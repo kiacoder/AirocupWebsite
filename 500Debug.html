@@ -1,0 +1,51 @@
+{% extends "Global/Base.html" %} {% block Title %}خطای سرور (500) - حالت دیباگ{%
+endblock %} {% block BodyClass %}ErrorDebug{% endblock %} {% block Body %}
+<main class="Container ErrorDebugContainer">
+  <h1 class="ErrorDebugTitle">
+    <i class="fas fa-bug" aria-hidden="true"></i>
+    خطای داخلی سرور (500)
+  </h1>
+  <p class="ErrorDebugSubtitle">
+    یک استثنا (Exception) در سرور رخ داده است. این صفحه فقط در حالت دیباگ نمایش
+    داده می‌شود.
+  </p>
+
+  <div class="TracebackWrapper">
+    <button
+      id="copyTracebackBtn"
+      class="Btn BtnSecondary"
+      title="کپی کردن متن خطا"
+    >
+      <i class="fas fa-copy" aria-hidden="true"></i> کپی کردن خطا
+    </button>
+    <div class="TracebackArea">
+      <pre id="tracebackContent">{{ error }}</pre>
+    </div>
+  </div>
+</main>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const copyButton = document.getElementById("copyTracebackBtn");
+    const tracebackContent = document.getElementById("tracebackContent");
+
+    if (copyButton && tracebackContent) {
+      copyButton.addEventListener("click", () => {
+        navigator.clipboard
+          .writeText(tracebackContent.textContent)
+          .then(() => {
+            const originalText = copyButton.innerHTML;
+            copyButton.innerHTML = '<i class="fas fa-check"></i> کپی شد!';
+            setTimeout(() => {
+              copyButton.innerHTML = originalText;
+            }, 2000);
+          })
+          .catch((err) => {
+            console.error("Failed to copy traceback:", err);
+            alert("Could not copy to clipboard.");
+          });
+      });
+    }
+  });
+</script>
+{% endblock %}

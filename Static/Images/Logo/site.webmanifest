@@ -1,0 +1,22 @@
+{
+  "name": "Airocup",
+  "short_name": "Airocup",
+  "icons": [
+    {
+      "src": "Logo/Solid/Airocup Logo MainFest 192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "Logo/Solid/Airocup Logo MainFest 512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "theme_color": "#005a9c",
+  "background_color": "#005a9c",
+  "start_url": "/",
+  "display": "standalone"
+}

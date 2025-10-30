@@ -1,0 +1,211 @@
+{% extends "Global/Base.html" %}
+
+{% block Title %}ویرایش تیم: {{ Team.TeamName }}{% endblock %}
+
+{% block Head %}
+<style>
+  .TabContainer {
+    width: 100%;
+  }
+  .TabButtons {
+    border-bottom: 2px solid #e2e8f0;
+    margin-bottom: 1.5rem;
+    display: flex;
+  }
+  .TabButton {
+    background: none;
+    border: none;
+    padding: 12px 20px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    color: #718096;
+    font-weight: 600;
+    position: relative;
+    bottom: -2px;
+  }
+  .TabButton.active {
+    border-bottom: 2px solid var(--ColorPrimary);
+    font-weight: bold;
+    color: var(--ColorPrimary);
+  }
+  .TabButton:disabled {
+    color: #cbd5e0;
+    cursor: not-allowed;
+  }
+  .TabContent {
+    display: none;
+    animation: fadeIn 0.5s;
+  }
+  .TabContent.active {
+    display: block;
+  }
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  .DataTable {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .DataTable th,
+  .DataTable td {
+    padding: 12px;
+    border: 1px solid var(--ColorBorder);
+    text-align: right;
+  }
+  .DataTable th {
+    background-color: var(--ColorBackgroundMuted);
+  }
+</style>
+{% endblock %}
+
+{% block Body %}
+<div class="AppContainer">
+  <div class="Container">
+    <div class="PageHeader">
+      <h1 class="SectionTitle">
+        ویرایش تیم:
+        <span style="color: var(--ColorPrimary)">{{ Team.TeamName }}</span>
+      </h1>
+      <p class="SectionSubtitle">
+        در این بخش می‌توانید نام تیم خود را تغییر دهید و در صورت تایید پرداخت، مستندات پروژه را بارگذاری کنید.
+      </p>
+    </div>
+
+    <div class="TabContainer">
+      <div class="TabButtons">
+        <button class="TabButton active" data-tab="edit-info">
+          <i class="fas fa-edit"></i> ویرایش نام
+        </button>
+        <button class="TabButton" data-tab="documents" {% if not IsPaid %}disabled title="برای فعال‌سازی، پرداخت تیم باید تایید شده باشد."{% endif %}>
+          <i class="fas fa-file-upload"></i> ارسال مستندات {% if not IsPaid %}(<i class="fas fa-lock"></i>){% endif %}
+        </button>
+      </div>
+
+      <div id="edit-info" class="TabContent active">
+        <div class="FormContainer FormContainer--medium" style="margin-top: 1rem">
+          <h2 class="FormTitle">تغییر نام تیم</h2>
+          <form method="POST" action="{{ url_for('Client.UpdateTeam', TeamID=Team.TeamID) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <div class="FormGroup">
+              <label for="TeamName">نام جدید تیم:<span class="RequiredStar">*</span></label>
+              <input type="text" id="TeamName" name="TeamName" value="{{ Team.TeamName }}" required minlength="3" maxlength="30" />
+            </div>
+            <div class="FormGroup">
+              <button type="submit" class="Btn BtnPrimary Btn--fullWidth">
+                ذخیره نام جدید
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div id="documents" class="TabContent">
+        {% if IsPaid %}
+        <div class="FormContainer FormContainer--medium" style="margin-top: 1rem">
+          <h2 class="FormTitle">بارگذاری مستندات</h2>
+          <p class="FormSubtitle" style="font-size: 0.9rem">
+            فایل‌های پروژه مانند ویدئو، پوستر، فایل‌های متنی و... را بارگذاری کنید.
+          </p>
+
+          <form id="DocumentUploadForm" method="POST" action="{{ url_for('Client.UploadDocument', TeamID=Team.TeamID) }}" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <div class="FormGroup">
+              <label for="documentFile" class="Btn BtnSecondary FileUploadBtn"><i class="fas fa-paperclip"></i> انتخاب فایل</label>
+              <input type="file" id="documentFile" name="File" class="FileUploadInput" required />
+              <span id="filename" class="FileNameDisplay">هیچ فایلی انتخاب نشده</span>
+              <small style="display: block; margin-top: 10px; text-align: center">
+                حداکثر حجم فایل سند: {{ (AppConfig.MaxDocumentSize / 1024 / 1024)|int }} مگابایت
+              </small>
+            </div>
+            <button type="submit" class="Btn BtnPrimary Btn--fullWidth">
+              بارگذاری فایل
+            </button>
+          </form>
+        </div>
+
+        <hr style="margin: 2.5rem 0" />
+
+        <h3>مستندات بارگذاری شده</h3>
+        {% if Documents %}
+        <div class="UserTableWrapper">
+          <table class="DataTable">
+            <thead>
+              <tr>
+                <th>نام فایل</th>
+                <th>نوع</th>
+                <th>تاریخ</th>
+                <th>دانلود</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for doc in Documents %}
+              <tr>
+                <td data-label="نام فایل">{{ doc.FileName | truncate(40) }}</td>
+                <td data-label="نوع">{{ doc.FileType }}</td>
+                <td data-label="تاریخ">{{ doc.UploadDate | formatdate }}</td>
+                <td data-label="دانلود">
+                  <a href="{{ url_for('Client.GetDocument', TeamID=doc.TeamID, filename=doc.FileName) }}" class="Btn BtnSm BtnSecondary" download>
+                    <i class="fas fa-download"></i>
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p style="text-align: center; margin-top: 1rem">
+          هنوز هیچ مستنداتی برای این تیم بارگذاری نشده است.
+        </p>
+        {% endif %}
+        {% else %}
+        <div style="text-align: center; padding: 2rem">
+          <i class="fas fa-lock" style="font-size: 2.5rem; color: #aaa"></i>
+          <h3 style="margin-top: 1.5rem">بخش مستندات قفل است</h3>
+          <p style="color: var(--ColorTextMuted)">
+            این بخش پس از پرداخت هزینه تیم و <strong>تایید نهایی</strong> آن توسط مدیریت، به صورت خودکار فعال خواهد شد.
+          </p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="SectionCta" style="text-align: center; margin-top: 2rem; margin-bottom: 30px">
+      <a href="{{ url_for('Client.Dashboard') }}" class="Btn BtnSecondary"><i class="fas fa-arrow-left"></i> بازگشت به داشبورد</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block Scripts %}
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const tabButtons = document.querySelectorAll(".TabButton");
+    const tabContents = document.querySelectorAll(".TabContent");
+    tabButtons.forEach((button) => {
+      if (button.disabled) return;
+      button.addEventListener("click", () => {
+        tabButtons.forEach((btn) => btn.classList.remove("active"));
+        button.classList.add("active");
+        const tabId = button.dataset.tab;
+        tabContents.forEach((content) => {
+          content.classList.toggle("active", content.id === tabId);
+        });
+      });
+    });
+
+    const fileInput = document.getElementById("documentFile");
+    const filenameDisplay = document.getElementById("filename");
+    if (fileInput && filenameDisplay) {
+      fileInput.addEventListener("change", () => {
+        filenameDisplay.textContent = fileInput.files.length > 0 ? fileInput.files[0].name : "هیچ فایلی انتخاب نشده";
+      });
+    }
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,3107 @@
+@font-face {
+  font-family: "IRANYekanX";
+  font-style: normal;
+  font-weight: 300; /* Light */
+  src: url("Fonts/woff2/IRANYekanX-Light.woff2") format("woff2"),
+    url("Fonts/woff/IRANYekanX-Light.woff") format("woff");
+}
+@font-face {
+  font-family: "IRANYekanX";
+  font-style: normal;
+  font-weight: 400; /* Regular */
+  src: url("Fonts/woff2/IRANYekanX-Regular.woff2") format("woff2"),
+    url("Fonts/woff/IRANYekanX-Regular.woff") format("woff");
+}
+@font-face {
+  font-family: "IRANYekanX";
+  font-style: normal;
+  font-weight: 700; /* Bold */
+  src: url("Fonts/woff2/IRANYekanX-Bold.woff2") format("woff2"),
+    url("Fonts/woff/IRANYekanX-Bold.woff") format("woff");
+}
+@font-face {
+  font-family: "IRANYekanX";
+  font-style: normal;
+  font-weight: 900; /* Black */
+  src: url("Fonts/woff2/IRANYekanX-Black.woff2") format("woff2"),
+    url("Fonts/woff/IRANYekanX-Black.woff") format("woff");
+}
+@font-face {
+  font-family: "IRANYekanX";
+  font-style: normal;
+  font-weight: 950; /* ExtraBlack */
+  src: url("Fonts/woff2/IRANYekanX-ExtraBlack.woff2") format("woff2"),
+    url("Fonts/woff/IRANYekanX-ExtraBlack.woff") format("woff");
+}
+
+/* IRANYekanX FaNum - For Persian Numerals */
+@font-face {
+  font-family: "IRANYekanX-FaNum";
+  font-style: normal;
+  font-weight: 300; /* Light */
+  src: url("Fonts/woff2/IRANYekanXFaNum-Light.woff2") format("woff2"),
+    url("Fonts/woff/IRANYekanXFaNum-Light.woff") format("woff");
+}
+@font-face {
+  font-family: "IRANYekanX-FaNum";
+  font-style: normal;
+  font-weight: 400; /* Regular */
+  src: url("Fonts/woff2/IRANYekanXFaNum-Regular.woff2") format("woff2"),
+    url("Fonts/woff/IRANYekanXFaNum-Regular.woff") format("woff");
+}
+@font-face {
+  font-family: "IRANYekanX-FaNum";
+  font-style: normal;
+  font-weight: 700; /* Bold */
+  src: url("Fonts/woff2/IRANYekanXFaNum-Bold.woff2") format("woff2"),
+    url("Fonts/woff/IRANYekanXFaNum-Bold.woff") format("woff");
+}
+@font-face {
+  font-family: "IRANYekanX-FaNum";
+  font-style: normal;
+  font-weight: 900; /* Black */
+  src: url("Fonts/woff2/IRANYekanXFaNum-Black.woff2") format("woff2"),
+    url("Fonts/woff/IRANYekanXFaNum-Black.woff") format("woff");
+}
+@font-face {
+  font-family: "IRANYekanX-FaNum";
+  font-style: normal;
+  font-weight: 950; /* ExtraBlack */
+  src: url("Fonts/woff2/IRANYekanXFaNum-ExtraBlack.woff2") format("woff2"),
+    url("Fonts/woff/IRANYekanXFaNum-ExtraBlack.woff") format("woff");
+}
+
+/* IRANYekanX NoEn - Persian Only Glyphs */
+@font-face {
+  font-family: "IRANYekanX-NoEn";
+  font-style: normal;
+  font-weight: 300; /* Light */
+  src: url("Fonts/woff2/IRANYekanXNoEn-Light.woff2") format("woff2"),
+    url("Fonts/woff/IRANYekanXNoEn-Light.woff") format("woff");
+}
+@font-face {
+  font-family: "IRANYekanX-NoEn";
+  font-style: normal;
+  font-weight: 400; /* Regular */
+  src: url("Fonts/woff2/IRANYekanXNoEn-Regular.woff2") format("woff2"),
+    url("Fonts/woff/IRANYekanXNoEn-Regular.woff") format("woff");
+}
+@font-face {
+  font-family: "IRANYekanX-NoEn";
+  font-style: normal;
+  font-weight: 700; /* Bold */
+  src: url("Fonts/woff2/IRANYekanXNoEn-Bold.woff2") format("woff2"),
+    url("Fonts/woff/IRANYekanXNoEn-Bold.woff") format("woff");
+}
+@font-face {
+  font-family: "IRANYekanX-NoEn";
+  font-style: normal;
+  font-weight: 900; /* Black */
+  src: url("Fonts/woff2/IRANYekanXNoEn-Black.woff2") format("woff2"),
+    url("Fonts/woff/IRANYekanXNoEn-Black.woff") format("woff");
+}
+@font-face {
+  font-family: "IRANYekanX-NoEn";
+  font-style: normal;
+  font-weight: 950; /* ExtraBlack */
+  src: url("Fonts/woff2/IRANYekanXNoEn-ExtraBlack.woff2") format("woff2"),
+    url("Fonts/woff/IRANYekanXNoEn-ExtraBlack.woff") format("woff");
+}
+
+:root {
+  --FontPersian: "IRANYekanX", "Tahoma", sans-serif;
+  --FontEnglish: "TwCenMT", sans-serif;
+  --FontPersianNum: "IRANYekanX-FaNum", sans-serif;
+  --FontPersianNoEnglish: "IRANYekanX-NoEn", sans-serif;
+  --ColorPrimary: #005a9c;
+  --ColorPrimaryDark: #004a80;
+  --ColorSecondary: #f7a600;
+  --ColorSecondaryDark: #d68f00;
+  --ColorDanger: #b00000;
+  --ColorDangerDark: #900000;
+  --ColorSuccess: #28a745;
+  --ColorWarning: #ffc107;
+  --ColorText: #212529;
+  --ColorTextMuted: #6c757d;
+  --ColorBackground: #f8f9fa;
+  --ColorBackgroundMuted: #e9ecef;
+  --ColorSurface: #ffffff;
+  --ColorBorder: #dee2e6;
+  --ColorDarkGrey: #2c3e50;
+  --ColorLightGrey: #f8f9fa;
+  --ColorHeader: #7b4baa;
+  --ColorFooter: #222;
+  --ColorTextGray: #4a5568;
+  --ColorText-light: #a0aec0;
+  --ColorCoolBlue: #3182ce;
+  --ShadowSM: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --ShadowMD: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --ShadowLG: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --GradientAngle: 0deg;
+  --SiteHeaderHeight: 100px;
+  --BorderRadius: 30px;
+  --BroderRadiusSmall: 10px;
+}
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--FontPersian), var(--FontEnglish);
+  font-weight: 400;
+  line-height: 1.7;
+  background-color: var(--ColorBackground);
+  color: var(--ColorText);
+  direction: rtl;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  height: 100%;
+  padding: 0;
+}
+
+main {
+  padding-top: var(--SiteHeaderHeight);
+}
+
+.AdminBody {
+  margin: var(--admin-header-height) 0 0 0;
+  padding: 0;
+  background-color: var(--ColorSurface);
+  color: var(--ColorTextGray);
+}
+
+.AdminMain {
+  padding: 2rem;
+  padding-top: 1rem;
+}
+
+a {
+  text-decoration: none;
+  color: var(--ColorPrimary);
+  transition: color 0.2s ease;
+}
+
+address {
+  font-style: normal;
+}
+
+a:hover {
+  color: var(--ColorPrimaryDark);
+}
+
+ul {
+  list-style: none;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+input,
+textarea,
+select,
+button {
+  font-family: inherit;
+  color: var(--ColorDarkGrey);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.Container {
+  width: 90%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+.AdminBody .Container {
+  width: 95%;
+  max-width: 1400px;
+  padding: 0 2rem;
+  margin: 0 auto;
+}
+
+@property --gradient-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.Btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 28px;
+  gap: 8px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  text-align: center;
+  border: 1px solid transparent;
+  border-radius: var(--BorderRadius);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.Btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.BtnPrimary {
+  color: var(--ColorSurface);
+  border-color: transparent;
+  background-color: var(--ColorPrimary);
+  background-image: linear-gradient(
+    var(--GradientAngle),
+    var(--ColorSecondaryDark),
+    var(--ColorPrimary)
+  );
+  background-size: 200% 200%;
+  background-position: center;
+  animation: gradient-rotate 4s linear infinite;
+}
+
+.BtnSecondary {
+  color: var(--ColorText);
+  background-color: var(--ColorSurface);
+  border-color: var(--ColorBorder);
+}
+
+.BtnSecondary:hover {
+  background-color: var(--ColorBackgroundMuted);
+}
+
+.BtnDanger {
+  color: var(--ColorSurface);
+  background-color: var(--ColorDanger);
+  border-color: var(--ColorDanger);
+}
+
+.BtnDanger:hover {
+  background-color: var(--ColorDangerDark);
+  border-color: var(--ColorDangerDark);
+}
+
+.Btn--fullWidth {
+  width: 100%;
+}
+
+.BtnSm {
+  padding: 5px 10px;
+  font-size: 0.9em;
+}
+
+@keyframes gradient-rotate {
+  to {
+    --GradientAngle: 360deg;
+  }
+}
+
+.AdminBody .Btn {
+  padding: 10px 20px;
+  font-size: 1rem;
+  border-radius: var(--admin-border-radius);
+}
+.AdminBody .Btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--admin-shadow-sm);
+}
+.AdminBody .BtnPrimary {
+  background-color: var(--ColorCoolBlue);
+  color: white;
+  background-image: none;
+}
+.AdminBody .BtnPrimary:hover {
+  background-color: #2b6cb0;
+}
+.AdminBody .BtnSecondary {
+  background-color: #e2e8f0;
+  color: var(--ColorTextGray);
+  border-color: #e2e8f0;
+}
+.AdminBody .BtnSecondary:hover {
+  background-color: #cbd5e0;
+}
+
+.Card {
+  background: var(--ColorSurface);
+  border-radius: var(--BorderRadius);
+  border: 1px solid var(--ColorBorder);
+  box-shadow: var(--ShadowSM);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  padding: 25px;
+  transform: translateY(0);
+}
+
+.Card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--ShadowMD);
+}
+
+.CardLeague {
+  text-align: center;
+  border-bottom: 4px solid var(--ColorPrimary);
+}
+
+.CardTeam {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  border-left: 5px solid var(--ColorPrimary);
+}
+
+.CardNews {
+  padding: 0;
+  display: flex;
+  overflow: hidden;
+  border-left: 5px solid var(--ColorSecondary);
+}
+
+.Card--table {
+  padding: 0;
+  margin-bottom: 30px;
+}
+
+.Card__header {
+  font-size: 1.5rem;
+  padding: 20px;
+  margin: 0;
+  border-bottom: 1px solid var(--ColorBorder);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.AdminBody .Card {
+  border-radius: var(--admin-border-radius);
+  border: 1px solid var(--ColorBackground);
+  box-shadow: var(--admin-shadow-sm);
+  padding: 1.5rem;
+  transform: none;
+}
+.AdminBody .Card:hover {
+  transform: none;
+  box-shadow: var(--admin-shadow-sm);
+}
+.AdminBody .Card--chart {
+  padding: 0;
+}
+
+.SectionTitle {
+  font-size: 2.5rem;
+  text-align: center;
+  margin-bottom: 50px;
+  position: relative;
+  padding-bottom: 15px;
+}
+
+.SectionTitle::after {
+  content: "";
+  position: absolute;
+  display: block;
+  width: 60px;
+  height: 4px;
+  background: var(--ColorPrimary);
+  border-radius: 2px;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.SectionTitleContact {
+  font-size: 2.5rem;
+  text-align: center;
+  margin-bottom: 50px;
+  position: relative;
+  padding-bottom: 15px;
+}
+
+.SectionTitleContact::after {
+  content: "";
+  position: absolute;
+  display: block;
+  width: 60px;
+  height: 4px;
+  background: var(--ColorPrimary);
+  border-radius: 2px;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.FormContainer {
+  max-width: 1000px;
+  margin: 0 Auto 10px Auto;
+  padding: 2rem;
+  background: var(--ColorSurface);
+  border-radius: var(--BorderRadius);
+  box-shadow: var(--ShadowMD);
+  border: 1px solid var(--ColorBorder);
+}
+
+.FormContainer--small {
+  max-width: 500px;
+}
+.FormContainer--medium {
+  max-width: 700px;
+}
+.FormContainer--large {
+  max-width: 900px;
+}
+
+.FormTitle {
+  text-align: center;
+  font-size: 1.8rem;
+  margin-bottom: 0.5rem;
+}
+.FormSubtitle {
+  text-align: center;
+  margin-top: 0;
+  margin-bottom: 2rem;
+  color: var(--ColorTextMuted);
+}
+
+.FormGroup {
+  margin-bottom: 1.25rem;
+}
+
+.FormGroup label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+  color: var(--ColorDarkGrey);
+}
+
+.FormGroup input,
+.FormGroup select,
+.FormGroup textarea {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid var(--ColorBorder);
+  border-radius: var(--BorderRadius);
+  font-size: 1rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.FormGroup input:focus,
+.FormGroup select:focus,
+.FormGroup textarea:focus {
+  outline: none;
+  border-color: var(--ColorPrimary);
+  box-shadow: 0 0 0 3px rgba(0, 90, 156, 0.2);
+}
+
+.FormGroup .RequiredStar {
+  color: var(--ColorDanger);
+  margin-right: 4px;
+  font-weight: bold;
+}
+
+fieldset {
+  border: 1px solid var(--ColorBorder);
+  border-radius: var(--BorderRadius);
+  padding: 20px;
+  margin-bottom: 25px;
+}
+
+legend {
+  font-weight: 700;
+  font-size: 1.2rem;
+  padding: 0 10px;
+  color: var(--ColorPrimary);
+}
+
+.FormGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.Grid-col-span-2 {
+  grid-column: span 2;
+}
+
+.AdminBody .FormContainer {
+  box-shadow: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+}
+.AdminBody .FormGrid {
+  gap: 1rem;
+}
+@media (min-width: 768px) {
+  .AdminBody .FormGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.AdminBody .FormHelpText {
+  font-size: 0.875rem;
+  color: var(--ColorText-light);
+  margin-top: -0.5rem;
+  margin-bottom: 0.5rem;
+}
+.AdminBody .FormGroup label {
+  font-weight: 600;
+}
+.AdminBody .FormGroup input,
+.AdminBody .FormGroup select,
+.AdminBody .FormGroup textarea {
+  border: 1px solid var(--ColorBackground);
+  border-radius: var(--admin-border-radius);
+  background-color: var(--ColorSurface);
+  color: var(--ColorTextGray);
+}
+
+.Modal {
+  display: none;
+  position: fixed;
+  z-index: 2000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.7);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.Modal.IsVisible {
+  display: block;
+  opacity: 1;
+}
+
+.ModalContent {
+  background-color: var(--ColorSurface);
+  margin: 10vh auto;
+  padding: 30px;
+  border-radius: var(--BorderRadius);
+  max-width: 90%;
+  width: 500px;
+  position: relative;
+  box-shadow: var(--ShadowLG);
+  transform: translateY(-20px);
+  transition: transform 0.3s ease;
+}
+
+.Modal.IsVisible .ModalContent {
+  transform: translateY(0);
+}
+
+.ModalContent--wide {
+  width: 800px;
+}
+
+.ModalContent--image {
+  background: none;
+  box-shadow: none;
+  width: auto;
+  padding: 0;
+}
+.ModalImage {
+  max-height: 80vh;
+  max-width: 90vw;
+  margin: 0 auto;
+  display: block;
+}
+
+.CloseBtn {
+  color: #aaa;
+  position: absolute;
+  top: 15px;
+  left: 25px;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.CloseBtn:hover {
+  color: var(--ColorText);
+}
+
+.StatusBadge {
+  padding: 6px 14px;
+  border-radius: 100px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+}
+.StatusPending {
+  background-color: var(--ColorWarning);
+  color: var(--ColorText);
+}
+.StatusApproved {
+  background-color: var(--ColorSuccess);
+}
+.StatusRejected {
+  background-color: var(--ColorDanger);
+}
+.StatusNotStarted {
+  background-color: var(--ColorTextMuted);
+}
+
+.UserTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.UserTable th,
+.UserTable td {
+  padding: 12px 15px;
+  text-align: right;
+  border-bottom: 1px solid var(--ColorBorder);
+  white-space: nowrap;
+}
+
+.UserTable th {
+  background-color: var(--ColorLightGrey);
+  font-weight: 600;
+}
+
+.AdminBody .UserTable th {
+  background-color: var(--ColorBackground);
+  color: var(--ColorTextGray);
+}
+
+.UserTable .Actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 10px;
+}
+.UserTableWrapper {
+  overflow-x: auto;
+}
+.EmptyStateRow td {
+  text-align: center;
+  padding: 20px;
+  color: var(--ColorTextMuted);
+}
+.AdminBody .EmptyStateRow td {
+  color: var(--ColorText-light);
+}
+
+.Logo img {
+  max-height: 100px;
+  transition: transform 0.3s ease;
+}
+.Logo img:hover {
+  transform: scale(1.05);
+}
+.MobileMenuBtn {
+  background: none;
+  border: none;
+  color: var(--ColorSurface);
+  font-size: 1.5rem;
+  cursor: pointer;
+  z-index: 1002;
+}
+.NavItems {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  position: fixed;
+  top: 0;
+  right: -100%;
+  width: 100%;
+  height: 100vh;
+  background-color: var(--ColorHeader);
+  z-index: 1001;
+  transition: right 0.4s ease-in-out;
+}
+.NavItems.Show {
+  right: 0;
+}
+.NavItems li a {
+  display: block;
+  padding: 15px 30px;
+  color: #e0e0e0;
+  font-weight: 500;
+  font-size: 1.5rem;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  border-radius: var(--BorderRadius);
+}
+.NavItems li a:hover,
+.NavItems li a.Active {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--ColorSurface);
+}
+.UserActions {
+  display: none;
+}
+
+.SiteFooter {
+  background-color: var(--ColorFooter);
+  color: #ccc;
+  padding: 40px 0;
+  border-top: 5px solid var(--ColorPrimary);
+  direction: rtl;
+  text-align: right;
+  flex-shrink: 0;
+}
+.FooterContent {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 40px;
+  text-align: center;
+}
+.FooterAbout p {
+  color: #ccc;
+  line-height: 1.8;
+}
+.FooterLogo {
+  margin-bottom: 20px;
+}
+.FooterLogo img {
+  max-height: 100px;
+  margin: 0 auto;
+}
+.FooterLinks h3,
+.FooterContact h3 {
+  color: var(--ColorSurface);
+  margin-bottom: 15px;
+  font-size: 1.3rem;
+}
+.FooterLinks ul li a {
+  color: #ccc;
+  padding: 5px 0;
+  display: block;
+}
+.FooterLinks ul li a:hover {
+  color: var(--ColorSecondary);
+}
+.FooterContact address p {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 0.5rem;
+}
+.SocialMedia {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 15px;
+}
+.SocialMedia a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ccc;
+  font-size: 1.2rem;
+  transition: all 0.3s ease;
+}
+.SocialMedia a:hover {
+  background-color: var(--ColorSecondary);
+  color: var(--ColorSurface);
+  transform: translateY(-3px);
+}
+.Copyright {
+  text-align: center;
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid #444;
+  font-size: 0.9rem;
+  color: var(--ColorTextMuted);
+}
+.FinalCta {
+  background-color: var(--ColorDarkGrey);
+  color: #fff;
+  padding: 50px 0;
+  text-align: center;
+}
+.FinalCta h2 {
+  color: #fff;
+  margin-bottom: 10px;
+}
+.FinalCta p {
+  color: #eee;
+  max-width: 700px;
+  margin: 0 auto 20px auto;
+}
+
+.HeroSection {
+  padding: 60px 0;
+  text-align: center;
+}
+.HeroContent {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 60px;
+  flex-wrap: wrap;
+}
+.HeroText {
+  flex: 1;
+  min-width: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.HeroText .Subtitle {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--ColorSecondaryDark);
+}
+.HeroText h1 {
+  font-size: 3.2rem;
+  line-height: 1.2;
+  margin: 10px 0 20px 0;
+  font-weight: 950;
+}
+.HeroText .Tagline {
+  font-size: 1.1rem;
+  color: var(--ColorText);
+  font-weight: bold;
+  max-width: 500px;
+  line-height: 1.8;
+}
+.HeroImage {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 320px;
+}
+.HeroImage img {
+  border-radius: var(--BorderRadius);
+  box-shadow: var(--ShadowLG);
+  max-width: 500px;
+}
+.EventDetails {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin: 30px 0;
+  flex-wrap: wrap;
+}
+.EventDetails p {
+  background: var(--ColorBackgroundMuted);
+  padding: 10px 20px;
+  border-radius: var(--BorderRadius);
+  border-right: 4px solid var(--ColorSecondary);
+  font-weight: 500;
+  margin: 0;
+}
+.OlympiadHighlight {
+  background-color: rgba(247, 166, 0, 0.1);
+  border: 1px solid var(--ColorSecondary);
+  border-radius: var(--BorderRadius);
+  padding: 15px 25px;
+  margin: 0 auto 30px auto;
+  max-width: 90%;
+  width: 700px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  font-size: 1.1rem;
+}
+.OlympiadHighlight i {
+  color: var(--ColorSecondaryDark);
+  font-size: 1.5rem;
+}
+.CtaButtons {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+.LeaguesSection {
+  padding: 80px 0;
+  background-color: var(--ColorSurface);
+}
+.LeaguesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 30px;
+}
+.LeagueIcon {
+  font-size: 2.5rem;
+  color: var(--ColorPrimary);
+  margin-bottom: 15px;
+}
+.SponsorsSection {
+  padding: 80px 0;
+}
+.SponsorsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 30px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+.SponsorBox {
+  background-color: var(--ColorSurface);
+  border: 1px solid var(--ColorBorder);
+  border-radius: var(--BorderRadius);
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--ShadowSM);
+  transition: all 0.3s ease;
+}
+.SponsorBox:hover {
+  box-shadow: var(--ShadowMD);
+  transform: translateY(-5px);
+}
+.SponsorLogo {
+  height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.SponsorLogo img {
+  max-height: 100%;
+  width: auto;
+  filter: grayscale(100%);
+  opacity: 0.7;
+  transition: all 0.3s ease;
+}
+.SponsorBox:hover .SponsorLogo img {
+  filter: grayscale(0%);
+  opacity: 1;
+}
+.SponsorPlusBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border: 3px dashed var(--ColorBorder);
+  border-radius: var(--BorderRadius);
+  color: var(--ColorTextMuted);
+  font-size: 2rem;
+  transition: all 0.3s ease;
+}
+.SponsorPlusBtn:hover {
+  background-color: var(--ColorBackgroundMuted);
+  border-style: solid;
+  border-color: var(--ColorPrimary);
+  color: var(--ColorPrimary);
+}
+.SponsorPlusBtn span {
+  font-size: 1rem;
+  margin-top: 10px;
+  font-weight: bold;
+}
+.SponsorshipBenefits {
+  padding: 80px 0;
+  background-color: var(--ColorSurface);
+}
+.SponsorshipBenefitsGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 50px;
+  align-items: center;
+}
+.BenefitsText h3 {
+  font-size: 1.8rem;
+  margin-bottom: 15px;
+}
+.BenefitsText p {
+  line-height: 1.8;
+  margin-bottom: 30px;
+  color: var(--ColorTextMuted);
+}
+.BenefitsText ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.BenefitsText ul li {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+  font-size: 1.1rem;
+}
+.BenefitsText ul i {
+  color: var(--ColorPrimary);
+  font-size: 1.2rem;
+  margin-top: 5px;
+}
+.BenefitsImage img {
+  width: 400px;
+  height: auto;
+  border-radius: var(--BorderRadius);
+  box-shadow: var(--ShadowLG);
+}
+
+.AboutStory {
+  padding: 80px 0;
+  text-align: center;
+}
+.AboutLogo {
+  margin: 0 auto 50px auto;
+  max-width: 250px;
+}
+.AboutLogo img {
+  opacity: 0.8;
+}
+.AboutStory p {
+  max-width: 800px;
+  margin: -20px auto 0 auto;
+  font-size: 1.2rem;
+  line-height: 2.2;
+  text-align: justify;
+}
+.ValuesSection {
+  background-color: var(--ColorBackground);
+  padding: 80px 0;
+}
+.ValuesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 30px;
+}
+.ValueCard {
+  text-align: center;
+  padding: 40px 25px;
+  border-top: 4px solid var(--ColorPrimary);
+}
+.ValueCard:hover {
+  border-top-color: var(--ColorSecondary);
+}
+.ValueIcon {
+  font-size: 3rem;
+  color: var(--ColorPrimary);
+  margin-bottom: 20px;
+  transition: color 0.3s ease;
+}
+.ValueCard:hover .ValueIcon {
+  color: var(--ColorSecondary);
+}
+.ValueCard h3 {
+  font-size: 1.4rem;
+  margin-bottom: 15px;
+}
+.ValueCard p {
+  color: var(--ColorTextMuted);
+  line-height: 1.8;
+}
+.CommitteeCta {
+  background-color: var(--ColorBackground);
+  padding: 80px 0;
+  text-align: center;
+}
+.CommitteeCta h2 {
+  font-size: 2.2rem;
+  margin-bottom: 15px;
+}
+.CommitteeCta p {
+  max-width: 600px;
+  margin: 0 auto 30px auto;
+  font-size: 1.1rem;
+}
+.CommitteeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+}
+.CommitteeMember {
+  border-top: 4px solid var(--ColorPrimary);
+  overflow: hidden;
+}
+.CommitteePhoto {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+}
+.CommitteePhoto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+}
+.CommitteeInfo {
+  padding: 20px;
+  text-align: center;
+}
+.CommitteeInfo h3 {
+  font-size: 1.4rem;
+  margin-bottom: 8px;
+}
+.CommitteeInfo p {
+  color: var(--ColorTextMuted);
+}
+.CommitteeInfo p:first-of-type {
+  color: var(--ColorPrimary);
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+.CooperateGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 30px;
+}
+.CooperateCard {
+  text-align: center;
+  padding: 40px 25px;
+  border-bottom: 4px solid var(--ColorPrimary);
+}
+.CooperateIcon {
+  font-size: 3rem;
+  color: var(--ColorPrimary);
+  margin-bottom: 25px;
+  transition: transform 0.3s ease;
+}
+.CooperateCard:hover .CooperateIcon {
+  transform: scale(1.1);
+}
+.CooperateCard h3 {
+  font-size: 1.5rem;
+  margin-bottom: 15px;
+}
+
+.GallerySection {
+  padding: 80px 0 20px 0;
+}
+.VideoGrid,
+.GalleryGrid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+.VideoWrapper {
+  position: relative;
+  padding-bottom: 56.25%;
+  height: 0;
+  overflow: hidden;
+  border-radius: var(--BorderRadius);
+  box-shadow: var(--ShadowMD);
+}
+.VideoWrapper iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+.GalleryItem {
+  border-radius: var(--BorderRadius);
+  overflow: hidden;
+  box-shadow: var(--ShadowMD);
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.GalleryItem:hover {
+  transform: scale(1.03);
+  box-shadow: var(--ShadowLG);
+}
+.GalleryItem img {
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+}
+
+.NewsGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 30px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.CardNews {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  text-decoration: none;
+  color: var(--ColorText);
+}
+.NewsCardImage img {
+  width: 100%;
+  height: 250px;
+  object-fit: cover;
+}
+.NewsCardContent {
+  padding: 25px;
+}
+.NewsTitle {
+  font-size: 1.6rem;
+  margin-bottom: 15px;
+  color: var(--ColorPrimaryDark);
+}
+.NewsMeta {
+  display: flex;
+  gap: 20px;
+  color: var(--ColorTextMuted);
+  font-size: 0.9rem;
+  margin-bottom: 20px;
+}
+.NewsMeta i {
+  margin-left: 5px;
+}
+.NewsExcerpt {
+  line-height: 1.8;
+  color: #495057;
+}
+.ReadMoreLink {
+  display: block;
+  margin-top: 1.5rem;
+  font-weight: bold;
+  color: var(--ColorPrimary);
+}
+
+.DashboardContainer {
+  max-width: 1200px;
+  margin: 1rem auto;
+}
+.DashboardActions {
+  text-align: center;
+  margin-bottom: 40px;
+}
+.TeamCardGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 30px;
+}
+.Card.CardTeam {
+  border-left: 5px solid var(--ColorPrimary);
+}
+.TeamCardBody {
+  padding: 1.5rem;
+  flex-grow: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+.DetailItem {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--ColorBorder);
+}
+.DetailItem:last-child {
+  border-bottom: none;
+}
+.TeamCardBody .DetailItem {
+  padding: 0;
+  border: none;
+  flex-direction: column;
+  gap: 5px;
+}
+.TeamCardBody .DetailItem span {
+  font-size: 0.9rem;
+  color: var(--ColorTextMuted);
+}
+.TeamCardBody .DetailItem strong {
+  font-size: 1.1rem;
+  display: block;
+  font-weight: 600;
+}
+.TeamCardFooter {
+  margin-top: auto;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--ColorBorder);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  background-color: var(--ColorBackground);
+}
+.NoTeamsCard {
+  text-align: center;
+  padding: 40px;
+  color: var(--ColorTextMuted);
+}
+.NoTeamsCard i {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  display: block;
+}
+
+.PaymentLayout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 30px;
+}
+.PaymentInfoCard h2,
+.PaymentSummaryCard h2 {
+  font-size: 1.3rem;
+  padding-bottom: 15px;
+  border-bottom: 1px solid var(--ColorBorder);
+  margin-bottom: 15px;
+}
+.PaymentDetails {
+  padding: 0 10px;
+}
+.DetailItem.Copyable span {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.CopyBtn {
+  background: none;
+  border: none;
+  color: var(--ColorTextMuted);
+  cursor: pointer;
+  font-size: 1rem;
+}
+.CopyBtn:hover {
+  color: var(--ColorPrimary);
+}
+.DetailItem strong {
+  font-weight: 700;
+  font-family: var(--FontEnglish);
+}
+.DiscountAmount {
+  font-size: 0.9em;
+  color: var(--ColorTextMuted);
+  border: none;
+}
+.SummaryDivider {
+  margin: 15px 0;
+  border: 0;
+  border-top: 1px dashed var(--ColorBorder);
+}
+.TotalAmount {
+  padding-top: 15px;
+  font-size: 1.2rem;
+  border: none;
+}
+.TotalAmount strong {
+  font-size: 1.6rem;
+  color: var(--ColorPrimary);
+}
+.CardFooter {
+  text-align: center;
+  margin-top: 20px;
+  padding: 20px;
+  border-top: 1px solid var(--ColorBorder);
+  background-color: var(--ColorBackground);
+}
+.UploadInstruction {
+  margin-bottom: 1rem;
+}
+#receipt {
+  padding: 10px;
+  height: auto;
+  margin: 10px auto;
+  display: block;
+}
+
+.ContactGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 30px;
+}
+.Card.ContactDetailsCard,
+.Card.LocationCard {
+  border-right: 4px solid var(--ColorPrimary);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.Card.LocationCard {
+  border-right-color: var(--ColorSecondary);
+}
+.ContactDetailsCard h3,
+.LocationCard h3 {
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+  border-bottom: 2px solid var(--ColorBackgroundMuted);
+  padding-bottom: 15px;
+}
+.LocationCard p {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 500;
+  margin-bottom: 20px;
+}
+.LocationCard p i {
+  color: var(--ColorSecondaryDark);
+}
+.ContactDetailsCard address {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex-grow: 1;
+}
+.ContactLink {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 12px;
+  border-radius: var(--BorderRadius);
+  transition: background-color 0.2s ease, transform 0.2s ease;
+  color: var(--ColorText);
+}
+.ContactLink:hover {
+  background-color: var(--ColorBackgroundMuted);
+  transform: translateX(-5px);
+}
+.ContactLink i {
+  font-size: 1.6rem;
+  color: var(--ColorPrimary);
+  width: 35px;
+  text-align: center;
+}
+.ContactText strong {
+  color: var(--ColorDarkGrey);
+  font-weight: 600;
+}
+.ContactText span {
+  color: var(--ColorTextMuted);
+  font-family: var(--FontEnglish);
+  direction: ltr;
+  display: block;
+}
+.MapContainer {
+  flex-grow: 1;
+  border-radius: var(--BorderRadius);
+  overflow: hidden;
+  border: 1px solid var(--ColorBorder);
+  box-shadow: var(--ShadowSM);
+  min-height: 400px;
+}
+.MapContainer iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.PasswordWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.PasswordWrapper input {
+  padding-left: 2.5rem;
+}
+.PasswordToggle {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  height: 100%;
+  width: 2.5rem;
+  color: var(--ColorTextMuted);
+}
+.PasswordToggle:hover {
+  color: var(--ColorPrimary);
+}
+.PasswordRequirements {
+  font-size: 0.9em;
+  background-color: var(--ColorBackgroundMuted);
+  padding: 15px;
+  border-radius: var(--BorderRadius);
+  margin: 1.5rem 0;
+  border-right: 4px solid var(--ColorPrimary);
+}
+.PasswordRequirements p {
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.PasswordRequirements ul {
+  list-style: none;
+  padding-right: 0;
+}
+.PasswordRequirements li {
+  margin-bottom: 8px;
+  transition: color 0.3s ease;
+}
+.PasswordRequirements li.invalid {
+  color: var(--ColorDanger);
+}
+.PasswordRequirements li.valid {
+  color: var(--ColorSuccess);
+}
+.PasswordRequirements li.valid::before {
+  content: "✓ ";
+}
+.PasswordRequirements li.invalid::before {
+  content: "✗ ";
+}
+
+.PageGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+.InfoList {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1rem 1.5rem;
+  padding: 1rem 0;
+}
+.InfoList dt {
+  font-weight: bold;
+  color: var(--ColorText-light);
+}
+.InfoList dd {
+  margin: 0;
+  direction: ltr;
+  text-align: left;
+}
+.ClientActions {
+  padding: 1.5rem;
+  border-top: 1px solid var(--ColorBackground);
+  display: flex;
+  gap: 1rem;
+  background-color: var(--ColorSurface);
+}
+.Toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.SearchInputGroup {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.SearchInputGroup i {
+  position: absolute;
+  right: 15px;
+  color: var(--ColorText-light);
+}
+.SearchInputGroup input {
+  padding-right: 40px;
+  min-width: 300px;
+}
+.Pagination {
+  text-align: center;
+  margin-top: 2rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+}
+.Pagination__info {
+  font-weight: bold;
+}
+.TeamId {
+  font-size: 0.8rem;
+  color: var(--ColorText-light);
+}
+.StatusForm {
+  display: flex;
+  flex-grow: 1;
+  gap: 5px;
+}
+.StatusForm select {
+  padding: 5px 8px;
+}
+.BtnSm {
+  padding: 5px 10px;
+  font-size: 0.9em;
+}
+
+.AdminChatLayout {
+  display: flex;
+  height: 80vh;
+  padding: 0;
+}
+
+.ClientList {
+  width: 300px;
+  border-left: 1px solid var(--ColorBackground);
+  overflow-y: auto;
+  background-color: var(--ColorSurface);
+  flex-shrink: 0;
+}
+
+.ClientListItem {
+  display: block;
+  padding: 15px;
+  border-bottom: 1px solid var(--ColorBackground);
+  text-decoration: none;
+  color: var(--ColorTextGray);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.ClientListItem:hover,
+.ClientListItem.Active {
+  background-color: var(--ColorBackground);
+}
+
+.ClientListItem strong {
+  display: block;
+  font-weight: 700;
+}
+.ClientListItem span {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--ColorText-light);
+}
+.ChatWrapper {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--ColorSurface);
+}
+.ChatBox {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+.ChatInput {
+  display: flex;
+  padding: 15px;
+  border-top: 1px solid var(--ColorBackground);
+  gap: 10px;
+}
+.ChatInput input {
+  flex-grow: 1;
+  border: 1px solid var(--ColorBackground);
+  padding: 10px;
+  border-radius: 20px;
+}
+.ChatInput button {
+  flex-shrink: 0;
+}
+
+.StatsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+.StatCard {
+  display: flex;
+  align-items: center;
+  padding: 1.5rem;
+  gap: 1.5rem;
+}
+.StatIcon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  flex-shrink: 0;
+}
+.StatContent h3 {
+  margin: 0 0 5px 0;
+  font-size: 2.2rem;
+}
+.StatContent p {
+  margin: 0;
+  color: var(--ColorText-light);
+}
+.ChartGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+.ChartContainer {
+  padding: 1.5rem;
+  height: 400px;
+}
+
+.StatIcon--members {
+  background-color: #e8f4f8;
+  color: #0c546b;
+}
+.StatIcon--teams {
+  background-color: #e6f3ff;
+  color: #005a9c;
+}
+.StatIcon--approved {
+  background-color: #e9f7ef;
+  color: #28a745;
+}
+.StatIcon--clients {
+  background-color: #fff8e1;
+  color: #856404;
+}
+.StatIcon--messages {
+  background-color: #fde8ee;
+  color: #a8184b;
+}
+.StatIcon--leaders {
+  background-color: #f0e8f8;
+  color: #531c82;
+}
+
+@media (min-width: 992px) {
+  .MobileMenuBtn {
+    display: none;
+  }
+  .UserActions {
+    display: flex;
+    gap: 10px;
+  }
+  .NavItems {
+    position: static;
+    flex-direction: row;
+    height: auto;
+    width: auto;
+    background-color: transparent;
+    padding: 0;
+    gap: 10px;
+    right: auto;
+    transition: none;
+  }
+  .NavItems li a {
+    font-size: 1.1rem;
+    padding: 8px 15px;
+  }
+
+  .AdminBody .PageGrid {
+    grid-template-columns: 1fr 1.5fr;
+  }
+  .AdminBody .ClientList {
+    height: auto;
+  }
+  .AdminBody .ChatWrapper {
+    height: 75vh;
+  }
+  .AdminBody .ChartGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .AdminBody .ContactGrid {
+    grid-template-columns: 1fr 1.5fr;
+  }
+  .AdminBody .PaymentLayout {
+    grid-template-columns: 1fr 1.5fr;
+  }
+  .AdminBody .SponsorshipBenefitsGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 991px) {
+  .SectionTitle {
+    font-size: 2.2rem;
+  }
+  .FooterContent {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+}
+
+@media (max-width: 768px) {
+  .SponsorsGrid,
+  .CommitteeGrid,
+  .NewsGrid,
+  .TeamCardGrid {
+    grid-template-columns: 1fr;
+  }
+  .DashboardContainer,
+  .FormContainer {
+    padding: 20px;
+  }
+  .UserTableWrapper {
+    overflow-x: auto;
+  }
+  .UserTable {
+    min-width: 700px;
+  }
+  .TeamCardFooter {
+    flex-direction: column;
+  }
+  .TeamCardFooter > * {
+    width: 100%;
+  }
+  .NewsCard {
+    flex-direction: column;
+  }
+  .ActivityGrid {
+    grid-template-columns: 1fr;
+  }
+  .AdminChatLayout {
+    flex-direction: column;
+    height: 100vh;
+  }
+  .ClientList {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--ColorBackground);
+    max-height: 40vh;
+  }
+  .ChatWrapper {
+    height: auto;
+  }
+}
+
+.ErrorDebug {
+  direction: ltr;
+  text-align: left;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  background-color: #1a1a1a;
+  color: #e8e8e8;
+  padding: 2rem;
+  margin-top: 0;
+}
+
+.ErrorDebug .SiteHeader,
+.ErrorDebug .SiteFooter {
+  display: none;
+}
+
+.ErrorDebug .Container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0;
+}
+
+.ErrorDebug .ErrorDebugTitle {
+  color: #ff5c5c;
+  border-bottom: 1px solid #444;
+  padding-bottom: 0.5rem;
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.ErrorDebug p {
+  font-size: 1.1rem;
+}
+
+.ErrorDebug .TracebackArea {
+  background-color: #2b2b2b;
+  border: 1px solid #444;
+  border-radius: 5px;
+  padding: 1.5rem;
+  overflow-x: auto;
+  font-family: "Consolas", "Monaco", monospace;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.ErrorDebug .TracebackArea pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.AccordionContainer {
+  margin: 50px auto;
+  max-width: 900px;
+}
+
+.AccordionItem {
+  margin-bottom: 20px;
+  transform: none;
+}
+.AccordionItem:hover {
+  box-shadow: var(--ShadowMD);
+}
+
+.AccordionContent {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease-out, padding 0.4s ease-out,
+    background-color 0.4s ease-out;
+  background-color: var(--ColorSurface);
+  border: 1px solid var(--ColorBorder);
+  border-top: none;
+  border-radius: 0 0 var(--BorderRadius) var(--BorderRadius);
+}
+
+.AccordionContent.active {
+  max-height: 2000px;
+  padding: 25px;
+  transition: max-height 0.6s ease-in, padding 0.6s ease-in;
+}
+
+.LeagueDetailsBody {
+  line-height: 1.8;
+}
+
+.LeagueDescription {
+  margin-bottom: 20px;
+  font-size: 1.1rem;
+  color: var(--ColorDarkGrey);
+}
+
+.LeagueDetailsBody h4 {
+  font-size: 1.25rem;
+  margin-top: 30px;
+  margin-bottom: 15px;
+  color: var(--ColorPrimaryDark);
+  border-bottom: 2px solid var(--ColorBackgroundMuted);
+  padding-bottom: 5px;
+}
+
+.LeagueGoalsList {
+  padding: 0;
+  list-style: none;
+}
+
+.LeagueGoalsList li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+  color: var(--ColorText);
+  font-weight: 500;
+}
+
+.LeagueGoalsList li i {
+  color: var(--ColorSuccess);
+  font-size: 1.1rem;
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+
+.LeagueSectionContent {
+  padding: 15px;
+  background-color: var(--ColorLightGrey);
+  border-right: 4px solid var(--ColorSecondary);
+  border-radius: var(--BorderRadius);
+  font-size: 1rem;
+}
+
+.SectionSubtitle {
+  max-width: 800px;
+  margin: 0 auto 30px auto;
+  font-size: 1.1rem;
+  color: var(--ColorTextMuted);
+  line-height: 1.8;
+}
+
+.AboutStory p {
+  text-align: justify;
+  text-justify: inter-word;
+  font-weight: 500;
+  max-width: 850px;
+  margin: 0px auto 50px auto;
+}
+
+.CommitteeCta {
+  background-color: var(--ColorBackground);
+  padding: 80px 0;
+  text-align: center;
+  border-top: 1px solid var(--ColorBorder);
+  border-bottom: 1px solid var(--ColorBorder);
+}
+
+.CommitteeCta h2 {
+  font-size: 2.2rem;
+  margin-bottom: 15px;
+  color: var(--ColorDarkGrey);
+}
+
+.CommitteeCta p {
+  max-width: 600px;
+  margin: 0 auto 30px auto;
+  font-size: 1.1rem;
+  color: var(--ColorTextMuted);
+}
+
+.FinalCtaContact {
+  background-color: var(--ColorDarkGrey);
+  color: #fff;
+  padding: 80px 0;
+  text-align: center;
+}
+
+.FinalCtaContact h2 {
+  color: #fff;
+  margin-bottom: 10px;
+  font-size: 2.5rem;
+  font-weight: 900;
+}
+
+.FinalCtaContact p {
+  color: #eee;
+  max-width: 700px;
+  margin: 0 auto 30px auto;
+  font-size: 1.2rem;
+  line-height: 1.8;
+}
+
+.ContactIntro {
+  text-align: center;
+  margin-bottom: 50px;
+}
+
+.ContactIntro .IntroSubtitle {
+  max-width: 800px;
+  margin: 0 auto 30px auto;
+  font-size: 1.1rem;
+  color: var(--ColorTextMuted);
+  line-height: 1.8;
+}
+
+.ContactGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 30px;
+}
+
+@media (min-width: 992px) {
+  .ContactGrid {
+    grid-template-columns: 1fr 1.5fr;
+  }
+}
+
+.Card.ContactDetailsCard,
+.Card.LocationCard {
+  border-right: 4px solid var(--ColorPrimary);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.Card.LocationCard {
+  border-right-color: var(--ColorSecondary);
+}
+
+.ContactDetailsCard h3,
+.LocationCard h3 {
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+  border-bottom: 2px solid var(--ColorBackgroundMuted);
+  padding-bottom: 15px;
+}
+
+.LocationCard .LocationAddress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 500;
+  margin-bottom: 20px;
+  line-height: 1.8;
+}
+.LocationCard .LocationAddress i {
+  color: var(--ColorSecondaryDark);
+  font-size: 1.1rem;
+}
+
+.ContactDetailsCard address {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex-grow: 1;
+}
+.ContactLink {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 12px;
+  border-radius: var(--BorderRadius);
+  transition: background-color 0.2s ease, transform 0.2s ease;
+  color: var(--ColorText);
+  text-decoration: none;
+}
+.ContactLink:hover {
+  background-color: var(--ColorBackgroundMuted);
+  transform: translateX(-5px);
+}
+.ContactLink i {
+  font-size: 1.6rem;
+  color: var(--ColorPrimary);
+  width: 35px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.ContactText strong {
+  color: var(--ColorDarkGrey);
+  font-weight: 600;
+  display: block;
+}
+.ContactText span {
+  color: var(--ColorTextMuted);
+  font-family: var(--FontEnglish);
+  direction: ltr;
+  display: block;
+  text-align: left;
+}
+.MapContainer {
+  flex-grow: 1;
+  border-radius: var(--BorderRadius);
+  overflow: hidden;
+  border: 1px solid var(--ColorBorder);
+  box-shadow: var(--ShadowSM);
+  min-height: 400px;
+}
+.MapContainer iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.InlineDate {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.InlineDate select,
+.InlineDate input {
+  flex-grow: 1;
+}
+
+select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+
+  background-color: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  padding: 0.625rem 0.75rem;
+  font-size: 1rem;
+  cursor: pointer;
+
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.5rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: 2.5rem;
+}
+
+select:focus {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  border-color: var(--ColorHeader);
+  box-shadow: 0 0 0 2px #c4b5fd;
+}
+
+select option {
+  padding: 0.5rem;
+  font-size: 1rem;
+}
+
+.InlineDate {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.InlineDate select,
+.InlineDate input {
+  flex-grow: 1;
+}
+
+select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-color: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  padding: 0.625rem 0.75rem;
+  font-size: 1rem;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: left;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: 7.5rem;
+}
+
+select:focus {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  border-color: var(--ColorHeader);
+  box-shadow: 0 0 0 2px #c4b5fd;
+}
+
+select option {
+  padding: 0.5rem;
+  font-size: 1rem;
+}
+
+.TeamCardFooter {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.ActionsDropdown {
+  position: relative;
+  margin-left: auto;
+}
+
+.DropdownMenu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: white;
+  border-radius: 0.375rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e5e7eb;
+  padding: 0.5rem 0;
+  min-width: 160px;
+  z-index: 10;
+
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.2s ease-in-out;
+}
+
+.ActionsDropdown.is-open .DropdownMenu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.DropdownMenu a,
+.DropdownMenu button {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.5rem 1rem;
+  text-align: right;
+  font-size: 0.9rem;
+  color: #374151;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.DropdownMenu a:hover,
+.DropdownMenu button:hover {
+  background-color: #f3f4f6;
+}
+
+.DropdownMenu .BtnDanger {
+  color: #dc2626;
+}
+
+.DropdownMenu .BtnDanger:hover {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+.DropdownMenu i {
+  width: 1.25rem;
+  text-align: center;
+}
+
+.InputWithButton {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.InputWithButton input {
+  padding-left: 3rem;
+}
+
+.InputWithButton .InputBtn {
+  position: absolute;
+  left: 0.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 0.5rem;
+  height: 100%;
+}
+
+.InputWithButton .InputBtn:hover {
+  color: #111827;
+}
+
+.PaymentGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+@media (min-width: 768px) {
+  .PaymentGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.PaymentInfoCard h2,
+.PaymentSummaryCard h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.25rem;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.PaymentDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.DetailItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.DetailItem span {
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.DetailItem strong {
+  color: #111827;
+  font-weight: 500;
+}
+
+.DetailItem.TotalAmount span {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.DetailItem .FinalAmount {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--ColorHeader);
+}
+
+.ValueWithCopy {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.CopyBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #9ca3af;
+  font-size: 1rem;
+  padding: 0.25rem;
+  border-radius: 9999px;
+  line-height: 1;
+}
+
+.CopyBtn:hover {
+  color: #111827;
+  background-color: #f3f4f6;
+}
+
+.SummaryDivider {
+  border: 0;
+  border-top: 1px solid #e5e7eb;
+  margin: 0.5rem 0;
+}
+
+.FileUploadInput {
+  width: 0.1px;
+  height: 0.1px;
+  opacity: 0;
+  overflow: hidden;
+  position: absolute;
+  z-index: -1;
+}
+
+.FileUploadBtn {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.FileNameDisplay {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: #6b7280;
+  display: inline-block;
+}
+
+@keyframes slide-in {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+}
+
+.QuickLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.StatsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.StatCard {
+  display: flex;
+  align-items: center;
+  padding: 1.25rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.StatIcon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  margin-left: 1rem;
+}
+
+.StatContent h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.StatContent p {
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.ChartGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+
+@media (min-width: 992px) {
+  .ChartGrid {
+    grid-template-columns: 2fr 1fr;
+  }
+}
+
+.ChartContainer {
+  position: relative;
+  height: 350px;
+}
+
+.UserTableWrapper {
+  margin-top: 1rem;
+}
+
+.UserTable th,
+.UserTable td {
+  white-space: nowrap;
+}
+
+.QuickLinks .Badge {
+  background-color: #ef4444;
+  color: white;
+  font-size: 0.75rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.75rem;
+  margin-right: 0.25rem;
+}
+
+.AdminChatContainer {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.ChatWrapper {
+  display: flex;
+  flex-direction: column;
+  height: 70vh;
+  max-height: 800px;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.ChatBox {
+  flex-grow: 1;
+  padding: 1rem;
+  overflow-y: auto;
+  background-color: #f9fafb;
+  scroll-behavior: smooth;
+}
+
+.ChatInput {
+  padding: 1rem;
+  background-color: white;
+  border-top: 1px solid #e5e7eb;
+}
+
+.MessageInputGroup {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.MessageInputGroup input {
+  flex-grow: 1;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+}
+
+.PersonaSelector {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+.PersonaSelector label {
+  font-weight: 500;
+}
+
+.PersonaSelector select {
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+}
+
+.ChatMessage {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0.75rem;
+  max-width: 80%;
+  padding: 0.6rem 0.9rem;
+  border-radius: 0.75rem;
+  word-wrap: break-word;
+}
+
+.ChatMessage.is-client {
+  margin-right: auto;
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.ChatMessage.is-admin {
+  margin-left: auto;
+  background-color: #4f46e5;
+  color: white;
+}
+
+.ChatMessage__sender {
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-bottom: 0.2rem;
+  opacity: 0.8;
+}
+
+.ChatMessage__text {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.ChatMessage__meta {
+  font-size: 0.65rem;
+  margin-top: 0.25rem;
+  opacity: 0.7;
+  text-align: right;
+}
+
+.PageHeader {
+  margin-bottom: 1rem;
+  text-align: center;
+  padding-top: 20px;
+  color: black;
+}
+.AccordionHeader {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 25px;
+  background-color: var(--ColorBackgroundMuted);
+  border: none;
+  border-radius: var(--BorderRadius);
+  cursor: pointer;
+  text-align: right;
+  transition: all 0.3s ease;
+  border-bottom: 2px solid transparent;
+}
+
+.WelcomeHeader {
+  text-align: center;
+  margin-bottom: 30px;
+  border-bottom: 1px solid var(--ColorBorder);
+  padding-bottom: 1rem;
+}
+.HeaderRight {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+.AdminBody .AdminHeader {
+  background-color: var(--ColorFooter);
+  color: white;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--admin-header-height);
+  z-index: 1000;
+  box-shadow: var(--admin-shadow-sm);
+}
+.AdminHeader__container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 100%;
+  padding: 0 1.5rem;
+}
+.AdminHeader__logo {
+  font-weight: bold;
+  font-size: 1.2rem;
+  color: white;
+  text-decoration: none;
+}
+.AdminHeader__nav {
+  display: flex;
+  gap: 1rem;
+}
+.AdminHeader__nav a {
+  color: #e2e8f0;
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: var(--admin-border-radius);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.AdminHeader__nav a:hover,
+.AdminHeader__nav a.active {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+.AdminHeader__mobile-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+.WelcomeHeader h2 {
+  font-size: 2.2rem;
+}
+.TeamCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--ColorBorder);
+}
+.TeamCardHeader h3 {
+  margin: 0;
+  font-size: 1.6rem;
+  color: var(--ColorPrimaryDark);
+}
+.AdminHeader__container {
+  padding: 0 1.5rem;
+}
+.AdminHeader__logo {
+  font-weight: bold;
+  font-size: 1.2rem;
+  color: white;
+  text-decoration: none;
+}
+.AdminHeader__nav {
+  display: flex;
+  gap: 1rem;
+}
+.AdminHeader__nav a {
+  color: #e2e8f0;
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: var(--admin-border-radius);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.AdminHeader__nav a:hover,
+.AdminHeader__nav a.active {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+.AdminHeader__mobile-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+.AdminBody .AdminHeader__nav {
+  display: none;
+  position: absolute;
+  top: var(--admin-header-height);
+  left: 0;
+  right: 0;
+  background-color: var(--ColorTextGray);
+  flex-direction: column;
+  padding: 1rem 0;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+.AdminBody .AdminHeader__nav.is-open {
+  display: flex;
+}
+.AdminBody .AdminHeader__nav a {
+  padding: 1rem;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.AdminBody .AdminHeader__nav a:last-child {
+  border-bottom: none;
+}
+.AdminBody .AdminHeader__mobile-toggle {
+  display: block;
+}
+.AdminBody .AdminHeader__mobile-toggle {
+  display: none;
+}
+.AdminBody .AdminHeader__nav {
+  display: flex !important;
+  position: static;
+  flex-direction: row;
+  width: auto;
+  height: auto;
+  padding: 0;
+  box-shadow: none;
+  background: transparent;
+}
+.AdminBody .AdminHeader__nav a {
+  border-bottom: none;
+}
+
+.AccordionHeader h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  color: var(--ColorDarkGrey);
+  font-weight: 700;
+  transition: color 0.3s ease;
+}
+
+.AccordionHeader:hover {
+  background-color: var(--ColorBorder);
+}
+
+.AccordionHeader.active {
+  background-color: var(--ColorPrimary);
+  border-radius: var(--BorderRadius) var(--BorderRadius) 0 0;
+  border-bottom-color: var(--ColorPrimary);
+}
+
+.AccordionHeader.active h3 {
+  color: var(--ColorSurface);
+}
+
+.AccordionIcon {
+  font-size: 1rem;
+  color: var(--ColorTextMuted);
+  transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.AccordionHeader.active .AccordionIcon {
+  transform: rotate(180deg);
+  color: var(--ColorSurface);
+}
+
+.SiteHeader {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  z-index: 1010;
+  background-color: var(--ColorHeader);
+  box-shadow: var(--ShadowMD);
+  color: var(--ColorSurface);
+  transition: background-color 0.3s ease;
+  display: block;
+  box-sizing: border-box;
+  height: var(--SiteHeaderHeight);
+}
+
+.TopHeader {
+  height: var(--SiteHeaderHeight);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 10px 15px;
+  box-sizing: border-box;
+}
+
+.ErrorPageContainer {
+  box-sizing: border-box;
+  font-family: var(--FontPersian);
+  text-align: center;
+  margin: 100px 0;
+}
+.MainContent {
+  flex: 1 0 auto;
+}
+
+/* Container / layout */
+#FlashContainer {
+  position: fixed;
+  top: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 90%;
+  max-width: 400px;
+}
+
+.FlashMessagesContainer {
+  position: fixed;
+  top: 120px;
+  right: 50%;
+  transform: translateX(50%);
+  z-index: 1500;
+  width: 90%;
+  max-width: 800px;
+  padding: 0 15px;
+}
+
+.AdminBody .FlashMessagesContainer {
+  top: 70px;
+}
+
+/* Flash message base (merged visual + animation styles) */
+.FlashMessage {
+  padding: 1rem 1.5rem;
+  margin-bottom: 1rem;
+  margin-top: 5rem;
+  border-radius: var(--BorderRadius);
+  font-weight: 600;
+  box-shadow: var(--ShadowMD);
+  border-right: 5px solid;
+  text-align: right;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  opacity: 0;
+  transform: translateY(-20px);
+  animation: SlideIn 0.3s ease-out forwards;
+}
+
+/* when closing/removing a flash */
+.FlashMessageClosing {
+  animation: SlideOut 0.3s ease-in forwards;
+}
+
+/* icon sizing — keep .fas (FontAwesome) as-is */
+.FlashMessage .fas {
+  font-size: 1.25rem;
+}
+
+/* content flow */
+.FlashMessage span {
+  flex-grow: 1;
+}
+
+/* close button */
+.FlashCloseBtn {
+  background: none;
+  border: none;
+  color: inherit; /* inherit text color from message variant */
+  font-size: 1.5rem;
+  font-weight: bold;
+  cursor: pointer;
+  opacity: 0.7;
+  padding: 0 0.5rem;
+}
+
+.FlashCloseBtn:hover {
+  opacity: 1;
+}
+
+/* variant colors — let variants control text color so some can be dark (FlashInfo) */
+.FlashSuccess {
+  color: var(--ColorSurface);
+  border-color: var(--ColorSuccess);
+  background-color: var(--ColorSuccess);
+}
+
+.FlashError {
+  color: var(--ColorSurface);
+  border-color: var(--ColorDanger);
+  background-color: var(--ColorDanger);
+}
+
+.FlashInfo {
+  /* kept light background + dark text from your original .FlashInfo */
+  background-color: #e8f4f8;
+  color: #0c546b;
+  border-color: var(--ColorPrimary);
+}
+
+.FlashWarning {
+  color: var(--ColorSurface);
+  border-color: var(--ColorWarning);
+  background-color: var(--ColorSecondary);
+}
+
+/* animations */
+@keyframes SlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes SlideOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+}
+
+/* Form-specific styles */
+.ErrorMsg {
+  color: #dc3545;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+  display: block;
+}
+
+.PasswordRequirements ul li.valid {
+  color: #28a745;
+}
+
+.PasswordRequirements ul li.invalid {
+  color: #6c757d;
+}
+
+/* Legacy Alert styles (for backward compatibility) */
+.Alert {
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: 4px;
+  border: 1px solid transparent;
+}
+
+.Alert--Error {
+  color: #721c24;
+  background-color: #f8d7da;
+  border-color: #f5c6cb;
+}
+
+.Alert--Success {
+  color: #155724;
+  background-color: #d4edda;
+  border-color: #c3e6cb;
+}
+
+.Alert--Warning {
+  color: #856404;
+  background-color: #fff3cd;
+  border-color: #ffeaa7;
+}
+
+.Alert--Info {
+  color: #0c546b;
+  background-color: #d1ecf1;
+  border-color: #bee5eb;
+}
+
+.Btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Flash Messages wrapper for form pages */
+.FlashMessages {
+  margin-bottom: 1.5rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .FlashMessagesContainer {
+    top: 100px;
+    width: 95%;
+    padding: 0 10px;
+  }
+
+  .FlashMessage {
+    padding: 0.75rem 1rem;
+    margin-top: 3rem;
+  }
+
+  .AdminBody .FlashMessagesContainer {
+    top: 60px;
+  }
+}

@@ -1,0 +1,174 @@
+{% extends "Global/Base.html" %}
+
+{% block Title %}اطلاعات پرداخت | آیروکاپ{% endblock %}
+
+{% block Body %}
+<div class="AppContainer">
+  <div class="Container">
+    <div class="PageHeader">
+      <h1 class="SectionTitle">
+        پرداخت هزینه ثبت‌نام برای تیم: {{ Team.TeamName }}
+      </h1>
+      <p class="SectionSubtitle">
+        برای نهایی کردن ثبت‌نام, لطفا مبلغ نهایی را به حساب زیر واریز کرده و سپس تصویر رسید را بارگذاری نمایید.
+      </p>
+    </div>
+
+    <div class="PaymentGrid">
+      <div class="Card PaymentInfoCard">
+        <h2><i class="fas fa-university"></i> اطلاعات حساب بانکی</h2>
+        <div class="PaymentDetails">
+          <div class="DetailItem">
+            <span>بانک</span>
+            <strong>{{ PaymentInfo.BankName }}</strong>
+          </div>
+          <div class="DetailItem Copyable">
+            <span>صاحب حساب</span>
+            <div class="ValueWithCopy">
+              <strong>{{ PaymentInfo.OwnerName }}</strong>
+              <button class="CopyBtn" data-copy="{{ PaymentInfo.OwnerName }}" title="کپی کردن">
+                <i class="far fa-copy"></i>
+              </button>
+            </div>
+          </div>
+          <div class="DetailItem Copyable">
+            <span>شماره کارت</span>
+            <div class="ValueWithCopy">
+              <strong dir="ltr">{{ PaymentInfo.CardNumber }}</strong>
+              <button class="CopyBtn" data-copy="{{ PaymentInfo.CardNumber | replace('-', '') }}" title="کپی کردن">
+                <i class="far fa-copy"></i>
+              </button>
+            </div>
+          </div>
+          <div class="DetailItem Copyable">
+            <span>شماره شبا (IBAN)</span>
+            <div class="ValueWithCopy">
+              <strong dir="ltr">{{ PaymentInfo.IBAN }}</strong>
+              <button class="CopyBtn" data-copy="{{ PaymentInfo.IBAN }}" title="کپی کردن">
+                <i class="far fa-copy"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="Card PaymentSummaryCard">
+        <h2><i class="fas fa-file-invoice-dollar"></i> خلاصه هزینه‌ها</h2>
+        <div class="PaymentDetails">
+          {% if IsNewMemberPayment %}
+          <div class="Alert Alert--Info" role="alert" style="text-align: center">
+            هزینه برای <strong>{{ MembersToPayFor | persian_digits }} عضو جدید</strong> محاسبه شده است.
+          </div>
+          <div class="DetailItem">
+            <span>هزینه هر عضو جدید</span>
+            <strong>{{ PaymentInfo.FeePerPerson | humanize_number | persian_digits }} ریال</strong>
+          </div>
+          <div class="DetailItem">
+            <span>تعداد اعضای جدید</span>
+            <strong>{{ MembersToPayFor | persian_digits }} نفر</strong>
+          </div>
+          {% else %}
+          <div class="DetailItem">
+            <span>هزینه ورودی تیم</span>
+            <strong>{{ PaymentInfo.FeeTeam | humanize_number | persian_digits }} ریال</strong>
+          </div>
+          <div class="DetailItem">
+            <span>هزینه ثبت‌نام ({{ NumMembers | persian_digits }} عضو)</span>
+            <strong>{{ (NumMembers * PaymentInfo.FeePerPerson) | humanize_number | persian_digits }} ریال</strong>
+          </div>
+          <hr class="SummaryDivider" />
+          <div class="DetailItem SubtotalItem">
+            <span>هزینه پایه (لیگ اول)</span>
+            <strong>{{ LeagueOneCost | humanize_number | persian_digits }} ریال</strong>
+          </div>
+          {% if LeagueTwoCost > 0 %}
+          <div class="DetailItem">
+            <span>هزینه لیگ دوم</span>
+            <strong>{{ LeagueTwoCost | humanize_number | persian_digits }} ریال</strong>
+          </div>
+          <div class="DetailItem DiscountAmount">
+            <span>تخفیف {{ PaymentInfo.LeagueTwoDiscount | persian_digits }}٪ برای لیگ دوم</span>
+            <strong>- {{ DiscountAmount | humanize_number | persian_digits }} ریال</strong>
+          </div>
+          {% endif %}
+          {% endif %}
+          <hr class="SummaryDivider" />
+          <div class="DetailItem TotalAmount Copyable">
+            <span>مبلغ نهایی قابل پرداخت</span>
+            <div class="ValueWithCopy">
+              <strong class="FinalAmount">{{ TotalFee | humanize_number | persian_digits }} ریال</strong>
+              <button class="CopyBtn" data-copy="{{ TotalFee }}" title="کپی کردن مبلغ">
+                <i class="far fa-copy"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="CardFooter">
+          <form method="POST" action="{{ url_for('Client.Payment', TeamID=Team.TeamID) }}" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <p class="UploadInstruction">
+              پس از واریز وجه، لطفا <strong>تصویر رسید پرداخت</strong> را بارگذاری کنید.
+            </p>
+            <div class="FormGroup">
+              <label for="receipt" class="Btn BtnSecondary FileUploadBtn">
+                <i class="fas fa-paperclip"></i> انتخاب فایل رسید
+              </label>
+              <input type="file" id="receipt" name="receipt" required class="FileUploadInput" accept="image/*,.pdf" />
+              <span id="filename" class="FileNameDisplay">هیچ فایلی انتخاب نشده</span>
+            </div>
+            <button type="submit" class="Btn BtnPrimary Btn--fullWidth">
+              ارسال رسید و نهایی کردن پرداخت
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="SectionCta" style="text-align: center; margin-top: 20px; margin-bottom: 20px">
+      <a href="{{ url_for('Client.Dashboard') }}" class="Btn BtnSecondary">
+        <i class="fas fa-arrow-left"></i> بازگشت به داشبورد
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block Scripts %}
+{{ super() }}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const fileInput = document.getElementById("receipt");
+    const filenameDisplay = document.getElementById("filename");
+    if (fileInput && filenameDisplay) {
+      fileInput.addEventListener("change", function () {
+        if (fileInput.files.length > 0) {
+          filenameDisplay.textContent = fileInput.files[0].name;
+        } else {
+          filenameDisplay.textContent = "هیچ فایلی انتخاب نشده";
+        }
+      });
+    }
+
+    document.querySelectorAll(".CopyBtn").forEach((button) => {
+      button.addEventListener("click", function () {
+        const textToCopy = this.getAttribute("data-copy");
+        navigator.clipboard
+          .writeText(textToCopy)
+          .then(() => {
+            const originalHTML = this.innerHTML;
+            this.innerHTML = '<i class="fas fa-check"></i>';
+            this.style.color = "var(--ColorSuccess)";
+            setTimeout(() => {
+              this.innerHTML = originalHTML;
+              this.style.color = "";
+            }, 2000);
+          })
+          .catch((err) => {
+            console.error("Failed to copy: ", err);
+          });
+      });
+    });
+  });
+</script>
+{% endblock %}

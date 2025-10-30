@@ -1,0 +1,72 @@
+{% extends "Global/Base.html" %}
+
+{% block Title %}ورود مدیر | پنل آیروکاپ{% endblock %}
+
+{% block Body %}
+<div class="AppContainer">
+  <div class="FormContainer FormContainer--small FormContainer--centered">
+    <form method="POST" action="{{ url_for('Admin.AdminLogin') }}" id="adminLoginForm">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+      <div class="FormHeader">
+        <div class="FormIcon">
+          <i class="fas fa-user-shield"></i>
+        </div>
+        <h1 class="FormTitle">ورود به پنل مدیریت</h1>
+        <p class="FormSubtitle">
+          لطفا برای ادامه، رمز عبور مدیریت را وارد کنید.
+        </p>
+      </div>
+
+      <div class="FormGroup">
+        <label for="password" class="FormLabel">رمز عبور ادمین *</label>
+        <input type="password" id="password" name="Password" class="FormControl" required autofocus autocomplete="current-password" minlength="8" placeholder="رمز عبور مدیریت را وارد کنید" />
+      </div>
+
+      <div class="FormGroup">
+        <button type="submit" class="Btn BtnPrimary Btn--fullWidth">
+          <i class="fas fa-sign-in-alt"></i> ورود به پنل
+        </button>
+      </div>
+
+      <div class="FormHelp">
+        <p>
+          <i class="fas fa-info-circle"></i> این صفحه فقط برای دسترسی مدیریت سیستم می‌باشد.
+        </p>
+      </div>
+    </form>
+
+    <div class="SectionCta">
+      <a href="{{ url_for('Global.Index') }}" class="Btn BtnSecondary Btn--fullWidth">
+        <i class="fas fa-home"></i> بازگشت به صفحه اصلی
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block Scripts %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("adminLoginForm");
+
+    if (form) {
+      form.addEventListener("submit", function (e) {
+        const password = document.getElementById("password").value.trim();
+
+        if (!password) {
+          e.preventDefault();
+          alert("لطفا رمز عبور را وارد کنید.");
+          return false;
+        }
+
+        if (password.length < 8) {
+          e.preventDefault();
+          alert("رمز عبور باید حداقل ۸ کاراکتر باشد.");
+          return false;
+        }
+      });
+    }
+  });
+</script>
+{% endblock %}

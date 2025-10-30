@@ -1,0 +1,110 @@
+{% extends "Global/Base.html" %}
+
+{% block Title %}انتخاب لیگ | آیروکاپ{% endblock %}
+
+{% block Body %}
+<div class="AppContainer">
+  <div class="Container">
+    <div class="PageHeader">
+      <h1 class="SectionTitle">انتخاب لیگ برای تیم: {{ Team.TeamName }}</h1>
+      <p class="SectionSubtitle">
+        تیم شما می‌تواند در یک لیگ (اجباری) یا دو لیگ (یک لیگ اجباری و یک لیگ اختیاری با تخفیف) شرکت کند.
+      </p>
+    </div>
+
+    <div class="FormContainer FormContainer--large">
+      <div class="Alert Alert--Warning" style="margin-bottom: 1.5rem;">
+        <i class="fas fa-exclamation-triangle"></i>
+        <p>
+          <strong>توجه:</strong> پس از انتخاب لیگ‌ها و رفتن به مرحله پرداخت، امکان تغییر آن‌ها دیگر وجود نخواهد داشت. لطفاً در انتخاب خود دقت کنید.
+        </p>
+      </div>
+
+      <form method="POST" id="SelectLeagueForm" action="{{ url_for('Client.SelectLeague', TeamID=Team.TeamID) }}" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+        <h2 class="FormTitle" style="font-size: 1.5rem">لیگ‌های موجود</h2>
+
+        <div class="FormGroup">
+          <label for="leagueOne">لیگ اول (اجباری):<span class="RequiredStar">*</span></label>
+          <select id="leagueOne" name="LeagueOne" class="FormControl" required>
+            <option value="">انتخاب کنید</option>
+            {% for league in Leagues %}
+            <option value="{{ league.ID }}" {% if Team.LeagueOneID == league.ID %}selected{% endif %}>
+              {{ league.Name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="FormGroup">
+          <label for="leagueTwo">لیگ دوم (اختیاری):</label>
+          <select id="leagueTwo" name="LeagueTwo" class="FormControl">
+            <option value="">انتخاب نمی‌کنم</option>
+            {% for league in Leagues %}
+            <option value="{{ league.ID }}" {% if Team.LeagueTwoID == league.ID %}selected{% endif %}>
+              {{ league.Name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div id="formError" class="ErrorMsg" style="text-align: center; margin-bottom: 1rem;"></div>
+
+        <div class="FormGroup">
+          <button type="submit" class="Btn BtnPrimary Btn--fullWidth">تایید و ذخیره لیگ‌ها</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="SectionCta" style="text-align: center; margin-bottom: 30px;">
+      <a href="{{ url_for('Client.Dashboard') }}" class="Btn BtnSecondary">بازگشت به داشبورد</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block Scripts %}
+{{ super() }}
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const leagueOne = document.getElementById('leagueOne');
+    const leagueTwo = document.getElementById('leagueTwo');
+    const form = document.getElementById('SelectLeagueForm');
+    const errorDisplay = document.getElementById('formError');
+
+    function validateLeagues() {
+      const selectedOne = leagueOne.value;
+      
+      Array.from(leagueTwo.options).forEach(opt => {
+          opt.disabled = opt.value === selectedOne && selectedOne !== '';
+      });
+
+      if (leagueTwo.value === selectedOne && selectedOne !== '') {
+          leagueTwo.value = '';
+      }
+    }
+
+    leagueOne.addEventListener('change', validateLeagues);
+    
+    form.addEventListener('submit', function(event) {
+      errorDisplay.textContent = '';
+      const leagueOneValue = leagueOne.value;
+      const leagueTwoValue = leagueTwo.value;
+
+      if (!leagueOneValue) {
+        event.preventDefault();
+        errorDisplay.textContent = 'لطفاً لیگ اول (اجباری) را انتخاب کنید.';
+        return;
+      }
+      if (leagueOneValue && leagueTwoValue && leagueOneValue === leagueTwoValue) {
+        event.preventDefault();
+        errorDisplay.textContent = 'شما نمی‌توانید یک لیگ را دو بار انتخاب کنید.';
+        return;
+      }
+    });
+
+    validateLeagues();
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends "Global/Base.html" %}
+
+{% block Title %}صندوق ورودی پیام‌ها | پنل آیروکاپ{% endblock %}
+
+{% block Body %}
+<div class="Container">
+  <div class="PageHeader">
+    <h1 class="SectionTitle">صندوق ورودی پیام‌ها</h1>
+    <p class="FormSubtitle">
+      لیست کاربرانی که پیام ارسال کرده‌اند و منتظر پاسخ هستند.
+    </p>
+  </div>
+
+  <div class="Card Card--table">
+    <h2 class="Card__header">
+      <i class="fas fa-inbox"></i> پیام‌های خوانده نشده
+    </h2>
+    <div class="UserTableWrapper">
+      <table class="UserTable">
+        <thead>
+          <tr>
+            <th>ایمیل کاربر</th>
+            <th>آخرین پیام</th>
+            <th>تعداد پیام جدید</th>
+            <th class="ActionsHeader">عملیات</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ClientData in Clients %}
+          <tr>
+            <td>{{ ClientData.Email }}</td>
+            <td class="RelativeTime" data-timestamp="{{ ClientData.LastMessageTimestamp.isoformat() }}">
+              {{ ClientData.LastMessageTimestamp | formatdate | persian_digits }}
+            </td>
+            <td>
+              <span class="Badge Badge--primary">
+                {{ ClientData.UnreadCount | persian_digits }}
+              </span>
+            </td>
+            <td class="Actions">
+              <a href="{{ url_for('Admin.AdminChat', ClientID=ClientData.ClientID) }}" class="Btn BtnPrimary">
+                <i class="fas fa-eye"></i> مشاهده و پاسخ
+              </a>
+            </td>
+          </tr>
+          {% else %}
+          <tr class="EmptyStateRow">
+            <td colspan="4" class="EmptyState">
+              <i class="fas fa-inbox EmptyState__icon"></i>
+              هیچ پیام خوانده نشده‌ای وجود ندارد.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="SectionCta">
+    <a href="{{ url_for('Admin.AdminDashboard') }}" class="Btn BtnSecondary">
+      <i class="fas fa-arrow-left"></i> بازگشت به داشبورد
+    </a>
+  </div>
+</div>
+{% endblock %}

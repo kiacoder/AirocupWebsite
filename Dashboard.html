@@ -1,0 +1,155 @@
+{% extends "Global/Base.html" %}
+
+{% block Title %}داشبورد | آیروکاپ{% endblock %}
+
+{% block Body %}
+<div class="Container" style="margin-top: 2rem; margin-bottom: 2rem">
+  <div class="WelcomeHeader">
+    <h2>به داشبورد خود خوش آمدید</h2>
+    <p class="FormSubtitle">
+      این پنل شخصی شما برای مدیریت تمام تیم‌هایتان است.
+    </p>
+  </div>
+
+  <div class="Card" style="margin-bottom: 2rem; border-left: 5px solid var(--ColorPrimary)">
+    <h3 class="Card__header" style="padding: 0 0 1rem 0; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px;">
+      <i class="fas fa-file-invoice-dollar" style="color: var(--ColorPrimary)"></i>
+      اطلاعات و هزینه‌های ثبت‌نام
+    </h3>
+    <div class="FormGrid" style="gap: 1.5rem">
+      <div class="DetailItem" style="border: none; padding: 1rem; background: var(--ColorBackgroundMuted); border-radius: var(--BorderRadiusSmall);">
+        <span><i class="fas fa-users" style="color: var(--ColorPrimaryDark)"></i>هزینه ورودی تیم</span>
+        <strong>{{ Payment.FeeTeam | humanize_number | persian_digits }} ریال</strong>
+      </div>
+      <div class="DetailItem" style="border: none; padding: 1rem; background: var(--ColorBackgroundMuted); border-radius: var(--BorderRadiusSmall);">
+        <span><i class="fas fa-user-plus" style="color: var(--ColorPrimaryDark)"></i>هزینه هر عضو</span>
+        <strong>{{ Payment.FeePerPerson | humanize_number | persian_digits }} ریال</strong>
+      </div>
+      <div class="DetailItem Grid-col-span-2" style="border: none; padding: 1rem; background: var(--ColorBackgroundMuted); border-radius: var(--BorderRadiusSmall);">
+        <span><i class="fas fa-percent" style="color: var(--ColorSecondaryDark)"></i>تخفیف ثبت‌نام در لیگ دوم</span>
+        <strong>{{ Payment.LeagueTwoDiscount | persian_digits }} درصد</strong>
+      </div>
+    </div>
+    <div class="FormFooter" style="padding-top: 1.5rem; margin-top: 1.5rem">
+      <p><strong>نکته:</strong> هزینه ورودی تیم، یک هزینه ثابت برای هر تیم است و به هزینه اعضا اضافه می‌گردد.</p>
+      <a href="{{ url_for('Client.MyHistory') }}" class="Btn BtnSecondary BtnSm">
+        <i class="fas fa-history"></i> مشاهده سوابق پرداخت
+      </a>
+    </div>
+  </div>
+
+  {% if Teams|length < AppConfig.MaxTeamPerClient %}
+  <div class="DashboardActions">
+    <a href="{{ url_for('Client.CreateTeam') }}" class="Btn BtnPrimary BtnLarge">
+      <i class="fas fa-plus"></i> ایجاد تیم جدید
+    </a>
+  </div>
+  {% endif %}
+
+  <div class="TeamCardGrid">
+    {% for Team in Teams %}
+    <div class="Card CardTeam">
+      <div class="TeamCardHeader">
+        <h3>{{ Team.TeamName }}</h3>
+        {% set status_enum = Team.LastPaymentStatus %}
+        <span class="StatusBadge {% if status_enum and status_enum.value == 'Approved' %}StatusApproved{% elif status_enum and status_enum.value == 'Pending' %}StatusPending{% elif status_enum and status_enum.value == 'Rejected' %}StatusRejected{% else %}StatusNotStarted{% endif %}">
+          {{ status_enum.label if status_enum else 'شروع نشده' }}
+        </span>
+      </div>
+
+      <div class="TeamCardBody">
+        <div class="DetailItem">
+          <span><i class="fas fa-users"></i> تعداد اعضا</span>
+          <strong>{{ Team.Members|length | persian_digits }} نفر</strong>
+        </div>
+        <div class="DetailItem">
+          <span><i class="fas fa-trophy"></i> لیگ‌ها</span>
+          <strong>{{ Team.LeagueOne.Name if Team.LeagueOne else 'انتخاب نشده' }}{% if Team.LeagueTwo %}<br />و {{ Team.LeagueTwo.Name }}{% endif %}</strong>
+        </div>
+        {% if Team.AverageAge and Team.AverageAge > 0 %}
+        <div class="DetailItem">
+          <span><i class="fas fa-birthday-cake"></i> میانگین سنی</span>
+          <strong>~{{ Team.AverageAge | persian_digits }} سال</strong>
+        </div>
+        {% endif %}
+        {% if Team.AverageProvinces %}
+        <div class="DetailItem">
+          <span><i class="fas fa-map-marker-alt"></i> استان‌ها</span>
+          <strong style="font-size: 0.9rem">{{ Team.AverageProvinces }}</strong>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="TeamCardFooter">
+        <a href="{{ url_for('Client.ManageMembers', TeamID=Team.TeamID) }}" class="Btn BtnPrimary"><i class="fas fa-users"></i> مدیریت اعضا</a>
+        <a href="{{ url_for('Client.UpdateTeam', TeamID=Team.TeamID) }}" class="Btn BtnSecondary"><i class="fas fa-edit"></i> ویرایش تیم</a>
+
+        {% set is_league_selection_disabled = Team.LastPaymentStatus and Team.LastPaymentStatus.value == 'Approved' %}
+        <a href="{{ url_for('Client.SelectLeague', TeamID=Team.TeamID) if not is_league_selection_disabled else '#' }}" class="Btn BtnSecondary {% if is_league_selection_disabled %}BtnDisabled{% endif %}" {% if is_league_selection_disabled %}aria-disabled="true" title="امکان تغییر لیگ پس از تایید پرداخت وجود ندارد."{% endif %}>
+          <i class="fas fa-trophy"></i> انتخاب لیگ
+        </a>
+
+        {% set is_ready_for_payment = Team.Members|length > 0 and Team.LeagueOneID %}
+        <a href="{{ url_for('Client.Payment', TeamID=Team.TeamID) if is_ready_for_payment else '#' }}" class="Btn BtnSuccess {% if not is_ready_for_payment %}BtnDisabled{% endif %}" {% if not is_ready_for_payment %}aria-disabled="true" title="برای پرداخت، تیم باید حداقل یک عضو و یک لیگ انتخاب شده داشته باشد."{% endif %}>
+          <i class="fas fa-credit-card"></i> پرداخت
+        </a>
+
+        <form action="{{ url_for('Client.DeleteTeam', TeamID=Team.TeamID) }}" method="POST" style="margin-right: auto">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+          {% set is_archive_disabled = Team.LastPaymentStatus and Team.LastPaymentStatus.value in ['Approved', 'Pending'] %}
+          <button type="button" class="Btn BtnDanger DeleteBtn" data-modal-title="تایید آرشیو تیم" data-modal-text="آیا از آرشیو کردن تیم «{{ Team.TeamName }}» اطمینان دارید؟" data-modal-confirm="بله، آرشیو کن" {% if is_archive_disabled %}disabled title="پس از تایید یا در زمان بررسی پرداخت، امکان آرشیو تیم وجود ندارد."{% endif %}>
+            <i class="fas fa-archive"></i> آرشیو
+          </button>
+        </form>
+      </div>
+    </div>
+    {% else %}
+    <div class="Card EmptyStateCard">
+      <i class="fas fa-users-slash EmptyStateIcon"></i>
+      <h3>هنوز هیچ تیمی نساخته‌اید</h3>
+      <p>برای شروع ماجراجویی خود، روی دکمه "ایجاد تیم جدید" در بالا کلیک کنید!</p>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="FormFooter">
+    <a href="{{ url_for('Global.Logout') }}" class="Btn BtnSecondary">
+        <i class="fas fa-sign-out-alt"></i> خروج از حساب کاربری
+    </a>
+  </div>
+</div>
+
+<div class="Modal" id="deleteConfirmModal" role="alertdialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="ModalDialog">
+    <div class="ModalContent">
+      <button class="CloseBtn" data-dismiss="modal" aria-label="بستن">&times;</button>
+      <h3 id="modalTitle" class="ModalHeader"></h3>
+      <p class="ModalBody"></p>
+      <div class="ModalFooter">
+        <button type="button" class="Btn BtnSecondary" data-dismiss="modal">انصراف</button>
+        <button type="button" id="confirmDeleteBtn" class="Btn BtnDanger"></button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block Scripts %}
+{{ super() }}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll('.DeleteBtn').forEach(button => {
+        button.addEventListener('click', function() {
+            if (this.disabled) return;
+            const form = this.closest('form');
+            const title = this.dataset.modalTitle;
+            const text = this.dataset.modalText;
+            const confirmText = this.dataset.modalConfirm;
+            FormHelpers.showConfirmModal(title, text, confirmText, () => {
+                form.submit();
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

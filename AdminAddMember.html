@@ -1,0 +1,58 @@
+{% extends "Global/Base.html" %}
+
+{% block Title %}افزودن عضو جدید به تیم {{ Team.TeamName }} | پنل آیروکاپ{% endblock %}
+
+{% block Body %}
+<div class="Container AdminMembersPage" data-team-id="{{ Team.TeamID }}">
+  <div class="PageHeader">
+    <h1 class="SectionTitle">افزودن عضو جدید</h1>
+    <p class="FormSubtitle">
+      شما در حال افزودن یک عضو جدید به تیم <strong>{{ Team.TeamName }}</strong> هستید.
+    </p>
+  </div>
+
+  <div class="FormContainer FormContainer--large">
+    <form id="AddMemberForm" method="POST" action="{{ url_for('Admin.AdminAddMember', TeamID=Team.TeamID) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+      {% with 
+        IdPrefix='AdminAdd-', 
+        MemberData={}, 
+        Provinces=Provinces, 
+        PersianMonths=PersianMonths, 
+        AllowedYears=AllowedYears, 
+        DaysInMonth=DaysInMonth,
+        MemberRole=MemberRole 
+      %}
+        {% include 'Client/MemberFormFields.html' %}
+      {% endwith %}
+
+      <div class="FormGrid" style="margin-top: 2rem">
+        <div class="FormGroup Grid-col-span-2">
+          <button type="submit" class="Btn BtnPrimary Btn--fullWidth">
+            <i class="fas fa-plus"></i> افزودن عضو
+          </button>
+        </div>
+        <div class="FormGroup Grid-col-span-2">
+          <a href="{{ url_for('Admin.AdminEditTeam', TeamID=Team.TeamID) }}" class="Btn BtnSecondary Btn--fullWidth">
+            <i class="fas fa-times"></i> انصراف
+          </a>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block Scripts %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const addMemberForm = document.getElementById("AddMemberForm");
+    if (addMemberForm) {
+      FormHelpers.PopulateProvinces(addMemberForm.querySelector('[name="Province"]'));
+      FormHelpers.SetupDatePicker(addMemberForm);
+      FormHelpers.SetupProvinceCityListener(addMemberForm);
+    }
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,95 @@
+{% extends "Global/Base.html" %}
+
+{% block Title %}{{ article.Title }} | اخبار آیروکاپ{% endblock %}
+
+{% block SEO_Description %}
+<meta name="description" content="{{ article.Content|striptags|truncate(155) }}" />
+{% endblock %}
+
+{% block Body %}
+<main class="AppContainer ArticlePage">
+  <div class="Container">
+    <nav aria-label="breadcrumb" class="BreadcrumbNav">
+      <ol>
+        <li><a href="{{ url_for('Global.Index') }}">خانه</a></li>
+        <li><a href="{{ url_for('Global.News') }}">اخبار</a></li>
+        <li aria-current="page">{{ article.Title }}</li>
+      </ol>
+    </nav>
+
+    <div class="ArticleGrid">
+      <article class="NewsArticle">
+        <header class="ArticleHeader">
+          <h1 class="ArticleTitle">{{ article.Title }}</h1>
+          <div class="ArticleMeta">
+            {% if article.PublishDate %}
+            <time datetime="{{ article.PublishDate|to_iso_format }}">
+              <i class="fas fa-calendar-alt" aria-hidden="true"></i>
+              {{ article.PublishDate|formatdate }}
+            </time>
+            {% endif %}
+          </div>
+        </header>
+
+        {% if article.ImagePath %}
+        <figure class="ArticleImage">
+          <img
+            src="{{ url_for('Global.UploadedNewsImage', filename=article.ImagePath) }}"
+            alt="تصویر اصلی مقاله: {{ article.Title }}"
+            loading="lazy"
+          />
+        </figure>
+        {% endif %}
+
+        <div class="ArticleContent">{{ article.Content | safe }}</div>
+
+        <footer class="ArticleFooter">
+          <div class="SocialShare">
+            <strong>اشتراک‌گذاری این خبر:</strong>
+            <ul>
+              <li>
+                <a
+                  href="https://twitter.com/intent/tweet?url={{ request.url }}&text={{ article.Title }}"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="اشتراک‌گذاری در توییتر"
+                >
+                  <i class="fab fa-twitter"></i>
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://www.linkedin.com/shareArticle?mini=true&url={{ request.url }}&title={{ article.Title }}"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="اشتراک‌گذاری در لینکدین"
+                >
+                  <i class="fab fa-linkedin"></i>
+                </a>
+              </li>
+              <li>
+                <button
+                  class="CopyBtn"
+                  data-copy="{{ request.url }}"
+                  aria-label="کپی کردن لینک"
+                >
+                  <i class="fas fa-link"></i>
+                </button>
+              </li>
+            </ul>
+          </div>
+          <hr />
+          <div class="ArticleNav">
+            <a href="{{ url_for('Global.News') }}" class="Btn BtnSecondary">
+              <i class="fas fa-arrow-right" aria-hidden="true"></i>
+              بازگشت به همه اخبار
+            </a>
+          </div>
+        </footer>
+      </article>
+
+      <aside class="ArticleSidebar"></aside>
+    </div>
+  </div>
+</main>
+{% endblock %}

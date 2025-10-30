@@ -1,0 +1,170 @@
+{% extends "Global/Base.html" %}
+
+{% block Title %}ایجاد حساب کاربری | آیروکاپ{% endblock %}
+
+{% block Body %}
+<main class="AppContainer">
+  <div class="FormContainer FormContainer--small">
+    <form method="POST" id="SignUpForm" action="{{ url_for('Client.SignUp') }}" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+      <h1 class="FormTitle">ایجاد حساب کاربری جدید</h1>
+      <p class="FormSubtitle">
+        برای تکمیل ثبت نام، یک کد تایید به شماره موبایل شما ارسال خواهد شد.
+      </p>
+
+      <div class="FormGroup">
+        <label for="email">ایمیل<span class="RequiredStar">*</span></label>
+        <input type="email" id="email" name="Email" placeholder="ایمیل خود را وارد کنید" required dir="ltr" value="{{ FormValues.Email or '' }}" autocomplete="email" aria-describedby="emailError" />
+        <span class="ErrorMsg" id="emailError"></span>
+      </div>
+
+      <div class="FormGroup">
+        <label for="phoneNumber">شماره موبایل<span class="RequiredStar">*</span></label>
+        <input type="tel" id="phoneNumber" name="PhoneNumber" placeholder="09123456789" required dir="ltr" value="{{ FormValues.PhoneNumber or '' }}" autocomplete="tel" aria-describedby="phoneError" />
+        <span class="ErrorMsg" id="phoneError"></span>
+      </div>
+      
+      <div class="FormGroup">
+        <label for="educationLevel">مقطع تحصیلی:<span class="RequiredStar">*</span></label>
+        <select id="educationLevel" name="EducationLevel" class="FormControl" required>
+            <option value="" {% if not FormValues.EducationLevel %}selected{% endif %} disabled>انتخاب کنید...</option>
+            <option value="ابتدایی" {% if FormValues.EducationLevel == 'ابتدایی' %}selected{% endif %}>ابتدایی</option>
+            <option value="متوسطه اول" {% if FormValues.EducationLevel == 'متوسطه اول' %}selected{% endif %}>متوسطه اول</option>
+            <option value="متوسطه دوم" {% if FormValues.EducationLevel == 'متوسطه دوم' %}selected{% endif %}>متوسطه دوم</option>
+            <option value="دانشجویی" {% if FormValues.EducationLevel == 'دانشجویی' %}selected{% endif %}>دانشجویی</option>
+            <option value="آزاد" {% if FormValues.EducationLevel == 'آزاد' %}selected{% endif %}>آزاد</option>
+        </select>
+        <span class="ErrorMsg" id="educationLevelError"></span>
+      </div>
+
+      <div class="FormGroup">
+        <label for="password">رمز عبور<span class="RequiredStar">*</span></label>
+        <div class="PasswordWrapper">
+          <input type="password" id="password" name="Password" required autocomplete="new-password" dir="ltr" aria-describedby="passwordError" />
+          <button type="button" class="PasswordToggle" data-target="#password" aria-label="نمایش/مخفی کردن رمز عبور">
+            <i class="fas fa-eye-slash"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="FormGroup">
+        <label for="confirmPassword">تکرار رمز عبور<span class="RequiredStar">*</span></label>
+        <div class="PasswordWrapper">
+          <input type="password" id="confirmPassword" name="ConfirmPassword" required autocomplete="new-password" dir="ltr" aria-describedby="confirmPasswordError" />
+          <button type="button" class="PasswordToggle" data-target="#confirmPassword" aria-label="نمایش/مخفی کردن تکرار رمز عبور">
+            <i class="fas fa-eye-slash"></i>
+          </button>
+        </div>
+        <span class="ErrorMsg" id="confirmPasswordError"></span>
+      </div>
+
+      <div class="PasswordRequirements" aria-live="polite">
+        <p>رمز عبور باید شامل موارد زیر باشد:</p>
+        <ul>
+          <li id="req-length" class="invalid">حداقل ۸ کاراکتر</li>
+          <li id="req-upper" class="invalid">حداقل یک حرف بزرگ انگلیسی</li>
+          <li id="req-lower" class="invalid">حداقل یک حرف کوچک انگلیسی</li>
+          <li id="req-number" class="invalid">حداقل یک عدد (۰-۹)</li>
+          <li id="req-special" class="invalid">حداقل یک کاراکتر خاص (!@#$...)</li>
+        </ul>
+      </div>
+
+      <div class="FormGroup">
+        <button type="submit" id="submitBtn" class="Btn BtnPrimary Btn--fullWidth" disabled>
+          ایجاد حساب
+        </button>
+      </div>
+
+      <div class="FormLinks">
+        <p>
+          قبلاً ثبت‌نام کرده‌اید؟
+          <a href="{{ url_for('Client.Login') }}">از اینجا وارد شوید</a>.
+        </p>
+      </div>
+    </form>
+  </div>
+</main>
+{% endblock %}
+
+{% block Scripts %}
+{{ super() }}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("SignUpForm");
+    const emailInput = document.getElementById("email");
+    const phoneInput = document.getElementById("phoneNumber");
+    const educationInput = document.getElementById("educationLevel");
+    const passwordInput = document.getElementById("password");
+    const confirmInput = document.getElementById("confirmPassword");
+    const submitBtn = document.getElementById("submitBtn");
+
+    const reqs = {
+        length: document.getElementById('req-length'),
+        upper: document.getElementById('req-upper'),
+        lower: document.getElementById('req-lower'),
+        number: document.getElementById('req-number'),
+        special: document.getElementById('req-special'),
+    };
+
+    function validatePassword() {
+        const password = passwordInput.value;
+        const checks = {
+            length: password.length >= 8,
+            upper: /[A-Z]/.test(password),
+            lower: /[a-z]/.test(password),
+            number: /[0-9]/.test(password),
+            special: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+        };
+        let allValid = true;
+        for (const key in checks) {
+            const el = reqs[key];
+            if (checks[key]) {
+                el.classList.add('valid');
+                el.classList.remove('invalid');
+            } else {
+                el.classList.add('invalid');
+                el.classList.remove('valid');
+                allValid = false;
+            }
+        }
+        return allValid;
+    }
+
+    function checkAllFields() {
+        const isEmailValid = Validators.IsValidEmail(emailInput.value);
+        const isPhoneValid = Validators.IsValidIranianPhone(phoneInput.value);
+        const isEducationSelected = educationInput.value !== "";
+        const isPasswordValid = validatePassword();
+        const doPasswordsMatch = passwordInput.value === confirmInput.value && passwordInput.value !== "";
+
+        const confirmError = document.getElementById('confirmPasswordError');
+        if (passwordInput.value && confirmInput.value && !doPasswordsMatch) {
+            confirmError.textContent = "رمزهای عبور مطابقت ندارند.";
+        } else {
+            confirmError.textContent = "";
+        }
+        
+        submitBtn.disabled = !(isEmailValid && isPhoneValid && isEducationSelected && isPasswordValid && doPasswordsMatch);
+    }
+
+    [emailInput, phoneInput, educationInput, passwordInput, confirmInput].forEach(input => {
+        input.addEventListener('input', checkAllFields);
+    });
+
+    document.querySelectorAll('.PasswordToggle').forEach(toggle => {
+        toggle.addEventListener('click', function() {
+            const target = document.querySelector(this.dataset.target);
+            if(target) {
+                const isPassword = target.type === 'password';
+                target.type = isPassword ? 'text' : 'password';
+                this.querySelector('i').classList.toggle('fa-eye', isPassword);
+                this.querySelector('i').classList.toggle('fa-eye-slash', !isPassword);
+            }
+        });
+    });
+
+    checkAllFields();
+});
+</script>
+{% endblock %}
