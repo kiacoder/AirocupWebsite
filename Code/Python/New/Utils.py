@@ -12,7 +12,7 @@ import requests as Requests
 from email.mime.text import MIMEText
 import datetime as Datetime
 import bleach as Bleach
-from Database import GetDBSession
+from Database import get_db_session
 import Database
 import enum as Enum
 
@@ -85,7 +85,7 @@ def SendTemplatedSMSAsync(
 ):
     with App.app_context():
         try:
-            with GetDBSession() as db:
+            with get_db_session() as db:
                 Client = (
                     db.query(Models.Client)
                     .filter(Models.Client.ClientID == ClientID)
@@ -197,7 +197,7 @@ def SendAsyncEmail(
 ):
     with App.app_context():
         try:
-            with GetDBSession() as db:
+            with get_db_session() as db:
                 Client = (
                     db.query(Models.Client)
                     .filter(Models.Client.ClientID == ClientID)
@@ -403,7 +403,7 @@ def GetCurrentClient() -> Optional[Models.Client]:
     if not ClientID:
         return None
     try:
-        with GetDBSession() as db:
+        with get_db_session() as db:
             return (
                 db.query(Models.Client)
                 .filter(

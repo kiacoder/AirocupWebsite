@@ -210,7 +210,7 @@ def LoginRequired(DecoratedRoute):
 @FlaskApp.route("/API/Admin/ProvinceDistribution")
 @AdminRequired
 def ApiProvinceDistribution():
-    with Database.GetDBSession() as db:
+    with Database.get_db_session() as db:
         Data = (
             db.query(
                 Models.Province.Name.label("Name"),
@@ -275,7 +275,7 @@ def HandleSendMessage(JsonData):
         if len(SanitizedMessage) > 1000:
             SanitizedMessage = SanitizedMessage[:1000]
 
-        with Database.GetDBSession() as DbSession:
+        with Database.get_db_session() as DbSession:
             Database.SaveChatMessage(DbSession, int(Room), SanitizedMessage, SenderType)
 
         CurrentTime = Datetime.datetime.now(Datetime.timezone.utc)
@@ -309,7 +309,7 @@ def ToISOFormatFilter(DateObject):
 @FlaskApp.route("/API/AdminCityDistribution")
 @AdminRequired
 def ApiCityDistribution():
-    with Database.GetDBSession() as db:
+    with Database.get_db_session() as db:
         CityData = (
             db.query(
                 Models.City.Name,

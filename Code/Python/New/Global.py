@@ -60,14 +60,14 @@ def TechnicalCommittee():
 
 @GlobalBlueprint.route("/News")
 def News():
-    with Database.GetDBSession() as DbSession:
+    with Database.get_db_session() as DbSession:
         Articles = Database.GetAllArticles(DbSession)
     return RenderTemplate(Constants.GlobalHTMLNamesData["News"], Articles=Articles)
 
 
 @GlobalBlueprint.route("/News/<int:ArticleID>")
 def ViewArticle(ArticleID):
-    with Database.GetDBSession() as DbSession:
+    with Database.get_db_session() as DbSession:
         Article = Database.GetArticleByID(DbSession, ArticleID)
     if not Article:
         Abort(404)

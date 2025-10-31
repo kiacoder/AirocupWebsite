@@ -1,10 +1,10 @@
-import os as OS
+import os
 from sqlalchemy import create_engine, func
 from sqlalchemy.orm import sessionmaker, Session
 from contextlib import contextmanager
 from typing import Iterator, Any, Optional, Tuple
-import datetime as Datetime
-import bcrypt as BCrypt
+import datetime
+import bcrypt
 import Utils
 from typing import List
 import Constants
@@ -17,16 +17,16 @@ DBSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=DBEngine)
 
 
 @contextmanager
-def GetDBSession() -> Iterator[Session]:
-    Db = DBSessionLocal()
+def get_db_session() -> Iterator[Session]:
+    db = DBSessionLocal()
     try:
-        yield Db
+        yield db
     finally:
-        Db.close()
+        db.close()
 
 
 def CreateDatabase():
-    OS.makedirs(OS.path.dirname(Constants.Path.DataBase), exist_ok=True)
+    os.makedirs(os.path.dirname(Constants.Path.DataBase), exist_ok=True)
     Models.DeclarativeBase.metadata.create_all(bind=DBEngine)
 
 
@@ -131,8 +131,8 @@ def UpdateClientDetails(db: Session, ClientID: int, CleanData: dict):
     if "Email" in CleanData:
         Client.Email = CleanData["Email"]
     if "Password" in CleanData:
-        Client.Password = BCrypt.hashpw(
-            CleanData["Password"].encode("utf-8"), BCrypt.gensalt()
+        Client.Password = bcrypt.hashpw(
+            CleanData["Password"].encode("utf-8"), bcrypt.gensalt()
         ).decode("utf-8")
 
     db.commit()
@@ -167,14 +167,14 @@ def LogLoginAttempt(db: Session, Identifier: str, IPAddress: str, IsSuccess: boo
         Models.LoginAttempt(
             Identifier=Identifier,
             IPAddress=IPAddress,
-            Timestamp=Datetime.datetime.now(Datetime.timezone.utc),
+            Timestamp=datetime.datetime.now(datetime.timezone.utc),
             IsSuccess=IsSuccess,
         )
     )
 
 
 def PopulateGeographyData():
-    with GetDBSession() as db:
+    with get_db_session() as db:
         if db.query(Models.Province).first():
             return
         print("Populating Provinces and Cities tables...")
@@ -238,7 +238,7 @@ def LogAction(
             ClientID=ClientID,
             Action=ActionDescription,
             AdminInvolved=IsAdminAction,
-            Timestamp=Datetime.datetime.now(Datetime.timezone.utc),
+            Timestamp=datetime.datetime.now(datetime.timezone.utc),
         )
     )
 
@@ -249,7 +249,7 @@ def SaveChatMessage(db: Session, ClientID: int, MessageText: str, Sender: str):
             ClientID=ClientID,
             MessageText=MessageText,
             Sender=Sender,
-            Timestamp=Datetime.datetime.now(Datetime.timezone.utc),
+            Timestamp=datetime.datetime.now(datetime.timezone.utc),
         )
     )
 

@@ -64,7 +64,7 @@ def AdminLogin():
 @App.FlaskApp.route("/Admin/GetChatHistory/<int:ClientID>")
 @App.AdminRequired
 def GetChatHistory(ClientID):
-    with Database.GetDBSession() as db:
+    with Database.get_db_session() as db:
         return Jsonify(
             {
                 "Messages": [
@@ -82,7 +82,7 @@ def GetChatHistory(ClientID):
 @App.FlaskApp.route("/API/GetChatClients")
 @App.AdminRequired
 def ApiGetChatClients():
-    with Database.GetDBSession() as db:
+    with Database.get_db_session() as db:
         ClientList = [
             {"ID": c.ClientID, "Email": c.Email}
             for c in Database.GetAllActiveClients(db)
@@ -93,7 +93,7 @@ def ApiGetChatClients():
 @App.FlaskApp.route("/Admin/Chat/<int:ClientID>")
 @App.AdminRequired
 def AdminChat(ClientID):
-    with Database.GetDBSession() as DbSession:
+    with Database.get_db_session() as DbSession:
         Client = Database.GetClientBy(DbSession, "ClientID", ClientID)
     if not Client or Client.Status != Models.EntityStatus.Active:
         Flash("کاربر مورد نظر یافت نشد یا غیرفعال است.", "Error")
@@ -114,7 +114,7 @@ def AdminAddTeam(ClientID):
         Flash("نام تیم نمی‌تواند خالی باشد.", "Error")
         return ReDirect(URLFor("AdminManageClient", ClientID=ClientID))
 
-    with Database.GetDBSession() as DbSession:
+    with Database.get_db_session() as DbSession:
         try:
             NewTeam = Models.Team(
                 ClientID=ClientID,
@@ -137,7 +137,7 @@ def AdminAddTeam(ClientID):
 @App.FlaskApp.route("/Admin/Chat/Select")
 @App.AdminRequired
 def AdminSelectChat():
-    with Database.GetDBSession() as DbSession:
+    with Database.get_db_session() as DbSession:
         ClientsQuery = (
             DbSession.query(
                 Models.Client.ClientID,
@@ -168,7 +168,7 @@ def AdminUpdatePaymentStatus(TeamID):
         Flash("وضعیت ارسالی نامعتبر است.", "Error")
         return ReDirect(URLFor("AdminManageTeams"))
 
-    with Database.GetDBSession() as DbSession:
+    with Database.get_db_session() as DbSession:
         LatestPayment = (
             DbSession.query(Models.Payment)
             .filter(Models.Payment.TeamID == TeamID)
@@ -200,7 +200,7 @@ def AdminUpdatePaymentStatus(TeamID):
 @App.FlaskApp.route("/Admin/DeleteTeam/<int:TeamID>", methods=["POST"])
 @App.AdminActionRequired
 def AdminDeleteTeam(TeamID):
-    with Database.GetDBSession() as DbSession:
+    with Database.get_db_session() as DbSession:
         try:
             Team = (
                 DbSession.query(Models.Team)
@@ -242,7 +242,7 @@ def AdminDeleteTeam(TeamID):
 )
 @App.AdminActionRequired
 def AdminDeleteMember(TeamID, MemberID):
-    with Database.GetDBSession() as DbSession:
+    with Database.get_db_session() as DbSession:
         Member = (
             DbSession.query(Models.Member)
             .options(joinedload(Models.Member.Team))
@@ -274,7 +274,7 @@ def AdminDeleteMember(TeamID, MemberID):
 @App.FlaskApp.route("/Admin/ManageNews", methods=["GET", "POST"])
 @App.AdminRequired
 def AdminManageNews():
-    with Database.GetDBSession() as DbSession:
+    with Database.get_db_session() as DbSession:
         if Request.method == "POST":
             TemplatePath = Request.form.get("TemplatePath", "").strip()
             TitleString = Bleach.clean(Request.form.get("Title", "").strip())
@@ -349,7 +349,7 @@ def AdminManageNews():
 @App.FlaskApp.route("/Admin/EditNews/<int:ArticleID>", methods=["GET", "POST"])
 @App.AdminRequired
 def AdminEditNews(ArticleID):
-    with Database.GetDBSession() as DbSession:
+    with Database.get_db_session() as DbSession:
         Article = Database.GetArticleByID(DbSession, ArticleID)
         if not Article:
             Abort(404)
@@ -422,7 +422,7 @@ def AdminEditNews(ArticleID):
 @App.FlaskApp.route("/Admin/ManageClient/<int:ClientID>")
 @App.AdminRequired
 def AdminManageClient(ClientID):
-    with Database.GetDBSession() as DbSession:
+    with Database.get_db_session() as DbSession:
         Client = (
             DbSession.query(Models.Client)
             .filter(Models.Client.ClientID == ClientID)
@@ -476,7 +476,7 @@ def AdminManageClient(ClientID):
 @App.FlaskApp.route("/Admin/ManageTeams")
 @App.AdminRequired
 def AdminManageTeams():
-    with Database.GetDBSession() as DbSession:
+    with Database.get_db_session() as DbSession:
         Subquery = (
             select(Models.Payment.Status)
             .where(Models.Payment.TeamID == Models.Team.TeamID)
@@ -513,7 +513,7 @@ def AdminManageTeams():
 @App.FlaskApp.route("/Admin/Team/<int:TeamID>/AddMember", methods=["GET", "POST"])
 @App.AdminRequired
 def AdminAddMember(TeamID):
-    with Database.GetDBSession() as DbSession:
+    with Database.get_db_session() as DbSession:
         Team = Database.GetTeamByID(DbSession, TeamID)
         if not Team:
             Abort(404)
@@ -555,7 +555,7 @@ def AdminAddMember(TeamID):
 @App.FlaskApp.route("/Admin/EditTeam/<int:TeamID>", methods=["GET", "POST"])
 @App.AdminRequired
 def AdminEditTeam(TeamID):
-    with Database.GetDBSession() as DbSession:
+    with Database.get_db_session() as DbSession:
         Team = DbSession.query(Models.Team).filter(Models.Team.TeamID == TeamID).first()
         if not Team:
             Abort(404)
@@ -615,7 +615,7 @@ def AdminEditTeam(TeamID):
 )
 @App.AdminRequired
 def AdminEditMember(TeamID, MemberID):
-    with Database.GetDBSession() as DbSession:
+    with Database.get_db_session() as DbSession:
         UpdatedMemberData, Error = Utils.CreateMemberFromFormData(
             DbSession, Request.form
         )
@@ -653,7 +653,7 @@ def AdminEditMember(TeamID, MemberID):
 @App.FlaskApp.route("/Admin/ManageClients")
 @App.AdminRequired
 def AdminClientsList():
-    with Database.GetDBSession() as DbSession:
+    with Database.get_db_session() as DbSession:
 
         return RenderTemplate(
             Constants.AdminHTMLNamesData["AdminClientsList"],
@@ -694,7 +694,7 @@ def AdminAddClient():
         Flash("لطفا تمام فیلدها را با مقادیر معتبر پر کنید.", "Error")
         return ReDirect(URLFor("AdminClientsList"))
 
-    with Database.GetDBSession() as DbSession:
+    with Database.get_db_session() as DbSession:
         try:
             if (
                 DbSession.query(Models.Client)
@@ -735,7 +735,7 @@ def AdminAddClient():
 @App.FlaskApp.route("/Admin/EditClient/<int:ClientID>", methods=["POST"])
 @App.AdminRequired
 def AdminEditClient(ClientID):
-    with Database.GetDBSession() as DbSession:
+    with Database.get_db_session() as DbSession:
         try:
             CleanData, Errors = Database.ValidateClientUpdate(
                 DbSession,
@@ -768,7 +768,7 @@ def AdminEditClient(ClientID):
 @App.FlaskApp.route("/Admin/DeleteClient/<int:ClientID>", methods=["POST"])
 @App.AdminRequired
 def AdminDeleteClient(ClientID):
-    with Database.GetDBSession() as DbSession:
+    with Database.get_db_session() as DbSession:
         Client = (
             DbSession.query(Models.Client)
             .filter(Models.Client.ClientID == ClientID)
@@ -797,7 +797,7 @@ def AdminDeleteClient(ClientID):
 @App.FlaskApp.route("/AdminDashboard")
 @App.AdminRequired
 def AdminDashboard():
-    with Database.GetDBSession() as DbSession:
+    with Database.get_db_session() as DbSession:
         TotalClients = (
             DbSession.query(func.count(Models.Client.ClientID))
             .filter(Models.Client.Status == Models.EntityStatus.Active)
@@ -866,7 +866,7 @@ def AdminManagePayment(PaymentID, Action):
     if Action not in ["approve", "reject"]:
         Abort(400)
 
-    with Database.GetDBSession() as DbSession:
+    with Database.get_db_session() as DbSession:
         try:
             Payment = (
                 DbSession.query(Models.Payment)

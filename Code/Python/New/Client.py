@@ -68,7 +68,7 @@ def SignUp():
             Flash("ایمیل یا شماره موبایل نامعتبر است.", "Error")
             return RenderTemplate(Constants.ClientHTMLNamesData["SignUp"], **FormValues)
 
-        with Database.GetDBSession() as DbSession:
+        with Database.get_db_session() as DbSession:
             try:
                 HashedPassword = BCrypt.hashpw(
                     Password.encode("utf-8"), BCrypt.gensalt()
@@ -125,7 +125,7 @@ def SignUp():
 @App.FlaskApp.route("/ResolveIssues", methods=["GET"])
 @App.ResolutionRequired
 def ResolveDataIssues():
-    with Database.GetDBSession() as db:
+    with Database.get_db_session() as db:
         Client = (
             db.query(Models.Client)
             .options(
@@ -152,7 +152,7 @@ def ResolveDataIssues():
 @App.ResolutionRequired
 def SubmitDataResolution():
     App.CSRF_Protector.protect()
-    with Database.GetDBSession() as DbSession:
+    with Database.get_db_session() as DbSession:
         try:
             RoleMap = {Role.value: Role for Role in Models.MemberRole}
             UpdatedMemberIDs = {
@@ -274,7 +274,7 @@ def Login():
         Password = Request.form.get("Password", "").encode("utf-8")
         NextURLFromForm = Request.form.get("next")
 
-        with Database.GetDBSession() as DbSession:
+        with Database.get_db_session() as DbSession:
             ClientCheck = Database.GetClientBy(
                 DbSession, "Email", Identifier
             ) or Database.GetClientBy(DbSession, "PhoneNumber", Identifier)
@@ -351,7 +351,7 @@ def Login():
 @App.FlaskApp.route("/MyHistory")
 @App.LoginRequired
 def MyHistory():
-    with Database.GetDBSession() as db:
+    with Database.get_db_session() as db:
 
         return RenderTemplate(
             Constants.ClientHTMLNamesData["MyHistory"],
@@ -379,7 +379,7 @@ def MyHistory():
 @App.FlaskApp.route("/Team/<int:TeamID>/Update", methods=["GET", "POST"])
 @App.LoginRequired
 def UpdateTeam(TeamID):
-    with Database.GetDBSession() as DbSession:
+    with Database.get_db_session() as DbSession:
         Team = (
             DbSession.query(Models.Team)
             .filter(
@@ -454,7 +454,7 @@ def UpdateTeam(TeamID):
 @App.LoginRequired
 def DeleteTeam(TeamID):
     App.CSRF_Protector.protect()
-    with Database.GetDBSession() as DbSession:
+    with Database.get_db_session() as DbSession:
         try:
             Team = (
                 DbSession.query(Models.Team)
@@ -495,7 +495,7 @@ def DeleteTeam(TeamID):
 @App.FlaskApp.route("/Team/<int:TeamID>/Members")
 @App.LoginRequired
 def ManageMembers(TeamID):
-    with Database.GetDBSession() as DbSession:
+    with Database.get_db_session() as DbSession:
         Team = (
             DbSession.query(Models.Team)
             .filter(
@@ -543,7 +543,7 @@ def SupportChat():
 def DeleteMember(TeamID, MemberID):
     App.CSRF_Protector.protect()
     try:
-        with Database.GetDBSession() as DbSession:
+        with Database.get_db_session() as DbSession:
             Team = (
                 DbSession.query(Models.Team)
                 .filter(
@@ -602,7 +602,7 @@ def DeleteMember(TeamID, MemberID):
 def GetMyChatHistory():
     if not session.get("ClientID"):
         return Jsonify({"Messages": []})
-    with Database.GetDBSession() as db:
+    with Database.get_db_session() as db:
         return Jsonify(
             {
                 "Messages": [
@@ -624,7 +624,7 @@ def GetMyChatHistory():
 def UploadDocument(TeamID):
     App.CSRF_Protector.protect()
 
-    with Database.GetDBSession() as db:
+    with Database.get_db_session() as db:
         Team = (
             db.query(Models.Team)
             .filter(
@@ -704,7 +704,7 @@ def UploadDocument(TeamID):
 @App.FlaskApp.route("/UploadDocuments/<int:TeamID>/<filename>")
 @App.LoginRequired
 def GetDocument(TeamID, filename):
-    with Database.GetDBSession() as db:
+    with Database.get_db_session() as db:
         Team = (
             db.query(Models.Team.ClientID).filter(Models.Team.TeamID == TeamID).first()
         )
@@ -733,7 +733,7 @@ def GetDocument(TeamID, filename):
 def AddMember(TeamID):
     App.CSRF_Protector.protect()
     try:
-        with Database.GetDBSession() as DbSession:
+        with Database.get_db_session() as DbSession:
             Team = (
                 DbSession.query(Models.Team)
                 .filter(
@@ -798,7 +798,7 @@ def AddMember(TeamID):
 def EditMember(TeamID, MemberID):
     TemplateName = Constants.ClientHTMLNamesData["EditMember"]
 
-    with Database.GetDBSession() as DbSession:
+    with Database.get_db_session() as DbSession:
         Team = (
             DbSession.query(Models.Team)
             .filter(
@@ -924,7 +924,7 @@ def GetReceipt(ClientID, filename):
 @App.FlaskApp.route("/CreateTeam", methods=["GET", "POST"])
 @App.LoginRequired
 def CreateTeam():
-    with Database.GetDBSession() as DbSession:
+    with Database.get_db_session() as DbSession:
         TeamsCount = (
             DbSession.query(Models.Team)
             .filter(
@@ -999,7 +999,7 @@ def CreateTeam():
 @App.FlaskApp.route("/Team/<int:TeamID>/SelectLeague", methods=["GET", "POST"])
 @App.LoginRequired
 def SelectLeague(TeamID):
-    with Database.GetDBSession() as DbSession:
+    with Database.get_db_session() as DbSession:
         Team = (
             DbSession.query(Models.Team)
             .filter(
@@ -1055,7 +1055,7 @@ def Verify():
 
         if Action == "phone_signup":
             ClientID = Request.form.get("ClientID")
-            with Database.GetDBSession() as DbSession:
+            with Database.get_db_session() as DbSession:
                 Client = (
                     DbSession.query(Models.Client)
                     .filter(Models.Client.ClientID == ClientID)
@@ -1090,7 +1090,7 @@ def Verify():
         elif Action == "password_reset":
             Identifier = Request.form.get("Identifier")
             IdentifierType = Request.form.get("IdentifierType")
-            with Database.GetDBSession() as db:
+            with Database.get_db_session() as db:
                 ResetRecord = (
                     db.query(Models.PasswordReset)
                     .filter(
@@ -1137,7 +1137,7 @@ def Verify():
         if not ClientID:
             Flash("شناسه کاربر نامعتبر است.", "Error")
             return ReDirect(URLFor("Login"))
-        with Database.GetDBSession() as DbSession:
+        with Database.get_db_session() as DbSession:
             Client = (
                 DbSession.query(Models.Client)
                 .filter(Models.Client.ClientID == ClientID)
@@ -1158,7 +1158,7 @@ def Verify():
         if not Identifier or not IdentifierType:
             Flash("اطلاعات مورد نیاز برای تایید کد موجود نیست.", "Error")
             return ReDirect(URLFor("ForgotPassword"))
-        with Database.GetDBSession() as db:
+        with Database.get_db_session() as db:
             ResetRecord = (
                 db.query(Models.PasswordReset)
                 .filter(Models.PasswordReset.Identifier == Identifier)
@@ -1199,7 +1199,7 @@ def ResendCode():
                 400,
             )
 
-        with Database.GetDBSession() as DbSession:
+        with Database.get_db_session() as DbSession:
             Client = (
                 DbSession.query(Models.Client)
                 .filter(Models.Client.ClientID == RequestData.get("ClientID"))
@@ -1245,7 +1245,7 @@ def ResendCode():
         if not Identifier or not IdentifierType:
             return Jsonify({"Success": False, "Message": "اطلاعات ناقص است."}), 400
 
-        with Database.GetDBSession() as DbSession:
+        with Database.get_db_session() as DbSession:
             ResetRecord = (
                 DbSession.query(Models.PasswordReset)
                 .filter(Models.PasswordReset.Identifier == Identifier)
@@ -1331,7 +1331,7 @@ def ForgotPassword():
             Flash("لطفا یک ایمیل یا شماره موبایل معتبر وارد کنید.", "Error")
             return ReDirect(URLFor("ForgotPassword"))
 
-        with Database.GetDBSession() as DbSession:
+        with Database.get_db_session() as DbSession:
             ClientCheck = Database.GetClientBy(DbSession, IdentifierType, Identifier)
 
             if ClientCheck:
@@ -1405,7 +1405,7 @@ def ResendPasswordCode():
     if not Identifier or not IdentifierType:
         return Jsonify({"Success": False, "Message": "اطلاعات ناقص است."}), 400
 
-    with Database.GetDBSession() as DbSession:
+    with Database.get_db_session() as DbSession:
         ResetRecord = (
             DbSession.query(Models.PasswordReset)
             .filter(Models.PasswordReset.Identifier == Identifier)
@@ -1478,7 +1478,7 @@ def ResendVerificationCode():
     if not ClientID:
         return Jsonify({"Success": False, "Message": "خطای کلاینت."}), 400
 
-    with Database.GetDBSession() as DbSession:
+    with Database.get_db_session() as DbSession:
         Client = (
             DbSession.query(Models.Client)
             .filter(Models.Client.ClientID == ClientID)
@@ -1531,7 +1531,7 @@ def ResetPassword():
             Flash(ErrorMessage, "Error")
             return ReDirect(URLFor("ResetPassword", Token=Token))
 
-        with Database.GetDBSession() as DbSession:
+        with Database.get_db_session() as DbSession:
             ValidRecord = (
                 DbSession.query(Models.PasswordReset)
                 .filter(Models.PasswordReset.Code == Token)
@@ -1575,7 +1575,7 @@ def ResetPassword():
 @App.FlaskApp.route("/Team/<int:TeamID>/Payment", methods=["GET", "POST"])
 @App.LoginRequired
 def Payment(TeamID):
-    with Database.GetDBSession() as DbSession:
+    with Database.get_db_session() as DbSession:
         Team = (
             DbSession.query(Models.Team)
             .filter(
@@ -1727,7 +1727,7 @@ def Payment(TeamID):
 @App.FlaskApp.route("/Dashboard")
 @App.LoginRequired
 def Dashboard():
-    with Database.GetDBSession() as DbSession:
+    with Database.get_db_session() as DbSession:
         Teams = (
             DbSession.query(Models.Team)
             .options(subqueryload(Models.Team.Members))
