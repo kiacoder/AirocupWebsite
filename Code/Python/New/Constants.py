@@ -1,6 +1,5 @@
 import os as OS
 import datetime as Datetime
-import Config
 
 
 class Path:

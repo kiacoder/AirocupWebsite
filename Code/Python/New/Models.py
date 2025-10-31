@@ -1,5 +1,6 @@
-import enum as Enum
-import datetime as Datetime
+"Define SQLite DataBase Structure"
+import enum
+import datetime
 from sqlalchemy.orm import declarative_base, relationship
 from sqlalchemy import (
     Column,
@@ -7,7 +8,7 @@ from sqlalchemy import (
     String,
     ForeignKey,
     TEXT,
-    Enum as SQLAlchemyEnum,
+    Enum as sql_alchemy_enum,
     DateTime,
     Boolean,
     Index,
@@ -16,8 +17,8 @@ from sqlalchemy import (
 
 DeclarativeBase = declarative_base()
 
-
-class LabeledEnum(Enum.Enum):
+"labeled enum"
+class labeled_enum(enum.Enum):
     def __new__(cls, value, label):
         obj = object.__new__(cls)
         obj._value_ = value
@@ -25,36 +26,36 @@ class LabeledEnum(Enum.Enum):
         return obj
 
 
-class EntityStatus(LabeledEnum):
-    Active = ("Active", "فعال")
-    Inactive = ("Inactive", "غیرفعال")
-    Withdrawn = ("Withdrawn", "منصرف شده")
+class entity_status(labeled_enum):
+    ACTIVE = ("active", "فعال")
+    INACTIVE = ("inactive", "غیرفعال")
+    WITH_DRAWN = ("with_drawn", "منصرف شده")
 
 
-class MemberRole(LabeledEnum):
-    Leader = ("Leader", "سرپرست")
-    Coach = ("Coach", "مربی")
-    Member = ("Member", "عضو")
+class MemberRole(labeled_enum):
+    LEADER = ("Leader", "سرپرست")
+    COACH = ("Coach", "مربی")
+    MEMBER = ("Member", "عضو")
 
 
-class PaymentStatus(LabeledEnum):
-    Pending = ("Pending", "در حال بررسی")
-    Approved = ("Approved", "تایید شده")
-    Rejected = ("Rejected", "رد شده")
+class payment_status(labeled_enum):
+    PENDING = ("Pending", "در حال بررسی")
+    APPROVED = ("Approved", "تایید شده")
+    REJECTED = ("Rejected", "رد شده")
 
 
-class Client(DeclarativeBase):
+class client(DeclarativeBase):
     __tablename__ = "Clients"
     ClientID = Column(Integer, primary_key=True, autoincrement=True)
     PhoneNumber = Column(String, nullable=False, unique=True)
     Email = Column(String, nullable=False, unique=True)
     Password = Column(String, nullable=False)
     RegistrationDate = Column(
-        DateTime, default=lambda: Datetime.datetime.now(Datetime.timezone.utc)
+        DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc)
     )
     EducationLevel = Column(String)
     Status = Column(
-        SQLAlchemyEnum(EntityStatus), default=EntityStatus.Active, nullable=False
+        sql_alchemy_enum(entity_status), default=entity_status.ACTIVE, nullable=False
     )
     IsPhoneVerified = Column(Boolean, default=False)
     PhoneVerificationCode = Column(String)
@@ -93,12 +94,12 @@ class Team(DeclarativeBase):
     LeagueOneID = Column(Integer, ForeignKey("Leagues.LeagueID"))
     LeagueTwoID = Column(Integer, ForeignKey("Leagues.LeagueID"))
     TeamRegistrationDate = Column(
-        DateTime, default=lambda: Datetime.datetime.now(Datetime.timezone.utc)
+        DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc)
     )
     AverageAge = Column(Integer, default=0)
     AverageProvinces = Column(String)
     Status = Column(
-        SQLAlchemyEnum(EntityStatus), default=EntityStatus.Active, nullable=False
+        sql_alchemy_enum(entity_status), default=entity_status.ACTIVE, nullable=False
     )
     UnpaidMembersCount = Column(Integer, default=0)
 
@@ -128,7 +129,7 @@ class Payment(DeclarativeBase):
     ReceiptFilename = Column(String, nullable=False)
     UploadDate = Column(DateTime, nullable=False)
     Status = Column(
-        SQLAlchemyEnum(PaymentStatus), nullable=False, default=PaymentStatus.Pending
+        sql_alchemy_enum(payment_status), nullable=False, default=payment_status.PENDING
     )
 
     Team = relationship("Team", back_populates="Payments")
@@ -142,9 +143,9 @@ class Member(DeclarativeBase):
     Name = Column(String, nullable=False)
     BirthDate = Column(Date, nullable=False)
     NationalID = Column(String, unique=True, nullable=False)
-    Role = Column(SQLAlchemyEnum(MemberRole), nullable=False)
+    Role = Column(sql_alchemy_enum(MemberRole), nullable=False)
     Status = Column(
-        SQLAlchemyEnum(EntityStatus), default=EntityStatus.Active, nullable=False
+        sql_alchemy_enum(entity_status), default=entity_status.ACTIVE, nullable=False
     )
     CityID = Column(Integer, ForeignKey("Cities.CityID"), nullable=False)
 
@@ -165,7 +166,9 @@ class Province(DeclarativeBase):
     __tablename__ = "Provinces"
     ProvinceID = Column(Integer, primary_key=True, autoincrement=True)
     Name = Column(String, nullable=False, unique=True)
-    Cities = relationship("City", back_populates="Province", cascade="all, delete-orphan")
+    Cities = relationship(
+        "City", back_populates="Province", cascade="all, delete-orphan"
+    )
 
 
 class City(DeclarativeBase):

@@ -1,4 +1,4 @@
-"""Utility functions for file operations and system checks."""
+"""DataBase Related Code, For Adding Editing And Deleting Members, Teams and Clients"""
 
 import datetime
 import os
@@ -6,14 +6,14 @@ from contextlib import contextmanager
 from typing import Any, Iterator, List, Optional, Tuple
 
 import bcrypt
-import Constants
-import Models
-import Utils
+import constants
+import models
+import utils
 from sqlalchemy import create_engine, func
 from sqlalchemy.orm import Session, sessionmaker
 
 db_engine = create_engine(
-    f"sqlite:///{Constants.Path.DataBase}", connect_args={"check_same_thread": False}
+    f"sqlite:///{constants.Path.DataBase}", connect_args={"check_same_thread": False}
 )
 db_session_local = sessionmaker(autocommit=False, autoflush=False, bind=db_engine)
 
@@ -28,145 +28,145 @@ def get_db_session() -> Iterator[Session]:
 
 
 def CreateDatabase():
-    os.makedirs(os.path.dirname(Constants.Path.DataBase), exist_ok=True)
-    Models.DeclarativeBase.metadata.create_all(bind=db_engine)
+    os.makedirs(os.path.dirname(constants.Path.DataBase), exist_ok=True)
+    models.DeclarativeBase.metadata.create_all(bind=db_engine)
 
 
-def HasExistingLeader(
-    db: Session, TeamID: int, MemberIDToExclude: Optional[int] = None
+def has_existing_leader(
+    db: Session, team_id: int, member_id_to_exclude: Optional[int] = None
 ) -> bool:
-    Query = db.query(Models.Member).filter(
-        Models.Member.TeamID == TeamID, Models.Member.Role == Models.MemberRole.Leader
+    query = db.query(models.Member).filter(
+        models.Member.TeamID == team_id, models.Member.Role == models.MemberRole.Leader
     )
-    if MemberIDToExclude:
-        Query = Query.filter(Models.Member.MemberID != MemberIDToExclude)
-    return Query.first() is not None
+    if member_id_to_exclude:
+        query = query.filter(models.Member.MemberID != member_id_to_exclude)
+    return query.first() is not None
 
 
-def GetAllActiveClients(db: Session) -> list[Models.Client]:
+def get_all_active_clients(db: Session) -> list[models.client]:
     return (
-        db.query(Models.Client)
-        .filter(Models.Client.Status == Models.EntityStatus.Active)
-        .order_by(Models.Client.Email.asc())
+        db.query(models.client)
+        .filter(models.client.Status == models.entity_status.ACTIVE)
+        .order_by(models.client.Email.asc())
         .all()
     )
 
 
-def GetTeamByID(db: Session, TeamID: int) -> Optional[Models.Team]:
-    return db.query(Models.Team).filter(Models.Team.TeamID == TeamID).first()
+def get_team_by_id(db: Session, team_id: int) -> Optional[models.Team]:
+    return db.query(models.Team).filter(models.Team.TeamID == team_id).first()
 
 
 def ValidateClientUpdate(
     db: Session,
-    ClientID: int,
-    FormData: Any,
-    IsValidPassword,
-    IsValidEmail,
-    IsValidIranianPhone,
-    FaToEN,
+    client_id: int,
+    form_data: Any,
+    is_valid_password,
+    is_valid_email,
+    is_valid_iranian_phone,
+    fa_to_en,
 ) -> Tuple[Optional[dict], list[str]]:
-    CleanData = {}
-    Errors = []
+    clean_data = {}
+    errors = []
 
-    ClientToUpdate = (
-        db.query(Models.Client).filter(Models.Client.ClientID == ClientID).first()
+    client_to_update = (
+        db.query(models.client).filter(models.client.client_id == client_id).first()
     )
-    if not ClientToUpdate:
+    if not client_to_update:
         return None, ["اطلاعات کاربر مورد نظر یافت نشد."]
 
-    NewEmail = FormData.get("Email", "").strip()
-    if NewEmail and NewEmail != ClientToUpdate.Email:
-        if not IsValidEmail(NewEmail):
-            Errors.append("فرمت ایمیل وارد شده معتبر نیست.")
+    new_email = form_data.get("Email", "").strip()
+    if new_email and new_email != client_to_update.Email:
+        if not is_valid_email(new_email):
+            errors.append("فرمت ایمیل وارد شده معتبر نیست.")
         else:
-            ExistingClient = (
-                db.query(Models.Client)
+            existing_client = (
+                db.query(models.client)
                 .filter(
-                    func.lower(Models.Client.Email) == func.lower(NewEmail),
-                    Models.Client.ClientID != ClientID,
+                    func.lower(models.client.Email) == func.lower(new_email),
+                    models.client.client_id != client_id,
                 )
                 .first()
             )
-            if ExistingClient:
-                Errors.append("این ایمیل قبلاً توسط کاربر دیگری ثبت شده است.")
+            if existing_client:
+                errors.append("این ایمیل قبلاً توسط کاربر دیگری ثبت شده است.")
             else:
-                CleanData["Email"] = NewEmail
+                clean_data["Email"] = new_email
 
-    NewPhoneNumber = FaToEN(FormData.get("PhoneNumber", "").strip())
-    if NewPhoneNumber and NewPhoneNumber != ClientToUpdate.PhoneNumber:
-        if not IsValidIranianPhone(NewPhoneNumber):
-            Errors.append("شماره تلفن وارد شده معتبر نیست.")
+    new_phone_number = fa_to_en(form_data.get("PhoneNumber", "").strip())
+    if new_phone_number and new_phone_number != client_to_update.PhoneNumber:
+        if not is_valid_iranian_phone(new_phone_number):
+            errors.append("شماره تلفن وارد شده معتبر نیست.")
         else:
-            ExistingClient = (
-                db.query(Models.Client)
+            existing_client = (
+                db.query(models.client)
                 .filter(
-                    Models.Client.PhoneNumber == NewPhoneNumber,
-                    Models.Client.ClientID != ClientID,
+                    models.client.PhoneNumber == new_phone_number,
+                    models.client.client_id != client_id,
                 )
                 .first()
             )
-            if ExistingClient:
-                Errors.append("این شماره تلفن قبلاً توسط کاربر دیگری ثبت شده است.")
+            if existing_client:
+                errors.append("این شماره تلفن قبلاً توسط کاربر دیگری ثبت شده است.")
             else:
-                CleanData["PhoneNumber"] = NewPhoneNumber
+                clean_data["PhoneNumber"] = new_phone_number
 
-    NewPassword = FormData.get("Password")
-    if NewPassword:
-        IsValid, ErrorMessage = IsValidPassword(NewPassword)
-        if not IsValid:
-            Errors.append(ErrorMessage)
+    new_password = form_data.get("Password")
+    if new_password:
+        is_valid, error_message = is_valid_password(new_password)
+        if not is_valid:
+            errors.append(error_message)
         else:
-            CleanData["Password"] = NewPassword
+            clean_data["Password"] = new_password
 
-    if Errors:
-        return None, Errors
-    return CleanData, []
+    if errors:
+        return None, errors
+    return clean_data, []
 
 
-def UpdateClientDetails(db: Session, ClientID: int, CleanData: dict):
-    Client = db.query(Models.Client).filter(Models.Client.ClientID == ClientID).first()
-    if not Client:
+def UpdateClientDetails(db: Session, client_id: int, CleanData: dict):
+    client = db.query(models.client).filter(models.client.client_id == client_id).first()
+    if not client:
         return
 
     if "PhoneNumber" in CleanData:
-        Client.PhoneNumber = CleanData["PhoneNumber"]
+        client.PhoneNumber = CleanData["PhoneNumber"]
     if "Email" in CleanData:
-        Client.Email = CleanData["Email"]
+        client.Email = CleanData["Email"]
     if "Password" in CleanData:
-        Client.Password = bcrypt.hashpw(
+        client.Password = bcrypt.hashpw(
             CleanData["Password"].encode("utf-8"), bcrypt.gensalt()
         ).decode("utf-8")
 
     db.commit()
 
 
-def GetClientBy(db: Session, Identifier: str, value: Any) -> Optional[Models.Client]:
-    if Identifier == "ClientID":
-        return db.query(Models.Client).filter(Models.Client.ClientID == value).first()
+def GetClientBy(db: Session, Identifier: str, value: Any) -> Optional[models.client]:
+    if Identifier == "client_id":
+        return db.query(models.client).filter(models.client.client_id == value).first()
     elif Identifier == "Email":
         return (
-            db.query(Models.Client)
-            .filter(func.lower(Models.Client.Email) == func.lower(value))
+            db.query(models.client)
+            .filter(func.lower(models.client.Email) == func.lower(value))
             .first()
         )
     elif Identifier == "PhoneNumber":
         return (
-            db.query(Models.Client).filter(Models.Client.PhoneNumber == value).first()
+            db.query(models.client).filter(models.client.PhoneNumber == value).first()
         )
     raise ValueError(f"Invalid Identifier for searching Clients: {Identifier}")
 
 
 def GetAllArticles(db: Session):
-    return db.query(Models.News).order_by(Models.News.PublishDate.desc()).all()
+    return db.query(models.News).order_by(models.News.PublishDate.desc()).all()
 
 
 def GetArticleByID(db: Session, ArticleID: int):
-    return db.query(Models.News).filter(Models.News.NewsID == ArticleID).first()
+    return db.query(models.News).filter(models.News.NewsID == ArticleID).first()
 
 
 def LogLoginAttempt(db: Session, Identifier: str, IPAddress: str, IsSuccess: bool):
     db.add(
-        Models.LoginAttempt(
+        models.LoginAttempt(
             Identifier=Identifier,
             IPAddress=IPAddress,
             Timestamp=datetime.datetime.now(datetime.timezone.utc),
@@ -177,15 +177,15 @@ def LogLoginAttempt(db: Session, Identifier: str, IPAddress: str, IsSuccess: boo
 
 def PopulateGeographyData():
     with get_db_session() as db:
-        if db.query(Models.Province).first():
+        if db.query(models.Province).first():
             return
         print("Populating Provinces and Cities tables...")
-        for ProvinceName, Cities in Constants.ProvincesData.items():
-            NewProvince = Models.Province(Name=ProvinceName)
+        for ProvinceName, Cities in constants.ProvincesData.items():
+            NewProvince = models.Province(Name=ProvinceName)
             db.add(NewProvince)
             db.flush()
             for CityName in Cities:
-                db.add(Models.City(Name=CityName, ProvinceID=NewProvince.ProvinceID))
+                db.add(models.City(Name=CityName, ProvinceID=NewProvince.ProvinceID))
         db.commit()
         print("Geography data populated successfully.")
 
@@ -202,42 +202,42 @@ def ValidateNewMemberData(
     RoleValue: str,
 ) -> List[str]:
     Errors = []
-    if not Utils.IsValidName(Name):
+    if not utils.IsValidName(Name):
         Errors.append("نام و نام خانوادگی معتبر نیست. لطفاً نام کامل را وارد کنید.")
 
-    if not Utils.IsValidNationalID(NationalID):
+    if not utils.IsValidNationalID(NationalID):
         Errors.append("کد ملی وارد شده معتبر نیست.")
     elif (
-        db.query(Models.Member.MemberID)
-        .filter(Models.Member.NationalID == NationalID)
+        db.query(models.Member.MemberID)
+        .filter(models.Member.NationalID == NationalID)
         .first()
     ):
         Errors.append("این کد ملی قبلاً برای عضو دیگری در سیستم ثبت شده است.")
 
     if not (
-        db.query(Models.City.CityID)
-        .join(Models.Province)
-        .filter(Models.Province.Name == Province, Models.City.Name == City)
+        db.query(models.City.CityID)
+        .join(models.Province)
+        .filter(models.Province.Name == Province, models.City.Name == City)
         .first()
     ):
         Errors.append("استان یا شهر انتخاب شده معتبر نیست.")
 
-    IsValidDate, DateError = Utils.ValidatePersianDate(BirthYear, BirthMonth, BirthDay)
+    IsValidDate, DateError = utils.ValidatePersianDate(BirthYear, BirthMonth, BirthDay)
     if not IsValidDate:
         Errors.append(DateError)
 
-    if RoleValue not in {role.value for role in Models.MemberRole}:
+    if RoleValue not in {role.value for role in models.MemberRole}:
         Errors.append("نقش انتخاب شده (سرپرست، مربی، عضو) معتبر نیست.")
 
     return Errors
 
 
 def LogAction(
-    db: Session, ClientID: int, ActionDescription: str, IsAdminAction: bool = False
+    db: Session, client_id: int, ActionDescription: str, IsAdminAction: bool = False
 ):
     db.add(
-        Models.HistoryLog(
-            ClientID=ClientID,
+        models.HistoryLog(
+            client_id=client_id,
             Action=ActionDescription,
             AdminInvolved=IsAdminAction,
             Timestamp=datetime.datetime.now(datetime.timezone.utc),
@@ -245,10 +245,10 @@ def LogAction(
     )
 
 
-def SaveChatMessage(db: Session, ClientID: int, MessageText: str, Sender: str):
+def SaveChatMessage(db: Session, client_id: int, MessageText: str, Sender: str):
     db.add(
-        Models.ChatMessage(
-            ClientID=ClientID,
+        models.ChatMessage(
+            client_id=client_id,
             MessageText=MessageText,
             Sender=Sender,
             Timestamp=datetime.datetime.now(datetime.timezone.utc),
@@ -256,28 +256,28 @@ def SaveChatMessage(db: Session, ClientID: int, MessageText: str, Sender: str):
     )
 
 
-def GetChatHistoryByClientID(db: Session, ClientID: int) -> list[Models.ChatMessage]:
+def GetChatHistoryByClientID(db: Session, client_id: int) -> list[models.ChatMessage]:
     return (
-        db.query(Models.ChatMessage)
-        .filter(Models.ChatMessage.ClientID == ClientID)
-        .order_by(Models.ChatMessage.Timestamp.asc())
+        db.query(models.ChatMessage)
+        .filter(models.ChatMessage.client_id == client_id)
+        .order_by(models.ChatMessage.Timestamp.asc())
         .all()
     )
 
 
 def HasTeamMadeAnyPayment(db: Session, TeamID: int) -> bool:
     return (
-        db.query(Models.Payment).filter(Models.Payment.TeamID == TeamID).first()
+        db.query(models.Payment).filter(models.Payment.TeamID == TeamID).first()
         is not None
     )
 
 
 def CheckIfTeamIsPaid(db: Session, TeamID: int) -> bool:
     return (
-        db.query(Models.Payment)
+        db.query(models.Payment)
         .filter(
-            Models.Payment.TeamID == TeamID,
-            Models.Payment.Status == Models.PaymentStatus.Approved,
+            models.Payment.TeamID == TeamID,
+            models.Payment.Status == models.payment_status.APPROVED,
         )
         .first()
     ) is not None
@@ -287,10 +287,10 @@ def IsMemberLeagueConflict(
     db: Session, NationalID: str, TargetTeamID: int
 ) -> Tuple[bool, str]:
     TargetTeam = (
-        db.query(Models.Team.LeagueOneID, Models.Team.LeagueTwoID)
+        db.query(models.Team.LeagueOneID, models.Team.LeagueTwoID)
         .filter(
-            Models.Team.TeamID == TargetTeamID,
-            Models.Team.Status == Models.EntityStatus.Active,
+            models.Team.TeamID == TargetTeamID,
+            models.Team.Status == models.entity_status.ACTIVE,
         )
         .first()
     )
@@ -302,19 +302,19 @@ def IsMemberLeagueConflict(
         return False, ""
 
     ConflictingTeam = (
-        db.query(Models.Team)
-        .join(Models.Member)
+        db.query(models.Team)
+        .join(models.Member)
         .filter(
-            Models.Member.NationalID == NationalID,
-            Models.Team.TeamID != TargetTeamID,
-            Models.Member.Status == Models.EntityStatus.Active,
-            Models.Team.Status == Models.EntityStatus.Active,
-            Models.Member.Role.notin_(
-                [Models.MemberRole.Leader, Models.MemberRole.Coach]
+            models.Member.NationalID == NationalID,
+            models.Team.TeamID != TargetTeamID,
+            models.Member.Status == models.entity_status.ACTIVE,
+            models.Team.Status == models.entity_status.ACTIVE,
+            models.Member.Role.notin_(
+                [models.MemberRole.Leader, models.MemberRole.Coach]
             ),
             (
-                Models.Team.LeagueOneID.in_(TargetLeagueIDs)
-                | Models.Team.LeagueTwoID.in_(TargetLeagueIDs)
+                models.Team.LeagueOneID.in_(TargetLeagueIDs)
+                | models.Team.LeagueTwoID.in_(TargetLeagueIDs)
             ),
         )
         .first()
@@ -328,8 +328,8 @@ def IsMemberLeagueConflict(
         SharedLeagueIDs = TargetLeagueIDs.intersection(ConflictingTeamLeagueIDs)
 
         SharedLeagueNames = (
-            db.query(Models.League.Name)
-            .filter(Models.League.LeagueID.in_(SharedLeagueIDs))
+            db.query(models.League.Name)
+            .filter(models.League.LeagueID.in_(SharedLeagueIDs))
             .all()
         )
         Names = ", ".join([Name for (Name,) in SharedLeagueNames])
