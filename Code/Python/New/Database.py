@@ -1,24 +1,26 @@
-import os
-from sqlalchemy import create_engine, func
-from sqlalchemy.orm import sessionmaker, Session
-from contextlib import contextmanager
-from typing import Iterator, Any, Optional, Tuple
+"""Utility functions for file operations and system checks."""
+
 import datetime
+import os
+from contextlib import contextmanager
+from typing import Any, Iterator, List, Optional, Tuple
+
 import bcrypt
-import Utils
-from typing import List
 import Constants
 import Models
+import Utils
+from sqlalchemy import create_engine, func
+from sqlalchemy.orm import Session, sessionmaker
 
-DBEngine = create_engine(
+db_engine = create_engine(
     f"sqlite:///{Constants.Path.DataBase}", connect_args={"check_same_thread": False}
 )
-DBSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=DBEngine)
+db_session_local = sessionmaker(autocommit=False, autoflush=False, bind=db_engine)
 
 
 @contextmanager
 def get_db_session() -> Iterator[Session]:
-    db = DBSessionLocal()
+    db = db_session_local()
     try:
         yield db
     finally:
@@ -27,7 +29,7 @@ def get_db_session() -> Iterator[Session]:
 
 def CreateDatabase():
     os.makedirs(os.path.dirname(Constants.Path.DataBase), exist_ok=True)
-    Models.DeclarativeBase.metadata.create_all(bind=DBEngine)
+    Models.DeclarativeBase.metadata.create_all(bind=db_engine)
 
 
 def HasExistingLeader(
