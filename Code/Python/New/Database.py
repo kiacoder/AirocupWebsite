@@ -187,6 +187,7 @@ def PopulateGeographyData():
         db.commit()
         print("Geography data populated successfully.")
 
+
 def ValidateNewMemberData(
     db: Session,
     Name: str,
@@ -227,6 +228,7 @@ def ValidateNewMemberData(
         Errors.append("نقش انتخاب شده (سرپرست، مربی، عضو) معتبر نیست.")
 
     return Errors
+
 
 def LogAction(
     db: Session, ClientID: int, ActionDescription: str, IsAdminAction: bool = False
@@ -277,6 +279,7 @@ def CheckIfTeamIsPaid(db: Session, TeamID: int) -> bool:
         )
         .first()
     ) is not None
+
 
 def IsMemberLeagueConflict(
     db: Session, NationalID: str, TargetTeamID: int
