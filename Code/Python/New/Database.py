@@ -43,11 +43,11 @@ def has_existing_leader(
     return query.first() is not None
 
 
-def get_all_active_clients(db: Session) -> list[models.client]:
+def get_all_active_clients(db: Session) -> list[models.Client]:
     return (
-        db.query(models.client)
-        .filter(models.client.Status == models.entity_status.ACTIVE)
-        .order_by(models.client.Email.asc())
+        db.query(models.Client)
+        .filter(models.Client.Status == models.EntityStatus.ACTIVE)
+        .order_by(models.Client.Email.asc())
         .all()
     )
 
@@ -69,7 +69,7 @@ def ValidateClientUpdate(
     errors = []
 
     client_to_update = (
-        db.query(models.client).filter(models.client.client_id == client_id).first()
+        db.query(models.Client).filter(models.Client.client_id == client_id).first()
     )
     if not client_to_update:
         return None, ["اطلاعات کاربر مورد نظر یافت نشد."]
@@ -80,10 +80,10 @@ def ValidateClientUpdate(
             errors.append("فرمت ایمیل وارد شده معتبر نیست.")
         else:
             existing_client = (
-                db.query(models.client)
+                db.query(models.Client)
                 .filter(
-                    func.lower(models.client.Email) == func.lower(new_email),
-                    models.client.client_id != client_id,
+                    func.lower(models.Client.Email) == func.lower(new_email),
+                    models.Client.client_id != client_id,
                 )
                 .first()
             )
@@ -98,10 +98,10 @@ def ValidateClientUpdate(
             errors.append("شماره تلفن وارد شده معتبر نیست.")
         else:
             existing_client = (
-                db.query(models.client)
+                db.query(models.Client)
                 .filter(
-                    models.client.PhoneNumber == new_phone_number,
-                    models.client.client_id != client_id,
+                    models.Client.PhoneNumber == new_phone_number,
+                    models.Client.client_id != client_id,
                 )
                 .first()
             )
@@ -124,7 +124,7 @@ def ValidateClientUpdate(
 
 
 def UpdateClientDetails(db: Session, client_id: int, CleanData: dict):
-    client = db.query(models.client).filter(models.client.client_id == client_id).first()
+    client = db.query(models.Client).filter(models.Client.client_id == client_id).first()
     if not client:
         return
 
@@ -140,18 +140,18 @@ def UpdateClientDetails(db: Session, client_id: int, CleanData: dict):
     db.commit()
 
 
-def GetClientBy(db: Session, Identifier: str, value: Any) -> Optional[models.client]:
+def GetClientBy(db: Session, Identifier: str, value: Any) -> Optional[models.Client]:
     if Identifier == "client_id":
-        return db.query(models.client).filter(models.client.client_id == value).first()
+        return db.query(models.Client).filter(models.Client.client_id == value).first()
     elif Identifier == "Email":
         return (
-            db.query(models.client)
-            .filter(func.lower(models.client.Email) == func.lower(value))
+            db.query(models.Client)
+            .filter(func.lower(models.Client.Email) == func.lower(value))
             .first()
         )
     elif Identifier == "PhoneNumber":
         return (
-            db.query(models.client).filter(models.client.PhoneNumber == value).first()
+            db.query(models.Client).filter(models.Client.PhoneNumber == value).first()
         )
     raise ValueError(f"Invalid Identifier for searching Clients: {Identifier}")
 
@@ -277,7 +277,7 @@ def CheckIfTeamIsPaid(db: Session, TeamID: int) -> bool:
         db.query(models.Payment)
         .filter(
             models.Payment.TeamID == TeamID,
-            models.Payment.Status == models.payment_status.APPROVED,
+            models.Payment.Status == models.PaymentStatus.APPROVED,
         )
         .first()
     ) is not None
@@ -290,7 +290,7 @@ def IsMemberLeagueConflict(
         db.query(models.Team.LeagueOneID, models.Team.LeagueTwoID)
         .filter(
             models.Team.TeamID == TargetTeamID,
-            models.Team.Status == models.entity_status.ACTIVE,
+            models.Team.Status == models.EntityStatus.ACTIVE,
         )
         .first()
     )
@@ -307,8 +307,8 @@ def IsMemberLeagueConflict(
         .filter(
             models.Member.NationalID == NationalID,
             models.Team.TeamID != TargetTeamID,
-            models.Member.Status == models.entity_status.ACTIVE,
-            models.Team.Status == models.entity_status.ACTIVE,
+            models.Member.Status == models.EntityStatus.ACTIVE,
+            models.Team.Status == models.EntityStatus.ACTIVE,
             models.Member.Role.notin_(
                 [models.MemberRole.Leader, models.MemberRole.Coach]
             ),

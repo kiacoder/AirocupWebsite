@@ -17,8 +17,8 @@ from sqlalchemy import (
 
 DeclarativeBase = declarative_base()
 
-"labeled enum"
-class labeled_enum(enum.Enum):
+class LabeledEnum(enum.Enum):
+    "todo"
     def __new__(cls, value, label):
         obj = object.__new__(cls)
         obj._value_ = value
@@ -26,25 +26,29 @@ class labeled_enum(enum.Enum):
         return obj
 
 
-class entity_status(labeled_enum):
+class EntityStatus(LabeledEnum):
+    "todo"
     ACTIVE = ("active", "فعال")
     INACTIVE = ("inactive", "غیرفعال")
     WITH_DRAWN = ("with_drawn", "منصرف شده")
 
 
-class MemberRole(labeled_enum):
+class MemberRole(LabeledEnum):
+    "todo"
     LEADER = ("Leader", "سرپرست")
     COACH = ("Coach", "مربی")
     MEMBER = ("Member", "عضو")
 
 
-class payment_status(labeled_enum):
+class PaymentStatus(LabeledEnum):
+    "todo"
     PENDING = ("Pending", "در حال بررسی")
     APPROVED = ("Approved", "تایید شده")
     REJECTED = ("Rejected", "رد شده")
 
 
-class client(DeclarativeBase):
+class Client(DeclarativeBase):
+    "todo"
     __tablename__ = "Clients"
     ClientID = Column(Integer, primary_key=True, autoincrement=True)
     PhoneNumber = Column(String, nullable=False, unique=True)
@@ -55,7 +59,7 @@ class client(DeclarativeBase):
     )
     EducationLevel = Column(String)
     Status = Column(
-        sql_alchemy_enum(entity_status), default=entity_status.ACTIVE, nullable=False
+        sql_alchemy_enum(EntityStatus), default=EntityStatus.ACTIVE, nullable=False
     )
     IsPhoneVerified = Column(Boolean, default=False)
     PhoneVerificationCode = Column(String)
@@ -99,7 +103,7 @@ class Team(DeclarativeBase):
     AverageAge = Column(Integer, default=0)
     AverageProvinces = Column(String)
     Status = Column(
-        sql_alchemy_enum(entity_status), default=entity_status.ACTIVE, nullable=False
+        sql_alchemy_enum(EntityStatus), default=EntityStatus.ACTIVE, nullable=False
     )
     UnpaidMembersCount = Column(Integer, default=0)
 
@@ -129,7 +133,7 @@ class Payment(DeclarativeBase):
     ReceiptFilename = Column(String, nullable=False)
     UploadDate = Column(DateTime, nullable=False)
     Status = Column(
-        sql_alchemy_enum(payment_status), nullable=False, default=payment_status.PENDING
+        sql_alchemy_enum(PaymentStatus), nullable=False, default=PaymentStatus.PENDING
     )
 
     Team = relationship("Team", back_populates="Payments")
@@ -145,7 +149,7 @@ class Member(DeclarativeBase):
     NationalID = Column(String, unique=True, nullable=False)
     Role = Column(sql_alchemy_enum(MemberRole), nullable=False)
     Status = Column(
-        sql_alchemy_enum(entity_status), default=entity_status.ACTIVE, nullable=False
+        sql_alchemy_enum(EntityStatus), default=EntityStatus.ACTIVE, nullable=False
     )
     CityID = Column(Integer, ForeignKey("Cities.CityID"), nullable=False)
 
@@ -157,7 +161,7 @@ class Member(DeclarativeBase):
             "one_leader_per_team_idx",
             "TeamID",
             unique=True,
-            sqlite_where=f"Role = '{MemberRole.Leader.value}'",
+            sqlite_where=f"Role = '{MemberRole.LEADER.value}'",
         ),
     )
 
