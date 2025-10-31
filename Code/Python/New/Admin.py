@@ -1,71 +1,73 @@
-import os as OS
-import math as Math
-import uuid as UUID
-import bcrypt as BCrypt
+"tood"
+
+import os
+import math
+import uuid
+import datetime
 from flask import (
     Blueprint,
-    abort as Abort,
-    flash as Flash,
-    redirect as ReDirect,
-    render_template as RenderTemplate,
-    request as Request,
-    send_from_directory as SendFromDirectory,
+    abort,
+    flash,
+    redirect,
+    render_template,
+    request,
+    send_from_directory,
     session,
-    url_for as URLFor,
-    jsonify as Jsonify,
+    url_for,
+    jsonify,
 )
 from sqlalchemy import exc, select, func
 from sqlalchemy.orm import joinedload
-import datetime as Datetime
-import bleach as Bleach
-from werkzeug.utils import secure_filename as SecureFileName
-import Config
-import Database
-import Constants
-import Models
-import Utils
-from persiantools.digits import fa_to_en as FaToEN
-import App
+import bleach
+import bcrypt
+from werkzeug.utils import secure_filename
+import config
+import database
+import constants
+import models
+import utils
+import persiantools.digits
+import app
 
 AdminBlueprint = Blueprint(
     "Admin", __name__, url_prefix="/Admin", template_folder="Admin"
 )
 
 
-@App.FlaskApp.route("/UploadsGallery/<filename>")
+@app.FlaskApp.route("/UploadsGallery/<filename>")
 def UploadedGalleryImage(filename):
-    return SendFromDirectory(Constants.Path.GalleryDir, filename)
+    return send_from_directory(constants.Path.GalleryDir, filename)
 
 
 def GetAdminPersonas():
-    return [Member["Name"] for Member in Constants.CommitteeMembersData] + [
+    return [Member["Name"] for Member in constants.CommitteeMembersData] + [
         "Website Dev",
         "Admin",
     ]
 
 
-@App.FlaskApp.route("/AdminLogin", methods=["GET", "POST"])
+@app.FlaskApp.route("/AdminLogin", methods=["GET", "PosT"])
 def AdminLogin():
-    if Request.method == "POST":
-        App.CSRF_Protector.protect()
-        if BCrypt.checkpw(
-            Request.form["Password"].encode("utf-8"),
-            Config.AdminPasswordHash.encode("utf-8"),
+    if request.method == "PosT":
+        app.CSRF_Protector.protect()
+        if bcrypt.checkpw(
+            request.form["Password"].encode("utf-8"),
+            config.AdminPasswordHash.encode("utf-8"),
         ):
             session["AdminLoggedIn"] = True
-            Flash("ورود به پنل مدیریت با موفقیت انجام شد.", "Success")
-            return ReDirect(URLFor("AdminDashboard"))
+            flash("ورود به پنل مدیریت با موفقیت انجام شد.", "Success")
+            return redirect(url_for("AdminDashboard"))
         else:
-            Flash("رمز عبور ادمین نامعتبر است.", "Error")
+            flash("رمز عبور ادمین نامعتبر است.", "Error")
 
-    return RenderTemplate(Constants.AdminHTMLNamesData["AdminLogin"])
+    return render_template(constants.AdminHTMLNamesData["AdminLogin"])
 
 
-@App.FlaskApp.route("/Admin/GetChatHistory/<int:ClientID>")
-@App.AdminRequired
+@app.FlaskApp.route("/Admin/GetChatHistory/<int:ClientID>")
+@app.AdminRequired
 def GetChatHistory(ClientID):
-    with Database.get_db_session() as db:
-        return Jsonify(
+    with database.get_db_session() as db:
+        return jsonify(
             {
                 "Messages": [
                     {
@@ -73,148 +75,148 @@ def GetChatHistory(ClientID):
                         "Timestamp": Message.Timestamp.isoformat(),
                         "Sender": Message.Sender,
                     }
-                    for Message in Database.GetChatHistoryByClientID(db, ClientID)
+                    for Message in database.GetChatHistoryByClientID(db, ClientID)
                 ]
             }
         )
 
 
-@App.FlaskApp.route("/API/GetChatClients")
-@App.AdminRequired
+@app.FlaskApp.route("/API/GetChatClients")
+@app.AdminRequired
 def ApiGetChatClients():
-    with Database.get_db_session() as db:
+    with database.get_db_session() as db:
         ClientList = [
             {"ID": c.ClientID, "Email": c.Email}
-            for c in Database.GetAllActiveClients(db)
+            for c in database.GetAllActiveClients(db)
         ]
-    return Jsonify(ClientList)
+    return jsonify(ClientList)
 
 
-@App.FlaskApp.route("/Admin/Chat/<int:ClientID>")
-@App.AdminRequired
+@app.FlaskApp.route("/Admin/Chat/<int:ClientID>")
+@app.AdminRequired
 def AdminChat(ClientID):
-    with Database.get_db_session() as DbSession:
-        Client = Database.GetClientBy(DbSession, "ClientID", ClientID)
-    if not Client or Client.Status != Models.EntityStatus.Active:
-        Flash("کاربر مورد نظر یافت نشد یا غیرفعال است.", "Error")
-        return ReDirect(URLFor("AdminSelectChat"))
-    return RenderTemplate(
-        Constants.AdminHTMLNamesData["AdminChat"],
+    with database.get_db_session() as DbSession:
+        Client = database.GetClientBy(DbSession, "ClientID", ClientID)
+    if not Client or Client.Status != models.EntityStatus.Active:
+        flash("کاربر مورد نظر یافت نشد یا غیرفعال است.", "Error")
+        return redirect(url_for("AdminSelectChat"))
+    return render_template(
+        constants.AdminHTMLNamesData["AdminChat"],
         Client=Client,
         Personas=GetAdminPersonas(),
     )
 
 
-@App.FlaskApp.route("/Admin/AddTeam/<int:ClientID>", methods=["POST"])
-@App.AdminRequired
+@app.FlaskApp.route("/Admin/AddTeam/<int:ClientID>", methods=["PosT"])
+@app.AdminRequired
 def AdminAddTeam(ClientID):
-    TeamName = Bleach.clean(Request.form.get("TeamName", "").strip())
+    TeamName = bleach.clean(request.form.get("TeamName", "").strip())
 
     if not TeamName:
-        Flash("نام تیم نمی‌تواند خالی باشد.", "Error")
-        return ReDirect(URLFor("AdminManageClient", ClientID=ClientID))
+        flash("نام تیم نمی‌تواند خالی باشد.", "Error")
+        return redirect(url_for("AdminManageClient", ClientID=ClientID))
 
-    with Database.get_db_session() as DbSession:
+    with database.get_db_session() as DbSession:
         try:
-            NewTeam = Models.Team(
+            NewTeam = models.Team(
                 ClientID=ClientID,
                 TeamName=TeamName,
-                TeamRegistrationDate=Datetime.datetime.now(Datetime.timezone.utc),
+                TeamRegistrationDate=datetime.datetime.now(datetime.timezone.utc),
             )
             DbSession.add(NewTeam)
             DbSession.commit()
-            Flash(f"تیم «{TeamName}» با موفقیت برای این کاربر ساخته شد.", "Success")
+            flash(f"تیم «{TeamName}» با موفقیت برای این کاربر ساخته شد.", "Success")
         except exc.IntegrityError:
             DbSession.rollback()
-            Flash(
+            flash(
                 "تیمی با این نام از قبل در سیستم وجود دارد. لطفا نام دیگری انتخاب کنید.",
                 "Error",
             )
 
-    return ReDirect(URLFor("AdminManageClient", ClientID=ClientID))
+    return redirect(url_for("AdminManageClient", ClientID=ClientID))
 
 
-@App.FlaskApp.route("/Admin/Chat/Select")
-@App.AdminRequired
+@app.FlaskApp.route("/Admin/Chat/Select")
+@app.AdminRequired
 def AdminSelectChat():
-    with Database.get_db_session() as DbSession:
+    with database.get_db_session() as DbSession:
         ClientsQuery = (
             DbSession.query(
-                Models.Client.client_id,
-                Models.Client.Email,
-                func.count(Models.ChatMessage.MessageID).label("UnreadCount"),
-                func.max(Models.ChatMessage.Timestamp).label("LastMessageTimestamp"),
+                models.Client.client_id,
+                models.Client.Email,
+                func.count(models.ChatMessage.MessageID).label("UnreadCount"),
+                func.max(models.ChatMessage.Timestamp).label("LastMessageTimestamp"),
             )
             .join(
-                Models.ChatMessage,
-                Models.Client.client_id == Models.ChatMessage.ClientID,
+                models.ChatMessage,
+                models.Client.client_id == models.ChatMessage.ClientID,
             )
-            .filter(Models.ChatMessage.Sender.notin_(GetAdminPersonas()))
-            .group_by(Models.Client.client_id)
-            .order_by(func.max(Models.ChatMessage.Timestamp).desc())
+            .filter(models.ChatMessage.Sender.notin_(GetAdminPersonas()))
+            .group_by(models.Client.client_id)
+            .order_by(func.max(models.ChatMessage.Timestamp).desc())
         )
 
-    return RenderTemplate(
-        Constants.AdminHTMLNamesData["AdminChatList"], Clients=ClientsQuery.all()
+    return render_template(
+        constants.AdminHTMLNamesData["AdminChatList"], Clients=ClientsQuery.all()
     )
 
 
-@App.FlaskApp.route("/Admin/UpdatePaymentStatus/<int:TeamID>", methods=["POST"])
-@App.AdminActionRequired
+@app.FlaskApp.route("/Admin/UpdatePaymentStatus/<int:TeamID>", methods=["PosT"])
+@app.AdminActionRequired
 def AdminUpdatePaymentStatus(TeamID):
     try:
-        NewStatus = Models.PaymentStatus(Request.form.get("NewStatus"))
+        NewStatus = models.PaymentStatus(request.form.get("NewStatus"))
     except ValueError:
-        Flash("وضعیت ارسالی نامعتبر است.", "Error")
-        return ReDirect(URLFor("AdminManageTeams"))
+        flash("وضعیت ارسالی نامعتبر است.", "Error")
+        return redirect(url_for("AdminManageTeams"))
 
-    with Database.get_db_session() as DbSession:
+    with database.get_db_session() as DbSession:
         LatestPayment = (
-            DbSession.query(Models.Payment)
-            .filter(Models.Payment.TeamID == TeamID)
-            .order_by(Models.Payment.UploadDate.desc())
+            DbSession.query(models.Payment)
+            .filter(models.Payment.TeamID == TeamID)
+            .order_by(models.Payment.UploadDate.desc())
             .first()
         )
 
         if not LatestPayment:
-            Flash("هیچ پرداختی برای این تیم یافت نشد.", "Error")
-            return ReDirect(URLFor("AdminManageTeams"))
+            flash("هیچ پرداختی برای این تیم یافت نشد.", "Error")
+            return redirect(url_for("AdminManageTeams"))
 
         try:
             LatestPayment.Status = NewStatus
             DbSession.commit()
-            Flash(
+            flash(
                 f"وضعیت آخرین پرداخت تیم به '{NewStatus.value}' تغییر یافت.", "Success"
             )
 
         except Exception as Error:
             DbSession.rollback()
-            App.FlaskApp.logger.error(
+            app.FlaskApp.logger.error(
                 f"Error updating payment status for Team {TeamID}: {Error}"
             )
-            Flash("خطایی در هنگام به‌روزرسانی وضعیت پرداخت رخ داد.", "Error")
+            flash("خطایی در هنگام به‌روزرسانی وضعیت پرداخت رخ داد.", "Error")
 
-    return ReDirect(URLFor("AdminManageTeams"))
+    return redirect(url_for("AdminManageTeams"))
 
 
-@App.FlaskApp.route("/Admin/DeleteTeam/<int:TeamID>", methods=["POST"])
-@App.AdminActionRequired
+@app.FlaskApp.route("/Admin/DeleteTeam/<int:TeamID>", methods=["PosT"])
+@app.AdminActionRequired
 def AdminDeleteTeam(TeamID):
-    with Database.get_db_session() as DbSession:
+    with database.get_db_session() as DbSession:
         try:
             Team = (
-                DbSession.query(Models.Team)
-                .filter(Models.Team.TeamID == TeamID)
+                DbSession.query(models.Team)
+                .filter(models.Team.TeamID == TeamID)
                 .first()
             )
             if not Team:
-                Abort(404)
+                abort(404)
 
-            Team.Status = Models.EntityStatus.Inactive
+            Team.Status = models.EntityStatus.Inactive
             for Member in Team.Members:
-                Member.Status = Models.EntityStatus.Withdrawn  # Status is white
+                Member.Status = models.EntityStatus.Withdrawn  # Status is white
 
-            Database.LogAction(
+            database.LogAction(
                 DbSession,
                 Team.ClientID,
                 f"Admin archived Team '{Team.TeamName}' (ID: {TeamID}) as withdrawn.",
@@ -222,41 +224,41 @@ def AdminDeleteTeam(TeamID):
             )
 
             DbSession.commit()
-            Flash(
+            flash(
                 f"تیم «{Team.TeamName}» با موفقیت به عنوان منصرف شده آرشیو شد.",
                 "Success",
             )
 
         except Exception as Error:
             DbSession.rollback()
-            App.FlaskApp.logger.error(
+            app.FlaskApp.logger.error(
                 f"Error in AdminDeleteTeam for Team {TeamID}: {Error}"
             )
-            Flash("خطایی در هنگام آرشیو تیم رخ داد.", "Error")
+            flash("خطایی در هنگام آرشیو تیم رخ داد.", "Error")
 
-    return ReDirect(URLFor("AdminManageClient", ClientID=Team.ClientID))
+    return redirect(url_for("AdminManageClient", ClientID=Team.ClientID))
 
 
-@App.FlaskApp.route(
-    "/Admin/Team/<int:TeamID>/DeleteMember/<int:MemberID>", methods=["POST"]
+@app.FlaskApp.route(
+    "/Admin/Team/<int:TeamID>/DeleteMember/<int:MemberID>", methods=["PosT"]
 )
-@App.AdminActionRequired
+@app.AdminActionRequired
 def AdminDeleteMember(TeamID, MemberID):
-    with Database.get_db_session() as DbSession:
+    with database.get_db_session() as DbSession:
         Member = (
-            DbSession.query(Models.Member)
-            .options(joinedload(Models.Member.Team))
-            .filter(Models.Member.MemberID == MemberID, Models.Member.TeamID == TeamID)
+            DbSession.query(models.Member)
+            .options(joinedload(models.Member.Team))
+            .filter(models.Member.MemberID == MemberID, models.Member.TeamID == TeamID)
             .first()
         )
 
         if not Member:
-            Flash("عضو مورد نظر یافت نشد.", "Error")
-            return ReDirect(URLFor("AdminEditTeam", TeamID=TeamID))
+            flash("عضو مورد نظر یافت نشد.", "Error")
+            return redirect(url_for("AdminEditTeam", TeamID=TeamID))
 
-        Member.Status = Models.EntityStatus.Withdrawn
+        Member.Status = models.EntityStatus.Withdrawn
 
-        Database.LogAction(
+        database.LogAction(
             DbSession,
             Member.Team.ClientID,  # ClientID is white
             f"Admin marked member '{Member.Name}' as resigned from Team ID {TeamID}.",
@@ -264,177 +266,177 @@ def AdminDeleteMember(TeamID, MemberID):
         )
 
         DbSession.commit()
-        Utils.UpdateTeamStats(DbSession, TeamID)
+        utils.UpdateTeamStats(DbSession, TeamID)
 
-        Flash("عضو با موفقیت به عنوان منصرف شده علامت‌گذاری و آرشیو شد.", "Success")
+        flash("عضو با موفقیت به عنوان منصرف شده علامت‌گذاری و آرشیو شد.", "Success")
 
-    return ReDirect(URLFor("AdminEditTeam", TeamID=TeamID))
+    return redirect(url_for("AdminEditTeam", TeamID=TeamID))
 
 
-@App.FlaskApp.route("/Admin/ManageNews", methods=["GET", "POST"])
-@App.AdminRequired
+@app.FlaskApp.route("/Admin/ManageNews", methods=["GET", "PosT"])
+@app.AdminRequired
 def AdminManageNews():
-    with Database.get_db_session() as DbSession:
-        if Request.method == "POST":
-            TemplatePath = Request.form.get("TemplatePath", "").strip()
-            TitleString = Bleach.clean(Request.form.get("Title", "").strip())
-            ContentString = Bleach.clean(Request.form.get("Content", "").strip())
-            ImageFile = Request.files.get("Image")
+    with database.get_db_session() as DbSession:
+        if request.method == "PosT":
+            TemplatePath = request.form.get("TemplatePath", "").strip()
+            TitleString = bleach.clean(request.form.get("Title", "").strip())
+            ContentString = bleach.clean(request.form.get("Content", "").strip())
+            ImageFile = request.files.get("Image")
 
             if not TitleString or not ContentString:
-                Flash("عنوان و محتوای خبر نمی‌توانند خالی باشند.", "Error")
-                return ReDirect(URLFor("AdminManageNews"))
+                flash("عنوان و محتوای خبر نمی‌توانند خالی باشند.", "Error")
+                return redirect(url_for("AdminManageNews"))
 
             ExistingNews = (
-                DbSession.query(Models.News)
+                DbSession.query(models.News)
                 .filter(
-                    func.lower(Models.News.Title) == func.lower(TitleString)
+                    func.lower(models.News.Title) == func.lower(TitleString)
                 )  # both lowers are white
                 .first()
             )
             if ExistingNews:
-                Flash("خبری با این عنوان از قبل وجود دارد.", "Error")
-                return ReDirect(URLFor("AdminManageNews"))
+                flash("خبری با این عنوان از قبل وجود دارد.", "Error")
+                return redirect(url_for("AdminManageNews"))
 
-            NewArticle = Models.News(
+            NewArticle = models.News(
                 Title=TitleString,
                 Content=ContentString,
-                PublishDate=Datetime.datetime.now(Datetime.timezone.utc),
+                PublishDate=datetime.datetime.now(datetime.timezone.utc),
                 TemplatePath=TemplatePath,
             )
 
             if ImageFile and ImageFile.filename:
                 ImageFile.stream.seek(0)
-                if not Utils.IsFileAllowed(ImageFile.stream):
-                    Flash("خطا: فرمت فایل تصویر مجاز نیست.", "Error")
-                    return ReDirect(URLFor("AdminManageNews"))
+                if not utils.IsFileAllowed(ImageFile.stream):
+                    flash("خطا: فرمت فایل تصویر مجاز نیست.", "Error")
+                    return redirect(url_for("AdminManageNews"))
                 ImageFile.stream.seek(0)
 
-                OriginalFileName = SecureFileName(ImageFile.filename)
+                OriginalFileName = secure_filename(ImageFile.filename)
                 Extension = OriginalFileName.rsplit(".", 1)[-1].lower()
-                NewArticle.ImagePath = f"{UUID.uuid4()}.{Extension}"
+                NewArticle.ImagePath = f"{uuid.uuid4()}.{Extension}"
 
                 try:
                     ImageFile.save(
-                        OS.path.join(
-                            App.FlaskApp.config["UPLOAD_FOLDER_NEWS"],
-                            f"{UUID.uuid4()}.{Extension}",
+                        os.path.join(
+                            app.FlaskApp.config["UPLOAD_FOLDER_NEWS"],
+                            f"{uuid.uuid4()}.{Extension}",
                         )
                     )
                 except Exception as Error:
-                    App.FlaskApp.logger.error(f"News image save failed: {Error}")
-                    Flash("خطا در ذخیره تصویر خبر.", "Error")
-                    return ReDirect(URLFor("AdminManageNews"))
+                    app.FlaskApp.logger.error(f"News image save failed: {Error}")
+                    flash("خطا در ذخیره تصویر خبر.", "Error")
+                    return redirect(url_for("AdminManageNews"))
 
             try:
                 DbSession.add(NewArticle)
                 DbSession.commit()
-                Flash("خبر جدید با موفقیت اضافه شد.", "Success")
+                flash("خبر جدید با موفقیت اضافه شد.", "Success")
             except exc.IntegrityError:
                 DbSession.rollback()
-                Flash("خبری با این عنوان از قبل وجود دارد.", "Error")
+                flash("خبری با این عنوان از قبل وجود دارد.", "Error")
             except Exception as Error:
                 DbSession.rollback()
-                App.FlaskApp.logger.error(f"Error creating news: {Error}")
-                Flash("خطایی در ایجاد خبر رخ داد.", "Error")
+                app.FlaskApp.logger.error(f"Error creating news: {Error}")
+                flash("خطایی در ایجاد خبر رخ داد.", "Error")
 
-            return ReDirect(URLFor("AdminManageNews"))
+            return redirect(url_for("AdminManageNews"))
 
-        ArticlesList = Database.GetAllArticles(DbSession)
-    return RenderTemplate(
-        Constants.AdminHTMLNamesData["AdminManageNews"], Articles=ArticlesList
+        ArticlesList = database.GetAllArticles(DbSession)
+    return render_template(
+        constants.AdminHTMLNamesData["AdminManageNews"], Articles=ArticlesList
     )
 
 
-@App.FlaskApp.route("/Admin/EditNews/<int:ArticleID>", methods=["GET", "POST"])
-@App.AdminRequired
+@app.FlaskApp.route("/Admin/EditNews/<int:ArticleID>", methods=["GET", "PosT"])
+@app.AdminRequired
 def AdminEditNews(ArticleID):
-    with Database.get_db_session() as DbSession:
-        Article = Database.GetArticleByID(DbSession, ArticleID)
+    with database.get_db_session() as DbSession:
+        Article = database.GetArticleByID(DbSession, ArticleID)
         if not Article:
-            Abort(404)
+            abort(404)
 
-        if Request.method == "POST":
+        if request.method == "PosT":
             try:
-                Article.TemplatePath = Request.form.get("TemplatePath", "").strip()
-                NewTitle = Bleach.clean(Request.form.get("Title", "").strip())
-                Article.Content = Bleach.clean(Request.form.get("Content", "").strip())
+                Article.TemplatePath = request.form.get("TemplatePath", "").strip()
+                NewTitle = bleach.clean(request.form.get("Title", "").strip())
+                Article.Content = bleach.clean(request.form.get("Content", "").strip())
 
                 if NewTitle != Article.Title:
                     ExistingNews = (
-                        DbSession.query(Models.News)
+                        DbSession.query(models.News)
                         .filter(
-                            func.lower(Models.News.Title)
+                            func.lower(models.News.Title)
                             == func.lower(NewTitle),  # both lowers is white
-                            Models.News.NewsID != ArticleID,
+                            models.News.NewsID != ArticleID,
                         )
                         .first()
                     )
                     if ExistingNews:
-                        Flash("خبری با این عنوان از قبل وجود دارد.", "Error")
-                        return ReDirect(URLFor("AdminEditNews", ArticleID=ArticleID))
+                        flash("خبری با این عنوان از قبل وجود دارد.", "Error")
+                        return redirect(url_for("AdminEditNews", ArticleID=ArticleID))
                     Article.Title = NewTitle
 
-                ImageFile = Request.files.get("Image")
+                ImageFile = request.files.get("Image")
                 if ImageFile and ImageFile.filename:
                     ImageFile.stream.seek(0)
-                    if not Utils.IsFileAllowed(ImageFile.stream):
-                        Flash("خطا: فرمت فایل تصویر مجاز نیست.", "Error")
-                        return ReDirect(URLFor("AdminEditNews", ArticleID=ArticleID))
+                    if not utils.IsFileAllowed(ImageFile.stream):
+                        flash("خطا: فرمت فایل تصویر مجاز نیست.", "Error")
+                        return redirect(url_for("AdminEditNews", ArticleID=ArticleID))
                     ImageFile.stream.seek(0)
 
-                    OriginalFileName = SecureFileName(ImageFile.filename)
+                    OriginalFileName = secure_filename(ImageFile.filename)
                     Extension = OriginalFileName.rsplit(".", 1)[-1].lower()
-                    SecureName = f"{UUID.uuid4()}.{Extension}"
-                    NewImagePath = OS.path.join(
-                        App.FlaskApp.config["UPLOAD_FOLDER_NEWS"], SecureName
+                    SecureName = f"{uuid.uuid4()}.{Extension}"
+                    NewImagePath = os.path.join(
+                        app.FlaskApp.config["UPLOAD_FOLDER_NEWS"], SecureName
                     )
 
                     OldImagePath = None
                     if Article.ImagePath:
-                        OldImagePath = OS.path.join(
-                            App.FlaskApp.config["UPLOAD_FOLDER_NEWS"],
+                        OldImagePath = os.path.join(
+                            app.FlaskApp.config["UPLOAD_FOLDER_NEWS"],
                             Article.ImagePath,
                         )
 
                     ImageFile.save(NewImagePath)
 
-                    if OldImagePath and OS.path.exists(OldImagePath):
-                        OS.remove(OldImagePath)
+                    if OldImagePath and os.path.exists(OldImagePath):
+                        os.remove(OldImagePath)
 
                     Article.ImagePath = SecureName
 
                 DbSession.commit()
-                Flash("خبر با موفقیت ویرایش شد.", "Success")
-                return ReDirect(URLFor("AdminManageNews"))
+                flash("خبر با موفقیت ویرایش شد.", "Success")
+                return redirect(url_for("AdminManageNews"))
 
             except Exception as Error:
                 DbSession.rollback()
-                App.FlaskApp.logger.error(f"Error editing news {ArticleID}: {Error}")
-                Flash("خطایی در ویرایش خبر رخ داد.", "Error")
-                return ReDirect(URLFor("AdminEditNews", ArticleID=ArticleID))
+                app.FlaskApp.logger.error(f"Error editing news {ArticleID}: {Error}")
+                flash("خطایی در ویرایش خبر رخ داد.", "Error")
+                return redirect(url_for("AdminEditNews", ArticleID=ArticleID))
 
-    return RenderTemplate(
-        Constants.AdminHTMLNamesData["AdminEditNews"], Article=Article
+    return render_template(
+        constants.AdminHTMLNamesData["AdminEditNews"], Article=Article
     )
 
 
-@App.FlaskApp.route("/Admin/ManageClient/<int:ClientID>")
-@App.AdminRequired
+@app.FlaskApp.route("/Admin/ManageClient/<int:ClientID>")
+@app.AdminRequired
 def AdminManageClient(ClientID):
-    with Database.get_db_session() as DbSession:
+    with database.get_db_session() as DbSession:
         Client = (
-            DbSession.query(Models.Client)
-            .filter(Models.Client.client_id == ClientID)
+            DbSession.query(models.Client)
+            .filter(models.Client.client_id == ClientID)
             .first()
         )
         if not Client:
-            Abort(404, "کاربر مورد نظر یافت نشد.")
+            abort(404, "کاربر مورد نظر یافت نشد.")
 
         LatestPaymentSubquery = (
-            select(Models.Payment.Status)
-            .where(Models.Payment.TeamID == Models.Team.TeamID)
-            .order_by(Models.Payment.UploadDate.desc())
+            select(models.Payment.Status)
+            .where(models.Payment.TeamID == models.Team.TeamID)
+            .order_by(models.Payment.UploadDate.desc())
             .limit(1)
             .scalar_subquery()
             .label("LastPaymentStatus")
@@ -442,21 +444,21 @@ def AdminManageClient(ClientID):
 
         TeamsQuery = (
             DbSession.query(
-                Models.Team,
-                func.count(Models.Member.MemberID).label("TotalMembers"),
+                models.Team,
+                func.count(models.Member.MemberID).label("TotalMembers"),
                 LatestPaymentSubquery,
             )
             .outerjoin(
-                Models.Member,
-                (Models.Member.TeamID == Models.Team.TeamID)
-                & (Models.Member.Status == Models.EntityStatus.Active),
+                models.Member,
+                (models.Member.TeamID == models.Team.TeamID)
+                & (models.Member.Status == models.EntityStatus.Active),
             )
             .filter(
-                Models.Team.ClientID == ClientID,
-                Models.Team.Status == Models.EntityStatus.Active,
+                models.Team.ClientID == ClientID,
+                models.Team.Status == models.EntityStatus.Active,
             )
-            .group_by(Models.Team.TeamID)
-            .order_by(Models.Team.TeamRegistrationDate.desc())
+            .group_by(models.Team.TeamID)
+            .order_by(models.Team.TeamRegistrationDate.desc())
             .all()
         )
 
@@ -466,172 +468,172 @@ def AdminManageClient(ClientID):
             Team.LastPaymentStatus = LastPaymentStatus  # LastPaymentStatus is white
             TeamsWithStatus.append(Team)
 
-    return RenderTemplate(
-        Constants.AdminHTMLNamesData["AdminManageClient"],
+    return render_template(
+        constants.AdminHTMLNamesData["AdminManageClient"],
         Client=Client,
         Teams=TeamsWithStatus,
     )
 
 
-@App.FlaskApp.route("/Admin/ManageTeams")
-@App.AdminRequired
+@app.FlaskApp.route("/Admin/ManageTeams")
+@app.AdminRequired
 def AdminManageTeams():
-    with Database.get_db_session() as DbSession:
+    with database.get_db_session() as DbSession:
         Subquery = (
-            select(Models.Payment.Status)
-            .where(Models.Payment.TeamID == Models.Team.TeamID)
-            .order_by(Models.Payment.UploadDate.desc())
+            select(models.Payment.Status)
+            .where(models.Payment.TeamID == models.Team.TeamID)
+            .order_by(models.Payment.UploadDate.desc())
             .limit(1)
             .scalar_subquery()
         )
 
         AllTeams = (
             DbSession.query(
-                Models.Team.TeamID,
-                Models.Team.TeamName,
-                Models.Client.Email.label("ClientEmail"),
-                func.count(Models.Member.MemberID).label("MemberCount"),
+                models.Team.TeamID,
+                models.Team.TeamName,
+                models.Client.Email.label("ClientEmail"),
+                func.count(models.Member.MemberID).label("MemberCount"),
                 Subquery.label("LastPaymentStatus"),
             )
-            .join(Models.Client, Models.Team.ClientID == Models.Client.client_id)
+            .join(models.Client, models.Team.ClientID == models.Client.client_id)
             .outerjoin(
-                Models.Member,
-                (Models.Team.TeamID == Models.Member.TeamID)
-                & (Models.Member.Status == Models.EntityStatus.Active),
+                models.Member,
+                (models.Team.TeamID == models.Member.TeamID)
+                & (models.Member.Status == models.EntityStatus.Active),
             )
-            .filter(Models.Team.Status == Models.EntityStatus.Active)
-            .group_by(Models.Team.TeamID)
-            .order_by(Models.Team.TeamRegistrationDate.desc())
+            .filter(models.Team.Status == models.EntityStatus.Active)
+            .group_by(models.Team.TeamID)
+            .order_by(models.Team.TeamRegistrationDate.desc())
             .all()
         )
 
-    return RenderTemplate(
-        Constants.AdminHTMLNamesData["AdminManageTeams"], Teams=AllTeams
+    return render_template(
+        constants.AdminHTMLNamesData["AdminManageTeams"], Teams=AllTeams
     )
 
 
-@App.FlaskApp.route("/Admin/Team/<int:TeamID>/AddMember", methods=["GET", "POST"])
-@App.AdminRequired
+@app.FlaskApp.route("/Admin/Team/<int:TeamID>/AddMember", methods=["GET", "PosT"])
+@app.AdminRequired
 def AdminAddMember(TeamID):
-    with Database.get_db_session() as DbSession:
-        Team = Database.GetTeamByID(DbSession, TeamID)
+    with database.get_db_session() as DbSession:
+        Team = database.GetTeamByID(DbSession, TeamID)
         if not Team:
-            Abort(404)
+            abort(404)
 
-        if Request.method == "POST":
-            App.CSRF_Protector.protect()
+        if request.method == "PosT":
+            app.CSRF_Protector.protect()
             try:
-                Success, Message = Utils.InternalAddMember(
-                    DbSession, TeamID, Request.form
+                Success, Message = utils.InternalAddMember(
+                    DbSession, TeamID, request.form
                 )
                 if Success:
-                    if Database.CheckIfTeamIsPaid(DbSession, TeamID):
+                    if database.CheckIfTeamIsPaid(DbSession, TeamID):
                         Team.UnpaidMembersCount += 1
-                        Flash(
+                        flash(
                             "عضو جدید با موفقیت اضافه شد. (توجه: تیم پرداخت‌شده است، هزینه عضو جدید باید محاسبه شود).",
                             "Warning",
                         )
                     else:
-                        Flash("عضو جدید با موفقیت توسط ادمین اضافه شد.", "Success")
+                        flash("عضو جدید با موفقیت توسط ادمین اضافه شد.", "Success")
 
                     DbSession.commit()
-                    Utils.UpdateTeamStats(DbSession, TeamID)
-                    return ReDirect(URLFor("AdminEditTeam", TeamID=TeamID))
+                    utils.UpdateTeamStats(DbSession, TeamID)
+                    return redirect(url_for("AdminEditTeam", TeamID=TeamID))
                 else:
-                    Flash(Message, "Error")
+                    flash(Message, "Error")
             except Exception as Error:
                 DbSession.rollback()
-                App.FlaskApp.logger.error(
+                app.FlaskApp.logger.error(
                     f"Error in AdminAddMember for Team {TeamID}: {Error}"
                 )
-                Flash("خطایی در هنگام افزودن عضو رخ داد.", "Error")
+                flash("خطایی در هنگام افزودن عضو رخ داد.", "Error")
 
-    FormContext = Utils.GetFormContext()
-    return RenderTemplate(
-        Constants.AdminHTMLNamesData["AdminAddMember"], Team=Team, **FormContext
+    FormContext = utils.GetFormContext()
+    return render_template(
+        constants.AdminHTMLNamesData["AdminAddMember"], Team=Team, **FormContext
     )
 
 
-@App.FlaskApp.route("/Admin/EditTeam/<int:TeamID>", methods=["GET", "POST"])
-@App.AdminRequired
+@app.FlaskApp.route("/Admin/EditTeam/<int:TeamID>", methods=["GET", "PosT"])
+@app.AdminRequired
 def AdminEditTeam(TeamID):
-    with Database.get_db_session() as DbSession:
-        Team = DbSession.query(Models.Team).filter(Models.Team.TeamID == TeamID).first()
+    with database.get_db_session() as DbSession:
+        Team = DbSession.query(models.Team).filter(models.Team.TeamID == TeamID).first()
         if not Team:
-            Abort(404)
+            abort(404)
 
-        if Request.method == "POST":
+        if request.method == "PosT":
             try:
-                NewTeamName = Bleach.clean(Request.form.get("TeamName", "").strip())
-                LeagueOneID = Request.form.get("LeagueOneID")
-                LeagueTwoID = Request.form.get("LeagueTwoID")
+                NewTeamName = bleach.clean(request.form.get("TeamName", "").strip())
+                LeagueOneID = request.form.get("LeagueOneID")
+                LeagueTwoID = request.form.get("LeagueTwoID")
 
-                IsValid, ErrorMessage = Utils.IsValidTeamName(NewTeamName)
+                IsValid, ErrorMessage = utils.IsValidTeamName(NewTeamName)
                 if not IsValid:
-                    Flash(ErrorMessage, "Error")
+                    flash(ErrorMessage, "Error")
                 else:
                     ExistingTeam = (
-                        DbSession.query(Models.Team)
+                        DbSession.query(models.Team)
                         .filter(
-                            func.lower(Models.Team.TeamName) == func.lower(NewTeamName),
-                            Models.Team.TeamID != TeamID,
+                            func.lower(models.Team.TeamName) == func.lower(NewTeamName),
+                            models.Team.TeamID != TeamID,
                         )
                         .first()
                     )
                     if ExistingTeam:
-                        Flash("تیمی با این نام از قبل وجود دارد.", "Error")
+                        flash("تیمی با این نام از قبل وجود دارد.", "Error")
                     else:
                         Team.TeamName = NewTeamName
                         Team.LeagueOneID = int(LeagueOneID) if LeagueOneID else None
                         Team.LeagueTwoID = int(LeagueTwoID) if LeagueTwoID else None
                         DbSession.commit()
-                        Utils.UpdateTeamStats(DbSession, TeamID)
-                        Flash("جزئیات تیم با موفقیت ذخیره شد", "Success")
+                        utils.UpdateTeamStats(DbSession, TeamID)
+                        flash("جزئیات تیم با موفقیت ذخیره شد", "Success")
 
             except Exception as Error:
                 DbSession.rollback()
-                App.FlaskApp.logger.error(
+                app.FlaskApp.logger.error(
                     f"Error in AdminEditTeam for Team {TeamID}: {Error}"
                 )
-                Flash("خطایی در هنگام ویرایش تیم رخ داد.", "Error")
+                flash("خطایی در هنگام ویرایش تیم رخ داد.", "Error")
 
-            return ReDirect(URLFor("AdminEditTeam", TeamID=TeamID))
+            return redirect(url_for("AdminEditTeam", TeamID=TeamID))
 
         Members = (
-            DbSession.query(Models.Member).filter(Models.Member.TeamID == TeamID).all()
+            DbSession.query(models.Member).filter(models.Member.TeamID == TeamID).all()
         )
-        FormContext = Utils.GetFormContext()
+        FormContext = utils.GetFormContext()
 
-    return RenderTemplate(
-        Constants.AdminHTMLNamesData["AdminEditTeam"],
+    return render_template(
+        constants.AdminHTMLNamesData["AdminEditTeam"],
         Team=Team,
         Members=Members,
         **FormContext,
     )
 
 
-@App.FlaskApp.route(
-    "/Admin/Team/<int:TeamID>/EditMember/<int:MemberID>", methods=["POST"]
+@app.FlaskApp.route(
+    "/Admin/Team/<int:TeamID>/EditMember/<int:MemberID>", methods=["PosT"]
 )
-@App.AdminRequired
+@app.AdminRequired
 def AdminEditMember(TeamID, MemberID):
-    with Database.get_db_session() as DbSession:
-        UpdatedMemberData, Error = Utils.CreateMemberFromFormData(
-            DbSession, Request.form
+    with database.get_db_session() as DbSession:
+        UpdatedMemberData, Error = utils.CreateMemberFromFormData(
+            DbSession, request.form
         )
         if Error:
-            Flash(Error, "Error")
+            flash(Error, "Error")
         else:
-            if UpdatedMemberData["Role"] == Models.MemberRole.Leader:
-                if Database.HasExistingLeader(
+            if UpdatedMemberData["Role"] == models.MemberRole.Leader:
+                if database.HasExistingLeader(
                     DbSession, TeamID, MemberIDToExclude=MemberID
                 ):
-                    Flash("خطا: این تیم از قبل یک سرپرست دارد.", "Error")
-                    return ReDirect(URLFor("AdminEditTeam", TeamID=TeamID))
+                    flash("خطا: این تیم از قبل یک سرپرست دارد.", "Error")
+                    return redirect(url_for("AdminEditTeam", TeamID=TeamID))
 
             MemberToUpdate = (
-                DbSession.query(Models.Member)
-                .filter(Models.Member.MemberID == MemberID)
+                DbSession.query(models.Member)
+                .filter(models.Member.MemberID == MemberID)
                 .first()
             )
             if MemberToUpdate:
@@ -642,34 +644,34 @@ def AdminEditMember(TeamID, MemberID):
                 MemberToUpdate.CityID = UpdatedMemberData["CityID"]
 
                 DbSession.commit()
-                Utils.UpdateTeamStats(DbSession, TeamID)
-                Flash("اطلاعات عضو با موفقیت ویرایش شد.", "Success")
+                utils.UpdateTeamStats(DbSession, TeamID)
+                flash("اطلاعات عضو با موفقیت ویرایش شد.", "Success")
             else:
-                Flash("عضو مورد نظر برای ویرایش یافت نشد.", "Error")
+                flash("عضو مورد نظر برای ویرایش یافت نشد.", "Error")
 
-    return ReDirect(URLFor("AdminEditTeam", TeamID=TeamID))
+    return redirect(url_for("AdminEditTeam", TeamID=TeamID))
 
 
-@App.FlaskApp.route("/Admin/ManageClients")
-@App.AdminRequired
+@app.FlaskApp.route("/Admin/ManageClients")
+@app.AdminRequired
 def AdminClientsList():
-    with Database.get_db_session() as DbSession:
+    with database.get_db_session() as DbSession:
 
-        return RenderTemplate(
-            Constants.AdminHTMLNamesData["AdminClientsList"],
+        return render_template(
+            constants.AdminHTMLNamesData["AdminClientsList"],
             Clients=(
-                DbSession.query(Models.Client)
-                .filter(Models.Client.Status == Models.EntityStatus.Active)
-                .order_by(Models.Client.RegistrationDate.desc())
+                DbSession.query(models.Client)
+                .filter(models.Client.Status == models.EntityStatus.Active)
+                .order_by(models.Client.RegistrationDate.desc())
                 .limit(10)
-                .offset((Request.args.get("page", 1, type=int) - 1) * 10)
+                .offset((request.args.get("page", 1, type=int) - 1) * 10)
                 .all()
             ),
-            CurrentPage=Request.args.get("page", 1, type=int),
-            TotalPagesCount=Math.ceil(
+            CurrentPage=request.args.get("page", 1, type=int),
+            TotalPagesCount=math.ceil(
                 (
-                    DbSession.query(func.count(Models.Client.client_id))
-                    .filter(Models.Client.Status == Models.EntityStatus.Active)
+                    DbSession.query(func.count(models.Client.client_id))
+                    .filter(models.Client.Status == models.EntityStatus.Active)
                     .scalar()
                 )
                 / 10
@@ -677,160 +679,160 @@ def AdminClientsList():
         )
 
 
-@App.FlaskApp.route("/Admin/AddClient", methods=["POST"])
-@App.AdminRequired
+@app.FlaskApp.route("/Admin/AddClient", methods=["PosT"])
+@app.AdminRequired
 def AdminAddClient():
-    Email = Request.form.get("Email", "").strip().lower()
-    Phone = Request.form.get("PhoneNumber", "").strip()
-    Password = Request.form.get("Password", "")
+    Email = request.form.get("Email", "").strip().lower()
+    Phone = request.form.get("PhoneNumber", "").strip()
+    Password = request.form.get("Password", "")
 
     if not all(
         [
-            Utils.IsValidEmail(Request.form.get("Email", "").strip().lower()),
-            Utils.IsValidIranianPhone(Phone),
+            utils.IsValidEmail(request.form.get("Email", "").strip().lower()),
+            utils.IsValidIranianPhone(Phone),
             Password,
         ]
     ):
-        Flash("لطفا تمام فیلدها را با مقادیر معتبر پر کنید.", "Error")
-        return ReDirect(URLFor("AdminClientsList"))
+        flash("لطفا تمام فیلدها را با مقادیر معتبر پر کنید.", "Error")
+        return redirect(url_for("AdminClientsList"))
 
-    with Database.get_db_session() as DbSession:
+    with database.get_db_session() as DbSession:
         try:
             if (
-                DbSession.query(Models.Client)
+                DbSession.query(models.Client)
                 .filter(
-                    (Models.Client.Email == Email)
-                    | (Models.Client.PhoneNumber == Phone)
+                    (models.Client.Email == Email)
+                    | (models.Client.PhoneNumber == Phone)
                 )
                 .first()
             ):
-                Flash("کاربری با این ایمیل یا شماره تلفن از قبل وجود دارد.", "Error")
-                return ReDirect(URLFor("AdminClientsList"))
+                flash("کاربری با این ایمیل یا شماره تلفن از قبل وجود دارد.", "Error")
+                return redirect(url_for("AdminClientsList"))
 
             DbSession.add(
-                Models.Client(
+                models.Client(
                     PhoneNumber=Phone,
                     Email=Email,
-                    Password=BCrypt.hashpw(
-                        Password.encode("utf-8"), BCrypt.gensalt()
+                    Password=bcrypt.hashpw(
+                        Password.encode("utf-8"), bcrypt.gensalt()
                     ).decode("utf-8"),
-                    RegistrationDate=Datetime.datetime.now(Datetime.timezone.utc),
+                    RegistrationDate=datetime.datetime.now(datetime.timezone.utc),
                     IsPhoneVerified=1,
                 )
             )
             DbSession.commit()
-            Flash("کاربر جدید با موفقیت اضافه شد.", "Success")
+            flash("کاربر جدید با موفقیت اضافه شد.", "Success")
 
         except exc.IntegrityError:
             DbSession.rollback()
-            Flash("کاربری با این ایمیل یا شماره تلفن از قبل وجود دارد.", "Error")
+            flash("کاربری با این ایمیل یا شماره تلفن از قبل وجود دارد.", "Error")
         except Exception as Error:
             DbSession.rollback()
-            App.FlaskApp.logger.error(f"Error adding Client: {Error}")
-            Flash("خطایی در ایجاد کاربر رخ داد.", "Error")
+            app.FlaskApp.logger.error(f"Error adding Client: {Error}")
+            flash("خطایی در ایجاد کاربر رخ داد.", "Error")
 
-    return ReDirect(URLFor("AdminClientsList"))
+    return redirect(url_for("AdminClientsList"))
 
 
-@App.FlaskApp.route("/Admin/EditClient/<int:ClientID>", methods=["POST"])
-@App.AdminRequired
+@app.FlaskApp.route("/Admin/EditClient/<int:ClientID>", methods=["PosT"])
+@app.AdminRequired
 def AdminEditClient(ClientID):
-    with Database.get_db_session() as DbSession:
+    with database.get_db_session() as DbSession:
         try:
-            CleanData, Errors = Database.ValidateClientUpdate(
+            CleanData, Errors = database.ValidateClientUpdate(
                 DbSession,
                 ClientID,
-                Request.form,
-                Utils.IsValidPassword,
-                Utils.IsValidEmail,
-                Utils.IsValidIranianPhone,
-                FaToEN,
+                request.form,
+                utils.IsValidPassword,
+                utils.IsValidEmail,
+                utils.IsValidIranianPhone,
+                persiantools.digits.fa_to_en,
             )
 
             if Errors:
                 for Error in Errors:
-                    Flash(Error, "Error")
+                    flash(Error, "Error")
             else:
                 if CleanData:
-                    Database.UpdateClientDetails(DbSession, ClientID, CleanData)
-                    Flash("اطلاعات کاربر با موفقیت ویرایش شد.", "Success")
+                    database.UpdateClientDetails(DbSession, ClientID, CleanData)
+                    flash("اطلاعات کاربر با موفقیت ویرایش شد.", "Success")
                 else:
-                    Flash("هیچ تغییری برای ذخیره وجود نداشت.", "Info")
+                    flash("هیچ تغییری برای ذخیره وجود نداشت.", "Info")
 
         except Exception as Error:
             DbSession.rollback()
-            App.FlaskApp.logger.error(f"Error editing Client {ClientID}: {Error}")
-            Flash("خطایی در هنگام ویرایش اطلاعات کاربر رخ داد.", "Error")
+            app.FlaskApp.logger.error(f"Error editing Client {ClientID}: {Error}")
+            flash("خطایی در هنگام ویرایش اطلاعات کاربر رخ داد.", "Error")
 
-    return ReDirect(URLFor("AdminManageClient", ClientID=ClientID))
+    return redirect(url_for("AdminManageClient", ClientID=ClientID))
 
 
-@App.FlaskApp.route("/Admin/DeleteClient/<int:ClientID>", methods=["POST"])
-@App.AdminRequired
+@app.FlaskApp.route("/Admin/DeleteClient/<int:ClientID>", methods=["PosT"])
+@app.AdminRequired
 def AdminDeleteClient(ClientID):
-    with Database.get_db_session() as DbSession:
+    with database.get_db_session() as DbSession:
         Client = (
-            DbSession.query(Models.Client)
-            .filter(Models.Client.client_id == ClientID)
+            DbSession.query(models.Client)
+            .filter(models.Client.client_id == ClientID)
             .first()
         )
         if Client:
-            Client.Status = Models.EntityStatus.Inactive
+            Client.Status = models.EntityStatus.Inactive
 
             for Team in (
-                DbSession.query(Models.Team)
+                DbSession.query(models.Team)
                 .filter(
-                    Models.Team.ClientID == ClientID,
-                    Models.Team.Status == Models.EntityStatus.Active,
+                    models.Team.ClientID == ClientID,
+                    models.Team.Status == models.EntityStatus.Active,
                 )
                 .all()
             ):
-                Team.Status = Models.EntityStatus.Inactive
+                Team.Status = models.EntityStatus.Inactive
 
             DbSession.commit()
-            Flash("کاربر و تمام تیم‌های مرتبط با او با موفقیت غیرفعال شدند.", "Success")
+            flash("کاربر و تمام تیم‌های مرتبط با او با موفقیت غیرفعال شدند.", "Success")
         else:
-            Flash("کاربر یافت نشد.", "Error")
-    return ReDirect(URLFor("AdminClientsList"))
+            flash("کاربر یافت نشد.", "Error")
+    return redirect(url_for("AdminClientsList"))
 
 
-@App.FlaskApp.route("/AdminDashboard")
-@App.AdminRequired
+@app.FlaskApp.route("/AdminDashboard")
+@app.AdminRequired
 def AdminDashboard():
-    with Database.get_db_session() as DbSession:
+    with database.get_db_session() as DbSession:
         TotalClients = (
-            DbSession.query(func.count(Models.Client.client_id))
-            .filter(Models.Client.Status == Models.EntityStatus.Active)
+            DbSession.query(func.count(models.Client.client_id))
+            .filter(models.Client.Status == models.EntityStatus.Active)
             .scalar()
         )
         TotalTeams = (
-            DbSession.query(func.count(Models.Team.TeamID))
-            .filter(Models.Team.Status == Models.EntityStatus.Active)
+            DbSession.query(func.count(models.Team.TeamID))
+            .filter(models.Team.Status == models.EntityStatus.Active)
             .scalar()
         )
         ApprovedTeams = (
-            DbSession.query(func.count(func.distinct(Models.Payment.TeamID)))
-            .filter(Models.Payment.Status == Models.PaymentStatus.Approved)
+            DbSession.query(func.count(func.distinct(models.Payment.TeamID)))
+            .filter(models.Payment.Status == models.PaymentStatus.Approved)
             .scalar()
         )
         TotalMembers = (
-            DbSession.query(func.count(Models.Member.MemberID))
-            .filter(Models.Member.Status == Models.EntityStatus.Active)
+            DbSession.query(func.count(models.Member.MemberID))
+            .filter(models.Member.Status == models.EntityStatus.Active)
             .scalar()
         )
         TotalLeaders = (
-            DbSession.query(func.count(Models.Member.MemberID))
+            DbSession.query(func.count(models.Member.MemberID))
             .filter(
-                Models.Member.Status == Models.EntityStatus.Active,
-                Models.Member.Role == Models.MemberRole.Leader,
+                models.Member.Status == models.EntityStatus.Active,
+                models.Member.Role == models.MemberRole.Leader,
             )
             .scalar()
         )
         TotalCoaches = (
-            DbSession.query(func.count(Models.Member.MemberID))
+            DbSession.query(func.count(models.Member.MemberID))
             .filter(
-                Models.Member.Status == Models.EntityStatus.Active,
-                Models.Member.Role == Models.MemberRole.Coach,
+                models.Member.Status == models.EntityStatus.Active,
+                models.Member.Role == models.MemberRole.Coach,
             )
             .scalar()
         )
@@ -845,85 +847,85 @@ def AdminDashboard():
         }
 
         PendingPayments = (
-            DbSession.query(Models.Payment, Models.Team.TeamName, Models.Client.Email)
-            .join(Models.Team, Models.Payment.TeamID == Models.Team.TeamID)
-            .join(Models.Client, Models.Payment.ClientID == Models.Client.client_id)
-            .filter(Models.Payment.Status == Models.PaymentStatus.Pending)
-            .order_by(Models.Payment.UploadDate.asc())
+            DbSession.query(models.Payment, models.Team.TeamName, models.Client.Email)
+            .join(models.Team, models.Payment.TeamID == models.Team.TeamID)
+            .join(models.Client, models.Payment.ClientID == models.Client.client_id)
+            .filter(models.Payment.Status == models.PaymentStatus.Pending)
+            .order_by(models.Payment.UploadDate.asc())
             .all()
         )
 
-    return RenderTemplate(
-        Constants.AdminHTMLNamesData["AdminDashboard"],
+    return render_template(
+        constants.AdminHTMLNamesData["AdminDashboard"],
         Stats=Stats,
         PendingPayments=PendingPayments,
     )
 
 
-@App.FlaskApp.route("/Admin/ManagePayment/<int:PaymentID>/<Action>", methods=["POST"])
-@App.AdminRequired
+@app.FlaskApp.route("/Admin/ManagePayment/<int:PaymentID>/<Action>", methods=["PosT"])
+@app.AdminRequired
 def AdminManagePayment(PaymentID, Action):
     if Action not in ["approve", "reject"]:
-        Abort(400)
+        abort(400)
 
-    with Database.get_db_session() as DbSession:
+    with database.get_db_session() as db_session:
         try:
             Payment = (
-                DbSession.query(Models.Payment)
+                db_session.query(models.Payment)
                 .filter(
-                    Models.Payment.PaymentID == PaymentID,
-                    Models.Payment.Status == Models.PaymentStatus.Pending,
+                    models.Payment.PaymentID == PaymentID,
+                    models.Payment.Status == models.PaymentStatus.Pending,
                 )
                 .first()
             )
 
             if not Payment:
-                Flash("این پرداخت قبلاً پردازش شده یا یافت نشد.", "Warning")
-                return ReDirect(URLFor("AdminDashboard"))
+                flash("این پرداخت قبلاً پردازش شده یا یافت نشد.", "Warning")
+                return redirect(url_for("AdminDashboard"))
 
             if Action == "approve":
-                Payment.Status = Models.PaymentStatus.Approved
-                DbSession.query(Models.Member).filter(
-                    Models.Member.TeamID == Payment.TeamID,
-                    Models.Member.Status != Models.EntityStatus.Active,
+                Payment.Status = models.PaymentStatus.Approved
+                db_session.query(models.Member).filter(
+                    models.Member.TeamID == Payment.TeamID,
+                    models.Member.Status != models.EntityStatus.Active,
                 ).update(
-                    {"Status": Models.EntityStatus.Active}, synchronize_session=False
+                    {"Status": models.EntityStatus.Active}, synchronize_session=False
                 )
 
                 MembersJustPaidFor = Payment.MembersPaidFor
-                DbSession.query(Models.Team).filter(
-                    Models.Team.TeamID == Payment.TeamID
+                db_session.query(models.Team).filter(
+                    models.Team.TeamID == Payment.TeamID
                 ).update(
                     {
-                        "UnpaidMembersCount": Models.Team.UnpaidMembersCount
+                        "UnpaidMembersCount": models.Team.UnpaidMembersCount
                         - MembersJustPaidFor
                     },
                     synchronize_session=False,
                 )
 
-                Database.LogAction(
-                    DbSession,
+                database.LogAction(
+                    db_session,
                     Payment.ClientID,
                     f"Admin Approved Payment ID {PaymentID} for Team ID {Payment.TeamID}.",
                     IsAdminAction=True,
                 )
-                Flash("پرداخت با موفقیت تایید شد و اعضای تیم فعال شدند.", "Success")
+                flash("پرداخت با موفقیت تایید شد و اعضای تیم فعال شدند.", "Success")
 
             elif Action == "reject":
-                Payment.Status = Models.PaymentStatus.Rejected
-                Database.LogAction(
-                    DbSession,
+                Payment.Status = models.PaymentStatus.Rejected
+                database.LogAction(
+                    db_session,
                     Payment.ClientID,
                     f"Admin Rejected Payment ID {PaymentID} for Team ID {Payment.TeamID}.",
                     IsAdminAction=True,
                 )
-                Flash("پرداخت رد شد.", "Warning")
+                flash("پرداخت رد شد.", "Warning")
 
-            DbSession.commit()
+            db_session.commit()
 
         except Exception as Error:
-            DbSession.rollback()
-            App.FlaskApp.logger.error(f"Error processing Payment {PaymentID}: {Error}")
-            Flash("خطایی در پردازش پرداخت رخ داد. عملیات لغو شد.", "Error")
+            db_session.rollback()
+            app.FlaskApp.logger.error(f"Error processing Payment {PaymentID}: {Error}")
+            flash("خطایی در پردازش پرداخت رخ داد. عملیات لغو شد.", "Error")
 
-    return ReDirect(URLFor("AdminDashboard"))
+    return redirect(url_for("AdminDashboard"))
