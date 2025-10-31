@@ -46,199 +46,199 @@ class EntityStatus(LabeledEnum):
     """Status of entities."""
     ACTIVE = ("active", "فعال")
     INACTIVE = ("inactive", "غیرفعال")
-    WITH_DRAWN = ("with_drawn", "منصرف شده")
+    WITHDRAWN = ("withdrawn", "منصرف شده")
 
 
 class MemberRole(LabeledEnum):
     """Role of a team member."""
-    LEADER = ("Leader", "سرپرست")
-    COACH = ("Coach", "مربی")
-    MEMBER = ("Member", "عضو")
+    LEADER = ("leader", "سرپرست")
+    COACH = ("coach", "مربی")
+    MEMBER = ("member", "عضو")
 
 
 class PaymentStatus(LabeledEnum):
     """Status of a payment."""
-    PENDING = ("Pending", "در حال بررسی")
-    APPROVED = ("Approved", "تایید شده")
-    REJECTED = ("Rejected", "رد شده")
+    PENDING = ("pending", "در حال بررسی")
+    APPROVED = ("approved", "تایید شده")
+    REJECTED = ("rejected", "رد شده")
 
 
 class Client(Base):
     """Client / account owner."""
-    __tablename__ = "Clients"
+    __tablename__ = "clients"
 
-    ClientID = Column(Integer, primary_key=True, autoincrement=True)
-    PhoneNumber = Column(String, nullable=False, unique=True)
-    Email = Column(String, nullable=False, unique=True)
-    Password = Column(String, nullable=False)
-    RegistrationDate = Column(
+    client_id = Column(Integer, primary_key=True, autoincrement=True)
+    phone_number = Column(String, nullable=False, unique=True)
+    email = Column(String, nullable=False, unique=True)
+    password = Column(String, nullable=False)
+    registration_date = Column(
         DateTime,
         default=lambda: datetime.datetime.now(datetime.timezone.utc),
     )
-    EducationLevel = Column(String)
-    Status: Mapped[EntityStatus] = mapped_column(
+    education_level = Column(String)
+    status: Mapped[EntityStatus] = mapped_column(
         sql_alchemy_enum(EntityStatus),
         default=EntityStatus.ACTIVE,
         nullable=False,
     )
-    IsPhoneVerified = Column(Boolean, default=False)
-    PhoneVerificationCode = Column(String)
-    VerificationCodeTimestamp = Column(DateTime)
+    is_phone_verified = Column(Boolean, default=False)
+    phone_verification_code = Column(String)
+    verification_code_timestamp = Column(DateTime)
 
-    Teams = relationship(
+    teams = relationship(
         "Team",
-        back_populates="Client",
+        back_populates="client",
         cascade="all, delete-orphan",
     )
-    Payments = relationship(
+    payments = relationship(
         "Payment",
-        back_populates="Client",
+        back_populates="client",
         cascade="all, delete-orphan",
     )
-    HistoryLogs = relationship(
+    history_logs = relationship(
         "HistoryLog",
-        back_populates="Client",
+        back_populates="client",
         cascade="all, delete-orphan",
     )
-    ChatMessages = relationship(
+    chat_messages = relationship(
         "ChatMessage",
-        back_populates="Client",
+        back_populates="client",
         cascade="all, delete-orphan",
     )
-    TeamDocuments = relationship(
+    team_documents = relationship(
         "TeamDocument",
-        back_populates="Client",
+        back_populates="client",
         cascade="all, delete-orphan",
     )
 
 
 class League(Base):
     """League / competition tier."""
-    __tablename__ = "Leagues"
+    __tablename__ = "leagues"
 
-    LeagueID = Column(Integer, primary_key=True, autoincrement=True)
-    Name = Column(String, nullable=False, unique=True)
-    Icon = Column(String)
-    Description = Column(TEXT)
+    league_id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, nullable=False, unique=True)
+    icon = Column(String)
+    description = Column(TEXT)
 
 
 class Team(Base):
     """Team entity."""
-    __tablename__ = "Teams"
+    __tablename__ = "teams"
 
-    TeamID = Column(Integer, primary_key=True, autoincrement=True)
-    ClientID = Column(
+    team_id = Column(Integer, primary_key=True, autoincrement=True)
+    client_id = Column(
         Integer,
-        ForeignKey("Clients.ClientID"),
+        ForeignKey("clients.client_id"),
         nullable=False,
         index=True,
     )
-    TeamName = Column(String, nullable=False, unique=True)
-    LeagueOneID = Column(Integer, ForeignKey("Leagues.LeagueID"))
-    LeagueTwoID = Column(Integer, ForeignKey("Leagues.LeagueID"))
-    TeamRegistrationDate = Column(
+    team_name = Column(String, nullable=False, unique=True)
+    league_one_id = Column(Integer, ForeignKey("leagues.league_id"))
+    league_two_id = Column(Integer, ForeignKey("leagues.league_id"))
+    team_registration_date = Column(
         DateTime,
         default=lambda: datetime.datetime.now(datetime.timezone.utc),
     )
-    AverageAge = Column(Integer, default=0)
-    AverageProvinces = Column(String)
-    Status: Mapped[EntityStatus] = mapped_column(
+    average_age = Column(Integer, default=0)
+    average_provinces = Column(String)
+    status: Mapped[EntityStatus] = mapped_column(
         sql_alchemy_enum(EntityStatus),
         default=EntityStatus.ACTIVE,
         nullable=False,
     )
-    UnpaidMembersCount = Column(Integer, default=0)
+    unpaid_members_count = Column(Integer, default=0)
 
-    Client = relationship("Client", back_populates="Teams")
-    Members = relationship(
+    client = relationship("Client", back_populates="teams")
+    members = relationship(
         "Member",
-        back_populates="Team",
+        back_populates="team",
         cascade="all, delete-orphan",
     )
-    Payments = relationship(
+    payments = relationship(
         "Payment",
-        back_populates="Team",
+        back_populates="team",
         cascade="all, delete-orphan",
     )
-    Documents = relationship(
+    documents = relationship(
         "TeamDocument",
-        back_populates="Team",
+        back_populates="team",
         cascade="all, delete-orphan",
     )
-    LeagueOne = relationship(
+    league_one = relationship(
         "League",
-        foreign_keys=[LeagueOneID],
+        foreign_keys=[league_one_id],
     )
-    LeagueTwo = relationship(
+    league_two = relationship(
         "League",
-        foreign_keys=[LeagueTwoID],
+        foreign_keys=[league_two_id],
     )
 
 
 class Payment(Base):
     """Payments uploaded by clients for teams."""
-    __tablename__ = "Payments"
+    __tablename__ = "payments"
 
-    PaymentID = Column(Integer, primary_key=True, autoincrement=True)
-    TeamID = Column(
+    payment_id = Column(Integer, primary_key=True, autoincrement=True)
+    team_id = Column(
         Integer,
-        ForeignKey("Teams.TeamID"),
+        ForeignKey("teams.team_id"),
         nullable=False,
         index=True,
     )
-    ClientID = Column(
+    client_id = Column(
         Integer,
-        ForeignKey("Clients.ClientID"),
+        ForeignKey("clients.client_id"),
         nullable=False,
         index=True,
     )
-    Amount = Column(Integer, nullable=False)
-    MembersPaidFor = Column(Integer, nullable=False)
-    ReceiptFilename = Column(String, nullable=False)
-    UploadDate = Column(DateTime, nullable=False)
-    Status: Mapped[PaymentStatus] = mapped_column(
+    amount = Column(Integer, nullable=False)
+    members_paid_for = Column(Integer, nullable=False)
+    receipt_filename = Column(String, nullable=False)
+    upload_date = Column(DateTime, nullable=False)
+    status: Mapped[PaymentStatus] = mapped_column(
         sql_alchemy_enum(PaymentStatus),
         nullable=False,
         default=PaymentStatus.PENDING,
     )
 
-    Team = relationship("Team", back_populates="Payments")
-    Client = relationship("Client", back_populates="Payments")
+    team = relationship("Team", back_populates="payments")
+    client = relationship("Client", back_populates="payments")
 
 
 class Member(Base):
     """Team member record."""
-    __tablename__ = "Members"
+    __tablename__ = "members"
 
-    MemberID = Column(Integer, primary_key=True, autoincrement=True)
-    TeamID = Column(
+    member_id = Column(Integer, primary_key=True, autoincrement=True)
+    team_id = Column(
         Integer,
-        ForeignKey("Teams.TeamID"),
+        ForeignKey("teams.team_id"),
         nullable=False,
         index=True,
     )
-    Name = Column(String, nullable=False)
-    BirthDate = Column(Date, nullable=False)
-    NationalID = Column(String, unique=True, nullable=False)
-    Role: Mapped[MemberRole] = mapped_column(
+    name = Column(String, nullable=False)
+    birth_date = Column(Date, nullable=False)
+    national_id = Column(String, unique=True, nullable=False)
+    role: Mapped[MemberRole] = mapped_column(
         sql_alchemy_enum(MemberRole),
         nullable=False,
     )
-    Status: Mapped[EntityStatus] = mapped_column(
+    status: Mapped[EntityStatus] = mapped_column(
         sql_alchemy_enum(EntityStatus),
         default=EntityStatus.ACTIVE,
         nullable=False,
     )
-    CityID = Column(Integer, ForeignKey("Cities.CityID"), nullable=False)
+    city_id = Column(Integer, ForeignKey("cities.city_id"), nullable=False)
 
-    Team = relationship("Team", back_populates="Members")
-    City = relationship("City", back_populates="Members")
+    team = relationship("Team", back_populates="members")
+    city = relationship("City", back_populates="members")
 
-    _leader_where = f"Role = '{MemberRole.LEADER.value}'"
+    _leader_where = f"role = '{MemberRole.LEADER.value}'"
     __table_args__ = (
         Index(
             "one_leader_per_team_idx",
-            "TeamID",
+            "team_id",
             unique=True,
             sqlite_where=_leader_where,
         ),
@@ -247,120 +247,120 @@ class Member(Base):
 
 class Province(Base):
     """Province containing cities."""
-    __tablename__ = "Provinces"
+    __tablename__ = "provinces"
 
-    ProvinceID = Column(Integer, primary_key=True, autoincrement=True)
-    Name = Column(String, nullable=False, unique=True)
-    Cities = relationship(
+    province_id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, nullable=False, unique=True)
+    cities = relationship(
         "City",
-        back_populates="Province",
+        back_populates="province",
         cascade="all, delete-orphan",
     )
 
 
 class City(Base):
     """City inside a province."""
-    __tablename__ = "Cities"
+    __tablename__ = "cities"
 
-    CityID = Column(Integer, primary_key=True, autoincrement=True)
-    ProvinceID = Column(
+    city_id = Column(Integer, primary_key=True, autoincrement=True)
+    province_id = Column(
         Integer,
-        ForeignKey("Provinces.ProvinceID"),
+        ForeignKey("provinces.province_id"),
         nullable=False,
         index=True,
     )
-    Name = Column(String, nullable=False)
-    Province = relationship("Province", back_populates="Cities")
-    Members = relationship("Member", back_populates="City")
+    name = Column(String, nullable=False)
+    province = relationship("Province", back_populates="cities")
+    members = relationship("Member", back_populates="city")
 
 
 class LoginAttempt(Base):
     """Login attempt audit."""
-    __tablename__ = "LoginAttempts"
+    __tablename__ = "login_attempts"
 
-    AttemptID = Column(Integer, primary_key=True, autoincrement=True)
-    Identifier = Column(String, nullable=False, index=True)
-    IPAddress = Column(String, nullable=False)
-    Timestamp = Column(DateTime, nullable=False, index=True)
-    IsSuccess = Column(Boolean, nullable=False)
+    attempt_id = Column(Integer, primary_key=True, autoincrement=True)
+    identifier = Column(String, nullable=False, index=True)
+    ip_address = Column(String, nullable=False)
+    timestamp = Column(DateTime, nullable=False, index=True)
+    is_success = Column(Boolean, nullable=False)
 
 
 class News(Base):
     """Published news articles."""
-    __tablename__ = "News"
+    __tablename__ = "news"
 
-    NewsID = Column(Integer, primary_key=True, autoincrement=True)
-    Title = Column(TEXT, nullable=False)
-    Content = Column(TEXT, nullable=False)
-    ImagePath = Column(String)
-    PublishDate = Column(DateTime, nullable=False, index=True)
-    TemplatePath = Column(String)
+    news_id = Column(Integer, primary_key=True, autoincrement=True)
+    title = Column(TEXT, nullable=False)
+    content = Column(TEXT, nullable=False)
+    image_path = Column(String)
+    publish_date = Column(DateTime, nullable=False, index=True)
+    template_path = Column(String)
 
 
 class HistoryLog(Base):
     """History log entries."""
-    __tablename__ = "HistoryLog"
+    __tablename__ = "history_logs"
 
-    LogID = Column(Integer, primary_key=True, autoincrement=True)
-    ClientID = Column(
+    log_id = Column(Integer, primary_key=True, autoincrement=True)
+    client_id = Column(
         Integer,
-        ForeignKey("Clients.ClientID"),
+        ForeignKey("clients.client_id"),
         nullable=False,
         index=True,
     )
-    AdminInvolved = Column(Boolean, default=False)
-    Action = Column(TEXT, nullable=False)
-    Timestamp = Column(DateTime, nullable=False)
-    Client = relationship("Client", back_populates="HistoryLogs")
+    admin_involved = Column(Boolean, default=False)
+    action = Column(TEXT, nullable=False)
+    timestamp = Column(DateTime, nullable=False)
+    client = relationship("Client", back_populates="history_logs")
 
 
 class PasswordReset(Base):
     """Password reset codes."""
-    __tablename__ = "PasswordResets"
+    __tablename__ = "password_resets"
 
-    ResetID = Column(Integer, primary_key=True, autoincrement=True)
-    Identifier = Column(String, nullable=False, index=True)
-    IdentifierType = Column(String, nullable=False)
-    Code = Column(String, nullable=False)
-    Timestamp = Column(DateTime, nullable=False, index=True)
+    reset_id = Column(Integer, primary_key=True, autoincrement=True)
+    identifier = Column(String, nullable=False, index=True)
+    identifier_type = Column(String, nullable=False)
+    code = Column(String, nullable=False)
+    timestamp = Column(DateTime, nullable=False, index=True)
 
 
 class ChatMessage(Base):
     """Chat messages stored per client."""
-    __tablename__ = "ChatMessages"
+    __tablename__ = "chat_messages"
 
-    MessageID = Column(Integer, primary_key=True, autoincrement=True)
-    ClientID = Column(
+    message_id = Column(Integer, primary_key=True, autoincrement=True)
+    client_id = Column(
         Integer,
-        ForeignKey("Clients.ClientID"),
+        ForeignKey("clients.client_id"),
         nullable=False,
         index=True,
     )
-    MessageText = Column(TEXT, nullable=False)
-    Timestamp = Column(DateTime, nullable=False, index=True)
-    Sender = Column(String, nullable=False)
-    Client = relationship("Client", back_populates="ChatMessages")
+    message_text = Column(TEXT, nullable=False)
+    timestamp = Column(DateTime, nullable=False, index=True)
+    sender = Column(String, nullable=False)
+    client = relationship("Client", back_populates="chat_messages")
 
 
 class TeamDocument(Base):
     """Uploaded documents related to teams."""
-    __tablename__ = "TeamDocuments"
+    __tablename__ = "team_documents"
 
-    DocumentID = Column(Integer, primary_key=True, autoincrement=True)
-    TeamID = Column(
+    document_id = Column(Integer, primary_key=True, autoincrement=True)
+    team_id = Column(
         Integer,
-        ForeignKey("Teams.TeamID"),
+        ForeignKey("teams.team_id"),
         nullable=False,
         index=True,
     )
-    ClientID = Column(
+    client_id = Column(
         Integer,
-        ForeignKey("Clients.ClientID"),
+        ForeignKey("clients.client_id"),
         nullable=False,
         index=True,
     )
-    FileName = Column(String, nullable=False)
-    FileType = Column(String, nullable=False)
-    UploadDate = Column(DateTime, nullable=False)
-    Team = relationship("Team", back_populates="Documents")
-    Client = relationship("Client", back_populates="TeamDocuments")
+    file_name = Column(String, nullable=False)
+    file_type = Column(String, nullable=False)
+    upload_date = Column(DateTime, nullable=False)
+    team = relationship("Team", back_populates="documents")
+    client = relationship("Client", back_populates="team_documents")

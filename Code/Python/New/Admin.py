@@ -140,17 +140,17 @@ def AdminSelectChat():
     with Database.get_db_session() as DbSession:
         ClientsQuery = (
             DbSession.query(
-                Models.Client.ClientID,
+                Models.Client.client_id,
                 Models.Client.Email,
                 func.count(Models.ChatMessage.MessageID).label("UnreadCount"),
                 func.max(Models.ChatMessage.Timestamp).label("LastMessageTimestamp"),
             )
             .join(
                 Models.ChatMessage,
-                Models.Client.ClientID == Models.ChatMessage.ClientID,
+                Models.Client.client_id == Models.ChatMessage.ClientID,
             )
             .filter(Models.ChatMessage.Sender.notin_(GetAdminPersonas()))
-            .group_by(Models.Client.ClientID)
+            .group_by(Models.Client.client_id)
             .order_by(func.max(Models.ChatMessage.Timestamp).desc())
         )
 
@@ -425,7 +425,7 @@ def AdminManageClient(ClientID):
     with Database.get_db_session() as DbSession:
         Client = (
             DbSession.query(Models.Client)
-            .filter(Models.Client.ClientID == ClientID)
+            .filter(Models.Client.client_id == ClientID)
             .first()
         )
         if not Client:
@@ -493,7 +493,7 @@ def AdminManageTeams():
                 func.count(Models.Member.MemberID).label("MemberCount"),
                 Subquery.label("LastPaymentStatus"),
             )
-            .join(Models.Client, Models.Team.ClientID == Models.Client.ClientID)
+            .join(Models.Client, Models.Team.ClientID == Models.Client.client_id)
             .outerjoin(
                 Models.Member,
                 (Models.Team.TeamID == Models.Member.TeamID)
@@ -668,7 +668,7 @@ def AdminClientsList():
             CurrentPage=Request.args.get("page", 1, type=int),
             TotalPagesCount=Math.ceil(
                 (
-                    DbSession.query(func.count(Models.Client.ClientID))
+                    DbSession.query(func.count(Models.Client.client_id))
                     .filter(Models.Client.Status == Models.EntityStatus.Active)
                     .scalar()
                 )
@@ -771,7 +771,7 @@ def AdminDeleteClient(ClientID):
     with Database.get_db_session() as DbSession:
         Client = (
             DbSession.query(Models.Client)
-            .filter(Models.Client.ClientID == ClientID)
+            .filter(Models.Client.client_id == ClientID)
             .first()
         )
         if Client:
@@ -799,7 +799,7 @@ def AdminDeleteClient(ClientID):
 def AdminDashboard():
     with Database.get_db_session() as DbSession:
         TotalClients = (
-            DbSession.query(func.count(Models.Client.ClientID))
+            DbSession.query(func.count(Models.Client.client_id))
             .filter(Models.Client.Status == Models.EntityStatus.Active)
             .scalar()
         )
@@ -847,7 +847,7 @@ def AdminDashboard():
         PendingPayments = (
             DbSession.query(Models.Payment, Models.Team.TeamName, Models.Client.Email)
             .join(Models.Team, Models.Payment.TeamID == Models.Team.TeamID)
-            .join(Models.Client, Models.Payment.ClientID == Models.Client.ClientID)
+            .join(Models.Client, Models.Payment.ClientID == Models.Client.client_id)
             .filter(Models.Payment.Status == Models.PaymentStatus.Pending)
             .order_by(Models.Payment.UploadDate.asc())
             .all()

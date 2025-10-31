@@ -92,7 +92,7 @@ def SignUp():
                     target=Utils.SendTemplatedSMSAsync,
                     args=(
                         App.FlaskApp,
-                        NewClient.ClientID,
+                        NewClient.client_id,
                         Config.MelliPayamak["TemplateID_Verification"],
                         VerificationCode,
                         Config.MelliPayamak,
@@ -100,7 +100,7 @@ def SignUp():
                 ).start()
 
                 return ReDirect(
-                    URLFor("Verify", Action="phone_signup", ClientID=NewClient.ClientID)
+                    URLFor("Verify", Action="phone_signup", ClientID=NewClient.client_id)
                 )
 
             except exc.IntegrityError:
@@ -131,7 +131,7 @@ def ResolveDataIssues():
             .options(
                 subqueryload(Models.Client.Teams).subqueryload(Models.Team.Members)
             )
-            .filter(Models.Client.ClientID == session.get("ClientIDForResolution"))
+            .filter(Models.Client.client_id == session.get("ClientIDForResolution"))
             .first()
         )
 
@@ -223,7 +223,7 @@ def SubmitDataResolution():
                 Client = (
                     DbSession.query(Models.Client)
                     .filter(
-                        Models.Client.ClientID == session.get("ClientIDForResolution")
+                        Models.Client.client_id == session.get("ClientIDForResolution")
                     )
                     .first()
                 )
@@ -1058,7 +1058,7 @@ def Verify():
             with Database.get_db_session() as DbSession:
                 Client = (
                     DbSession.query(Models.Client)
-                    .filter(Models.Client.ClientID == ClientID)
+                    .filter(Models.Client.client_id == ClientID)
                     .first()
                 )
                 if Client and Client.PhoneVerificationCode == Request.form.get("Code"):
@@ -1140,7 +1140,7 @@ def Verify():
         with Database.get_db_session() as DbSession:
             Client = (
                 DbSession.query(Models.Client)
-                .filter(Models.Client.ClientID == ClientID)
+                .filter(Models.Client.client_id == ClientID)
                 .first()
             )
             if Client and Client.VerificationCodeTimestamp:
@@ -1202,7 +1202,7 @@ def ResendCode():
         with Database.get_db_session() as DbSession:
             Client = (
                 DbSession.query(Models.Client)
-                .filter(Models.Client.ClientID == RequestData.get("ClientID"))
+                .filter(Models.Client.client_id == RequestData.get("ClientID"))
                 .first()
             )
             if not Client:
@@ -1481,7 +1481,7 @@ def ResendVerificationCode():
     with Database.get_db_session() as DbSession:
         Client = (
             DbSession.query(Models.Client)
-            .filter(Models.Client.ClientID == ClientID)
+            .filter(Models.Client.client_id == ClientID)
             .first()
         )
         if not Client:

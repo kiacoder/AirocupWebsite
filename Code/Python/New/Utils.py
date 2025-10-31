@@ -87,7 +87,7 @@ def SendTemplatedSMSAsync(
             with database.get_db_session() as db:
                 Client = (
                     db.query(Models.Client)
-                    .filter(Models.Client.ClientID == ClientID)
+                    .filter(Models.Client.client_id == ClientID)
                     .first()
                 )
                 if not Client:
@@ -199,7 +199,7 @@ def SendAsyncEmail(
             with get_db_session() as db:
                 Client = (
                     db.query(Models.Client)
-                    .filter(Models.Client.ClientID == ClientID)
+                    .filter(Models.Client.client_id == ClientID)
                     .first()
                 )
                 if not Client:
@@ -342,7 +342,7 @@ def _validate_member_for_resolution(Member: Models.Member, EducationLevel: str) 
 
 
 def CheckForDataCompletionIssues(db: Session, ClientID: int) -> Tuple[bool, dict]:
-    Client = db.query(Models.Client).filter(Models.Client.ClientID == ClientID).first()
+    Client = db.query(Models.Client).filter(Models.Client.client_id == ClientID).first()
     if not Client:
         return False, {}
 
@@ -406,7 +406,7 @@ def GetCurrentClient() -> Optional[Models.Client]:
             return (
                 db.query(Models.Client)
                 .filter(
-                    Models.Client.ClientID == ClientID,
+                    Models.Client.client_id == ClientID,
                     Models.Client.Status == Models.EntityStatus.Active,
                 )
                 .first()
