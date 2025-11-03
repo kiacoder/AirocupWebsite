@@ -1,49 +1,62 @@
-import os as OS
-import datetime as Datetime
+"containing various constants used throughout the Airocup application"
+# flake8: noqa: E501
+import os
+import datetime
+from typing import Dict, Optional, Tuple
+from better_profanity import profanity  # type: ignore
 
 
 class Path:
-    BaseDir = OS.path.dirname(OS.path.abspath(__file__))
-    RootDir = OS.path.abspath(OS.path.join(BaseDir, "..", ".."))
-    StaticDir = OS.path.join(RootDir, "Static")
-    CSSDir = OS.path.join(StaticDir, "CSS")
-    JSDir = OS.path.join(StaticDir, "JS")
-    TemplatesDir = OS.path.join(RootDir, "Code", "Templates")
-    AdminTemplatesDir = OS.path.join(TemplatesDir, "Admin")
-    ClientTemplatesDir = OS.path.join(TemplatesDir, "Client")
-    GlobalTemplatesDir = OS.path.join(TemplatesDir, "Global")
-    UploadsDir = OS.path.join(StaticDir, "Uploads")
-    ImagesDir = OS.path.join(StaticDir, "Images")
-    ReceiptsDir = OS.path.join(UploadsDir, "Receipts")
-    NewsDir = OS.path.join(UploadsDir, "News")
-    GalleryDir = OS.path.join(ImagesDir, "Gallery")
-    CommitteeDir = OS.path.join(ImagesDir, "Committee")
-    TechnicalCommitteeDir = OS.path.join(ImagesDir, "TechnicalCommittee")
-    DatabaseDir = OS.path.join(StaticDir, "DataBase")
-    DataBase = OS.path.join(DatabaseDir, "Airocup.db")
-    GuideLineDir = OS.path.join(DatabaseDir, "GuideLine", "Guideline.pdf")
+    "Define All Paths Of Files"
+
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    root_dir = os.path.abspath(os.path.join(base_dir, "..", ".."))
+    static_dir = os.path.join(root_dir, "Static")
+    css_dir = os.path.join(static_dir, "CSS")
+    js_dir = os.path.join(static_dir, "JS")
+    templates_dir = os.path.join(root_dir, "Code", "Templates")
+    admin_templates_dir = os.path.join(templates_dir, "Admin")
+    client_templates_dir = os.path.join(templates_dir, "Client")
+    global_templates_dir = os.path.join(templates_dir, "Global")
+
+    uploads_dir = os.path.join(static_dir, "Uploads")
+    images_dir = os.path.join(static_dir, "Images")
+    receipts_dir = os.path.join(uploads_dir, "Receipts")
+    news_dir = os.path.join(uploads_dir, "News")
+    gallery_dir = os.path.join(images_dir, "Gallery")
+    committee_dir = os.path.join(images_dir, "Committee")
+    technical_committee_dir = os.path.join(images_dir, "TechnicalCommittee")
+
+    database_dir = os.path.join(static_dir, "DataBase")
+    database = os.path.join(database_dir, "Airocup.db")
+    guideline_file = os.path.join(database_dir, "GuideLine", "Guideline.pdf")
 
     class URLs:
-        CSS_Style = "CSS/Style.css"
-        CSS_Admin = "CSS/Admin.css"
+        "Css And JS File Paths"
 
-        JS_Main = "JS/Main.js"
-        JS_Admin = "JS/Admin.js"
+        css_style = "CSS/Style.css"
+        css_admin = "CSS/Admin.css"
+        js_main = "JS/Main.js"
+        js_admin = "JS/Admin.js"
 
         class Images:
-            Logo = "Images/Logo/"
-            Gallery = "Images/Gallery/"
-            Committee = "Images/Committee/"
-            TechnicalCommittee = "Images/TechnicalCommittee/"
-            Poster = "Images/Poster/"
-            Sponsors = "Images/Logo/Sponsors/"
+            "Define Images Path"
+
+            logo = "Images/Logo/"
+            gallery = "Images/Gallery/"
+            committee = "Images/Committee/"
+            technical_committee = "Images/TechnicalCommittee/"
+            poster = "Images/Poster/"
+            sponsors = "Images/Logo/Sponsors/"
 
         class Files:
-            Poster = "Images/Poster/Poster.png"
-            GuideLine = "DataBase/GuideLine/Guideline.pdf"
-            SiteWebManifest = "site.webmanifest"
+            "Define Files Path"
 
-    SolidLogos = {
+            poster = "Images/Poster/Poster.png"
+            guideline = "DataBase/GuideLine/Guideline.pdf"
+            site_web_manifest = "site.webmanifest"
+
+    solid_logos = {
         "MainFest 512": "Images/Logo/Solid/Airocup Logo MainFest 512.png",
         "SolidPurpleGlowCrop": "Images/Logo/Solid/SPG Airocup Logo Crop.png",
         "SolidPurpleGlow": "Images/Logo/Solid/SPG Airocup Logo.png",
@@ -51,442 +64,357 @@ class Path:
         "SolidWhiteFavicon": "Images/Logo/Solid/SWF Airocup Logo.ico",
     }
 
-    TransparentLogos = {
+    transparent_logos = {
         "TransparentBlack": "Images/Logo/Transparent/TB Airocup Logo.png",
         "TransparentPurple": "Images/Logo/Transparent/TP Airocup Logo.png",
         "TransparentWhite": "Images/Logo/Transparent/TW Airocup Logo.png",
     }
 
-    SponsorsLogos = {
+    sponsors_logos = {
         "EducationMinistry": "Images/Logo/Sponsors/Amoozsh Parvarsh.png",
-        "InteriorMinistry": "Images/Logo/Sponsors/Ministry Of The Interior Of Iran.png",
-        "StudentResearchCenter": "Images/Logo/Sponsors/Student Research Center.png",
-        "StudentResearchCenterTehran": "Images/Logo/Sponsors/Student Research Center Tehran.png",
-        "ScienceMinistry": "Images/Logo/Sponsors/Ministry Of Science And Technology.png",
-        "EducationDepartmentTehran": "Images/Logo/Sponsors/Education Department Tehran.png",
+        "InteriorMinistry": (
+            "Images/Logo/Sponsors/Ministry Of The Interior Of Iran.png"
+        ),
+        "StudentResearchCenter": ("Images/Logo/Sponsors/Student Research Center.png"),
+        "StudentResearchCenterTehran": (
+            "Images/Logo/Sponsors/Student Research Center Tehran.png"
+        ),
+        "ScienceMinistry": (
+            "Images/Logo/Sponsors/Ministry Of Science And Technology.png"
+        ),
+        "EducationDepartmentTehran": (
+            "Images/Logo/Sponsors/Education Department Tehran.png"
+        ),
         "University": "Images/Logo/Sponsors/University Logo.png",
-        "WaterWaste": "Images/Logo/Sponsors/Water And Waste.png",
     }
 
 
-EducationLevels = {
-    "ابتدایی": {"grades": (1, 6), "ages": (6, 12)},
-    "متوسطه اول": {"grades": (7, 9), "ages": (13, 16)},
-    "متوسطه دوم": {"grades": (10, 12), "ages": (16, 18)},
-    "دانشجویی": {"grades": None, "ages": (19, 60)},
-    "آزاد": {"grades": None, "ages": (18, 65)},
-}
-
-AllowedEducation = set(EducationLevels.keys())
-
-
-class ForbiddenContent:  # todo
-    WORDS = {
-        "Admin",
-        "Administrator",
-        "mod",
-        "sex",
-        "boobs",
-        "penis",
-        "moderator",
-        "root",
-        "spam",
-        "free",
-        "money",
-        "win",
-        "idiot",
-        "stupid",
-        "fool",
-        "ادمین",
-        "مدیر",
-        "پشتیبان",
-        "رایگان",
-        "جایزه",
-        "برنده",
-        "احمق",
-        "نادان",
-        "ابله",
-    }
-
-
-class Event:
-    StartDate = "2024-12-01"
-    EndDate = "2024-12-05"
-    StageOne = "مجازی (لیگ ۲ ۳٬ ۴٬ ۵٬)"
-    StageTwo = "حضوری در دانشگاه علم و صنعت، بهمن‌ماه ۱۴۰۴"
-    RegistrationDeadline = "مهلت تا ۳۰ آبان"
-
-class Location:
-    Address = "دانشگاه علم و صنعت ایران، تهران، ایران"
-    GoogleMapURL = "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3238.3677491108874!2d51.50446664881416!3d35.74176489774458!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3f8e032fd49e3809%3A0x470e49fef97ae303!2sIran%20University%20of%20Science%20and%20Technology%20(IUST)!5e0!3m2!1sen!2s!4v1759235497853!5m2!1sen!2s"
-
-
-class Date:
-    DaysInMonth = {
-        1: 31,
-        2: 31,
-        3: 31,
-        4: 31,
-        5: 31,
-        6: 31,
-        7: 30,
-        8: 30,
-        9: 30,
-        10: 30,
-        11: 30,
-        12: 29,
-    }
-    PersianMonths = {
-        1: "فروردین",
-        2: "اردیبهشت",
-        3: "خرداد",
-        4: "تیر",
-        5: "مرداد",
-        6: "شهریور",
-        7: "مهر",
-        8: "آبان",
-        9: "آذر",
-        10: "دی",
-        11: "بهمن",
-        12: "اسفند",
-    }
-
-    @staticmethod
-    def GetAllowedYears():
-        CurrentYear = Datetime.datetime.now(Datetime.timezone.utc).year
-        return list(range(CurrentYear - 80, CurrentYear - 4))
-
-
-class AppConfig:
-    MaxTeamPerClient = 20
-    MaxMembersPerTeam = 10
-    MaxImageSize = 50 * 1024 * 1024
-    MaxDocumentSize = 100 * 1024 * 1024
-    MaxVideoSize = 300 * 1024 * 1024
-    AllowedExtensions = [
-        "png",
-        "jpg",
-        "jpeg",
-        "gif",
-        "pdf",
-        "docx",
-        "doc",
-        "xlsx",
-        "xls",
-        "ppt",
-        "pptx",
-        "mp4",
-        "mov",
-        "avi",
-        "mkv",
-        "webm",
-    ]
-    AllowedMimeTypes = [
-        "image/jpeg",
-        "image/png",
-        "image/gif",
-        "application/pdf",
-        "application/msword",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "application/vnd.ms-excel",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "application/vnd.ms-powerpoint",
-        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-        "video/mp4",
-        "video/quicktime",
-        "video/x-msvideo",
-        "video/x-matroska",
-        "video/webm",
-    ]
-
-
-class Contact:
-    Phone = "09352117339"
-    EmailPrimary = "airocupiran@gmail.com"
-    EmailSecondary = "ai90maharat@gmail.com"
-    Website = "https://airocup.org"
-    Instagram = "@airo.cup"
-    LinkedIn = "linkedin.com/in/airo-cup-آیروکاپ-5b4818231"
-    Bale = "https://ble.ir/join/8VwzjR1U3f"
-    AparatChannel = "https://www.aparat.com/Kia_coder"
-    AparatPlaylist = "https://www.aparat.com/playlist/22114839"
-    AparatEmbedURL = (
-        "https://www.aparat.com/video/video/embed/videohash/wtw75xo/vt/frame"
-    )
-
-
-ContactPointsData = [
-    {
-        "href": f"tel:{Contact.Phone}",
-        "icon": "fas fa-phone-alt",
-        "label": "پشتیبانی (تلفنی)",
-        "display": Contact.Phone,
-        "target": None,
-    },
-    {
-        "href": f"mailto:{Contact.EmailPrimary}",
-        "icon": "fas fa-envelope",
-        "label": "ایمیل اصلی (سازمانی)",
-        "display": Contact.EmailPrimary,
-        "target": None,
-    },
-    {
-        "href": f"mailto:{Contact.EmailSecondary}",
-        "icon": "fas fa-envelope-open-text",
-        "label": "ایمیل دوم (پشتیبانی)",
-        "display": Contact.EmailSecondary,
-        "target": None,
-    },
-    {
-        "href": Contact.Bale,
-        "icon": "fas fa-comment-dots",
-        "label": "کانال بله",
-        "display": "@airocup2025",
-        "target": "_blank",
-    },
-    {
-        "href": f"https://instagram.com/{Contact.Instagram.replace('@', '')}",
-        "icon": "fab fa-instagram",
-        "label": "اینستاگرام",
-        "display": Contact.Instagram,
-        "target": "_blank",
-    },
-    {
-        "href": f"https://{Contact.LinkedIn}",
-        "icon": "fab fa-linkedin",
-        "label": "لینکدین",
-        "display": "Airocup LinkedIn",
-        "target": "_blank",
-    },
-    {
-        "href": Contact.AparatPlaylist,
-        "icon": "fas fa-play-circle",
-        "label": "آپارات",
-        "display": "کانال آپارات آیروکاپ",
-        "target": "_blank",
-    },
-]
-
-ProvincesData = {
+provinces_data = {
     "آذربایجان شرقی": [
-        "تبریز",
-        "مراغه",
-        "مرند",
-        "اهر",
-        "میانه",
-        "بناب",
-        "سراب",
+        "آبش‌احمد",
         "آذرشهر",
-        "هادیشهر",
-        "عجب‌شیر",
+        "آقکند",
         "اسکو",
+        "اهر",
         "ایلخچی",
         "باسمنج",
+        "بخشایش",
         "بستان‌آباد",
-        "شبستر",
-        "کلیبر",
-        "ورزقان",
-        "هریس",
-        "هوراند",
-        "خداآفرین",
-        "جلفا",
-        "چاراویماق",
-        "صوفیان",
+        "بناب",
+        "ترک",
+        "ترکمانچای",
         "تسوج",
+        "تیکمه‌داش",
+        "جلفا",
+        "خاروانا",
         "خامنه",
+        "خمارلو",
+        "خواجه",
+        "دوزدوزان",
+        "زرنق",
+        "زنوز",
+        "سراب",
+        "سردرود",
         "سیس",
+        "شبستر",
         "شربیان",
         "شرفخانه",
         "شندآباد",
-        "صایین‌قلعه",
+        "صوفیان",
+        "عجب‌شیر",
+        "قره‌آغاج",
+        "کشکسرای",
+        "کلوانق",
+        "کلیبر",
+        "کندوان",
+        "گوگان",
+        "لیلان",
+        "مراغه",
+        "مرند",
+        "ملکان",
+        "ممقان",
+        "میانه",
+        "نظرکهریزی",
+        "هادی‌شهر",
+        "هریس",
+        "هوراند",
+        "ورزقان",
+        "یامچی",
+        "تبریز",
     ],
     "آذربایجان غربی": [
         "ارومیه",
-        "خوی",
-        "مهاباد",
-        "بوکان",
-        "میاندوآب",
-        "سلماس",
-        "پیرانشهر",
-        "نقده",
-        "سردشت",
-        "شاهین‌دژ",
         "اشنویه",
-        "تکاب",
-        "چالدران",
+        "ایواوغلی",
+        "باروق",
+        "بازرگان",
+        "بوکان",
         "پلدشت",
-        "سیه‌چشمه",
-        "قوشچی",
-        "محمدیار",
+        "پیرانشهر",
+        "تکاب",
+        "چهاربرج",
+        "خوی",
+        "دیزج‌دیز",
         "ربط",
+        "زرآباد",
         "سرو",
-        "دیزج",
+        "سلماس",
+        "سیه‌چشمه",
+        "سیمینه",
+        "شاهین‌دژ",
+        "شوط",
         "فیرورق",
+        "قره‌ضیاءالدین",
+        "قوشچی",
+        "کشاورز",
+        "ماکو",
+        "محمدیار",
+        "محمودآباد",
+        "مرگنلر",
+        "مهاباد",
+        "میاندوآب",
         "نالوس",
+        "نقده",
     ],
     "اردبیل": [
         "اردبیل",
-        "پارس‌آباد",
-        "مشگین‌شهر",
-        "خلخال",
-        "گرمی",
+        "اصلاندوز",
         "بیله‌سوار",
-        "نمین",
+        "پارس‌آباد",
+        "تازه‌کندانگوت",
         "جعفرآباد",
-        "کوثر",
-        "نیر",
+        "خلخال",
         "سرعین",
+        "فخرآباد",
+        "کلور",
+        "کوراییم",
+        "گرمی",
         "گیوی",
         "لاهرود",
-        "انگوت",
-        "تازه‌کند",
-        "جعفرآباد",
-        "قصابه",
         "مرادلو",
+        "مشگین‌شهر",
+        "نمین",
+        "نیر",
         "هشتجین",
     ],
     "اصفهان": [
         "اصفهان",
-        "کاشان",
+        "آران و بیدگل",
+        "ابریشم",
+        "ابوزیدآباد",
+        "اردستان",
+        "اژیه",
+        "بادرود",
+        "برزک",
+        "بهاران‌شهر",
+        "بوئین و میاندشت",
+        "تودشک",
+        "تیران",
+        "جندق",
+        "جوزدان",
+        "چادگان",
+        "چرمهین",
+        "حبیب‌آباد",
+        "حسن‌آباد",
+        "خالدآباد",
         "خمینی‌شهر",
-        "نجف‌آباد",
+        "خوانسار",
+        "خور",
+        "داران",
+        "دهق",
+        "دهاقان",
+        "درچه",
+        "رزوه",
+        "رضوان‌شهر",
+        "زازران",
+        "زرین‌شهر",
+        "زیار",
+        "سده لنجان",
+        "سمیرم",
         "شاهین‌شهر",
         "شهرضا",
-        "فولادشهر",
-        "مبارکه",
-        "آران و بیدگل",
-        "گلپایگان",
-        "خوانسار",
-        "سمیرم",
-        "درچه",
-        "زرین‌شهر",
-        "دامنه",
-        "برخوار",
-        "چادگان",
-        "خور و بیابانک",
-        "تیران و کرون",
+        "طالخونچه",
+        "عسگران",
+        "علویجه",
+        "فرخی",
+        "فریدون‌شهر",
         "فلاورجان",
-        "نطنز",
+        "فولادشهر",
+        "قهدریجان",
+        "کاشان",
+        "کامو و چوگان",
+        "کمشچه",
+        "کهریزسنگ",
+        "گلپایگان",
+        "گلدشت",
+        "گلشهر",
+        "گوگد",
+        "محمدآباد",
+        "مهاباد",
+        "میمه",
         "نائین",
+        "نجف‌آباد",
+        "نصرآباد",
+        "نطنز",
+        "نیاسر",
+        "نیک‌آباد",
+        "هرند",
     ],
     "البرز": [
         "کرج",
+        "اشتهارد",
+        "تنکمان",
+        "چهارباغ",
         "هشتگرد",
-        "نظرآباد",
-        "محمدشهر",
+        "طالقان",
         "فردیس",
         "کمال‌شهر",
-        "ماهدشت",
-        "مشکین‌دشت",
-        "چهارباغ",
         "گرمدره",
         "گلسار",
-        "اشترجان",
-        "پلنگ‌آباد",
-        "تنکمان",
-        "عشق‌آباد",
-        "کوهپایه",
+        "ماهدشت",
+        "محمدشهر",
+        "مشکین‌دشت",
+        "نظرآباد",
     ],
     "ایلام": [
         "ایلام",
-        "دهلران",
-        "ایوان",
         "آبدانان",
-        "دره‌شهر",
-        "مهران",
-        "سرابله",
-        "ارکواز",
-        "چوار",
         "آسمان‌آباد",
+        "ارکواز",
+        "ایوان",
         "بدره",
         "پهله",
         "توحید",
+        "چوار",
+        "دره‌شهر",
+        "دهلران",
         "زرنه",
+        "سرابله",
         "لومار",
+        "ماژین",
         "مورموری",
+        "مهران",
     ],
     "بوشهر": [
         "بوشهر",
-        "برازجان",
-        "گناوه",
-        "کنگان",
-        "خورموج",
-        "جم",
-        "عسلویه",
-        "دیر",
-        "دیلم",
+        "آب‌پخش",
         "اهرم",
-        "سیراف",
+        "انارستان",
+        "بادوله",
+        "بردخون",
+        "بردستان",
+        "برازجان",
+        "بندردیر",
+        "بندردیلم",
+        "بندرریگ",
+        "بندرکنگان",
+        "بندرگناوه",
+        "تنگ ارم",
+        "جم",
         "چغادک",
+        "خارک",
+        "خورموج",
+        "دالکی",
         "دلوار",
+        "ریز",
+        "سعدآباد",
         "شنبه",
+        "عسلویه",
         "کاکی",
+        "کلمه",
+        "نخل‌تقی",
         "وحدتیه",
     ],
     "تهران": [
-        "تهران",
-        "شهریار",
+        "آبسرد",
+        "آبعلی",
+        "احمدآباد مستوفی",
         "اسلام‌شهر",
-        "قدس",
-        "ملارد",
-        "ورامین",
-        "پاکدشت",
-        "قرچک",
         "اندیشه",
-        "رباط‌کریم",
-        "ری",
-        "شهرقدس",
-        "فشم",
-        "کهریزک",
-        "لواسان",
-        "نسیم‌شهر",
-        "پردیس",
+        "باغستان",
+        "باقرشهر",
         "بومهن",
-        "جاجرود",
+        "پاکدشت",
+        "پردیس",
+        "پیشوا",
+        "تجریش",
+        "تهران",
+        "جوادآباد",
+        "چهاردانگه",
+        "حسن‌آباد",
         "دماوند",
+        "رباط‌کریم",
+        "رودهن",
+        "ری",
+        "شاهدشهر",
+        "شریف‌آباد",
+        "شمشک",
+        "شهرقدس",
+        "شهرری",
+        "شهریار",
+        "صالح‌آباد",
+        "صباشهر",
+        "صفادشت",
+        "فردوسیه",
+        "فشم",
         "فیروزکوه",
+        "قدس",
+        "قرچک",
+        "کهریزک",
+        "گلستان",
+        "لواسان",
+        "ملارد",
+        "نسیم‌شهر",
+        "نصیرآباد",
+        "ورامین",
     ],
     "چهارمحال و بختیاری": [
-        "شهرکرد",
+        "اردل",
+        "آلونی",
+        "باباحیدر",
         "بروجن",
-        "فرخ‌شهر",
-        "فارسان",
-        "لردگان",
-        "هفشجان",
-        "جونقان",
-        "سامان",
-        "فرادنبه",
-        "دستنا",
+        "بلداجی",
         "بن",
+        "جونقان",
+        "دستنا",
+        "سرخون",
+        "سردشت",
         "سودجان",
         "شلمزار",
-        "گهرو",
-        "نافچ",
-        "وردنجان",
+        "شهرکرد",
+        "فارسان",
+        "فرادبنه",
+        "فرخ‌شهر",
+        "کاج",
         "کیان",
-        "مال خلیفه",
+        "گندمان",
+        "گهرو",
+        "مال‌خلیفه",
+        "ناغان",
+        "نافچ",
         "نقنه",
+        "وردنجان",
+        "هفشجان",
     ],
     "خراسان جنوبی": [
-        "بیرجند",
-        "قائن",
-        "فردوس",
-        "نهبندان",
-        "طبس",
-        "سربیشه",
-        "سرایان",
-        "بشرویه",
-        "درمیان",
-        "خوسف",
-        "زیرکوه",
+        "آیسک",
+        "ارسک",
         "اسدیه",
         "اسفدن",
-        "آیسک",
-        "حاجی‌آباد",
-        "خضری",
-        "دشت بیاض",
+        "بشرویه",
+        "بیرجند",
+        "خضری‌دشت‌بیاض",
+        "خوسف",
+        "زهان",
+        "سرایان",
+        "سربیشه",
         "سه‌قلعه",
+        "طبس",
+        "فردوس",
+        "قاین",
+        "محمدشهر",
         "مود",
+        "نهبندان",
     ],
     "خراسان رضوی": [
         "مشهد",
@@ -504,54 +432,55 @@ ProvincesData = {
         "گناباد",
         "درگز",
         "خواف",
+        "رشتخوار",
+        "فیض‌آباد",
         "سلامی",
         "شاندیز",
         "طرقبه",
         "کلات",
-        "رشتخوار",
-        "فیض‌آباد",
+        "سنگان",
     ],
     "خراسان شمالی": [
         "بجنورد",
         "شیروان",
         "اسفراین",
-        "آشخانه",
         "جاجرم",
         "فاروج",
         "گرمه",
-        "ساروج",
-        "قاضی",
-        "پیش قلعه",
-        "حصارگرمخان",
-        "درق",
+        "آشخانه",
         "راز",
         "سنخواست",
         "شوقان",
         "لوجلی",
+        "پیش قلعه",
+        "حصارگرمخان",
+        "درق",
+        "ساروج",
+        "قاضی",
     ],
     "خوزستان": [
         "اهواز",
-        "دزفول",
         "آبادان",
-        "ماهشهر",
-        "اندیمشک",
-        "خرمشهر",
-        "ایذه",
-        "شوشتر",
-        "مسجدسلیمان",
-        "بهبهان",
-        "شوش",
-        "رامهرمز",
-        "بندرماهشهر",
-        "هویزه",
-        "حمیدیه",
-        "لالی",
-        "اندیکا",
         "آغاجاری",
+        "اندیکا",
+        "اندیمشک",
+        "ایذه",
         "باغ‌ملک",
-        "هفتگل",
+        "بهبهان",
+        "ماهشهر",
         "رامشیر",
+        "رامهرمز",
+        "خرمشهر",
+        "دزفول",
+        "شادگان",
+        "شادمان",
+        "شوش",
+        "شوشتر",
         "کارون",
+        "مسجدسلیمان",
+        "هویزه",
+        "هفتگل",
+        "لالی",
     ],
     "زنجان": [
         "زنجان",
@@ -653,17 +582,14 @@ ProvincesData = {
         "محمودآباد نمونه",
         "محمدیه",
         "بویین‌زهرا",
-        "ارداق",
         "اسفرورین",
+        "ارداق",
         "شال",
         "ضیاءآباد",
-        "کوهین",
-        "نرجه",
         "خرمدشت",
         "سگزآباد",
-        "سیردان",
-        "شریفیه",
-        "معلم‌کلایه",
+        "نرجه",
+        "کوهین",
     ],
     "قم": [
         "قم",
@@ -688,22 +614,13 @@ ProvincesData = {
         "بیجار",
         "دهگلان",
         "سروآباد",
-        "چناره",
-        "زرینه",
-        "شویشه",
-        "گروه",
         "یاسوکند",
-        "آرمرده",
         "بلبان‌آباد",
-        "بوالحسن",
-        "توپ آغاج",
-        "دزج",
+        "موچش",
+        "آرمرده",
         "دلبران",
         "سریش‌آباد",
-        "شوی",
-        "قصلان",
-        "کانی سور",
-        "موچش",
+        "زرینه",
     ],
     "کرمان": [
         "کرمان",
@@ -746,7 +663,6 @@ ProvincesData = {
         "روانسر",
         "ثلاث باباجانی",
         "دالاهو",
-        "روانسر",
         "سرپل ذهاب",
         "قصر شیرین",
         "گیلانغرب",
@@ -755,9 +671,6 @@ ProvincesData = {
         "ازگله",
         "باینگان",
         "تازه‌آباد",
-        "ماهیدشت",
-        "میان راهان",
-        "هلشی",
     ],
     "کهگیلویه و بویراحمد": [
         "یاسوج",
@@ -778,7 +691,7 @@ ProvincesData = {
         "گرگان",
         "گنبد کاووس",
         "علی‌آباد کتول",
-        "بندر ترکمن",
+        "ترکمن",
         "آق‌قلا",
         "کردکوی",
         "بندر گز",
@@ -789,17 +702,10 @@ ProvincesData = {
         "گالیکش",
         "مراوه‌تپه",
         "نوکنده",
-        "اینچه برون",
-        "جلین",
-        "دلند",
-        "سنگدوین",
-        "فاضل‌آباد",
-        "مزرعه",
-        "نظام‌آباد",
     ],
     "گیلان": [
         "رشت",
-        "بندر انزلی",
+        "انزلی",
         "لاهیجان",
         "لنگرود",
         "آستارا",
@@ -813,7 +719,7 @@ ProvincesData = {
         "سیاهکل",
         "اطاقور",
         "اسالم",
-        "بندر کیاشهر",
+        "کیاشهر",
         "پره سر",
         "چابکسر",
         "حویق",
@@ -860,21 +766,16 @@ ProvincesData = {
         "نوشهر",
         "رامسر",
         "تنکابن",
-        "جویبار",
-        "فریدونکنار",
-        "محمودآباد",
         "عباس‌آباد",
-        "گلوگاه",
-        "کجور",
-        "مرزن‌آباد",
-        "نور",
-        "پل سفید",
-        "پول",
+        "فریدون‌کنار",
         "کلاردشت",
-        "هچیرود",
-        "امیرکلا",
-        "شیرگاه",
-        "کتالم",
+        "سوادکوه",
+        "محمودآباد",
+        "میاندورود",
+        "پل سفید",
+        "جویبار",
+        "نور",
+        "گلوگاه",
     ],
     "مرکزی": [
         "اراک",
@@ -906,18 +807,16 @@ ProvincesData = {
         "بندرعباس",
         "میناب",
         "دهبارز",
-        "بندر لنگه",
+        "لنگه",
         "قشم",
         "کیش",
         "حاجی‌آباد",
         "بستک",
         "جاسک",
-        "حاجی‌آباد",
         "خمیر",
         "رودان",
         "سیریک",
         "فین",
-        "قشم",
         "گاوبندی",
         "پارسیان",
         "تخت",
@@ -948,9 +847,6 @@ ProvincesData = {
         "فرسفج",
         "قلقلرود",
         "گیان",
-        "لالجین",
-        "مریانج",
-        "مهاجران",
     ],
     "یزد": [
         "یزد",
@@ -973,148 +869,599 @@ ProvincesData = {
     ],
 }
 
-CommitteeMembersData = [
+leagues_list = [
     {
-        "Name": "دکتر بهروز مینایی بیدگلی",
-        "Role": "رئیس مسابقات",
-        "Description": "رهبری کلی مسابقات و نظارت بر اجرای صحیح تمامی مراحل برگزاری",
-        "Image": "Images/Committee/Minayi.png",
+        "id": 1,
+        "name": "لیگ آیروچلنج حل چالش‌ها با ربات و هوش مصنوعی",
+        "icon": "fa-puzzle-piece",
+        "description": (
+            "لیگ آیروچلنج، نقطه‌ی تلاقی خلاقیت، مهارت فنی و تفکر حل‌مسئله است. "
+            "در این رقابت، شرکت‌کنندگان با طراحی ربات‌ها یا الگوریتم‌های هوشمند، "
+            "مأموریت‌های واقعی را در زمینه‌های گوناگون مانند نجات، حمل‌ونقل یا "
+            "محیط‌زیست حل می‌کنند. این لیگ ترکیبی از نوآوری مهندسی و هوش مصنوعی "
+            "است و بستری برای سنجش توانایی تیم‌ها در طراحی، پیاده‌سازی و تحلیل "
+            "سیستم‌های هوشمند فراهم می‌آورد."
+        ),
     },
     {
-        "Name": "دکتر داوود زارع",
-        "Role": "رئیس کمیته ملی مسابقات",
-        "Description": "هماهنگی و نظارت بر کلیه فعالیت‌های کمیته‌های تخصصی",
-        "Image": "Images/Committee/Davood.png",
+        "id": 2,
+        "name": "لیگ تولید محتوای دیجیتال ویژه بازار کار",
+        "icon": "fa-solid fa-compass-drafting",
+        "description": (
+            "این لیگ با هدف پرورش خلاقیت دیجیتال و مهارت‌های تولید محتوای کاربردی "
+            "طراحی شده است. شرکت‌کنندگان در سه سطح (ابتدایی، متوسطه و دانشجویی) "
+            "با استفاده از ابزارهای حرفه‌ای و هوش مصنوعی، محتوای آموزشی، تبلیغاتی "
+            "یا فرهنگی تولید می‌کنند. داوری بر اساس خلاقیت، کیفیت فنی، تلفیق AI و "
+            "کاربردی بودن آثار انجام می‌شود. هدف نهایی، آماده‌سازی نسل جوان برای حضور "
+            "مؤثر در بازار کار دیجیتال است."
+        ),
     },
     {
-        "Name": "مهندس زهرا سعادتی داریان",
-        "Role": "دبیر کمیته علمی",
-        "Description": "مسئولیت ارزیابی علمی پروژه‌ها و تنظیم معیارهای داوری",
-        "Image": "Images/Committee/Saadati.png",
+        "id": 3,
+        "name": "لیگ تولید محتوا با هوش مصنوعی",
+        "icon": "fa-solid fa-video",
+        "description": (
+            "در این لیگ، تمرکز بر تولید ویدئو یا پوسترهای خلاقانه با بهره‌گیری از "
+            "ابزارهای هوش مصنوعی است. شرکت‌کنندگان می‌توانند در دو بخش مستقل رقابت "
+            "دهند: تولید محتوای ویدیویی و طراحی پوستر تبلیغاتی. این رقابت بستری است "
+            "برای نمایش قدرت خلاقیت، مهارت فنی و درک هنری در استفاده از فناوری‌های "
+            "مولد (Generative AI) برای انتقال پیام‌های آموزشی، فرهنگی یا تجاری."
+        ),
     },
     {
-        "Name": "مهندس محمدرضا ریاحی سامانی",
-        "Role": "دبیر کمیته رباتیک",
-        "Description": "مسئولیت برگزاری لیگ‌های رباتیک و ارزیابی ربات‌ها",
-        "Image": "Images/Committee/Riyahi.png",
+        "id": 4,
+        "name": "لیگ ساخت عامل هوشمند (AI Agent)",
+        "icon": "fa-brain",
+        "description": (
+            "در این لیگ، شرکت‌کنندگان به طراحی و توسعه‌ی عامل‌های هوشمند می‌پردازند؛ "
+            "سیستم‌هایی که می‌توانند به‌صورت خودکار تصمیم بگیرند، تحلیل کنند و با "
+            "کاربر یا محیط تعامل داشته باشند. این عامل‌ها می‌توانند در قالب چت‌بات، "
+            "دستیار مجازی یا سیستم‌های تصمیم‌یار طراحی شوند. داوری بر اساس خلاقیت، "
+            "کارایی، تعامل کاربری و قابلیت توسعه انجام می‌گیرد."
+        ),
     },
     {
-        "Name": "مهندس پوریا حداد",
-        "Role": "دبیر کمیته هوش مصنوعی",
-        "Description": "مسئولیت برگزاری لیگ‌های هوش مصنوعی و ارزیابی پروژه‌ها",
-        "Image": "Images/Committee/Poria.png",
+        "id": 5,
+        "name": "لیگ اختراعات رباتیک و هوش مصنوعی",
+        "icon": "fa-lightbulb",
+        "description": (
+            "این لیگ ترکیبی از پژوهش، نوآوری و کارآفرینی فناورانه است. شرکت‌کنندگان "
+            "در سه بخش «محصول»، «ایده» و «پژوهش» رقابت می‌کنند و باید توانایی خود را "
+            "در ارائه طرح‌های فناورانه، مدل‌های تجاری‌سازی و مستندات علمی نشان دهند. "
+            "هدف اصلی، تبدیل ایده‌های پژوهشی به محصولات واقعی و ایجاد پیوند میان علم، "
+            "صنعت و نوآوری است."
+        ),
     },
     {
-        "Name": "دکتر محمد خلیل پور",
-        "Role": "دبیر کمیته پشتیبانی",
-        "Description": "مسئولیت پشتیبانی فنی و حل مشکلات شرکت‌کنندگان",
-        "Image": "Images/Committee/Khalil Pore.png",
+        "id": 6,
+        "name": "لیگ جنگجوهای هوشمند",
+        "icon": "fa-shield-alt",
+        "description": (
+            "در این لیگ هیجان‌انگیز، شرکت‌کنندگان ربات‌هایی طراحی می‌کنند که در زمین "
+            "مسابقه با رعایت اصول ایمنی با یکدیگر رقابت می‌کنند. هدف اصلی، آموزش اصول "
+            "طراحی مکانیکی، کنترل هوشمند و تحلیل استراتژیک است. داوری بر اساس عملکرد، "
+            "استراتژی، ایمنی و نوآوری انجام می‌شود. این لیگ برای هر دو سطح دانش‌آموزی "
+            "و دانشجویی قابل شرکت است."
+        ),
+    },
+    {
+        "id": 7,
+        "name": "لیگ برنامه‌نویسی و هوش مصنوعی",
+        "icon": "fa-code",
+        "description": (
+            "این لیگ برای علاقه‌مندان به کدنویسی و حل مسائل پیچیده طراحی شده است. "
+            "مسابقه در چهار بخش برگزار می‌شود: اسکرچ، ACM، پایتون و هوش مصنوعی. "
+            "شرکت‌کنندگان از مفاهیم پایه تا مباحث پیشرفته الگوریتمی، به رقابت در "
+            "بهینه‌سازی کد، دقت و خلاقیت در طراحی راه‌حل می‌پردازند. این لیگ فرصتی "
+            "برای شناسایی استعدادهای برتر در حوزه برنامه‌نویسی هوشمند است."
+        ),
+    },
+    {
+        "id": 8,
+        "name": "لیگ نمایش ربات‌ها",
+        "icon": "fa-star",
+        "description": (
+            "در این لیگ، ربات‌ها نه برای مبارزه بلکه برای نمایش خلاقیت، طراحی و تعامل "
+            "با انسان ساخته می‌شوند. تیم‌ها ربات‌هایی را طراحی می‌کنند که بتوانند حرکات "
+            "نمایشی، رفتارهای تعاملی یا عملکردهای هنری از خود نشان دهند. ارزیابی بر اساس "
+            "نوآوری، جذابیت بصری، کیفیت ارائه و ایمنی انجام می‌شود. این لیگ ترکیبی از "
+            "فناوری، هنر و ارتباط با مخاطب است."
+        ),
+    },
+    {
+        "id": 9,
+        "name": "لیگ ربات امدادگر محیط‌زیست",
+        "icon": "fa-leaf",
+        "description": (
+            "در این رقابت، ربات‌ها مأموریت دارند تا در سناریوهای امدادی و زیست‌محیطی "
+            "فعالیت کنند؛ از شناسایی آلودگی تا جمع‌آوری پسماند یا نجات در شرایط بحرانی. "
+            "شرکت‌کنندگان باید ربات‌هایی بسازند که بتوانند به‌صورت خودمختار داده‌ها را "
+            "تحلیل و بهترین تصمیم را اتخاذ کنند. این لیگ تلفیقی از علم، فناوری و مسئولیت "
+            "اجتماعی است."
+        ),
+    },
+    {
+        "id": 10,
+        "name": "لیگ ربات پرنده",
+        "icon": "fa-solid fa-plane",
+        "description": (
+            "این لیگ برای علاقه‌مندان به طراحی پهپادها و سیستم‌های پروازی هوشمند طراحی "
+            "شده است. تیم‌ها باید ربات‌های پرنده‌ای بسازند که توانایی انجام مأموریت‌های "
+            "خاص مانند حمل بار، فیلم‌برداری یا نقشه‌برداری خودکار را داشته باشند. ارزیابی "
+            "بر اساس پایداری پرواز، دقت کنترل، ایمنی و نوآوری در طراحی انجام می‌شود."
+        ),
+    },
+    {
+        "id": 11,
+        "name": "لیگ خودرو خودران",
+        "icon": "fa-solid fa-car",
+        "description": (
+            "در این لیگ، شرکت‌کنندگان باید یک خودروی هوشمند طراحی کنند که بتواند در مسیر "
+            "مشخص، موانع را شناسایی کرده و به‌صورت خودکار حرکت کند. محورهای اصلی شامل "
+            "بینایی ماشین، کنترل خودکار و تصمیم‌گیری هوشمند است. این لیگ مقدمه‌ای برای ورود "
+            "به دنیای وسایل نقلیه خودران و فناوری‌های آینده‌ی حمل‌ونقل است."
+        ),
+    },
+    {
+        "id": 12,
+        "name": "لیگ کشاورز هوشمند (AgriTech AI)",
+        "icon": "fa-solid fa-tractor",
+        "description": (
+            "هدف این لیگ، پرورش مهارت‌های هوش مصنوعی در حوزه‌ی کشاورزی است. شرکت‌کنندگان "
+            "با طراحی الگوریتم‌ها و عامل‌های هوشمند در محیط شبیه‌سازی‌شده، به بهینه‌سازی "
+            "مصرف آب، کود، بذر و انرژی می‌پردازند. داوری بر اساس دقت تشخیص، بهره‌وری منابع "
+            "و عملکرد کلی انجام می‌شود. این رقابت بستری برای توسعه فناوری‌های AgriTech در ایران است."
+        ),
+    },
+    {
+        "id": 13,
+        "name": "لیگ هوش مصنوعی در علوم پزشکی و سلامت (Medi AI)",
+        "icon": "fa-stethoscope",
+        "description": (
+            "در این لیگ، تیم‌ها راهکارهای مبتنی بر هوش مصنوعی برای تحلیل داده‌های پزشکی، "
+            "تشخیص بیماری‌ها، پایش سلامت و تصمیم‌یارهای بالینی توسعه می‌دهند. هدف، آموزش "
+            "کاربردهای علمی و اخلاقی هوش مصنوعی در پزشکی است. داوری بر اساس دقت مدل، نوآوری، "
+            "قابلیت تفسیر و کاربردپذیری در نظام سلامت انجام می‌شود."
+        ),
+    },
+    {
+        "id": 14,
+        "name": "لیگ مدیریت هوشمند مصرف آب (Aqua AI)",
+        "icon": "fa-tint",
+        "description": (
+            "با توجه به بحران آب در ایران، این لیگ با هدف آموزش هوش مصنوعی در مدیریت منابع "
+            "آبی طراحی شده است. در دو سطح دانش‌آموزی و دانشجویی، شرکت‌کنندگان با داده‌های "
+            "واقعی کار کرده و مدل‌هایی برای پیش‌بینی مصرف، تشخیص نشتی و بهینه‌سازی شبکه‌های "
+            "آبرسانی طراحی می‌کنند. این لیگ نمونه‌ای از کاربرد مستقیم علم داده و AI در حل "
+            "چالش‌های ملی است."
+        ),
     },
 ]
 
-TechnicalCommitteeMembersData = [
+
+education_levels: Dict[str, Dict[str, Optional[Tuple[int, int]]]] = {
+    "ابتدایی": {"grades": (1, 6), "ages": (6, 12)},
+    "متوسطه اول": {"grades": (7, 9), "ages": (13, 16)},
+    "متوسطه دوم": {"grades": (10, 12), "ages": (16, 18)},
+    "دانشجویی": {"grades": None, "ages": (19, 60)},
+    "آزاد": {"grades": None, "ages": (18, 65)},
+}
+
+allowed_education = set(education_levels.keys())
+
+education_age_ranges = {
+    level: details["ages"]
+    for level, details in education_levels.items()
+    if details["ages"]
+}
+
+week_days = {
+    "Saturday": "شنبه",
+    "Sunday": "یکشنبه",
+    "Monday": "دوشنبه",
+    "Tuesday": "سه‌شنبه",
+    "Wednesday": "چهارشنبه",
+    "Thursday": "پنجشنبه",
+    "Friday": "جمعه",
+}
+
+TechnicalCommitteeMembers = [
     {
         "Name": "دکتر سمیه سلطانی",
         "Role": "رئیس لیگ کاربرد هوش مصنوعی در علوم پزشکی و بهداشت",
         "Description": "استاد دانشگاه تبریز",
-        "Image": "Images/Technical Committee/Somaieh Soltani.png",
+        "Image": os.path.join(Path.technical_committee_dir, "Somaieh Soltani.png"),
     },
     {
         "Name": "مهندس امیر حسین کرمی",
         "Role": "مدیر امور استان ها",
         "Description": "هماهنگی٬ برنامه ریزی و پیگیری امور استان ها",
-        "Image": "Images/Technical Committee/Amir Hossain.png",
+        "Image": os.path.join(Path.technical_committee_dir, "Amir Hossain.png"),
     },
 ]
 
-LeaguesListData = [
+
+class ForbiddenContent:
+    "Manages the application's profanity filter and custom word list"
+
+    custom_words = {
+        "admin",
+        "administrator",
+        "mod",
+        "sex",
+        "boobs",
+        "penis",
+        "moderator",
+        "root",
+        "spam",
+        "free",
+        "money",
+        "win",
+        "idiot",
+        "stupid",
+        "fool",
+        "fuck",
+        "airocup",
+        "ادمین",
+        "مدیر",
+        "پشتیبان",
+        "رایگان",
+        "جایزه",
+        "برنده",
+        "احمق",
+        "نادان",
+        "ابله",
+    }
+
+    filter_loaded = False
+
+    @staticmethod
+    def _initialize_filter():
+        "Loads the default library list and adds our custom list"
+        if not ForbiddenContent.filter_loaded:
+            profanity.load_censor_words()
+            profanity.add_censor_words(
+                [w.lower() for w in ForbiddenContent.custom_words]
+            )
+            ForbiddenContent.filter_loaded = True
+
+    @staticmethod
+    def censor(text: str) -> str:
+        "Censors any profane text"
+        ForbiddenContent._initialize_filter()
+        return profanity.censor(text)
+
+    @staticmethod
+    def contains_profanity(text: str) -> bool:
+        "Checks if text contains any profane word"
+        ForbiddenContent._initialize_filter()
+        return profanity.contains_profanity(text)
+
+
+class Date:
+    "Date-related constants and methods for the application"
+
+    days_in_month = {
+        1: 31,
+        2: 31,
+        3: 31,
+        4: 31,
+        5: 31,
+        6: 31,
+        7: 30,
+        8: 30,
+        9: 30,
+        10: 30,
+        11: 30,
+        12: 29,
+    }
+    persian_months = {
+        1: "فروردین",
+        2: "اردیبهشت",
+        3: "خرداد",
+        4: "تیر",
+        5: "مرداد",
+        6: "شهریور",
+        7: "مهر",
+        8: "آبان",
+        9: "آذر",
+        10: "دی",
+        11: "بهمن",
+        12: "اسفند",
+    }
+
+    @staticmethod
+    def get_allowed_years():
+        "Returns a list of allowed birth years for participants"
+        current_year = datetime.datetime.now(datetime.timezone.utc).year
+        min_age = 5
+        max_age = 80
+        return list(range(current_year - max_age, current_year - min_age + 1))
+
+
+class AppConfig:
+    "Configuration constants for the application."
+
+    max_team_per_client = 20
+    max_members_per_team = 10
+    max_image_size = 50 * 1024 * 1024
+    max_document_size = 100 * 1024 * 1024
+    max_video_size = 300 * 1024 * 1024
+    allowed_extensions = [
+        "png",
+        "jpg",
+        "jpeg",
+        "gif",
+        "pdf",
+        "doc",
+        "docx",
+        "xls",
+        "xlsx",
+        "ppt",
+        "pptx",
+        "mp4",
+        "mov",
+        "avi",
+        "mkv",
+        "webm",
+    ]
+    allowed_mime_types = [
+        "image/jpeg",
+        "image/png",
+        "image/gif",
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.ms-powerpoint",
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        "video/mp4",
+        "video/quicktime",
+        "video/x-msvideo",
+        "video/x-matroska",
+        "video/webm",
+    ]
+
+
+class Details:
+    "Details for Airocup event"
+
+    address = "دانشگاه علم و صنعت ایران، تهران، ایران"
+    google_map_url = "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3238.3671459295647!2d51.50422711222071!3d35.74177972652958!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3f8e032fd49e3809%3A0x470e49fef97ae303!2sIran%20University%20of%20Science%20and%20Technology%20(IUST)!5e0!3m2!1sen!2snl!4v1762083993443!5m2!1sen!2snl"
+    stage_one = "مجازی (لیگ ۲ ۳٬ ۴٬ ۵٬)"
+    stage_two = "حضوری در دانشگاه علم و صنعت، بهمن‌ماه ۱۴۰۴"
+    registration_deadline = "مهلت تا ۳۰ آبان"
+
+
+class Contact:
+    "Contact information for Airocup"
+
+    phone = "09352117339"
+    email_primary = "airocupiran@gmail.com"
+    email_secondary = "ai90maharat@gmail.com"
+    website = "https://airocup.org"
+    instagram = "@airo.cup"
+    linked_in = "linkedin.com/in/airo-cup-آیروکاپ-5b4818231"
+    bale = "https://ble.ir/join/8VwzjR1U3f"
+    aparat_channel = "https://www.aparat.com/Kia_coder"
+    aparat_playlist = "https://www.aparat.com/playlist/22114839"
+    aparat_embed_url = (
+        "https://www.aparat.com/video/video/embed/videohash/wtw75xo/vt/frame"
+    )
+
+
+contact_points_data = [
     {
-        "ID": 1,
-        "Name": "لیگ آیروچلنج حل چالش‌ها با ربات و هوش مصنوعی",
-        "Icon": "fa-puzzle-piece",
-        "Description": "لیگ آیروچلنج، نقطه‌ی تلاقی خلاقیت، مهارت فنی و تفکر حل‌مسئله است. در این رقابت، شرکت‌کنندگان با طراحی ربات‌ها یا الگوریتم‌های هوشمند، مأموریت‌های واقعی را در زمینه‌های گوناگون مانند نجات، حمل‌ونقل یا محیط‌زیست حل می‌کنند. این لیگ ترکیبی از نوآوری مهندسی و هوش مصنوعی است و بستری برای سنجش توانایی تیم‌ها در طراحی، پیاده‌سازی و تحلیل سیستم‌های هوشمند فراهم می‌آورد.",
+        "href": f"tel:{Contact.phone}",
+        "icon": "fas fa-phone-alt",
+        "label": "پشتیبانی (تلفنی)",
+        "display": Contact.phone,
+        "target": None,
     },
     {
-        "ID": 2,
-        "Name": "لیگ تولید محتوای دیجیتال ویژه بازار کار",
-        "Icon": "fa-solid fa-compass-drafting",
-        "Description": "این لیگ با هدف پرورش خلاقیت دیجیتال و مهارت‌های تولید محتوای کاربردی طراحی شده است. شرکت‌کنندگان در سه سطح (ابتدایی، متوسطه و دانشجویی) با استفاده از ابزارهای حرفه‌ای و هوش مصنوعی، محتوای آموزشی، تبلیغاتی یا فرهنگی تولید می‌کنند. داوری بر اساس خلاقیت، کیفیت فنی، تلفیق AI و کاربردی بودن آثار انجام می‌شود. هدف نهایی، آماده‌سازی نسل جوان برای حضور مؤثر در بازار کار دیجیتال است.",
+        "href": f"mailto:{Contact.email_primary}",
+        "icon": "fas fa-envelope",
+        "label": "ایمیل اصلی (سازمانی)",
+        "display": Contact.email_primary,
+        "target": None,
     },
     {
-        "ID": 3,
-        "Name": "لیگ تولید محتوا با هوش مصنوعی",
-        "Icon": "fa-solid fa-video",
-        "Description": "در این لیگ، تمرکز بر تولید ویدئو یا پوسترهای خلاقانه با بهره‌گیری از ابزارهای هوش مصنوعی است. شرکت‌کنندگان می‌توانند در دو بخش مستقل رقابت دهند: تولید محتوای ویدیویی و طراحی پوستر تبلیغاتی. این رقابت بستری است برای نمایش قدرت خلاقیت، مهارت فنی و درک هنری در استفاده از فناوری‌های مولد (Generative AI) برای انتقال پیام‌های آموزشی، فرهنگی یا تجاری.",
+        "href": f"mailto:{Contact.email_secondary}",
+        "icon": "fas fa-envelope-open-text",
+        "label": "ایمیل دوم (پشتیبانی)",
+        "display": Contact.email_secondary,
+        "target": None,
     },
     {
-        "ID": 4,
-        "Name": "لیگ ساخت عامل هوشمند (AI Agent)",
-        "Icon": "fa-brain",
-        "Description": "در این لیگ، شرکت‌کنندگان به طراحی و توسعه‌ی عامل‌های هوشمند می‌پردازند؛ سیستم‌هایی که می‌توانند به‌صورت خودکار تصمیم بگیرند، تحلیل کنند و با کاربر یا محیط تعامل داشته باشند. این عامل‌ها می‌توانند در قالب چت‌بات، دستیار مجازی یا سیستم‌های تصمیم‌یار طراحی شوند. داوری بر اساس خلاقیت، کارایی، تعامل کاربری و قابلیت توسعه انجام می‌گیرد.",
+        "href": Contact.bale,
+        "icon": "fas fa-comment-dots",
+        "label": "کانال بله",
+        "display": "@airocup2025",
+        "target": "_blank",
     },
     {
-        "ID": 5,
-        "Name": "لیگ اختراعات رباتیک و هوش مصنوعی",
-        "Icon": "fa-lightbulb",
-        "Description": "این لیگ ترکیبی از پژوهش، نوآوری و کارآفرینی فناورانه است. شرکت‌کنندگان در سه بخش «محصول»، «ایده» و «پژوهش» رقابت می‌کنند و باید توانایی خود را در ارائه طرح‌های فناورانه، مدل‌های تجاری‌سازی و مستندات علمی نشان دهند. هدف اصلی، تبدیل ایده‌های پژوهشی به محصولات واقعی و ایجاد پیوند میان علم، صنعت و نوآوری است.",
+        "href": f"https://instagram.com/{Contact.instagram.replace('@', '')}",
+        "icon": "fab fa-instagram",
+        "label": "اینستاگرام",
+        "display": Contact.instagram,
+        "target": "_blank",
     },
     {
-        "ID": 6,
-        "Name": "لیگ جنگجوهای هوشمند",
-        "Icon": "fa-shield-alt",
-        "Description": "در این لیگ هیجان‌انگیز، شرکت‌کنندگان ربات‌هایی طراحی می‌کنند که در زمین مسابقه با رعایت اصول ایمنی با یکدیگر رقابت می‌کنند. هدف اصلی، آموزش اصول طراحی مکانیکی، کنترل هوشمند و تحلیل استراتژیک است. داوری بر اساس عملکرد، استراتژی، ایمنی و نوآوری انجام می‌شود. این لیگ برای هر دو سطح دانش‌آموزی و دانشجویی قابل شرکت است.",
+        "href": f"https://{Contact.linked_in}",
+        "icon": "fab fa-linkedin",
+        "label": "لینکدین",
+        "display": "Airocup LinkedIn",
+        "target": "_blank",
     },
     {
-        "ID": 7,
-        "Name": "لیگ برنامه‌نویسی و هوش مصنوعی",
-        "Icon": "fa-code",
-        "Description": "این لیگ برای علاقه‌مندان به کدنویسی و حل مسائل پیچیده طراحی شده است. مسابقه در چهار بخش برگزار می‌شود: اسکرچ، ACM، پایتون و هوش مصنوعی. شرکت‌کنندگان از مفاهیم پایه تا مباحث پیشرفته الگوریتمی، به رقابت در بهینه‌سازی کد، دقت و خلاقیت در طراحی راه‌حل می‌پردازند. این لیگ فرصتی برای شناسایی استعدادهای برتر در حوزه برنامه‌نویسی هوشمند است.",
-    },
-    {
-        "ID": 8,
-        "Name": "لیگ نمایش ربات‌ها",
-        "Icon": "fa-star",
-        "Description": "در این لیگ، ربات‌ها نه برای مبارزه بلکه برای نمایش خلاقیت، طراحی و تعامل با انسان ساخته می‌شوند. تیم‌ها ربات‌هایی را طراحی می‌کنند که بتوانند حرکات نمایشی، رفتارهای تعاملی یا عملکردهای هنری از خود نشان دهند. ارزیابی بر اساس نوآوری، جذابیت بصری، کیفیت ارائه و ایمنی انجام می‌شود. این لیگ ترکیبی از فناوری، هنر و ارتباط با مخاطب است.",
-    },
-    {
-        "ID": 9,
-        "Name": "لیگ ربات امدادگر محیط‌زیست",
-        "Icon": "fa-leaf",
-        "Description": "در این رقابت، ربات‌ها مأموریت دارند تا در سناریوهای امدادی و زیست‌محیطی فعالیت کنند؛ از شناسایی آلودگی تا جمع‌آوری پسماند یا نجات در شرایط بحرانی. شرکت‌کنندگان باید ربات‌هایی بسازند که بتوانند به‌صورت خودمختار داده‌ها را تحلیل و بهترین تصمیم را اتخاذ کنند. این لیگ تلفیقی از علم، فناوری و مسئولیت اجتماعی است.",
-    },
-    {
-        "ID": 10,
-        "Name": "لیگ ربات پرنده",
-        "Icon": "fa-solid fa-plane",
-        "Description": "این لیگ برای علاقه‌مندان به طراحی پهپادها و سیستم‌های پروازی هوشمند طراحی شده است. تیم‌ها باید ربات‌های پرنده‌ای بسازند که توانایی انجام مأموریت‌های خاص مانند حمل بار، فیلم‌برداری یا نقشه‌برداری خودکار را داشته باشند. ارزیابی بر اساس پایداری پرواز، دقت کنترل، ایمنی و نوآوری در طراحی انجام می‌شود.",
-    },
-    {
-        "ID": 11,
-        "Name": "لیگ خودرو خودران",
-        "Icon": "fa-solid fa-car",
-        "Description": "در این لیگ، شرکت‌کنندگان باید یک خودروی هوشمند طراحی کنند که بتواند در مسیر مشخص، موانع را شناسایی کرده و به‌صورت خودکار حرکت کند. محورهای اصلی شامل بینایی ماشین، کنترل خودکار و تصمیم‌گیری هوشمند است. این لیگ مقدمه‌ای برای ورود به دنیای وسایل نقلیه خودران و فناوری‌های آینده‌ی حمل‌ونقل است.",
-    },
-    {
-        "ID": 12,
-        "Name": "لیگ کشاورز هوشمند (AgriTech AI)",
-        "Icon": "fa-solid fa-tractor",
-        "Description": "هدف این لیگ، پرورش مهارت‌های هوش مصنوعی در حوزه‌ی کشاورزی است. شرکت‌کنندگان با طراحی الگوریتم‌ها و عامل‌های هوشمند در محیط شبیه‌سازی‌شده، به بهینه‌سازی مصرف آب، کود، بذر و انرژی می‌پردازند. داوری بر اساس دقت تشخیص، بهره‌وری منابع و عملکرد کلی انجام می‌شود. این رقابت بستری برای توسعه فناوری‌های AgriTech در ایران است.",
-    },
-    {
-        "ID": 13,
-        "Name": "لیگ هوش مصنوعی در علوم پزشکی و سلامت (Medi AI)",
-        "Icon": "fa-stethoscope",
-        "Description": "در این لیگ، تیم‌ها راهکارهای مبتنی بر هوش مصنوعی برای تحلیل داده‌های پزشکی، تشخیص بیماری‌ها، پایش سلامت و تصمیم‌یارهای بالینی توسعه می‌دهند. هدف، آموزش کاربردهای علمی و اخلاقی هوش مصنوعی در پزشکی است. داوری بر اساس دقت مدل، نوآوری، قابلیت تفسیر و کاربردپذیری در نظام سلامت انجام می‌شود.",
-    },
-    {
-        "ID": 14,
-        "Name": "لیگ مدیریت هوشمند مصرف آب (Aqua AI)",
-        "Icon": "fa-tint",
-        "Description": "با توجه به بحران آب در ایران، این لیگ با هدف آموزش هوش مصنوعی در مدیریت منابع آبی طراحی شده است. در دو سطح دانش‌آموزی و دانشجویی، شرکت‌کنندگان با داده‌های واقعی کار کرده و مدل‌هایی برای پیش‌بینی مصرف، تشخیص نشتی و بهینه‌سازی شبکه‌های آبرسانی طراحی می‌کنند. این لیگ نمونه‌ای از کاربرد مستقیم علم داده و AI در حل چالش‌های ملی است.",
+        "href": Contact.aparat_playlist,
+        "icon": "fas fa-play-circle",
+        "label": "آپارات",
+        "display": "کانال آپارات آیروکاپ",
+        "target": "_blank",
     },
 ]
 
-GlobalHTMLNamesData = {
+cooperation_opportunities_data = [
+    {
+        "icon": "fas fa-handshake",
+        "title": "حمایت و اسپانسرشیپ",
+        "description": (
+            "نام تجاری خود را در قلب بزرگترین رویداد هوش مصنوعی کشور به "
+            "نمایش بگذارید و تعهد سازمان خود به نوآوری و پیشرفت فناوری را "
+            "نشان دهید."
+        ),
+    },
+    {
+        "icon": "fas fa-brain",
+        "title": "تعریف چالش‌های صنعتی",
+        "description": (
+            "مسائل واقعی صنعت خود را از طریق نوآوری باز حل کنید. چالش‌های "
+            "سازمان خود را به یک رقابت هیجان‌انگیز برای صدها تیم خلاق تبدیل "
+            "کنید."
+        ),
+    },
+    {
+        "icon": "fas fa-chalkboard-teacher",
+        "title": "همکاری علمی و داوری",
+        "description": (
+            "دانش و تجربه خود را با نسل آینده به اشتراک بگذارید. از اساتید و "
+            "متخصصان برجسته برای ارتقای سطح علمی رویداد دعوت به همکاری "
+            "می‌کنیم."
+        ),
+    },
+    {
+        "icon": "fas fa-users-cog",
+        "title": "پیوستن به تیم اجرایی",
+        "description": (
+            "اگر فردی پرانرژی و علاقه‌مند به دنیای فناوری هستید، به تیم "
+            "اجرایی آیروکاپ بپیوندید و تجربه‌ای بی‌نظیر در برگزاری یک رویداد "
+            "ملی کسب کنید."
+        ),
+    },
+    {
+        "icon": "fas fa-trophy",
+        "title": "برگزاری لیگ‌های تخصصی",
+        "description": (
+            "تخصص و حوزه فعالیت خود را به یک لیگ رقابتی تبدیل کنید. ما بستر "
+            "لازم برای افزودن رقابت‌های جدید به آیروکاپ را فراهم می‌کنیم."
+        ),
+    },
+    {
+        "icon": "fas fa-box-open",
+        "title": "همکاری در تامین تجهیزات",
+        "description": (
+            "آیروکاپ به قطعات الکترونیکی، رباتیک و نرم‌افزار نیاز دارد. "
+            "از شرکت‌های واردکننده و تامین‌کننده دعوت می‌شود تا با ارائه محصولات "
+            "خود، به عنوان شریک فنی در کنار ما باشند."
+        ),
+    },
+    {
+        "icon": "fas fa-bullhorn",
+        "title": "همکاری رسانه‌ای و تبلیغاتی",
+        "description": (
+            "از رسانه‌ها، خبرگزاری‌ها و شرکت‌های تبلیغاتی دعوت می‌کنیم تا با "
+            "پوشش خبری و اطلاع‌رسانی، به دیده‌شدن این رویداد ملی کمک کرده و "
+            "برند خود را معرفی کنند."
+        ),
+    },
+    {
+        "icon": "fas fa-university",
+        "title": "مشارکت علمی و دانشگاهی",
+        "description": (
+            "از دانشگاه‌ها، مراکز پژوهشی و موسسات آموزشی دعوت می‌شود تا به عنوان "
+            "شرکت علمی، در غنی‌سازی محتوای رویداد و تشویق دانشجویان به شرکت، با "
+            "ما همراه شوند."
+        ),
+    },
+    {
+        "icon": "fas fa-concierge-bell",
+        "title": "ارائه خدمات و پشتیبانی",
+        "description": (
+            "برگزاری یک رویداد بزرگ نیازمند خدمات اجرایی و پشتیبانی است. از "
+            "ارائه‌دهندگان خدمات (لجستیک، پذیرایی و...) برای همکاری در اجرای هرچه "
+            "بهتر مسابقات دعوت می‌کنیم."
+        ),
+    },
+]
+
+
+committee_members_data = [
+    {
+        "Name": "دکتر بهروز مینایی بیدگلی",
+        "Role": "رئیس مسابقات",
+        "Description": "رهبری کلی مسابقات و نظارت بر اجرای صحیح تمامی مراحل برگزاری",
+        "Image": os.path.join(Path.committee_dir, "Minayi.png"),
+    },
+    {
+        "Name": "دکتر داوود زارع",
+        "Role": "رئیس کمیته ملی مسابقات",
+        "Description": "هماهنگی و نظارت بر کلیه فعالیت‌های کمیته‌های تخصصی",
+        "Image": os.path.join(Path.committee_dir, "Davood.png"),
+    },
+    {
+        "Name": "مهندس زهرا سعادتی داریان",
+        "Role": "دبیر کمیته علمی",
+        "Description": "مسئولیت ارزیابی علمی پروژه‌ها و تنظیم معیارهای داوری",
+        "Image": os.path.join(Path.committee_dir, "Saadati.png"),
+    },
+    {
+        "Name": "مهندس محمدرضا ریاحی سامانی",
+        "Role": "دبیر کمیته رباتیک",
+        "Description": "مسئولیت برگزاری لیگ‌های رباتیک و ارزیابی ربات‌ها",
+        "Image": os.path.join(Path.committee_dir, "Riyahi.png"),
+    },
+    {
+        "Name": "مهندس پوریا حداد",
+        "Role": "دبیر کمیته هوش مصنوعی",
+        "Description": "مسئولیت برگزاری لیگ‌های هوش مصنوعی و ارزیابی پروژه‌ها",
+        "Image": os.path.join(Path.committee_dir, "Poria.png"),
+    },
+    {
+        "Name": "دکتر محمد خلیل پور",
+        "Role": "دبیر کمیته پشتیبانی",
+        "Description": "مسئولیت پشتیبانی فنی و حل مشکلات شرکت‌کنندگان",
+        "Image": os.path.join(Path.committee_dir, "KhalilPore.png"),
+    },
+]
+
+homepage_sponsors_data = [
+    {"logo_key": "InteriorMinistry", "alt_text": "وزارت کشور جمهوری اسلامی ایران"},
+    {"logo_key": "ScienceMinistry", "alt_text": "وزارت علوم، تحقیقات و فناوری"},
+    {"logo_key": "EducationMinistry", "alt_text": "وزارت آموزش و پرورش"},
+    {
+        "logo_key": "EducationDepartmentTehran",
+        "alt_text": "اداره کل آموزش و پرورش شهر تهران",
+    },
+    {"logo_key": "StudentResearchCenter", "alt_text": "پژوهش سرای دانش‌آموزی"},
+    {
+        "logo_key": "StudentResearchCenterTehran",
+        "alt_text": "پژوهش سرای دانش‌آموزی تهران",
+    },
+    {"logo_key": "WaterWaste", "alt_text": "شرکت مهندسی آب و فاضلاب کشور"},
+]
+
+gallery_videos_data = [
+    {
+        "title": "علام برگزاری اولین دوره مسابقات هوش مصنوعی و رباتیک آیروکاپ",
+        "src": ("https://www.aparat.com/video/video/embed/videohash/tgg3hv0/vt/frame"),
+    },
+    {
+        "title": "آیروکاپ | آماده سازی نوجوانان برای دنیای رباتیک",
+        "src": ("https://www.aparat.com/video/video/embed/videohash/icpiigb/vt/frame"),
+    },
+    {
+        "title": "آیروکاپ | اهمیت دانش رباتیک و مهارت های نرم برای دانش آموزان",
+        "src": ("https://www.aparat.com/video/video/embed/videohash/pyv0uga/vt/frame"),
+    },
+    {
+        "title": "آیروکاپ | مشاغل آینده دار برای نوجوانان",
+        "src": ("https://www.aparat.com/video/video/embed/videohash/ket93i2/vt/frame"),
+    },
+]
+
+global_html_names_data = {
     "About": "Global/About.html",
     "Base": "Global/Base.html",
     "Committee": "Global/Committee.html",
@@ -1134,7 +1481,7 @@ GlobalHTMLNamesData = {
     "Article": "Global/Article.html",
 }
 
-ClientHTMLNamesData = {
+client_html_names_data = {
     "CreateTeam": "Client/CreateTeam.html",
     "Dashboard": "Client/Dashboard.html",
     "ForgotPassword": "Client/ForgotPassword.html",
@@ -1153,7 +1500,7 @@ ClientHTMLNamesData = {
     "MyHistory": "Client/MyHistory.html",
 }
 
-AdminHTMLNamesData = {
+admin_html_names_data = {
     "AdminChat": "Admin/AdminChat.html",
     "AdminChatList": "Admin/AdminChatList.html",
     "AdminClientsList": "Admin/AdminClientsList.html",
@@ -1165,102 +1512,4 @@ AdminHTMLNamesData = {
     "AdminManageNews": "Admin/AdminManageNews.html",
     "AdminManageTeams": "Admin/AdminManageTeams.html",
     "AdminAddMember": "Admin/AdminAddMember.html",
-}
-
-CooperationOpportunitiesData = [
-    {
-        "icon": "fas fa-handshake",
-        "title": "حمایت و اسپانسرشیپ",
-        "description": "نام تجاری خود را در قلب بزرگترین رویداد هوش مصنوعی کشور به نمایش بگذارید و تعهد سازمان خود به نوآوری و پیشرفت فناوری را نشان دهید.",
-    },
-    {
-        "icon": "fas fa-brain",
-        "title": "تعریف چالش‌های صنعتی",
-        "description": "مسائل واقعی صنعت خود را از طریق نوآوری باز حل کنید. چالش‌های سازمان خود را به یک رقابت هیجان‌انگیز برای صدها تیم خلاق تبدیل کنید.",
-    },
-    {
-        "icon": "fas fa-chalkboard-teacher",
-        "title": "همکاری علمی و داوری",
-        "description": "دانش و تجربه خود را با نسل آینده به اشتراک بگذارید. از اساتید و متخصصان برجسته برای ارتقای سطح علمی رویداد دعوت به همکاری می‌کنیم.",
-    },
-    {
-        "icon": "fas fa-users-cog",
-        "title": "پیوستن به تیم اجرایی",
-        "description": "اگر فردی پرانرژی و علاقه‌مند به دنیای فناوری هستید، به تیم اجرایی آیروکاپ بپیوندید و تجربه‌ای بی‌نظیر در برگزاری یک رویداد ملی کسب کنید.",
-    },
-    {
-        "icon": "fas fa-trophy",
-        "title": "برگزاری لیگ‌های تخصصی",
-        "description": "تخصص و حوزه فعالیت خود را به یک لیگ رقابتی تبدیل کنید. ما بستر لازم برای افزودن رقابت‌های جدید به آیروکاپ را فراهم می‌کنیم.",
-    },
-    {
-        "icon": "fas fa-box-open",
-        "title": "همکاری در تامین تجهیزات",
-        "description": "آیروکاپ به قطعات الکترونیکی، رباتیک و نرم‌افزار نیاز دارد. از شرکت‌های واردکننده و تامین‌کننده دعوت می‌کنیم تا با ارائه محصولات خود، به عنوان شریک فنی در کنار ما باشند.",
-    },
-    {
-        "icon": "fas fa-bullhorn",
-        "title": "همکاری رسانه‌ای و تبلیغاتی",
-        "description": "از رسانه‌ها، خبرگزاری‌ها و شرکت‌های تبلیغاتی دعوت می‌کنیم تا با پوشش خبری و اطلاع‌رسانی، به دیده‌شدن این رویداد ملی کمک کرده و برند خود را معرفی کنند.",
-    },
-    {
-        "icon": "fas fa-university",
-        "title": "مشارکت علمی و دانشگاهی",
-        "description": "از دانشگاه‌ها، مراکز پژوهشی و موسسات آموزشی دعوت می‌شود تا به عنوان شریک علمی، در غنی‌سازی محتوای رویداد و تشویق دانشجویان به شرکت، با ما همراه شوند.",
-    },
-    {
-        "icon": "fas fa-concierge-bell",
-        "title": "ارائه خدمات و پشتیبانی",
-        "description": "برگزاری یک رویداد بزرگ نیازمند خدمات اجرایی و پشتیبانی است. از ارائه‌دهندگان خدمات (لجستیک، پذیرایی، و...) برای همکاری در اجرای هرچه بهتر مسابقات دعوت می‌کنیم.",
-    },
-]
-
-GalleryVideosData = [
-    {
-        "title": "علام برگزاری اولین دوره مسابقات هوش مصنوعی و رباتیک آیروکاپ",
-        "src": "https://www.aparat.com/video/video/embed/videohash/tgg3hv0/vt/frame",
-    },
-    {
-        "title": "آیروکاپ | مشاغل آینده دار برای نوجوانان",
-        "src": "https://www.aparat.com/video/video/embed/videohash/ket93i2/vt/frame",
-    },
-    {
-        "title": "آیروکاپ | آماده سازی نوجوانان برای دنیای رباتیک",
-        "src": "https://www.aparat.com/video/video/embed/videohash/icpiigb/vt/frame",
-    },
-    {
-        "title": "آیروکاپ | اهمیت دانش رباتیک و مهارت های نرم برای دانش آموزان",
-        "src": "https://www.aparat.com/video/video/embed/videohash/pyv0uga/vt/frame",
-    },
-]
-
-HomepageSponsorsData = [
-    {"logo_key": "InteriorMinistry", "alt_text": "وزارت کشور جمهوری اسلامی ایران"},
-    {"logo_key": "StudentResearchCenter", "alt_text": "پژوهش سرای دانش آموزی"},
-    {"logo_key": "EducationMinistry", "alt_text": "وزارت آموزش و پرورش"},
-    {"logo_key": "WaterWaste", "alt_text": "شرکت مهندسی آب و فاضلاب کشور"},
-    {
-        "logo_key": "EducationDepartmentTehran",
-        "alt_text": "اداره کل آموزش و پرورش شهر تهران",
-    },
-    {
-        "logo_key": "StudentResearchCenterTehran",
-        "alt_text": "پژوهش سرای دانش آموزی تهران",
-    },
-]
-
-EducationAgeRanges = {
-    level: details["ages"]
-    for level, details in EducationLevels.items()
-    if details["ages"]
-}
-
-Weekdays = {
-    "Saturday": "شنبه",
-    "Sunday": "یکشنبه",
-    "Monday": "دوشنبه",
-    "Tuesday": "سه‌شنبه",
-    "Wednesday": "چهارشنبه",
-    "Thursday": "پنجشنبه",
-    "Friday": "جمعه",
 }
