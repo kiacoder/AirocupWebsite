@@ -75,7 +75,7 @@ def GetChatHistory(ClientID):
                         "Timestamp": Message.Timestamp.isoformat(),
                         "Sender": Message.Sender,
                     }
-                    for Message in database.GetChatHistoryByClientID(db, ClientID)
+                    for Message in database.get_chat_history_by_client_id(db, ClientID)
                 ]
             }
         )
@@ -96,7 +96,7 @@ def ApiGetChatClients():
 @app.AdminRequired
 def AdminChat(ClientID):
     with database.get_db_session() as DbSession:
-        Client = database.GetClientBy(DbSession, "ClientID", ClientID)
+        Client = database.get_client_by(DbSession, "ClientID", ClientID)
     if not Client or Client.Status != models.EntityStatus.Active:
         flash("کاربر مورد نظر یافت نشد یا غیرفعال است.", "Error")
         return redirect(url_for("AdminSelectChat"))
@@ -266,7 +266,7 @@ def AdminDeleteMember(TeamID, MemberID):
         )
 
         DbSession.commit()
-        utils.UpdateTeamStats(DbSession, TeamID)
+        utils.update_team_stats(DbSession, TeamID)
 
         flash("عضو با موفقیت به عنوان منصرف شده علامت‌گذاری و آرشیو شد.", "Success")
 
@@ -307,7 +307,7 @@ def AdminManageNews():
 
             if ImageFile and ImageFile.filename:
                 ImageFile.stream.seek(0)
-                if not utils.IsFileAllowed(ImageFile.stream):
+                if not utils.is_file_allowed(ImageFile.stream):
                     flash("خطا: فرمت فایل تصویر مجاز نیست.", "Error")
                     return redirect(url_for("AdminManageNews"))
                 ImageFile.stream.seek(0)
@@ -342,7 +342,7 @@ def AdminManageNews():
 
             return redirect(url_for("AdminManageNews"))
 
-        ArticlesList = database.GetAllArticles(DbSession)
+        ArticlesList = database.get_all_articles(DbSession)
     return render_template(
         constants.AdminHTMLNamesData["AdminManageNews"], Articles=ArticlesList
     )
@@ -380,7 +380,7 @@ def AdminEditNews(ArticleID):
                 ImageFile = request.files.get("Image")
                 if ImageFile and ImageFile.filename:
                     ImageFile.stream.seek(0)
-                    if not utils.IsFileAllowed(ImageFile.stream):
+                    if not utils.is_file_allowed(ImageFile.stream):
                         flash("خطا: فرمت فایل تصویر مجاز نیست.", "Error")
                         return redirect(url_for("AdminEditNews", ArticleID=ArticleID))
                     ImageFile.stream.seek(0)
@@ -523,11 +523,11 @@ def AdminAddMember(TeamID):
         if request.method == "PosT":
             app.CSRF_Protector.protect()
             try:
-                Success, Message = utils.InternalAddMember(
+                Success, Message = utils.internaladdmember(
                     DbSession, TeamID, request.form
                 )
                 if Success:
-                    if database.CheckIfTeamIsPaid(DbSession, TeamID):
+                    if database.check_if_team_is_paid(DbSession, TeamID):
                         Team.UnpaidMembersCount += 1
                         flash(
                             "عضو جدید با موفقیت اضافه شد. (توجه: تیم پرداخت‌شده است، هزینه عضو جدید باید محاسبه شود).",
@@ -537,7 +537,7 @@ def AdminAddMember(TeamID):
                         flash("عضو جدید با موفقیت توسط ادمین اضافه شد.", "Success")
 
                     DbSession.commit()
-                    utils.UpdateTeamStats(DbSession, TeamID)
+                    utils.update_team_stats(DbSession, TeamID)
                     return redirect(url_for("AdminEditTeam", TeamID=TeamID))
                 else:
                     flash(Message, "Error")
@@ -568,7 +568,7 @@ def AdminEditTeam(TeamID):
                 LeagueOneID = request.form.get("LeagueOneID")
                 LeagueTwoID = request.form.get("LeagueTwoID")
 
-                IsValid, ErrorMessage = utils.IsValidTeamName(NewTeamName)
+                IsValid, ErrorMessage = utils.is_valid_team_name(NewTeamName)
                 if not IsValid:
                     flash(ErrorMessage, "Error")
                 else:
@@ -587,7 +587,7 @@ def AdminEditTeam(TeamID):
                         Team.LeagueOneID = int(LeagueOneID) if LeagueOneID else None
                         Team.LeagueTwoID = int(LeagueTwoID) if LeagueTwoID else None
                         DbSession.commit()
-                        utils.UpdateTeamStats(DbSession, TeamID)
+                        utils.update_team_stats(DbSession, TeamID)
                         flash("جزئیات تیم با موفقیت ذخیره شد", "Success")
 
             except Exception as Error:
@@ -618,7 +618,7 @@ def AdminEditTeam(TeamID):
 @app.AdminRequired
 def AdminEditMember(TeamID, MemberID):
     with database.get_db_session() as DbSession:
-        UpdatedMemberData, Error = utils.CreateMemberFromFormData(
+        UpdatedMemberData, Error = utils.create_member_from_form_data(
             DbSession, request.form
         )
         if Error:
@@ -644,7 +644,7 @@ def AdminEditMember(TeamID, MemberID):
                 MemberToUpdate.CityID = UpdatedMemberData["CityID"]
 
                 DbSession.commit()
-                utils.UpdateTeamStats(DbSession, TeamID)
+                utils.update_team_stats(DbSession, TeamID)
                 flash("اطلاعات عضو با موفقیت ویرایش شد.", "Success")
             else:
                 flash("عضو مورد نظر برای ویرایش یافت نشد.", "Error")
@@ -688,8 +688,8 @@ def AdminAddClient():
 
     if not all(
         [
-            utils.IsValidEmail(request.form.get("Email", "").strip().lower()),
-            utils.IsValidIranianPhone(Phone),
+            utils.is_valid_email(request.form.get("Email", "").strip().lower()),
+            utils.is_valid_iranian_phone(Phone),
             Password,
         ]
     ):
@@ -739,13 +739,13 @@ def AdminAddClient():
 def AdminEditClient(ClientID):
     with database.get_db_session() as DbSession:
         try:
-            CleanData, Errors = database.ValidateClientUpdate(
+            CleanData, Errors = database.validate_client_update(
                 DbSession,
                 ClientID,
                 request.form,
                 utils.IsValidPassword,
-                utils.IsValidEmail,
-                utils.IsValidIranianPhone,
+                utils.is_valid_email,
+                utils.is_valid_iranian_phone,
                 persiantools.digits.fa_to_en,
             )
 

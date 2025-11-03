@@ -1,10 +1,4 @@
-"""Define SQLite database structure."""
-
-# Disable style checks that are not useful for declarative models
-# pylint: disable=missing-module-docstring, invalid-name
-# pylint: disable=too-few-public-methods, missing-class-docstring
-# pylint: disable=line-too-long, unnecessary-pass
-
+"ORM models for the application using SQLAlchemy"
 import enum
 import datetime
 from sqlalchemy.orm import (
@@ -28,12 +22,12 @@ from sqlalchemy import (
 
 
 class Base(DeclarativeBase):
-    """Base declarative class for SQLAlchemy models."""
-    pass
+    "Base class for all ORM models"
 
 
 class LabeledEnum(enum.Enum):
-    """Enum with human-readable label attached to each member."""
+    "Enum base class with an additional label attribute"
+    label: str
 
     def __new__(cls, value, label):
         obj = object.__new__(cls)
@@ -43,28 +37,28 @@ class LabeledEnum(enum.Enum):
 
 
 class EntityStatus(LabeledEnum):
-    """Status of entities."""
+    "Entity status enumeration"
     ACTIVE = ("active", "فعال")
     INACTIVE = ("inactive", "غیرفعال")
     WITHDRAWN = ("withdrawn", "منصرف شده")
 
 
 class MemberRole(LabeledEnum):
-    """Role of a team member."""
+    "Member role enumeration"
     LEADER = ("leader", "سرپرست")
     COACH = ("coach", "مربی")
     MEMBER = ("member", "عضو")
 
 
 class PaymentStatus(LabeledEnum):
-    """Status of a payment."""
+    "Payment status enumeration"
     PENDING = ("pending", "در حال بررسی")
     APPROVED = ("approved", "تایید شده")
     REJECTED = ("rejected", "رد شده")
 
 
 class Client(Base):
-    """Client / account owner."""
+    "Client entity"
     __tablename__ = "clients"
 
     client_id = Column(Integer, primary_key=True, autoincrement=True)
@@ -113,9 +107,8 @@ class Client(Base):
 
 
 class League(Base):
-    """League / competition tier."""
+    "League entity"
     __tablename__ = "leagues"
-
     league_id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False, unique=True)
     icon = Column(String)
@@ -123,9 +116,8 @@ class League(Base):
 
 
 class Team(Base):
-    """Team entity."""
+    "Team entity"
     __tablename__ = "teams"
-
     team_id = Column(Integer, primary_key=True, autoincrement=True)
     client_id = Column(
         Integer,
@@ -176,7 +168,7 @@ class Team(Base):
 
 
 class Payment(Base):
-    """Payments uploaded by clients for teams."""
+    "Payment entity"
     __tablename__ = "payments"
 
     payment_id = Column(Integer, primary_key=True, autoincrement=True)
@@ -207,7 +199,7 @@ class Payment(Base):
 
 
 class Member(Base):
-    """Team member record."""
+    "Member entity"
     __tablename__ = "members"
 
     member_id = Column(Integer, primary_key=True, autoincrement=True)
@@ -234,21 +226,19 @@ class Member(Base):
     team = relationship("Team", back_populates="members")
     city = relationship("City", back_populates="members")
 
-    _leader_where = f"role = '{MemberRole.LEADER.value}'"
     __table_args__ = (
         Index(
             "one_leader_per_team_idx",
             "team_id",
             unique=True,
-            sqlite_where=_leader_where,
+            sqlite_where=f"role = '{MemberRole.LEADER.value}'",
         ),
     )
 
 
 class Province(Base):
-    """Province containing cities."""
+    "Province entity"
     __tablename__ = "provinces"
-
     province_id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False, unique=True)
     cities = relationship(
@@ -259,9 +249,8 @@ class Province(Base):
 
 
 class City(Base):
-    """City inside a province."""
+    "City entity"
     __tablename__ = "cities"
-
     city_id = Column(Integer, primary_key=True, autoincrement=True)
     province_id = Column(
         Integer,
@@ -275,9 +264,8 @@ class City(Base):
 
 
 class LoginAttempt(Base):
-    """Login attempt audit."""
+    "Login attempt entity"
     __tablename__ = "login_attempts"
-
     attempt_id = Column(Integer, primary_key=True, autoincrement=True)
     identifier = Column(String, nullable=False, index=True)
     ip_address = Column(String, nullable=False)
@@ -286,9 +274,8 @@ class LoginAttempt(Base):
 
 
 class News(Base):
-    """Published news articles."""
+    "News entity"
     __tablename__ = "news"
-
     news_id = Column(Integer, primary_key=True, autoincrement=True)
     title = Column(TEXT, nullable=False)
     content = Column(TEXT, nullable=False)
@@ -298,9 +285,8 @@ class News(Base):
 
 
 class HistoryLog(Base):
-    """History log entries."""
+    "History log entity for tracking actions and changes"
     __tablename__ = "history_logs"
-
     log_id = Column(Integer, primary_key=True, autoincrement=True)
     client_id = Column(
         Integer,
@@ -315,9 +301,8 @@ class HistoryLog(Base):
 
 
 class PasswordReset(Base):
-    """Password reset codes."""
+    "Password reset entity"
     __tablename__ = "password_resets"
-
     reset_id = Column(Integer, primary_key=True, autoincrement=True)
     identifier = Column(String, nullable=False, index=True)
     identifier_type = Column(String, nullable=False)
@@ -326,9 +311,8 @@ class PasswordReset(Base):
 
 
 class ChatMessage(Base):
-    """Chat messages stored per client."""
+    "Chat message entity"
     __tablename__ = "chat_messages"
-
     message_id = Column(Integer, primary_key=True, autoincrement=True)
     client_id = Column(
         Integer,
@@ -343,7 +327,7 @@ class ChatMessage(Base):
 
 
 class TeamDocument(Base):
-    """Uploaded documents related to teams."""
+    "Team document entity"
     __tablename__ = "team_documents"
 
     document_id = Column(Integer, primary_key=True, autoincrement=True)

@@ -3,7 +3,7 @@
 import os
 import datetime
 from typing import Dict, Optional, Tuple
-from better_profanity import profanity  # type: ignore
+from better_profanity import profanity # type: ignore
 
 
 class Path:

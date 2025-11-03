@@ -1,10 +1,8 @@
-"""DataBase Related Code, For Adding Editing And Deleting Members, Teams and Clients"""
-
+"""DataBase Code For Adding Editing And Deleting Members, Teams and Clients"""
 import datetime
 import os
 from contextlib import contextmanager
 from typing import Any, Iterator, List, Optional, Tuple
-
 import bcrypt
 import constants
 import models
@@ -13,50 +11,57 @@ from sqlalchemy import create_engine, func
 from sqlalchemy.orm import Session, sessionmaker
 
 db_engine = create_engine(
-    f"sqlite:///{constants.Path.DataBase}", connect_args={"check_same_thread": False}
+    f"sqlite:///{constants.Path.database}", connect_args={"check_same_thread": False}
 )
-db_session_local = sessionmaker(autocommit=False, autoflush=False, bind=db_engine)
+
+
+def create_database():
+    "Create the database and its tables if they do not exist"
+    os.makedirs(os.path.dirname(constants.Path.database), exist_ok=True)
+    models.DeclarativeBase.metadata.create_all(bind=db_engine)
 
 
 @contextmanager
 def get_db_session() -> Iterator[Session]:
-    db = db_session_local()
+    "Get a database session"
+    session_local = sessionmaker(
+        autocommit=False, autoflush=False, bind=db_engine
+    )
+    db = session_local()
     try:
         yield db
     finally:
         db.close()
 
 
-def CreateDatabase():
-    os.makedirs(os.path.dirname(constants.Path.DataBase), exist_ok=True)
-    models.DeclarativeBase.metadata.create_all(bind=db_engine)
-
-
 def has_existing_leader(
     db: Session, team_id: int, member_id_to_exclude: Optional[int] = None
 ) -> bool:
+    "Check if team already has leader, optionally excluding specific member ID"
     query = db.query(models.Member).filter(
-        models.Member.TeamID == team_id, models.Member.Role == models.MemberRole.Leader
+        models.Member.team_id == team_id, models.Member.role == models.MemberRole.LEADER
     )
     if member_id_to_exclude:
-        query = query.filter(models.Member.MemberID != member_id_to_exclude)
+        query = query.filter(models.Member.member_id != member_id_to_exclude)
     return query.first() is not None
 
 
 def get_all_active_clients(db: Session) -> list[models.Client]:
+    "Retrieve all active clients ordered by email address"
     return (
         db.query(models.Client)
-        .filter(models.Client.Status == models.EntityStatus.ACTIVE)
-        .order_by(models.Client.Email.asc())
+        .filter(models.Client.status == models.EntityStatus.ACTIVE)
+        .order_by(models.Client.email.asc())
         .all()
     )
 
 
 def get_team_by_id(db: Session, team_id: int) -> Optional[models.Team]:
-    return db.query(models.Team).filter(models.Team.TeamID == team_id).first()
+    "Retrieve a team by its ID"
+    return db.query(models.Team).filter(models.Team.team_id == team_id).first()
 
 
-def ValidateClientUpdate(
+def validate_client_update(
     db: Session,
     client_id: int,
     form_data: Any,
@@ -65,6 +70,7 @@ def ValidateClientUpdate(
     is_valid_iranian_phone,
     fa_to_en,
 ) -> Tuple[Optional[dict], list[str]]:
+    "Validate client update data and return cleaned data or errors"
     clean_data = {}
     errors = []
 
@@ -75,14 +81,14 @@ def ValidateClientUpdate(
         return None, ["اطلاعات کاربر مورد نظر یافت نشد."]
 
     new_email = form_data.get("Email", "").strip()
-    if new_email and new_email != client_to_update.Email:
+    if new_email and new_email != client_to_update.email:
         if not is_valid_email(new_email):
             errors.append("فرمت ایمیل وارد شده معتبر نیست.")
         else:
             existing_client = (
                 db.query(models.Client)
                 .filter(
-                    func.lower(models.Client.Email) == func.lower(new_email),
+                    func.lower(models.Client.email) == func.lower(new_email),
                     models.Client.client_id != client_id,
                 )
                 .first()
@@ -93,14 +99,14 @@ def ValidateClientUpdate(
                 clean_data["Email"] = new_email
 
     new_phone_number = fa_to_en(form_data.get("PhoneNumber", "").strip())
-    if new_phone_number and new_phone_number != client_to_update.PhoneNumber:
+    if new_phone_number and new_phone_number != client_to_update.phone_number:
         if not is_valid_iranian_phone(new_phone_number):
             errors.append("شماره تلفن وارد شده معتبر نیست.")
         else:
             existing_client = (
                 db.query(models.Client)
                 .filter(
-                    models.Client.PhoneNumber == new_phone_number,
+                    models.Client.phone_number == new_phone_number,
                     models.Client.client_id != client_id,
                 )
                 .first()
@@ -123,219 +129,235 @@ def ValidateClientUpdate(
     return clean_data, []
 
 
-def UpdateClientDetails(db: Session, client_id: int, CleanData: dict):
-    client = db.query(models.Client).filter(models.Client.client_id == client_id).first()
-    if not client:
+def update_client_details(db: Session, client_id: int, clean_data: dict):
+    "Update client details in the database"
+    client_to_update = (
+        db.query(models.Client)
+        .filter(models.Client.client_id == client_id)
+        .first()
+    )
+    if not client_to_update:
         return
 
-    if "PhoneNumber" in CleanData:
-        client.PhoneNumber = CleanData["PhoneNumber"]
-    if "Email" in CleanData:
-        client.Email = CleanData["Email"]
-    if "Password" in CleanData:
-        client.Password = bcrypt.hashpw(
-            CleanData["Password"].encode("utf-8"), bcrypt.gensalt()
+    if "PhoneNumber" in clean_data:
+        client_to_update.phone_number = clean_data["PhoneNumber"]
+    if "Email" in clean_data:
+        client_to_update.email = clean_data["Email"]
+    if "Password" in clean_data:
+        client_to_update.password = bcrypt.hashpw(
+            clean_data["Password"].encode("utf-8"), bcrypt.gensalt()
         ).decode("utf-8")
-
     db.commit()
 
 
-def GetClientBy(db: Session, Identifier: str, value: Any) -> Optional[models.Client]:
-    if Identifier == "client_id":
+def get_client_by(db: Session, identifier: str, value: Any) -> Optional[models.Client]:
+    "Retrieve a Client by specified identifier"
+    if identifier == "client_id":
         return db.query(models.Client).filter(models.Client.client_id == value).first()
-    elif Identifier == "Email":
+    elif identifier == "email":
         return (
             db.query(models.Client)
-            .filter(func.lower(models.Client.Email) == func.lower(value))
+            .filter(func.lower(models.Client.email) == func.lower(value))
             .first()
         )
-    elif Identifier == "PhoneNumber":
+    elif identifier == "phone_number":
         return (
-            db.query(models.Client).filter(models.Client.PhoneNumber == value).first()
+            db.query(models.Client).filter(models.Client.phone_number == value).first()
         )
-    raise ValueError(f"Invalid Identifier for searching Clients: {Identifier}")
+    raise ValueError(f"Invalid Identifier for searching Clients: {identifier}")
 
 
-def GetAllArticles(db: Session):
-    return db.query(models.News).order_by(models.News.PublishDate.desc()).all()
+def get_all_articles(db: Session):
+    "Retrieve all news articles ordered by publish date descending"
+    return db.query(models.News).order_by(models.News.publish_date.desc()).all()
 
 
-def GetArticleByID(db: Session, ArticleID: int):
-    return db.query(models.News).filter(models.News.NewsID == ArticleID).first()
+def get_article_by_id(db: Session, article_id: int):
+    "Retrieve a news article by its ID"
+    return db.query(models.News).filter(models.News.news_id == article_id).first()
 
 
-def LogLoginAttempt(db: Session, Identifier: str, IPAddress: str, IsSuccess: bool):
+def log_login_attempt(db: Session, identifier: str, ip_address: str, is_success: bool):
+    "Log a login attempt to the database"
     db.add(
         models.LoginAttempt(
-            Identifier=Identifier,
-            IPAddress=IPAddress,
+            Identifier=identifier,
+            IPAddress=ip_address,
             Timestamp=datetime.datetime.now(datetime.timezone.utc),
-            IsSuccess=IsSuccess,
+            IsSuccess=is_success,
         )
     )
 
 
-def PopulateGeographyData():
+def populate_geography_data():
+    "Populate Provinces and Cities tables from constants if they are empty"
     with get_db_session() as db:
         if db.query(models.Province).first():
             return
         print("Populating Provinces and Cities tables...")
-        for ProvinceName, Cities in constants.ProvincesData.items():
-            NewProvince = models.Province(Name=ProvinceName)
-            db.add(NewProvince)
+        for province_name, cities in constants.provinces_data.items():
+            new_province = models.Province(Name=province_name)
+            db.add(new_province)
             db.flush()
-            for CityName in Cities:
-                db.add(models.City(Name=CityName, ProvinceID=NewProvince.ProvinceID))
+            for city_name in cities:
+                db.add(models.City(Name=city_name, ProvinceID=new_province.province_id))
         db.commit()
         print("Geography data populated successfully.")
 
 
-def ValidateNewMemberData(
+def validate_new_member_data(
     db: Session,
-    Name: str,
-    NationalID: str,
-    Province: str,
-    City: str,
-    BirthYear: int,
-    BirthMonth: int,
-    BirthDay: int,
-    RoleValue: str,
+    name: str,
+    national_id: str,
+    province: str,
+    city: str,
+    birth_year: int,
+    birth_month: int,
+    birth_day: int,
+    role_value: str,
 ) -> List[str]:
-    Errors = []
-    if not utils.IsValidName(Name):
-        Errors.append("نام و نام خانوادگی معتبر نیست. لطفاً نام کامل را وارد کنید.")
+    "Validate new member data and return a list of error messages if any"
+    errors = []
+    if not utils.is_valid_name(name):
+        errors.append("نام و نام خانوادگی معتبر نیست. لطفاً نام کامل را وارد کنید.")
 
-    if not utils.IsValidNationalID(NationalID):
-        Errors.append("کد ملی وارد شده معتبر نیست.")
+    if not utils.is_valid_national_id(national_id):
+        errors.append("کد ملی وارد شده معتبر نیست.")
     elif (
-        db.query(models.Member.MemberID)
-        .filter(models.Member.NationalID == NationalID)
+        db.query(models.Member.member_id)
+        .filter(models.Member.national_id == national_id)
         .first()
     ):
-        Errors.append("این کد ملی قبلاً برای عضو دیگری در سیستم ثبت شده است.")
+        errors.append("این کد ملی قبلاً برای عضو دیگری در سیستم ثبت شده است.")
 
     if not (
-        db.query(models.City.CityID)
+        db.query(models.City.city_id)
         .join(models.Province)
-        .filter(models.Province.Name == Province, models.City.Name == City)
+        .filter(models.Province.name == province, models.City.name == city)
         .first()
     ):
-        Errors.append("استان یا شهر انتخاب شده معتبر نیست.")
+        errors.append("استان یا شهر انتخاب شده معتبر نیست.")
 
-    IsValidDate, DateError = utils.ValidatePersianDate(BirthYear, BirthMonth, BirthDay)
-    if not IsValidDate:
-        Errors.append(DateError)
+    is_valid_date, date_error = utils.validate_persian_date(birth_year, birth_month, birth_day)
+    if not is_valid_date:
+        errors.append(date_error)
 
-    if RoleValue not in {role.value for role in models.MemberRole}:
-        Errors.append("نقش انتخاب شده (سرپرست، مربی، عضو) معتبر نیست.")
+    if role_value not in {role.value for role in models.MemberRole}:
+        errors.append("نقش انتخاب شده (سرپرست، مربی، عضو) معتبر نیست.")
 
-    return Errors
+    return errors
 
 
-def LogAction(
-    db: Session, client_id: int, ActionDescription: str, IsAdminAction: bool = False
+def log_action(
+    db: Session, client_id: int, action_description: str, is_admin_action: bool = False
 ):
+    "Log an action to the database"
     db.add(
         models.HistoryLog(
             client_id=client_id,
-            Action=ActionDescription,
-            AdminInvolved=IsAdminAction,
-            Timestamp=datetime.datetime.now(datetime.timezone.utc),
+            action=action_description,
+            admin_involved=is_admin_action,
+            timestamp=datetime.datetime.now(datetime.timezone.utc),
         )
     )
 
 
-def SaveChatMessage(db: Session, client_id: int, MessageText: str, Sender: str):
+def save_chat_message(db: Session, client_id: int, message_text: str, sender: str):
+    "Save a chat message to the database"
     db.add(
         models.ChatMessage(
             client_id=client_id,
-            MessageText=MessageText,
-            Sender=Sender,
-            Timestamp=datetime.datetime.now(datetime.timezone.utc),
+            message_text=message_text,
+            sender=sender,
+            timestamp=datetime.datetime.now(datetime.timezone.utc),
         )
     )
 
 
-def GetChatHistoryByClientID(db: Session, client_id: int) -> list[models.ChatMessage]:
+def get_chat_history_by_client_id(db: Session, client_id: int) -> list[models.ChatMessage]:
+    "Retrieve chat history for a specific client"
     return (
         db.query(models.ChatMessage)
         .filter(models.ChatMessage.client_id == client_id)
-        .order_by(models.ChatMessage.Timestamp.asc())
+        .order_by(models.ChatMessage.timestamp.asc())
         .all()
     )
 
 
-def HasTeamMadeAnyPayment(db: Session, TeamID: int) -> bool:
+def has_team_made_any_payment(db: Session, team_id: int) -> bool:
+    "Check if the team has made any payments"
     return (
-        db.query(models.Payment).filter(models.Payment.TeamID == TeamID).first()
+        db.query(models.Payment).filter(models.Payment.team_id == team_id).first()
         is not None
     )
 
 
-def CheckIfTeamIsPaid(db: Session, TeamID: int) -> bool:
+def check_if_team_is_paid(db: Session, team_id: int) -> bool:
+    "Check if the team has any approved payments"
     return (
         db.query(models.Payment)
         .filter(
-            models.Payment.TeamID == TeamID,
-            models.Payment.Status == models.PaymentStatus.APPROVED,
+            models.Payment.team_id == team_id,
+            models.Payment.status == models.PaymentStatus.APPROVED,
         )
         .first()
     ) is not None
 
 
-def IsMemberLeagueConflict(
-    db: Session, NationalID: str, TargetTeamID: int
+def is_member_league_conflict(
+    db: Session, national_id: str, target_team_id: int
 ) -> Tuple[bool, str]:
-    TargetTeam = (
-        db.query(models.Team.LeagueOneID, models.Team.LeagueTwoID)
+    "Check if adding a member to the target team would create league conflict"
+    target_team = (
+        db.query(models.Team.league_one_id, models.Team.league_two_id)
         .filter(
-            models.Team.TeamID == TargetTeamID,
-            models.Team.Status == models.EntityStatus.ACTIVE,
+            models.Team.team_id == target_team_id,
+            models.Team.status == models.EntityStatus.ACTIVE,
         )
         .first()
     )
-    if not TargetTeam or (not TargetTeam.LeagueOneID and not TargetTeam.LeagueTwoID):
+    if not target_team or (not target_team.league_one_id and not target_team.league_two_id):
         return False, ""
 
-    TargetLeagueIDs = {TargetTeam.LeagueOneID, TargetTeam.LeagueTwoID} - {None}
-    if not TargetLeagueIDs:
+    target_league_ids = {target_team.league_one_id, target_team.league_two_id} - {None}
+    if not target_league_ids:
         return False, ""
 
-    ConflictingTeam = (
+    conflicting_team = (
         db.query(models.Team)
         .join(models.Member)
         .filter(
-            models.Member.NationalID == NationalID,
-            models.Team.TeamID != TargetTeamID,
-            models.Member.Status == models.EntityStatus.ACTIVE,
-            models.Team.Status == models.EntityStatus.ACTIVE,
-            models.Member.Role.notin_(
-                [models.MemberRole.Leader, models.MemberRole.Coach]
+            models.Member.national_id == national_id,
+            models.Team.team_id != target_team_id,
+            models.Member.status == models.EntityStatus.ACTIVE,
+            models.Team.status == models.EntityStatus.ACTIVE,
+            models.Member.role.notin_(
+                [models.MemberRole.LEADER, models.MemberRole.COACH]
             ),
             (
-                models.Team.LeagueOneID.in_(TargetLeagueIDs)
-                | models.Team.LeagueTwoID.in_(TargetLeagueIDs)
+                models.Team.league_one_id.in_(target_league_ids)
+                | models.Team.league_two_id.in_(target_league_ids)
             ),
         )
         .first()
     )
 
-    if ConflictingTeam:
-        ConflictingTeamLeagueIDs = {
-            ConflictingTeam.LeagueOneID,
-            ConflictingTeam.LeagueTwoID,
+    if conflicting_team:
+        conflicting_team_league_ids = {
+            conflicting_team.league_one_id,
+            conflicting_team.league_two_id,
         }
-        SharedLeagueIDs = TargetLeagueIDs.intersection(ConflictingTeamLeagueIDs)
+        shared_league_ids = target_league_ids.intersection(conflicting_team_league_ids)
 
-        SharedLeagueNames = (
-            db.query(models.League.Name)
-            .filter(models.League.LeagueID.in_(SharedLeagueIDs))
+        shared_league_names = (
+            db.query(models.League.name)
+            .filter(models.League.league_id.in_(shared_league_ids))
             .all()
         )
-        Names = ", ".join([Name for (Name,) in SharedLeagueNames])
+        names = ", ".join([name for (name,) in shared_league_names])
 
         return (
             True,
-            f"این عضو در تیم «{ConflictingTeam.TeamName}» که در لیگ(های) «{Names}» حضور دارد، ثبت شده است.",
+            f"این عضو در تیم «{conflicting_team.team_name}» که در لیگ(های) «{names}» حضور دارد، ثبت شده است.",
         )
     return False, ""
