@@ -1,379 +1,416 @@
-import getpass as GetPass
-import os as OS
-import sys as Sys
-from functools import wraps as Wraps
-import bcrypt as BCrypt
-import jdatetime as JDateTime
-from flask_socketio import SocketIO, emit as Emit, join_room as JoinRoom
-from flask_wtf.csrf import CSRFProtect
-from persiantools.digits import en_to_fa as EnToFa
-import traceback as TraceBack
-from sqlalchemy.orm import Session
-from sqlalchemy import func
-import Config
-import Database
-import bleach as Bleach
+"Backend application for the Airocup website using Flask framework"
+import getpass
+import os
+import sys
+from functools import wraps
+import traceback # type: ignore
+import datetime # type: ignore
+import bcrypt
+import jdatetime # type: ignore
+from flask_socketio import SocketIO, emit, join_room # type: ignore
+from flask_wtf.csrf import CSRFProtect, CSRFError # type: ignore
+from persiantools.digits import en_to_fa # type: ignore
+from sqlalchemy import exc, func
+import config
+import database
+import bleach
 from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address as GetRemoteAddress
-import datetime as Datetime
+from flask_limiter.util import get_remote_address
 from flask import (
     Flask,
-    abort as Abort,
-    flash as Flash,
-    redirect as ReDirect,
-    render_template as RenderTemplate,
-    request as Request,
-    send_from_directory as SendFromDirectory,
+    abort,
+    flash,
+    redirect,
+    render_template,
+    request,
+    send_from_directory,
     session,
-    url_for as URLFor,
-    jsonify as Jsonify,
+    url_for,
+    jsonify,
 )
-import Constants
-import Models
-import Admin
-import Client
-import Global
+import constants
+import models
+import admin
+import client
+import globals as globals_file
 
-FlaskApp = Flask(
+flask_app = Flask(
     __name__,
-    static_folder=Constants.Path.StaticDir,
-    template_folder=Constants.Path.TemplatesDir,
+    static_folder=constants.Path.static_dir,
+    template_folder=constants.Path.templates_dir,
     static_url_path="",
 )
 
-FlaskApp.secret_key = Config.SecretKey
-CSRF_Protector = CSRFProtect(FlaskApp)
-SocketIOInstance = SocketIO(FlaskApp)
+flask_app.secret_key = config.secret_key
+CSRF_Protector = CSRFProtect(flask_app)
+SocketIOInstance = SocketIO(flask_app)
 limiter = Limiter(
-    app=FlaskApp,
-    key_func=GetRemoteAddress,
+    app=flask_app,
+    key_func=get_remote_address,
     default_limits=["200 per day", "50 per hour"],
 )
 
-FlaskApp.config["PERMANENT_SESSION_LIFETIME"] = Config.PermanentSessionLifeTime
-FlaskApp.config["SESSION_COOKIE_HTTPONLY"] = True
-FlaskApp.config["SESSION_COOKIE_SECURE"] = True
-FlaskApp.config["UPLOAD_FOLDER_RECEIPTS"] = Constants.Path.ReceiptsDir
-FlaskApp.config["MAX_CONTENT_LENGTH"] = Constants.AppConfig.MaxVideoSize
-FlaskApp.config["ALLOWED_EXTENSIONS"] = list(Constants.AppConfig.AllowedExtensions)
-FlaskApp.config["UPLOAD_FOLDER_DOCUMENTS"] = OS.path.join(
-    Constants.Path.UploadsDir, "Documents"
+flask_app.config["PERMANENT_SESSION_LIFETIME"] = config.permanent_session_life_time
+flask_app.config["SESSION_COOKIE_HTTPONLY"] = True
+flask_app.config["SESSION_COOKIE_SECURE"] = True
+flask_app.config["UPLOAD_FOLDER_RECEIPTS"] = constants.Path.receipts_dir
+flask_app.config["MAX_CONTENT_LENGTH"] = constants.AppConfig.max_document_size
+flask_app.config["ALLOWED_EXTENSIONS"] = list(constants.AppConfig.allowed_extensions)
+flask_app.config["UPLOAD_FOLDER_DOCUMENTS"] = os.path.join(
+    constants.Path.uploads_dir, "Documents"
 )
-FlaskApp.config["UPLOAD_FOLDER_NEWS"] = Constants.Path.NewsDir
+flask_app.config["UPLOAD_FOLDER_NEWS"] = constants.Path.news_dir
 
-OS.makedirs(FlaskApp.config["UPLOAD_FOLDER_RECEIPTS"], exist_ok=True)
-OS.makedirs(FlaskApp.config["UPLOAD_FOLDER_NEWS"], exist_ok=True)
-OS.makedirs(FlaskApp.config["UPLOAD_FOLDER_DOCUMENTS"], exist_ok=True)
-OS.makedirs(OS.path.dirname(Constants.Path.DatabaseDir), exist_ok=True)
-
-
-@FlaskApp.template_filter("persian_digits")
-def PersianDigitsFilter(Content):
-    return EnToFa(str(Content))
+os.makedirs(flask_app.config["UPLOAD_FOLDER_RECEIPTS"], exist_ok=True)
+os.makedirs(flask_app.config["UPLOAD_FOLDER_NEWS"], exist_ok=True)
+os.makedirs(flask_app.config["UPLOAD_FOLDER_DOCUMENTS"], exist_ok=True)
+os.makedirs(os.path.dirname(constants.Path.database_dir), exist_ok=True)
 
 
-@FlaskApp.template_filter("basename")
-def BasenameFilter(PathString):
-    return OS.path.basename(PathString)
+@flask_app.template_filter("persian_digits")
+def persian_digits_filter(content):
+    "Converts English digits in the content to Persian digits"
+    return en_to_fa(str(content))
 
 
-@FlaskApp.errorhandler(400)
-def HandleBadRequest(Error):
-    FlaskApp.logger.warning(
-        f"Bad Request (400) at {Request.url} from {Request.remote_addr}: {Error}"
+@flask_app.template_filter("basename")
+def basename_filter(path_string):
+    "Returns the base name of a given path string"
+    return os.path.basename(path_string)
+
+
+@flask_app.errorhandler(400)
+def handle_bad_request(error):
+    "Handles 400 Bad Request errors"
+    flask_app.logger.warning(
+        "Bad request (400) at %s from %s: %s", request.url, request.remote_addr, error
     )
-    return RenderTemplate(Constants.GlobalHTMLNamesData["400"], error=str(Error)), 400
+    return render_template(constants.global_html_names_data["400"], error=str(error)), 400
 
 
-@FlaskApp.errorhandler(403)
-def HandleForbidden(Error):
-    FlaskApp.logger.warning(
-        f"Forbidden (403) access attempt at {Request.url} by {Request.remote_addr}: {Error}"
+@flask_app.errorhandler(403)
+def handle_forbidden(error):
+    "Handles 403 Forbidden errors"
+    flask_app.logger.warning(
+        "Forbidden (403) access attempt at %s by %s: %s",
+        request.url,
+        request.remote_addr,
+        error,
     )
-    return RenderTemplate(Constants.GlobalHTMLNamesData["403"]), 403
+    return render_template(constants.global_html_names_data["403"]), 403
 
 
-@FlaskApp.errorhandler(500)
-def HandleServerError(Error):
-    FlaskApp.logger.error(
-        f"Internal Server Error (500) on {Request.method} {Request.url} from {Request.remote_addr}:\n{TraceBack.format_exc()}"
+@flask_app.errorhandler(500)
+def handle_server_error(_error): # needs fix for error, do we need it?
+    "Handles 500 Internal Server errors"
+    flask_app.logger.error(
+        "Internal Server Error (500) on %s %s from %s:\n%s",
+        request.method,
+        request.url,
+        request.remote_addr,
+        traceback.format_exc(),
     )
-    if FlaskApp.debug:
+    if flask_app.debug:
         return (
-            RenderTemplate(
-                Constants.GlobalHTMLNamesData["500 Debug"], error=TraceBack.format_exc()
+            render_template(
+                constants.global_html_names_data["500 Debug"], error=traceback.format_exc()
             ),
             500,
         )
-    return RenderTemplate(Constants.GlobalHTMLNamesData["500"]), 500
+    return render_template(constants.global_html_names_data["500"]), 500
 
 
-def AdminRequired(DecoratedRoute):
-    @Wraps(DecoratedRoute)
-    def DecoratedFunction(*args, **kwargs):
-        if not Session.get("AdminLoggedIn"):
-            return ReDirect(URLFor("AdminLogin"))
-        return DecoratedRoute(*args, **kwargs)
+def admin_required(decorated_route):
+    "@wraps decorator to ensure admin access is required for a route"
+    @wraps(decorated_route)
+    def decorated_function(*args, **kwargs):
+        "Checks if admin is logged in; redirects to admin login if not"
+        if not session.get("AdminLoggedIn"):
+            return redirect(url_for("AdminLogin"))
+        return decorated_route(*args, **kwargs)
 
-    return DecoratedFunction
+    return decorated_function
 
 
-def AdminActionRequired(DecoratedRoute):
-    @Wraps(DecoratedRoute)
-    def DecoratedFunction(*args, **kwargs):
-        if not Session.get("AdminLoggedIn"):
-            return ReDirect(URLFor("AdminLogin"))
+def admin_action_required(decorated_route):
+    "@wraps decorator to ensure admin action is required for a route"
+    @wraps(decorated_route)
+    def decorated_function(*args, **kwargs):
+        "Checks if admin is logged in and protects against CSRF"
+        if not session.get("AdminLoggedIn"):
+            return redirect(url_for("AdminLogin"))
         try:
             CSRF_Protector.protect()
-        except Exception:
-            Abort(400, "توکن امنیتی نامعتبر است (CSRF).")
-        return DecoratedRoute(*args, **kwargs)
+        except CSRFError:
+            abort(400, "توکن امنیتی نامعتبر است (CSRF).")
+        return decorated_route(*args, **kwargs)
 
-    return DecoratedFunction
+    return decorated_function
 
 
-def ResolutionRequired(f):
-    @Wraps(f)
+def resolution_required(f):
+    "Decorator to ensure user is in data resolution state"
+    @wraps(f)
     def decorated_function(*args, **kwargs):
-        if "ClientIDForResolution" not in session:
-            Flash("شما در وضعیت اصلاح اطلاعات قرار ندارید.", "Info")
-            return ReDirect(URLFor("Login"))
+        if "client_idForResolution" not in session:
+            flash("شما در وضعیت اصلاح اطلاعات قرار ندارید.", "Info")
+            return redirect(url_for("Login"))
         return f(*args, **kwargs)
 
     return decorated_function
 
 
-@FlaskApp.template_filter("formatdate")
-def FormatDateFilter(DateObject):
-    if not isinstance(DateObject, Datetime.datetime):
+@flask_app.template_filter("formatdate")
+def format_date_filter(date_object):
+    "Formats a datetime object to a Persian date string (YYYY-MM-DD)"
+    if not isinstance(date_object, datetime.datetime):
         return ""
-    return JDateTime.datetime.fromgregorian(datetime=DateObject).strftime("%Y-%m-%d")
+    return jdatetime.datetime.fromgregorian(datetime=date_object).strftime("%Y-%m-%d")
 
 
-@FlaskApp.template_filter("humanize_number")
-def HumanizeNumberFilter(Num):
+@flask_app.template_filter("humanize_number")
+def humanize_number_filter(num):
+    "Formats a number with commas for thousands separators"
     try:
-        return f"{int(Num):,}"
+        return f"{int(num):,}"
     except (ValueError, TypeError):
-        return Num
+        return num
 
 
-@FlaskApp.context_processor
-def InjectGlobalVariables():
-    AirocupData = {
-        "DaysInMonth": Constants.Date.DaysInMonth,
-        "AllowedYears": Constants.Date.GetAllowedYears(),
-        "PersianMonths": Constants.Date.PersianMonths,
-        "ForbiddenWords": list(Constants.ForbiddenContent.WORDS),
-        "ClientID": session.get("ClientID"),
-        "Provinces": Constants.ProvincesData,
+@flask_app.context_processor
+def inject_global_variables():
+    "Injects global variables into the template context"
+    airocup_data = {
+        "DaysInMonth": constants.Date.days_in_month,
+        "AllowedYears": constants.Date.get_allowed_years(),
+        "PersianMonths": constants.Date.persian_months,
+        "ForbiddenWords": list(constants.ForbiddenContent.custom_words),
+        "client_id": session.get("client_id"),
+        "provinces_data": constants.provinces_data,
     }
 
     return {
-        "Path": Constants.Path,
+        "Path": constants.Path,
         "AppConfig": {
-            "MaxTeamPerClient": Constants.AppConfig.MaxTeamPerClient,
-            "MaxMembersPerTeam": Constants.AppConfig.MaxMembersPerTeam,
+            "MaxTeamPerClient": constants.AppConfig.max_team_per_client,
+            "MaxMembersPerTeam": constants.AppConfig.max_members_per_team,
         },
-        "Contact": Constants.Contact,
-        "Event": Constants.Event,
-        "HTMLNames": Constants.GlobalHTMLNamesData,
-        "Location": Constants.Location,
-        "ContactPoints": Constants.ContactPointsData,
-        "CooperationOpportunities": Constants.CooperationOpportunitiesData,
-        "JDateTime": JDateTime,
-        "AirocupData": AirocupData,
-        "Payment": Constants.PaymentConfig,
-        "LeaguesList": Constants.LeaguesListData,
-        "CommitteeMembers": Constants.CommitteeMembersData,
-        "TechnicalCommitteeMembers": Constants.TechnicalCommitteeMembersData,
-        "HomepageSponsors": Constants.HomepageSponsorsData,
+        "Contact": constants.Contact,
+        "Event": constants.Details,
+        "HTMLnames": constants.global_html_names_data,
+        "Location": constants.Details.address,
+        "ContactPoints": constants.contact_points_data,
+        "CooperationOpportunities": constants.cooperation_opportunities_data,
+        "jdatetime": jdatetime,
+        "AirocupData": airocup_data,
+        "Payment": config.payment_config,
+        "LeaguesList": constants.leagues_list,
+        "CommitteeMembers": constants.committee_members_data,
+        "TechnicalCommitteeMembers": constants.technical_committee_members,
+        "HomepageSponsors": constants.homepage_sponsors_data,
     }
 
 
-def LoginRequired(DecoratedRoute):
-    @Wraps(DecoratedRoute)
-    def DecoratedFunction(*args, **kwargs):
-        if "ClientID" not in session:
-            Flash("برای مشاهده این صفحه باید وارد شوید.", "Warning")
-            return ReDirect(URLFor("Login", next=Request.url))
-        if "ClientIDForResolution" in session:
-            Flash(
+def login_required(decorated_route):
+    "@wraps decorator to ensure user login is required for a route"
+    @wraps(decorated_route)
+    def decorated_function(*args, **kwargs):
+        "Checks if user is logged in; redirects to login if not"
+        if "client_id" not in session:
+            flash("برای مشاهده این صفحه باید وارد شوید.", "Warning")
+            return redirect(url_for("Login", next=request.url))
+        if "client_idForResolution" in session:
+            flash(
                 "ابتدا باید اطلاعات حساب کاربری خود را تکمیل و اصلاح نمایید.", "Warning"
             )
-            return ReDirect(URLFor("ResolveDataIssues"))
-        return DecoratedRoute(*args, **kwargs)
+            return redirect(url_for("ResolveDataIssues"))
+        return decorated_route(*args, **kwargs)
 
-    return DecoratedFunction
+    return decorated_function
 
 
-@FlaskApp.route("/API/Admin/ProvinceDistribution")
-@AdminRequired
-def ApiProvinceDistribution():
-    with Database.get_db_session() as db:
-        Data = (
+@flask_app.route("/API/admin/ProvinceDistribution")
+@admin_required
+def api_province_distribution():
+    "Returns JSON data for province distribution of active members"
+    with database.get_db_session() as db:
+        data = (
             db.query(
-                Models.Province.Name.label("Name"),
-                func.count(Models.Member.MemberID).label("Count"),
+                models.Province.name.label("name"),
+                func.count(models.Member.member_id).label("Count"),
             )
-            .join(Models.City, Models.Member.CityID == Models.City.CityID)
-            .join(Models.Province, Models.City.ProvinceID == Models.Province.ProvinceID)
-            .filter(Models.Member.Status == Models.EntityStatus.Active)
-            .group_by(Models.Province.Name)
-            .order_by(func.count(Models.Member.MemberID).desc())
+            .join(models.City, models.Member.city_id == models.City.city_id)
+            .join(models.Province, models.City.province_id == models.Province.province_id)
+            .filter(models.Member.status == models.EntityStatus.ACTIVE)
+            .group_by(models.Province.name)
+            .order_by(func.count(models.Member.member_id).desc())
             .limit(10)
             .all()
         )
 
-    return Jsonify(
+    return jsonify(
         {
-            "Labels": [row.Name for row in Data],
-            "Data": [row.Count for row in Data],
+            "Labels": [row.name for row in data],
+            "Data": [row.count for row in data],
         }
     )
 
 
 @SocketIOInstance.on("join")
-def OnJoinMessage(DataDictionary):
-    RoomName = DataDictionary.get("Room")
-    ClientID = session.get("ClientID")
+def on_join_message(data_dictionary):
+    "Handles a user joining a chat room"
+    room_name = data_dictionary.get("Room")
+    client_id = session.get("client_id")
 
     if session.get("AdminLoggedIn", False):
-        JoinRoom(RoomName)
-    elif ClientID and str(ClientID) == str(RoomName):
-        JoinRoom(str(ClientID))
+        join_room(room_name)
+    elif client_id and str(client_id) == str(room_name):
+        join_room(str(client_id))
     else:
-        FlaskApp.logger.warning(
-            f"Unauthorized chat room join attempt by session {ClientID} for room {RoomName}"
+        flask_app.logger.warning(
+            "Unauthorized chat room join attempt by session %s for room %s",
+            client_id,
+            room_name,
         )
         return
 
 
 @SocketIOInstance.on("send_message")
-def HandleSendMessage(JsonData):
+def handle_send_message(json_data):
+    "Handles incoming chat messages and broadcasts them to the appropriate room"
     try:
-        if not isinstance(JsonData, dict):
+        if not isinstance(json_data, dict):
             return
 
-        Message = str(JsonData.get("message") or "").strip()
-        Room = JsonData.get("room")
+        message = str(json_data.get("message") or "").strip()
+        target_room = json_data.get("room")
 
-        if not Message or not Room:
+        if not message or not target_room:
             return
 
         if session.get("AdminLoggedIn", False):
-            SenderType = "Admin"
-        elif session.get("ClientID") and str(session.get("ClientID")) == str(Room):
-            SenderType = "Client"
+            sender_type = "admin"
+        elif session.get("client_id") and str(session.get("client_id")) == str(target_room):
+            sender_type = "client"
         else:
-            FlaskApp.logger.warning(
-                f"Unauthorized chat message attempt by session {session.get("ClientID")} in room {Room}"
+            flask_app.logger.warning(
+                "Unauthorized chat message attempt by session %s in room %s",
+                session.get("client_id"),
+                target_room,
             )
             return
 
-        SanitizedMessage = Bleach.clean(Message)
-        if len(SanitizedMessage) > 1000:
-            SanitizedMessage = SanitizedMessage[:1000]
+        sanitized_message = bleach.clean(message)
+        if len(sanitized_message) > 1000:
+            sanitized_message = sanitized_message[:1000]
 
-        with Database.get_db_session() as DbSession:
-            Database.SaveChatMessage(DbSession, int(Room), SanitizedMessage, SenderType)
+        with database.get_db_session() as db:
+            database.save_chat_message(db, int(target_room), sanitized_message, sender_type)
 
-        CurrentTime = Datetime.datetime.now(Datetime.timezone.utc)
-        Emit(
+        current_time = datetime.datetime.now(datetime.timezone.utc)
+        emit(
             "new_message",
             {
-                "message": SanitizedMessage,
-                "timestamp": CurrentTime.isoformat(),
-                "sender": SenderType,
+                "message": sanitized_message,
+                "timestamp": current_time.isoformat(),
+                "sender": sender_type,
             },
-            room=str(Room),
+            to=str(target_room),
         )
 
-    except Exception as Error:
-        FlaskApp.logger.error(f"Chat message error: {Error}")
+    except (ValueError, TypeError, exc.SQLAlchemyError) as error:
+        flask_app.logger.error("Chat message error: %s", error)
 
 
-@FlaskApp.route("/uploads/receipts/<filename>")
-@AdminRequired
-def UploadedReceiptFile(filename):
-    return SendFromDirectory(Constants.Path.ReceiptsDir, filename)
+@flask_app.route("/uploads/receipts/<filename>")
+@admin_required
+def uploaded_receipt_file(filename):
+    "Serves uploaded receipt files to admin users"
+    return send_from_directory(constants.Path.receipts_dir, filename)
 
 
-@FlaskApp.template_filter("to_iso_format")
-def ToISOFormatFilter(DateObject):
-    if not isinstance(DateObject, Datetime.datetime):
+@flask_app.template_filter("to_iso_format")
+def to_iso_format_filter(date_object):
+    "Converts a datetime object to ISO 8601 format"
+    if not isinstance(date_object, datetime.datetime):
         return ""
-    return DateObject.isoformat()
+    return date_object.isoformat()
 
 
-@FlaskApp.route("/API/AdminCityDistribution")
-@AdminRequired
-def ApiCityDistribution():
-    with Database.get_db_session() as db:
-        CityData = (
+@flask_app.route("/API/AdminCityDistribution")
+@admin_required
+def api_city_distribution():
+    "Returns JSON data for city distribution of active members"
+    with database.get_db_session() as db:
+        city_data = (
             db.query(
-                Models.City.Name,
-                func.count(Models.Member.MemberID).label("Count"),
+                models.City.name,
+                func.count(models.Member.member_id).label("Count"), # pylint: disable=no-member
             )
-            .join(Models.City, Models.Member.CityID == Models.City.CityID)
+            .join(models.City, models.Member.city_id == models.City.city_id)
             .filter(
-                Models.Member.Status == Models.EntityStatus.Active,
+                models.Member.status == models.EntityStatus.ACTIVE,
             )
-            .group_by(Models.City.Name)
-            .order_by(func.count(Models.Member.MemberID).desc())
+            .group_by(models.City.name)
+            .order_by(func.count(models.Member.member_id).desc()) # pylint: disable=no-member
             .limit(10)
             .all()
         )
 
-    ChartData = {
-        "Labels": [row.Name for row in CityData],  # name is white
-        "Data": [row.Count for row in CityData],  # Count is white
+    chart_data = {
+        "Labels": [row.name for row in city_data],  # name is white
+        "Data": [row.count for row in city_data],  # Count is is yellow and corrected 
     }
-    return Jsonify(ChartData)
+    return jsonify(chart_data)
 
 
-def PrintStartupMessage(Host, Port):
+def print_startup_message(host, port):
+    "Prints the startup message for the server"
     print("=" * 60)
-    print(f"🚀 Airocup Backend Server is launching...")
-    print(f"   - Version: {Config.Version}")
-    print(f"   - Mode: {'✅ Debug' if Config.Debug else '⛔ Production'}")
-    print(f"   - Database: Verified and connected successfully.")
-    print(f"   - Listening on: http://{Host}:{Port}")
+    print("🚀 Airocup Backend Server is launching...")
+    print(f"   - Version: {config.version}")
+    print(f"   - Mode: {'✅ Debug' if config.debug else '⛔ Production'}")
+    print("   - database: Verified and connected successfully.")
+    print(f"   - Listening on: http://{host}:{port}")
     print("=" * 60)
 
 
-@FlaskApp.cli.command("init-db")
-def InitializeDatabaseCommand():
+@flask_app.cli.command("init-db")
+def initialize_database_command():
     """Creates the database tables and populates geography data."""
-    Database.CreateDatabase()
-    Database.PopulateGeographyData()
-    print("Database initialized successfully.")
+    database.create_database()
+    database.populate_geography_data()
+    print("database initialized successfully.")
 
 
-FlaskApp.register_blueprint(Admin.AdminBlueprint)
-FlaskApp.register_blueprint(Client.ClientBlueprint)
-FlaskApp.register_blueprint(Global.GlobalBlueprint)
+flask_app.register_blueprint(admin.admin_blueprint)
+flask_app.register_blueprint(client.client_blueprint)
+flask_app.register_blueprint(globals_file.global_blueprint)
 
 if __name__ == "__main__":
-    if len(Sys.argv) > 1 and Sys.argv[1] == "generate_hash":
+    if len(sys.argv) > 1 and sys.argv[1] == "generate_hash":
         try:
-            AdminPassword = GetPass.getpass("رمز عبور ادمین مورد نظر را وارد کنید: ")
+            AdminPassword = getpass.getpass("رمز عبور ادمین مورد نظر را وارد کنید: ")
             if len(AdminPassword) > 0:
                 print("\n✅ هش ادمین شما با موفقیت ایجاد شد.")
-                print("خط زیر را کپی کرده و در فایل Config.py خود جای‌گذاری کنید:")
+                print("خط زیر را کپی کرده و در فایل config.py خود جای‌گذاری کنید:")
                 print("-" * 50)
                 print(
-                    f"AdminPasswordHash = '{BCrypt.hashpw(AdminPassword.encode("utf-8"), BCrypt.gensalt()).decode('utf-8')}'"
+                    f"AdminPasswordHash = '{
+                        bcrypt.hashpw(
+                            AdminPassword.encode("utf-8"), bcrypt.gensalt()
+                        ).decode('utf-8')
+                    }'"
                 )
                 print("-" * 50)
             else:
                 print("رمز عبور نمی‌تواند خالی باشد.")
-        except Exception as Error:
-            print(f"خطایی رخ داد: {Error}")
+        except (KeyboardInterrupt, EOFError, ValueError) as error:
+            print(f"خطایی رخ داد: {error}")
 
-        Sys.exit()
+        sys.exit()
     else:
-        if OS.environ.get("WERKZEUG_RUN_MAIN") != "true":
-            PrintStartupMessage(Host="0.0.0.0", Port=5000)
+        if os.environ.get("WERKZEUG_RUN_MAIN") != "true":
+            print_startup_message(host="0.0.0.0", port=5000)
 
-        SocketIOInstance.run(FlaskApp, host="0.0.0.0", port=5000, debug=Config.Debug)
+        SocketIOInstance.run(flask_app, host="0.0.0.0", port=5000, debug=config.debug)

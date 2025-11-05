@@ -1,1773 +1,1948 @@
-import os as OS
-import random as Random
-import string as String
-import uuid as UUID
+"Client-side routes and logic for the web application"
+import os
+import random
+import string
+import uuid
+import datetime
+import secrets
 from threading import Thread
-import bcrypt as BCrypt
-import jdatetime as JDateTime
-from persiantools.digits import fa_to_en as FaToEN
+import bcrypt
+import jdatetime # type: ignore
+from persiantools.digits import fa_to_en # type: ignore
 from sqlalchemy import exc, func, select
 from sqlalchemy.orm import subqueryload
-import datetime as Datetime
-import secrets as Secrets
-import bleach as Bleach
-from werkzeug.utils import secure_filename as SecureFileName, safe_join as SafeJoin
+import bleach
+from werkzeug.utils import secure_filename
+from werkzeug.security import safe_join
 from flask import (
     Blueprint,
-    abort as Abort,
-    flash as Flash,
-    redirect as ReDirect,
-    render_template as RenderTemplate,
-    request as Request,
-    send_from_directory as SendFromDirectory,
+    abort,
+    flash,
+    redirect,
+    render_template,
+    request,
+    send_from_directory,
     session,
-    url_for as URLFor,
-    jsonify as Jsonify,
+    url_for,
+    jsonify,
 )
 
-import Config
-import Database
-import Constants
-import Models
-import Utils
-import App
+import config
+import database
+import constants
+import models
+import utils
+import app
 
-ClientBlueprint = Blueprint("Client", __name__)
+client_blueprint = Blueprint("client", __name__)
 
 
-@App.FlaskApp.route("/SignUp", methods=["GET", "POST"])
-def SignUp():
-    if Request.method == "POST":
-        App.CSRF_Protector.protect()
+@app.flask_app.route("/SignUp", methods=["GET", "POST"])
+def signup():
+    "Render and handle the client sign-up page"
+    if request.method == "POST":
+        app.CSRF_Protector.protect()
 
-        Phone = FaToEN(Request.form.get("PhoneNumber", "").strip())
-        Email = FaToEN(Request.form.get("Email", "").strip().lower())
-        Password = Request.form.get("Password", "")
-        EducationLevel = Request.form.get("EducationLevel", "").strip()
+        phone = fa_to_en(request.form.get("PhoneNumber", "").strip())
+        email = fa_to_en(request.form.get("Email", "").strip().lower())
+        password = request.form.get("Password", "")
+        education_level = request.form.get("EducationLevel", "").strip()
 
-        FormValues = {
-            "PhoneNumber": Phone,
-            "Email": Email,
-            "EducationLevel": EducationLevel,
+        form_values = {
+            "PhoneNumber": phone,
+            "Email": email,
+            "EducationLevel": education_level,
         }
 
-        if EducationLevel not in Constants.AllowedEducation:
-            Flash("مقطع تحصیلی انتخاب‌شده نامعتبر است.", "Error")
-            return RenderTemplate(Constants.ClientHTMLNamesData["SignUp"], **FormValues)
+        response = None
 
-        if Password != Request.form.get("ConfirmPassword", ""):
-            Flash("رمز عبور و تکرار آن یکسان نیستند.", "Error")
-            return RenderTemplate(Constants.ClientHTMLNamesData["SignUp"], **FormValues)
-
-        IsValid, ErrorMessage = Utils.IsValidPassword(Password)
-        if not IsValid:
-            Flash(ErrorMessage, "Error")
-            return RenderTemplate(Constants.ClientHTMLNamesData["SignUp"], **FormValues)
-
-        if not Utils.IsValidIranianPhone(Phone) or not Utils.IsValidEmail(Email):
-            Flash("ایمیل یا شماره موبایل نامعتبر است.", "Error")
-            return RenderTemplate(Constants.ClientHTMLNamesData["SignUp"], **FormValues)
-
-        with Database.get_db_session() as DbSession:
-            try:
-                HashedPassword = BCrypt.hashpw(
-                    Password.encode("utf-8"), BCrypt.gensalt()
-                )
-                VerificationCode = "".join(Random.choices(String.digits, k=6))
-                NewClient = Models.Client(
-                    PhoneNumber=Phone,
-                    Email=Email,
-                    Password=HashedPassword.decode("utf-8"),
-                    RegistrationDate=Datetime.datetime.now(Datetime.timezone.utc),
-                    EducationLevel=EducationLevel,
-                    PhoneVerificationCode=VerificationCode,
-                    VerificationCodeTimestamp=Datetime.datetime.now(
-                        Datetime.timezone.utc
-                    ),
-                )
-                DbSession.add(NewClient)
-                DbSession.commit()
-
-                Thread(
-                    target=Utils.SendTemplatedSMSAsync,
-                    args=(
-                        App.FlaskApp,
-                        NewClient.client_id,
-                        Config.MelliPayamak["TemplateID_Verification"],
-                        VerificationCode,
-                        Config.MelliPayamak,
-                    ),
-                ).start()
-
-                return ReDirect(
-                    URLFor("Verify", Action="phone_signup", ClientID=NewClient.client_id)
-                )
-
-            except exc.IntegrityError:
-                DbSession.rollback()
-                Flash(
-                    "کاربری با این ایمیل یا شماره تلفن قبلا ثبت نام کرده است.", "Error"
-                )
-                return RenderTemplate(
-                    Constants.ClientHTMLNamesData["SignUp"], **FormValues
-                )
-            except Exception as Error:
-                DbSession.rollback()
-                App.FlaskApp.logger.error(f"SignUp unexpected error: {Error}")
-                Flash("خطایی در هنگام ثبت نام رخ داد. لطفا دوباره تلاش کنید.", "Error")
-                return RenderTemplate(
-                    Constants.ClientHTMLNamesData["SignUp"], **FormValues
-                )
-
-    return RenderTemplate(Constants.ClientHTMLNamesData["SignUp"])
-
-
-@App.FlaskApp.route("/ResolveIssues", methods=["GET"])
-@App.ResolutionRequired
-def ResolveDataIssues():
-    with Database.get_db_session() as db:
-        Client = (
-            db.query(Models.Client)
-            .options(
-                subqueryload(Models.Client.Teams).subqueryload(Models.Team.Members)
+        if education_level not in constants.allowed_education:
+            flash("مقطع تحصیلی انتخاب‌شده نامعتبر است.", "error")
+            response = render_template(
+                constants.client_html_names_data["SignUp"], **form_values
             )
-            .filter(Models.Client.client_id == session.get("ClientIDForResolution"))
+        elif password != request.form.get("ConfirmPassword", ""):
+            flash("رمز عبور و تکرار آن یکسان نیستند.", "error")
+            response = render_template(
+                constants.client_html_names_data["SignUp"], **form_values
+            )
+        else:
+            is_valid, error_message = utils.is_valid_password(password)
+            if not is_valid:
+                flash(error_message or "خطای نامشخص در رمز عبور.", "error")
+                response = render_template(
+                    constants.client_html_names_data["SignUp"], **form_values
+                )
+            elif not utils.is_valid_iranian_phone(phone) or not utils.is_valid_email(
+                email
+            ):
+                flash("ایمیل یا شماره موبایل نامعتبر است.", "error")
+                response = render_template(
+                    constants.client_html_names_data["SignUp"], **form_values
+                )
+
+        if response is None:
+            with database.get_db_session() as db:
+                try:
+                    hashed_password = bcrypt.hashpw(
+                        password.encode("utf-8"), bcrypt.gensalt()
+                    )
+                    verification_code = "".join(random.choices(string.digits, k=6))
+                    new_client = models.Client(
+                        PhoneNumber=phone,
+                        Email=email,
+                        Password=hashed_password.decode("utf-8"),
+                        RegistrationDate=datetime.datetime.now(datetime.timezone.utc),
+                        EducationLevel=education_level,
+                        phone_verification_code=verification_code,
+                        verification_code_timestamp=datetime.datetime.now(
+                            datetime.timezone.utc
+                        ),
+                    )
+                    db.add(new_client)
+                    db.commit()
+
+                    Thread(
+                        target=utils.send_templated_sms_async,
+                        args=(
+                            app.flask_app,
+                            new_client.client_id,
+                            config.melli_payamak["TemplateID_Verification"],
+                            verification_code,
+                            config.melli_payamak,
+                        ),
+                    ).start()
+
+                    response = redirect(
+                        url_for(
+                            "Verify",
+                            action="phone_signup",
+                            client_id=new_client.client_id,
+                        )
+                    )
+
+                except exc.IntegrityError:
+                    db.rollback()
+                    flash(
+                        "کاربری با این ایمیل یا شماره تلفن قبلا ثبت نام کرده است.",
+                        "error",
+                    )
+                    response = render_template(
+                        constants.client_html_names_data["SignUp"], **form_values
+                    )
+                except exc.SQLAlchemyError as error:
+                    db.rollback()
+                    app.flask_app.logger.error("SignUp database error: %s", error)
+                    flash(
+                        "خطایی در پایگاه داده رخ داد. لطفا دوباره تلاش کنید.", "error"
+                    )
+                    response = render_template(
+                        constants.client_html_names_data["SignUp"], **form_values
+                    )
+                except RuntimeError as error:
+                    app.flask_app.logger.exception("SignUp unexpected error: %s", error)
+                    flash(
+                        "خطایی در هنگام ثبت نام رخ داد. لطفا دوباره تلاش کنید.", "error"
+                    )
+                    response = render_template(
+                        constants.client_html_names_data["SignUp"], **form_values
+                    )
+
+        return response
+
+    return render_template(constants.client_html_names_data["SignUp"])
+
+
+@app.flask_app.route("/ResolveIssues", methods=["GET"])
+@app.resolution_required
+def resolve_data_issues():
+    """Render the data resolution form for clients with incomplete/invalid data."""
+    with database.get_db_session() as db:
+        client = (
+            db.query(models.Client)
+            .options(
+                subqueryload(models.Client.teams).subqueryload(models.Team.members)
+            )
+            .filter(models.Client.client_id == session.get("ClientIDForResolution"))
             .first()
         )
 
-        if not Client:
+        if not client:
             session.clear()
-            Flash("خطا: اطلاعات کاربری برای اصلاح یافت نشد.", "Error")
-            return ReDirect(URLFor("Login"))
+            flash("خطا: اطلاعات کاربری برای اصلاح یافت نشد.", "error")
+            return redirect(url_for("Login"))
 
-    return RenderTemplate(
-        Constants.ClientHTMLNamesData["Null"],
-        Client=Client,
+    return render_template(
+        constants.client_html_names_data["Null"],
+        client=client,
         Problems=session.get("ResolutionProblems", {}),
-        **Utils.GetFormContext(),
+        **utils.get_form_context(),
     )
 
 
-@App.FlaskApp.route("/SubmitResolution", methods=["POST"])
-@App.ResolutionRequired
-def SubmitDataResolution():
-    App.CSRF_Protector.protect()
-    with Database.get_db_session() as DbSession:
+@app.flask_app.route("/SubmitResolution", methods=["POST"])
+@app.resolution_required
+def submit_data_resolution():
+    """Handle submission of data resolution form."""
+    app.CSRF_Protector.protect()
+    with database.get_db_session() as db:
         try:
-            RoleMap = {Role.value: Role for Role in Models.MemberRole}
-            UpdatedMemberIDs = {
+            role_map = {Role.value: Role for Role in models.MemberRole}
+            updated_member_ids = {
                 int(k.split("_")[-1])
-                for k in Request.form
+                for k in request.form
                 if k.startswith("member_name_")
             }
 
-            for MemberID in UpdatedMemberIDs:
-                Member = (
-                    DbSession.query(Models.Member)
-                    .join(Models.Team)
+            for member_id in updated_member_ids:
+                member = (
+                    db.query(models.Member)
+                    .join(models.Team)
                     .filter(
-                        Models.Member.MemberID == MemberID,
-                        Models.Team.ClientID == session.get("ClientIDForResolution"),
+                        models.Member.member_id == member_id,
+                        models.Team.client_id == session.get("ClientIDForResolution"),
                     )
                     .first()
                 )
 
-                if Member:
-                    Member.Name = Bleach.clean(
-                        Request.form.get(f"member_name_{MemberID}", "").strip()
+                if member:
+                    member.name = bleach.clean(
+                        request.form.get(f"member_name_{member_id}", "").strip()
                     )
-                    Member.NationalID = FaToEN(
-                        Request.form.get(f"member_nationalid_{MemberID}", "").strip()
+                    member.national_id = fa_to_en(
+                        request.form.get(f"member_nationalid_{member_id}", "").strip()
                     )
-                    RoleStr = Request.form.get(f"member_Role_{MemberID}", "").strip()
-                    Member.Role = RoleMap.get(RoleStr, Models.MemberRole.Member)
+                    member.role = role_map.get(
+                        request.form.get(f"member_Role_{member_id}", "").strip(),
+                        models.MemberRole.MEMBER,
+                    )
 
-                    ProvinceName = Request.form.get(
-                        f"member_Province_{MemberID}", ""
-                    ).strip()
-                    CityName = Request.form.get(f"member_City_{MemberID}", "").strip()
-
-                    CityID = (
-                        DbSession.query(Models.City.CityID)
-                        .join(Models.Province)
+                    city_id = (
+                        db.query(models.City.city_id)
+                        .join(models.Province)
                         .filter(
-                            Models.Province.Name == ProvinceName,
-                            Models.City.Name == CityName,
+                            models.Province.name
+                            == request.form.get(
+                                f"member_Province_{member_id}", ""
+                            ).strip(),
+                            models.City.name
+                            == request.form.get(f"member_City_{member_id}", "").strip(),
                         )
                         .scalar()
                     )
-                    Member.CityID = CityID
+                    member.city_id = city_id
 
-                    YearStr = Request.form.get(f"member_birthyear_{MemberID}")
-                    MonthStr = Request.form.get(f"member_birthmonth_{MemberID}")
-                    DayStr = Request.form.get(f"member_birthday_{MemberID}")
-
-                    if YearStr and MonthStr and DayStr:
+                    if (
+                        request.form.get(f"member_birthyear_{member_id}")
+                        and request.form.get(f"member_birthmonth_{member_id}")
+                        and request.form.get(f"member_birthday_{member_id}")
+                    ):
                         try:
-                            Year, Month, Day = int(YearStr), int(MonthStr), int(DayStr)
-                            JalaliDate = JDateTime.date(Year, Month, Day)
-                            Member.BirthDate = JalaliDate.togregorian()
+                            year = int(
+                                request.form.get(f"member_birthyear_{member_id}", "")
+                            )
+                            month = int(
+                                request.form.get(f"member_birthmonth_{member_id}", "")
+                            )
+                            day = int(
+                                request.form.get(f"member_birthday_{member_id}", "")
+                            )
+                            jalali_date = jdatetime.date(year, month, day)
+                            member.birth_date = jalali_date.togregorian()
                         except (ValueError, TypeError):
-                            Flash(
-                                f"تاریخ تولد نامعتبر برای عضو '{Member.Name}' نادیده گرفته شد.",
+                            flash(
+                                f"تاریخ تولد نامعتبر برای عضو '{member.name}' نادیده گرفته شد.",
                                 "Warning",
                             )
 
-            DbSession.commit()
+            db.commit()
 
-            NeedsArchiving, NewProblems = Utils.CheckForDataCompletionIssues(
-                DbSession, session.get("ClientIDForResolution")
+            client_id_for_resolution = session.get("ClientIDForResolution")
+            if not isinstance(client_id_for_resolution, int):
+                app.flask_app.logger.error(
+                    "ClientIDForResolution is missing or not an integer in session."
+                )
+                flash("خطا: شناسه کاربری برای اصلاح اطلاعات نامعتبر است.", "error")
+                return redirect(url_for("Login"))
+
+            needs_archiving, new_problems = utils.check_for_data_completion_issues(
+                db, client_id_for_resolution
             )
 
-            if not NeedsArchiving:
-                Client = (
-                    DbSession.query(Models.Client)
-                    .filter(
-                        Models.Client.client_id == session.get("ClientIDForResolution")
-                    )
+            if not needs_archiving:
+                client = (
+                    db.query(models.Client)
+                    .filter(models.Client.client_id == client_id_for_resolution)
                     .first()
                 )
-                Client.Status = Models.EntityStatus.Active
-                for Team in Client.Teams:
-                    if Team.Status != Models.EntityStatus.Active:
-                        Team.Status = Models.EntityStatus.Active
-                    for Member in Team.Members:
-                        if Member.Status != Models.EntityStatus.Active:
-                            Member.Status = Models.EntityStatus.Active
-                DbSession.commit()
+                if client:
+                    client.status = models.EntityStatus.ACTIVE
+                    for team in client.teams:
+                        if team.status != models.EntityStatus.ACTIVE:
+                            team.status = models.EntityStatus.ACTIVE
+                        for member in team.members:
+                            if member.status != models.EntityStatus.ACTIVE:
+                                member.status = models.EntityStatus.ACTIVE
+                    db.commit()
 
-                session.clear()
-                session["ClientID"] = session.get("ClientIDForResolution")
-                session.permanent = True
-                Flash(
-                    "اطلاعات شما با موفقیت تکمیل و حساب کاربری شما مجددا فعال شد!",
-                    "Success",
-                )
-                return ReDirect(URLFor("Dashboard"))
-            else:
-                session["ResolutionProblems"] = NewProblems
-                Flash(
-                    "برخی از مشکلات همچنان باقی است. لطفا موارد مشخص شده را اصلاح نمایید.",
-                    "Error",
-                )
-                return ReDirect(URLFor("ResolveDataIssues"))
-
-        except Exception as Error:
-            DbSession.rollback()
-            App.FlaskApp.logger.error(
-                f"Error during Data resolution for ClientID {session.get("ClientIDForResolution")}: {Error}"
+                    session.clear()
+                    session["client_id"] = client_id_for_resolution
+                    session.permanent = True
+                    flash(
+                        "اطلاعات شما با موفقیت تکمیل و حساب کاربری شما مجددا فعال شد!",
+                        "Success",
+                    )
+                    return redirect(url_for("Dashboard"))
+                else:
+                    app.flask_app.logger.error(
+                        "Client not found for ID %s during resolution.",
+                        client_id_for_resolution,
+                    )
+                    flash("خطا: اطلاعات کاربری برای اصلاح یافت نشد.", "error")
+                    return redirect(url_for("Login"))
+            session["ResolutionProblems"] = new_problems
+            flash(
+                "برخی از مشکلات همچنان باقی است. لطفا موارد مشخص شده را اصلاح نمایید.",
+                "error",
             )
-            Flash(
-                "خطایی در هنگام ذخیره اطلاعات رخ داد. لطفا دوباره تلاش کنید.", "Error"
+            return redirect(url_for("ResolveDataIssues"))
+
+        except (exc.SQLAlchemyError, ValueError, TypeError) as error:
+            db.rollback()
+            app.flask_app.logger.error(
+                "error during Data resolution for client_id %s: %s",
+                session.get("ClientIDForResolution"),
+                error,
             )
-            return ReDirect(URLFor("ResolveDataIssues"))
+            flash(
+                "خطایی در هنگام ذخیره اطلاعات رخ داد. لطفا دوباره تلاش کنید.", "error"
+            )
+            return redirect(url_for("ResolveDataIssues"))
 
 
-@App.FlaskApp.route("/Login", methods=["GET", "POST"])
-@App.limiter.limit("15 per minute")
-def Login():
-    NextURL = Request.args.get("next")
-    if Request.method == "POST":
-        App.CSRF_Protector.protect()
-        IPAddress = Request.remote_addr
-        Identifier = FaToEN(Request.form.get("Identifier", "").strip())
-        Password = Request.form.get("Password", "").encode("utf-8")
-        NextURLFromForm = Request.form.get("next")
+@app.flask_app.route("/Login", methods=["GET", "POST"])
+@app.limiter.limit("15 per minute")
+def login_client():
+    "Render and handle the client login page"
+    next_url = request.args.get("next")
+    if request.method == "POST":
+        app.CSRF_Protector.protect()
+        ip_address = request.remote_addr or "unknown"
+        identifier = fa_to_en(request.form.get("identifier", "").strip())
+        password = request.form.get("Password", "").encode("utf-8")
+        next_url_from_form = request.form.get("next")
 
-        with Database.get_db_session() as DbSession:
-            ClientCheck = Database.GetClientBy(
-                DbSession, "Email", Identifier
-            ) or Database.GetClientBy(DbSession, "PhoneNumber", Identifier)
+        with database.get_db_session() as db:
+            client_check = database.get_client_by(
+                db, "Email", identifier
+            ) or database.get_client_by(db, "PhoneNumber", identifier)
 
-            if not ClientCheck or not BCrypt.checkpw(
-                Password, ClientCheck.Password.encode("utf-8")
+            if not client_check or not bcrypt.checkpw(
+                password, client_check.password.encode("utf-8")
             ):
-                Database.LogLoginAttempt(
-                    DbSession, Identifier, IPAddress, IsSuccess=False
-                )
-                Flash("ایمیل/شماره تلفن یا رمز عبور نامعتبر است.", "Error")
-                return ReDirect(URLFor("Login", next=NextURLFromForm or ""))
+                database.log_login_attempt(db, identifier, ip_address, is_success=False)
+                flash("ایمیل/شماره تلفن یا رمز عبور نامعتبر است.", "error")
+                return redirect(url_for("login_client", next=next_url_from_form or ""))
 
-            if ClientCheck.Status != Models.EntityStatus.Active:
-                Flash(
+            if client_check.status != models.EntityStatus.ACTIVE:
+                flash(
                     "حساب کاربری شما غیر فعال شده است. لطفا با مدیریت تماس بگیرید.",
-                    "Error",
+                    "error",
                 )
-                return ReDirect(URLFor("Login"))
+                return redirect(url_for("login_client"))
 
-            Database.LogLoginAttempt(DbSession, Identifier, IPAddress, IsSuccess=True)
+            database.log_login_attempt(db, identifier, ip_address, is_success=True)
 
-            if not ClientCheck.IsPhoneVerified:
-                NewCode = "".join(Random.choices(String.digits, k=6))
-                ClientCheck.PhoneVerificationCode = NewCode
-                ClientCheck.VerificationCodeTimestamp = Datetime.datetime.now(
-                    Datetime.timezone.utc
+            if client_check.is_phone_verified is not True:
+                new_code = "".join(random.choices(string.digits, k=6))
+                client_check.phone_verification_code = new_code
+                client_check.verification_code_timestamp = datetime.datetime.now(
+                    datetime.timezone.utc
                 )
-                DbSession.commit()
+                db.commit()
                 Thread(
-                    target=Utils.SendTemplatedSMSAsync,
+                    target=utils.send_templated_sms_async,
                     args=(
-                        App.FlaskApp,
-                        ClientCheck.ClientID,
-                        Config.MelliPayamak["TemplateID_Verification"],
-                        NewCode,
-                        Config.MelliPayamak,
+                        app.flask_app,
+                        client_check.client_id,
+                        config.melli_payamak["TemplateID_Verification"],
+                        new_code,
+                        config.melli_payamak,
                     ),
                 ).start()
-                Flash(
+                flash(
                     "حساب شما هنوز فعال نشده است. یک کد تایید جدید به شماره موبایل شما ارسال شد.",
                     "Warning",
                 )
-                return ReDirect(
-                    URLFor(
-                        "Verify", Action="phone_signup", ClientID=ClientCheck.ClientID
+                return redirect(
+                    url_for(
+                        "Verify",
+                        action="phone_signup",
+                        client_id=client_check.client_id,
                     )
                 )
-
-            NeedsResolution, Problems = Utils.CheckForDataCompletionIssues(
-                DbSession, ClientCheck.ClientID
+            needs_resolution, problems = utils.check_for_data_completion_issues(
+                db, client_check.client_id
             )
-            if NeedsResolution:
+            if needs_resolution:
                 session.clear()
-                session["ClientIDForResolution"] = ClientCheck.ClientID
-                session["ResolutionProblems"] = Problems
-                Flash(
-                    "حساب کاربری شما دارای اطلاعات ناقص یا نامعتبر است. لطفا برای ادامه، اطلاعات خواسته‌شده را تکمیل و اصلاح نمایید.",
-                    "Error",
+                session["ResolutionProblems"] = problems
+                flash(
+                    "حساب کاربری شما دارای اطلاعات ناقص یا نامعتبر است. "
+                    "لطفا برای ادامه، اطلاعات خواسته‌شده را تکمیل و اصلاح نمایید.",
+                    "error",
                 )
-                return ReDirect(URLFor("ResolveDataIssues"))
+                return redirect(url_for("ResolveDataIssues"))
 
             session.clear()
-            session["ClientID"] = ClientCheck.ClientID
+            session["client_id"] = client_check.client_id
             session.permanent = True
-            Flash("شما با موفقیت وارد شدید.", "Success")
-            return ReDirect(NextURLFromForm or URLFor("Dashboard"))
+            flash("شما با موفقیت وارد شدید.", "Success")
+            return redirect(next_url_from_form or url_for("Dashboard"))
 
-    return RenderTemplate(
-        Constants.ClientHTMLNamesData["Login"], next_url=NextURL or ""
+    return render_template(
+        constants.client_html_names_data["Login"], next_url=next_url or ""
     )
 
 
-@App.FlaskApp.route("/MyHistory")
-@App.LoginRequired
-def MyHistory():
-    with Database.get_db_session() as db:
+@app.flask_app.route("/MyHistory")
+@app.login_required
+def my_history():
+    "Render the payment history page for the logged-in client"
+    with database.get_db_session() as db:
 
-        return RenderTemplate(
-            Constants.ClientHTMLNamesData["MyHistory"],
+        return render_template(
+            constants.client_html_names_data["MyHistory"],
             Payments=[
                 {
-                    "PaymentID": p.PaymentID,
+                    "PaymentID": p.payment_id,
                     "TeamName": TeamName,
-                    "Amount": p.Amount,
-                    "UploadDate": p.UploadDate,
-                    "Status": p.Status,
-                    "ReceiptFilename": p.ReceiptFilename,
-                    "ClientID": p.ClientID,
+                    "Amount": p.amount,
+                    "UploadDate": p.upload_date,
+                    "Status": p.status,
+                    "ReceiptFilename": p.receipt_filename,
+                    "client_id": p.client_id,
                 }
                 for p, TeamName in (
-                    db.query(Database.Payment, Models.Team.TeamName)
-                    .join(Models.Team, Database.Payment.TeamID == Database.Team.TeamID)
-                    .filter(Database.Payment.ClientID == session["ClientID"])
-                    .order_by(Database.Payment.UploadDate.desc())
+                    db.query(models.Payment, models.Team.team_name)
+                    .join(models.Team, models.Payment.team_id == models.Team.team_id)
+                    .filter(models.Payment.client_id == session["client_id"])
+                    .order_by(models.Payment.upload_date.desc())
                     .all()
                 )
             ],
         )
 
 
-@App.FlaskApp.route("/Team/<int:TeamID>/Update", methods=["GET", "POST"])
-@App.LoginRequired
-def UpdateTeam(TeamID):
-    with Database.get_db_session() as DbSession:
-        Team = (
-            DbSession.query(Models.Team)
+@app.flask_app.route("/Team/<int:team_id>/Update", methods=["GET", "POST"])
+@app.login_required
+def update_team(team_id):
+    "Render and handle updates to a specific team's information"
+    with database.get_db_session() as db:
+        team = (
+            db.query(models.Team)
             .filter(
-                Models.Team.TeamID == TeamID,
-                Models.Team.ClientID == session["ClientID"],
-                Models.Team.Status == Models.EntityStatus.Active,
+                models.Team.team_id == team_id,
+                models.Team.client_id == session["client_id"],
+                models.Team.status == models.EntityStatus.ACTIVE,
             )
             .first()
         )
 
-        if not Team:
-            Abort(404, "تیم مورد نظر پیدا نشد یا شما دسترسی به این تیم را ندارید")
+        if not team:
+            abort(404, "تیم مورد نظر پیدا نشد یا شما دسترسی به این تیم را ندارید")
 
-        if Request.method == "POST":
-            App.CSRF_Protector.protect()
-            NewTeamName = Bleach.clean(Request.form.get("TeamName", "").strip())
-            IsValid, ErrorMessage = Utils.IsValidTeamName(NewTeamName)
-            if not IsValid:
-                Flash(ErrorMessage, "Error")
+        if request.method == "POST":
+            app.CSRF_Protector.protect()
+            new_team_name = bleach.clean(request.form.get("TeamName", "").strip())
+            is_valid, error_message = utils.is_valid_team_name(new_team_name)
+            if not is_valid:
+                flash(error_message, "error")
             else:
                 try:
-                    ExistingTeam = (
-                        DbSession.query(Models.Team)
+                    existing_team = (
+                        db.query(models.Team)
                         .filter(
-                            func.lower(Models.Team.TeamName) == func.lower(NewTeamName),
-                            Models.Team.TeamID != TeamID,
+                            func.lower(models.Team.team_name)
+                            == func.lower(new_team_name),
+                            models.Team.team_id != team_id,
                         )
                         .first()
                     )
-                    if ExistingTeam:
-                        Flash(
+                    if existing_team:
+                        flash(
                             "تیمی با این نام از قبل وجود دارد. لطفا نام دیگری انتخاب کنید.",
-                            "Error",
+                            "error",
                         )
                     else:
-                        Team.TeamName = NewTeamName
-                        DbSession.commit()
-                        Database.LogAction(
-                            DbSession,
-                            session["ClientID"],
-                            f"User updated Team name for Team ID {TeamID} to '{NewTeamName}'.",
+                        team.team_name = new_team_name
+                        db.commit()
+                        database.log_action(
+                            db,
+                            session["client_id"],
+                            f"User updated Team name for Team ID {team_id} to '{new_team_name}'.",
                         )
-                        Flash("نام تیم با موفقیت به‌روزرسانی شد!", "Success")
+                        flash("نام تیم با موفقیت به‌روزرسانی شد!", "Success")
                 except exc.IntegrityError:
-                    DbSession.rollback()
-                    Flash(
+                    db.rollback()
+                    flash(
                         "خطای پایگاه داده: تیمی با این نام از قبل وجود دارد.",
-                        "Error",
+                        "error",
                     )
 
-            return ReDirect(URLFor("UpdateTeam", TeamID=TeamID))
+            return redirect(url_for("UpdateTeam", team_id=team_id))
 
-        IsPaid = Database.CheckIfTeamIsPaid(DbSession, TeamID)
-        Documents = []
-        if IsPaid:
-            Documents = (
-                DbSession.query(Models.TeamDocument)
-                .filter(Models.TeamDocument.TeamID == TeamID)
-                .order_by(Models.TeamDocument.UploadDate.desc())
+        is_paid = database.check_if_team_is_paid(db, team_id)
+        documents = []
+        if is_paid:
+            documents = (
+                db.query(models.TeamDocument)
+                .filter(models.TeamDocument.team_id == team_id)
+                .order_by(models.TeamDocument.upload_date.desc())
                 .all()
             )
 
-    return RenderTemplate(
-        Constants.ClientHTMLNamesData["UpdateTeam"],
-        Team=Team,
-        IsPaid=IsPaid,
-        Documents=Documents,
+    return render_template(
+        constants.client_html_names_data["UpdateTeam"],
+        Team=team,
+        IsPaid=is_paid,
+        Documents=documents,
     )
 
 
-@App.FlaskApp.route("/Team/<int:TeamID>/Delete", methods=["POST"])
-@App.LoginRequired
-def DeleteTeam(TeamID):
-    App.CSRF_Protector.protect()
-    with Database.get_db_session() as DbSession:
+@app.flask_app.route("/Team/<int:team_id>/Delete", methods=["POST"])
+@app.login_required
+def delete_team(team_id):
+    "Archive a team and its members"
+    app.CSRF_Protector.protect()
+    with database.get_db_session() as db:
         try:
-            Team = (
-                DbSession.query(Models.Team)
+            team = (
+                db.query(models.Team)
                 .filter(
-                    Models.Team.TeamID == TeamID,
-                    Models.Team.ClientID == session["ClientID"],
-                    Models.Team.Status == Models.EntityStatus.Active,
+                    models.Team.team_id == team_id,
+                    models.Team.client_id == session["client_id"],
+                    models.Team.status == models.EntityStatus.ACTIVE,
                 )
                 .first()
             )
 
-            if not Team:
-                Flash("تیم مورد نظر یافت نشد یا شما اجازه حذف آن را ندارید.", "Error")
-                return ReDirect(URLFor("Dashboard"))
+            if not team:
+                flash("تیم مورد نظر یافت نشد یا شما اجازه حذف آن را ندارید.", "error")
+                return redirect(url_for("Dashboard"))
 
-            if Database.HasTeamMadeAnyPayment(DbSession, TeamID):
-                Flash(
+            if database.has_team_made_any_payment(db, team_id):
+                flash(
                     "پس از ارسال رسید پرداخت، امکان آرشیو تیم توسط شما وجود ندارد.",
-                    "Error",
+                    "error",
                 )
-                return ReDirect(URLFor("Dashboard"))
+                return redirect(url_for("Dashboard"))
 
-            Team.Status = Models.EntityStatus.Inactive
-            for Member in Team.Members:
-                Member.Status = Models.EntityStatus.Withdrawn
+            team.status = models.EntityStatus.INACTIVE
+            for member in team.members:
+                member.status = models.EntityStatus.WITHDRAWN
 
-            DbSession.commit()
-            Flash(f"تیم «{Team.TeamName}» با موفقیت آرشیو شد.", "Success")
+            db.commit()
+            flash(f"تیم «{team.team_name}» با موفقیت آرشیو شد.", "Success")
 
-        except Exception as Error:
-            DbSession.rollback()
-            App.FlaskApp.logger.error(f"Error deleting Team {TeamID}: {Error}")
-            Flash("خطایی در هنگام آرشیو تیم رخ داد.", "Error")
+        except exc.SQLAlchemyError as error:
+            db.rollback()
+            app.flask_app.logger.error("error deleting Team %s: %s", team_id, error)
+            flash("خطایی در هنگام آرشیو تیم رخ داد.", "error")
 
-    return ReDirect(URLFor("Dashboard"))
+    return redirect(url_for("Dashboard"))
 
 
-@App.FlaskApp.route("/Team/<int:TeamID>/Members")
-@App.LoginRequired
-def ManageMembers(TeamID):
-    with Database.get_db_session() as DbSession:
-        Team = (
-            DbSession.query(Models.Team)
+@app.flask_app.route("/Team/<int:team_id>/members")
+@app.login_required
+def manage_members(team_id):
+    "Render the manage members page for a specific team"
+    with database.get_db_session() as db:
+        team = (
+            db.query(models.Team)
             .filter(
-                Models.Team.TeamID == TeamID,
-                Models.Team.ClientID == session["ClientID"],
-                Models.Team.Status == Models.EntityStatus.Active,
+                models.Team.team_id == team_id,
+                models.Team.client_id == session["client_id"],
+                models.Team.status == models.EntityStatus.ACTIVE,
             )
             .first()
         )
 
-        if not Team:
-            Abort(404, "تیم مورد نظر پیدا نشد یا شما دسترسی به این تیم را ندارید")
+        if not team:
+            abort(404, "تیم مورد نظر پیدا نشد یا شما دسترسی به این تیم را ندارید")
 
-    return RenderTemplate(
-        Constants.ClientHTMLNamesData["Members"],
-        Team=Team,
-        Members=(
-            DbSession.query(Models.Member)
+    return render_template(
+        constants.client_html_names_data["members"],
+        Team=team,
+        members=(
+            db.query(models.Member)
             .filter(
-                Models.Member.TeamID == TeamID,
-                Models.Member.Status == Models.EntityStatus.Active,
+                models.Member.team_id == team_id,
+                models.Member.status == models.EntityStatus.ACTIVE,
             )
             .all()
         ),
-        IsPaid=Database.CheckIfTeamIsPaid(DbSession, TeamID),
-        **Utils.GetFormContext(),
+        IsPaid=database.check_if_team_is_paid(db, team_id),
+        **utils.get_form_context(),
     )
 
 
-@App.FlaskApp.route("/SupportChat")
-@App.LoginRequired
-def SupportChat():
-    ClientUser = Utils.GetCurrentClient()
-    if not ClientUser:
-        Flash("خطا در بارگیری اطلاعات کاربری. لطفا دوباره وارد شوید.", "Error")
-        return ReDirect(URLFor("Login"))
-    return RenderTemplate(
-        Constants.ClientHTMLNamesData["SupportChat"],
-        User=ClientUser,
+@app.flask_app.route("/SupportChat")
+@app.login_required
+def support_chat():
+    "Render the support chat page for the logged-in client"
+    client_user = utils.get_current_client()
+    if not client_user:
+        flash("خطا در بارگیری اطلاعات کاربری. لطفا دوباره وارد شوید.", "error")
+        return redirect(url_for("Login"))
+    return render_template(
+        constants.client_html_names_data["SupportChat"],
+        User=client_user,
     )
 
 
-@App.FlaskApp.route("/Team/<int:TeamID>/DeleteMember/<int:MemberID>", methods=["POST"])
-@App.LoginRequired
-def DeleteMember(TeamID, MemberID):
-    App.CSRF_Protector.protect()
+@app.flask_app.route(
+    "/Team/<int:team_id>/DeleteMember/<int:member_id>", methods=["POST"]
+)
+@app.login_required
+def delete_member(team_id, member_id):
+    "Archive a member from a specific team."
+    app.CSRF_Protector.protect()
     try:
-        with Database.get_db_session() as DbSession:
-            Team = (
-                DbSession.query(Models.Team)
+        with database.get_db_session() as db:
+            team = (
+                db.query(models.Team)
                 .filter(
-                    Models.Team.TeamID == TeamID,
-                    Models.Team.ClientID == session["ClientID"],
-                    Models.Team.Status == Models.EntityStatus.Active,
+                    models.Team.team_id == team_id,
+                    models.Team.client_id == session["client_id"],
+                    models.Team.status == models.EntityStatus.ACTIVE,
                 )
                 .first()
             )
 
-            if not Team:
-                Abort(404)
+            if not team:
+                abort(404)
 
-            if Database.HasTeamMadeAnyPayment(DbSession, TeamID):
-                Flash("پس از ارسال رسید پرداخت، امکان حذف عضو وجود ندارد.", "Error")
-                return ReDirect(URLFor("ManageMembers", TeamID=TeamID))
+            if database.has_team_made_any_payment(db, team_id):
+                flash("پس از ارسال رسید پرداخت، امکان حذف عضو وجود ندارد.", "error")
+                return redirect(url_for("manage_members", team_id=team_id))
 
-            MemberToDelete = (
-                DbSession.query(Models.Member)
+            member_to_delete = (
+                db.query(models.Member)
                 .filter(
-                    Models.Member.MemberID == MemberID,
-                    Models.Member.TeamID == TeamID,
-                    Models.Member.Status == Models.EntityStatus.Active,
+                    models.Member.member_id == member_id,
+                    models.Member.team_id == team_id,
+                    models.Member.status == models.EntityStatus.ACTIVE,
                 )
                 .first()
             )
 
-            if MemberToDelete:
-                MemberName = MemberToDelete.Name
-                MemberToDelete.Status = Models.EntityStatus.Withdrawn
+            if member_to_delete:
+                member_name = member_to_delete.name
+                member_to_delete.status = models.EntityStatus.WITHDRAWN
 
-                Database.LogAction(
-                    DbSession,
-                    session["ClientID"],
-                    f"User marked member '{MemberName}' as withdrawn from Team ID {TeamID}.",
+                database.log_action(
+                    db,
+                    session["client_id"],
+                    f"User marked member '{member_name}' as withdrawn from Team ID {team_id}.",
                 )
 
-                DbSession.commit()
-                Utils.UpdateTeamStats(DbSession, TeamID)
+                db.commit()
+                utils.update_team_stats(db, team_id)
 
-                Flash("عضو با موفقیت به عنوان منصرف شده علامت‌گذاری شد.", "Success")
+                flash("عضو با موفقیت به عنوان منصرف شده علامت‌گذاری شد.", "Success")
             else:
-                Flash("عضو مورد نظر یافت نشد.", "Error")
+                flash("عضو مورد نظر یافت نشد.", "error")
 
-    except Exception as Error:
-        App.FlaskApp.logger.error(
-            f"Error archiving member {MemberID} from Team {TeamID}: {Error}"
+    except exc.SQLAlchemyError as error:
+        app.flask_app.logger.error(
+            "error archiving member %s from Team %s: %s", member_id, team_id, error
         )
-        Flash("خطایی در هنگام حذف عضو رخ داد.", "Error")
+        flash("خطایی در هنگام حذف عضو رخ داد.", "error")
 
-    return ReDirect(URLFor("ManageMembers", TeamID=TeamID))
+    return redirect(url_for("manage_members", team_id=team_id))
 
 
-@App.FlaskApp.route("/GetMyChatHistory")
-@App.LoginRequired
-def GetMyChatHistory():
-    if not session.get("ClientID"):
-        return Jsonify({"Messages": []})
-    with Database.get_db_session() as db:
-        return Jsonify(
+@app.flask_app.route("/get_my_chat_history")
+@app.login_required
+def get_my_chat_history():
+    "Return the chat history for the logged-in client as JSON"
+    client_id = session.get("client_id")
+    if not isinstance(client_id, int):
+        return jsonify({"Messages": []})
+    with database.get_db_session() as db:
+        return jsonify(
             {
                 "Messages": [
                     {
-                        "MessageText": Message.MessageText,
-                        "Timestamp": Message.Timestamp.isoformat(),
-                        "Sender": Message.Sender,
+                        "MessageText": Message.message_text,
+                        "timestamp": Message.timestamp.isoformat(),
+                        "Sender": Message.sender,
                     }
-                    for Message in Database.GetChatHistoryByClientID(
-                        db, session.get("ClientID")
-                    )
+                    for Message in database.get_chat_history_by_client_id(db, client_id)
                 ]
             }
         )
 
 
-@App.FlaskApp.route("/Team/<int:TeamID>/UploadDocument", methods=["POST"])
-@App.LoginRequired
-def UploadDocument(TeamID):
-    App.CSRF_Protector.protect()
+@app.flask_app.route("/Team/<int:team_id>/UploadDocument", methods=["POST"])
+@app.login_required
+def upload_document(team_id):
+    "Handle document upload for a specific team"
+    app.CSRF_Protector.protect()
 
-    with Database.get_db_session() as db:
-        Team = (
-            db.query(Models.Team)
+    with database.get_db_session() as db:
+        team = (
+            db.query(models.Team)
             .filter(
-                Models.Team.TeamID == TeamID,
-                Models.Team.Status == Models.EntityStatus.Active,
+                models.Team.team_id == team_id,
+                models.Team.status == models.EntityStatus.ACTIVE,
             )
             .first()
         )
 
-        if not Team:
-            Abort(404)
+        if not team:
+            abort(404)
 
-        if Team.ClientID != session.get("ClientID") and not session.get(
+        if team.client_id != session.get("client_id") and not session.get(
             "AdminLoggedIn"
         ):
-            Abort(403)
+            abort(403)
 
-        if not Database.CheckIfTeamIsPaid(db, TeamID):
-            Flash("شما اجازه بارگذاری مستندات برای این تیم را ندارید.", "Error")
-            return ReDirect(URLFor("UpdateTeam", TeamID=TeamID))
+        if not database.check_if_team_is_paid(db, team_id):
+            flash("شما اجازه بارگذاری مستندات برای این تیم را ندارید.", "error")
+            return redirect(url_for("UpdateTeam", team_id=team_id))
 
-        if "File" not in Request.files:
-            Flash("فایلی برای بارگذاری انتخاب نشده است.", "Error")
-            return ReDirect(URLFor("UpdateTeam", TeamID=TeamID))
-
-        File = Request.files["File"]
-        if not File or not File.filename:
-            Flash("نام فایل نامعتبر است.", "Error")
-            return ReDirect(URLFor("UpdateTeam", TeamID=TeamID))
-
-        if Request.content_length > Constants.AppConfig.MaxDocumentSize:
-            Flash(
-                f"حجم فایل سند نباید بیشتر از {Constants.AppConfig.MaxDocumentSize / 1024 / 1024:.1f} مگابایت باشد.",
-                "Error",
+        if "File" not in request.files:
+            flash("فایلی برای بارگذاری انتخاب نشده است.", "error")
+            return redirect(url_for("UpdateTeam", team_id=team_id))
+        temp = constants.AppConfig.max_document_size
+        file = request.files["File"]
+        if not file or not file.filename:
+            flash("نام فایل نامعتبر است.", "error")
+            return redirect(url_for("UpdateTeam", team_id=team_id))
+        if (
+            request.content_length is None
+            or request.content_length > temp
+        ):
+            flash(
+                f"حجم فایل سند نباید بیشتر از {temp / 1024 / 1024:.1f} مگابایت باشد.",
+                "error",
             )
-            return ReDirect(URLFor("UpdateTeam", TeamID=TeamID))
+            return redirect(url_for("UpdateTeam", team_id=team_id))
 
-        File.stream.seek(0)
-        if not Utils.IsFileAllowed(File.stream):
-            Flash("نوع فایل مجاز نیست یا فایل خراب است.", "Error")
-            return ReDirect(URLFor("UpdateTeam", TeamID=TeamID))
-        File.stream.seek(0)
+        file.stream.seek(0)
+        if not utils.is_file_allowed(file.stream):
+            flash("نوع فایل مجاز نیست یا فایل خراب است.", "error")
+            return redirect(url_for("UpdateTeam", team_id=team_id))
+        file.stream.seek(0)
 
-        OriginalFilename = SecureFileName(File.filename)
-        Extension = (
-            OriginalFilename.rsplit(".", 1)[1].lower()
-            if "." in OriginalFilename
+        original_filename = secure_filename(file.filename)
+        extension = (
+            original_filename.rsplit(".", 1)[1].lower()
+            if "." in original_filename
             else ""
         )
-        SecureName = f"{UUID.uuid4()}.{Extension}"
+        secure_name = f"{uuid.uuid4()}.{extension}"
 
-        NewDocument = Models.TeamDocument(
-            TeamID=TeamID,
-            ClientID=session["ClientID"],
-            FileName=SecureName,
-            FileType=Extension,
-            UploadDate=Datetime.datetime.now(Datetime.timezone.utc),
+        new_document = models.TeamDocument(
+            team_id=team_id,
+            client_id=session["client_id"],
+            FileName=secure_name,
+            FileType=extension,
+            UploadDate=datetime.datetime.now(datetime.timezone.utc),
         )
 
         try:
-            DocumentFolder = OS.path.join(
-                App.FlaskApp.config["UPLOAD_FOLDER_DOCUMENTS"], str(TeamID)
+            document_folder = os.path.join(
+                app.flask_app.config["UPLOAD_FOLDER_DOCUMENTS"], str(team_id)
             )
-            OS.makedirs(DocumentFolder, exist_ok=True)
-            File.save(OS.path.join(DocumentFolder, SecureName))
-            db.add(NewDocument)
+            os.makedirs(document_folder, exist_ok=True)
+            file.save(os.path.join(document_folder, secure_name))
+            db.add(new_document)
             db.commit()
-            Flash("مستندات با موفقیت بارگذاری شد.", "Success")
-        except Exception as Error:
+            flash("مستندات با موفقیت بارگذاری شد.", "Success")
+        except (IOError, OSError, exc.SQLAlchemyError) as error:
             db.rollback()
-            App.FlaskApp.logger.error(f"Document save failed: {Error}")
-            Flash("خطایی در هنگام ذخیره فایل مستندات رخ داد.", "Error")
+            app.flask_app.logger.error("Document save failed: %s", error)
+            flash("خطایی در هنگام ذخیره فایل مستندات رخ داد.", "error")
 
-    return ReDirect(URLFor("UpdateTeam", TeamID=TeamID))
+    return redirect(url_for("UpdateTeam", team_id=team_id))
 
 
-@App.FlaskApp.route("/UploadDocuments/<int:TeamID>/<filename>")
-@App.LoginRequired
-def GetDocument(TeamID, filename):
-    with Database.get_db_session() as db:
-        Team = (
-            db.query(Models.Team.ClientID).filter(Models.Team.TeamID == TeamID).first()
+@app.flask_app.route("/UploadDocuments/<int:team_id>/<filename>")
+@app.login_required
+def get_document(team_id, filename):
+    "Return the requested document for a specific team"
+    with database.get_db_session() as db:
+        team = (
+            db.query(models.Team.client_id)
+            .filter(models.Team.team_id == team_id)
+            .first()
         )
 
-        if not Team or (
-            Team.ClientID != session.get("ClientID")
+        if not team or (
+            team.client_id != session.get("client_id")
             and not session.get("AdminLoggedIn")
         ):
-            Abort(403)
+            abort(403)
 
-    Filepath = SafeJoin(
-        OS.path.join(Constants.Path.UploadsDir, "Documents", str(TeamID)), filename
+    filepath = safe_join(
+        os.path.join(constants.Path.uploads_dir, "Documents", str(team_id)), filename
     )
-    if Filepath is None or not OS.path.exists(Filepath):
-        Abort(404)
+    if filepath is None or not os.path.exists(filepath):
+        abort(404)
 
-    return SendFromDirectory(
-        OS.path.join(Constants.Path.UploadsDir, "Documents", str(TeamID)),
+    return send_from_directory(
+        os.path.join(constants.Path.uploads_dir, "Documents", str(team_id)),
         filename,
         as_attachment=True,
     )
 
 
-@App.FlaskApp.route("/Team/<int:TeamID>/AddMember", methods=["POST"])
-@App.LoginRequired
-def AddMember(TeamID):
-    App.CSRF_Protector.protect()
+@app.flask_app.route("/Team/<int:team_id>/AddMember", methods=["POST"])
+@app.login_required
+def add_member(team_id):
+    "Handle adding a new member to a specific team"
+    app.CSRF_Protector.protect()
     try:
-        with Database.get_db_session() as DbSession:
-            Team = (
-                DbSession.query(Models.Team)
+        with database.get_db_session() as db:
+            team = (
+                db.query(models.Team)
                 .filter(
-                    Models.Team.TeamID == TeamID,
-                    Models.Team.ClientID == session["ClientID"],
-                    Models.Team.Status == Models.EntityStatus.Active,
+                    models.Team.team_id == team_id,
+                    models.Team.client_id == session["client_id"],
+                    models.Team.status == models.EntityStatus.ACTIVE,
                 )
                 .first()
             )
 
-            if not Team:
-                Abort(404)
+            if not team:
+                abort(404)
 
-            CurrentMemberCount = (
-                DbSession.query(func.count(Models.Member.MemberID))
+            current_member_count = (
+                db.query(models.Member)
                 .filter(
-                    Models.Member.TeamID == TeamID,
-                    Models.Member.Status == Models.EntityStatus.Active,
-                )
-                .scalar()
-            )
-
-            if CurrentMemberCount >= Constants.AppConfig.MaxMembersPerTeam:
-                Flash("خطا: شما به حداکثر تعداد اعضای تیم رسیده‌اید.", "Error")
-                return ReDirect(URLFor("ManageMembers", TeamID=TeamID))
-
-            Success, Message = Utils.InternalAddMember(DbSession, TeamID, Request.form)
-
-            if Success:
-                MemberName = Message
-                Database.LogAction(
-                    DbSession,
-                    session["ClientID"],
-                    f"Added new member '{MemberName}' to Team ID {TeamID}.",
-                )
-
-                if Database.CheckIfTeamIsPaid(DbSession, TeamID):
-                    Team.UnpaidMembersCount += 1
-                    Flash(
-                        "عضو جدید با موفقیت اضافه شد. لطفاً برای فعال‌سازی، هزینه عضو جدید را پرداخت نمایید.",
-                        "Warning",
-                    )
-                else:
-                    Flash("عضو با موفقیت اضافه شد!", "Success")
-
-                DbSession.commit()
-                Utils.UpdateTeamStats(DbSession, TeamID)
-            else:
-                Flash(Message, "Error")
-
-    except Exception as Error:
-        App.FlaskApp.logger.error(f"Error adding member to Team {TeamID}: {Error}")
-        Flash("خطایی در هنگام افزودن عضو رخ داد.", "Error")
-
-    return ReDirect(URLFor("ManageMembers", TeamID=TeamID))
-
-
-@App.FlaskApp.route(
-    "/Team/<int:TeamID>/EditMember/<int:MemberID>", methods=["GET", "POST"]
-)
-@App.LoginRequired
-def EditMember(TeamID, MemberID):
-    TemplateName = Constants.ClientHTMLNamesData["EditMember"]
-
-    with Database.get_db_session() as DbSession:
-        Team = (
-            DbSession.query(Models.Team)
-            .filter(
-                Models.Team.TeamID == TeamID,
-                Models.Team.ClientID == session["ClientID"],
-                Models.Team.Status == Models.EntityStatus.Active,
-            )
-            .first()
-        )
-
-        if not Team:
-            Abort(404, "تیم مورد نظر پیدا نشد یا شما دسترسی به این تیم را ندارید")
-
-        Member = (
-            DbSession.query(Models.Member)
-            .filter(
-                Models.Member.MemberID == MemberID,
-                Models.Member.TeamID == TeamID,
-                Models.Member.Status == Models.EntityStatus.Active,
-            )
-            .first()
-        )
-
-        if not Member:
-            Flash("عضو مورد نظر یافت نشد.", "Error")
-            return ReDirect(URLFor("ManageMembers", TeamID=TeamID))
-
-        if Request.method == "POST":
-            App.CSRF_Protector.protect()
-
-            NewName = Bleach.clean(Request.form.get("Name", "").strip())
-            NewRoleValue = Request.form.get("Role", "").strip()
-            NewNationalID = FaToEN(Request.form.get("NationalID", "").strip())
-            NewCityName = Request.form.get("City", "").strip()
-            NewProvinceName = Request.form.get("Province", "").strip()
-
-            RoleMap = {Role.value: Role for Role in Models.MemberRole}
-            NewRole = RoleMap.get(NewRoleValue)
-
-            if (
-                not NewName
-                or not NewNationalID
-                or not NewCityName
-                or not NewProvinceName
-            ):
-                Flash("نام، کد ملی، استان و شهر الزامی هستند.", "Error")
-                return RenderTemplate(
-                    TemplateName,
-                    Team=Team,
-                    Member=Member,
-                    FormData=Request.form,
-                    **Utils.GetFormContext(),
-                )
-
-            if NewRole == Models.MemberRole.Leader:
-                if Database.HasExistingLeader(
-                    DbSession, TeamID, MemberIDToExclude=MemberID
-                ):
-                    Flash("خطا: این تیم از قبل یک سرپرست دارد.", "Error")
-                    return ReDirect(
-                        URLFor("EditMember", TeamID=TeamID, MemberID=MemberID)
-                    )
-
-            try:
-                NewCityID = (
-                    DbSession.query(Models.City.CityID)
-                    .join(Models.Province)
-                    .filter(
-                        Models.Province.Name == NewProvinceName,
-                        Models.City.Name == NewCityName,
-                    )
-                    .scalar()
-                )
-
-                if not NewCityID:
-                    Flash("استان یا شهر انتخاب شده معتبر نیست.", "Error")
-                else:
-                    Member.Name = NewName
-                    Member.Role = NewRole
-                    Member.NationalID = NewNationalID
-                    Member.CityID = NewCityID
-                    DbSession.commit()
-
-                    Utils.UpdateTeamStats(DbSession, TeamID)
-                    Database.LogAction(
-                        DbSession,
-                        session["ClientID"],
-                        f"Edited member '{NewName}' (ID: {MemberID}) in Team ID {TeamID}.",
-                    )
-
-                    Flash("اطلاعات عضو با موفقیت به‌روزرسانی شد.", "Success")
-                    return ReDirect(URLFor("ManageMembers", TeamID=TeamID))
-
-            except Exception as Error:
-                DbSession.rollback()
-                App.FlaskApp.logger.error(f"Error updating member {MemberID}: {Error}")
-                Flash("خطایی در هنگام به‌روزرسانی اطلاعات عضو رخ داد.", "Error")
-
-            return RenderTemplate(
-                TemplateName,
-                Team=Team,
-                Member=Member,
-                FormData=Request.form,
-                **Utils.GetFormContext(),
-            )
-
-    return RenderTemplate(
-        TemplateName, Team=Team, Member=Member, **Utils.GetFormContext()
-    )
-
-
-@App.FlaskApp.route("/ReceiptUploads/<int:ClientID>/<filename>")
-@App.LoginRequired
-def GetReceipt(ClientID, filename):
-    if ClientID != session.get("ClientID") and not session.get("AdminLoggedIn"):
-        Abort(403)
-    return SendFromDirectory(
-        OS.path.join(App.FlaskApp.config["UPLOAD_FOLDER_RECEIPTS"], str(ClientID)),
-        filename,
-    )
-
-
-@App.FlaskApp.route("/CreateTeam", methods=["GET", "POST"])
-@App.LoginRequired
-def CreateTeam():
-    with Database.get_db_session() as DbSession:
-        TeamsCount = (
-            DbSession.query(Models.Team)
-            .filter(
-                Models.Team.ClientID == session["ClientID"],
-                Models.Team.Status == Models.EntityStatus.Active,
-            )
-            .count()
-        )
-        if TeamsCount >= Constants.AppConfig.MaxTeamPerClient:
-            Flash(f"شما به حداکثر تعداد تیم مجاز رسیده‌اید.", "Error")
-            return ReDirect(URLFor("Dashboard"))
-
-        if Request.method == "POST":
-            App.CSRF_Protector.protect()
-            TeamName = Bleach.clean(Request.form.get("TeamName", "").strip())
-            FormContext = Utils.GetFormContext()
-
-            IsValid, ErrorMessage = Utils.IsValidTeamName(TeamName)
-            if not IsValid:
-                Flash(ErrorMessage, "Error")
-                return RenderTemplate(
-                    Constants.ClientHTMLNamesData["CreateTeam"],
-                    FormData=Request.form,
-                    **FormContext,
-                )
-
-            FirstMemberData, Error = Utils.CreateMemberFromFormData(
-                DbSession, Request.form
-            )
-            if Error:
-                Flash(Error, "Error")
-                return RenderTemplate(
-                    Constants.ClientHTMLNamesData["CreateTeam"],
-                    FormData=Request.form,
-                    **FormContext,
-                )
-
-            try:
-                RegDate = Datetime.datetime.now(Datetime.timezone.utc)
-                NewTeam = Models.Team(
-                    ClientID=session["ClientID"],
-                    TeamName=TeamName,
-                    TeamRegistrationDate=RegDate,
-                )
-                DbSession.add(NewTeam)
-                DbSession.flush()
-
-                NewMember = Models.Member(TeamID=NewTeam.TeamID, **FirstMemberData)
-                DbSession.add(NewMember)
-                DbSession.commit()
-
-                Utils.UpdateTeamStats(DbSession, NewTeam.TeamID)
-
-                Flash(f"تیم «{TeamName}» با موفقیت ساخته شد!", "Success")
-                return ReDirect(URLFor("Dashboard"))
-            except exc.IntegrityError:
-                DbSession.rollback()
-                Flash(
-                    "تیمی با این نام از قبل وجود دارد. لطفا نام دیگری انتخاب کنید.",
-                    "Error",
-                )
-                return RenderTemplate(
-                    Constants.ClientHTMLNamesData["CreateTeam"],
-                    FormData=Request.form,
-                    **FormContext,
-                )
-
-    FormContext = Utils.GetFormContext()
-    return RenderTemplate(Constants.ClientHTMLNamesData["CreateTeam"], **FormContext)
-
-
-@App.FlaskApp.route("/Team/<int:TeamID>/SelectLeague", methods=["GET", "POST"])
-@App.LoginRequired
-def SelectLeague(TeamID):
-    with Database.get_db_session() as DbSession:
-        Team = (
-            DbSession.query(Models.Team)
-            .filter(
-                Models.Team.TeamID == TeamID,
-                Models.Team.ClientID == session["ClientID"],
-                Models.Team.Status == Models.EntityStatus.Active,
-            )
-            .first()
-        )
-
-        if not Team:
-            Abort(404, "تیم پیدا نشد")
-
-        if Database.HasTeamMadeAnyPayment(DbSession, TeamID):
-            Flash(
-                "از آنجایی که برای این تیم رسید پرداخت ارسال شده است، امکان تغییر لیگ‌ها وجود ندارد.",
-                "Warning",
-            )
-            return ReDirect(URLFor("Dashboard"))
-
-        if Request.method == "POST":
-            App.CSRF_Protector.protect()
-            LeagueOneID = Request.form.get("LeagueOne")
-            LeagueTwoID = Request.form.get("LeagueTwo")
-
-            if not LeagueOneID:
-                Flash("لطفاً لیگ اول (اجباری) را انتخاب کنید.", "Error")
-                return ReDirect(URLFor("SelectLeague", TeamID=TeamID))
-
-            if LeagueTwoID and LeagueOneID == LeagueTwoID:
-                Flash("شما نمی‌توانید یک لیگ را دو بار انتخاب کنید.", "Error")
-                return ReDirect(URLFor("SelectLeague", TeamID=TeamID))
-
-            Team.LeagueOneID = int(LeagueOneID) if LeagueOneID else None
-            Team.LeagueTwoID = int(LeagueTwoID) if LeagueTwoID else None
-
-            DbSession.commit()
-            Flash("لیگ‌های تیم با موفقیت به‌روزرسانی شد.", "Success")
-            return ReDirect(URLFor("Dashboard"))
-
-    return RenderTemplate(
-        Constants.ClientHTMLNamesData["SelectLeague"],
-        Team=Team,
-        Leagues=Constants.LeaguesListData,
-    )
-
-
-@App.FlaskApp.route("/Verify", methods=["GET", "POST"])
-def Verify():
-    if Request.method == "POST":
-        App.CSRF_Protector.protect()
-        Action = Request.form.get("Action")
-
-        if Action == "phone_signup":
-            ClientID = Request.form.get("ClientID")
-            with Database.get_db_session() as DbSession:
-                Client = (
-                    DbSession.query(Models.Client)
-                    .filter(Models.Client.client_id == ClientID)
-                    .first()
-                )
-                if Client and Client.PhoneVerificationCode == Request.form.get("Code"):
-                    if (
-                        Datetime.datetime.now(Datetime.timezone.utc)
-                        - Client.VerificationCodeTimestamp
-                    ).total_seconds() > 900:
-                        Flash(
-                            "کد تایید منقضی شده است. لطفا دوباره درخواست دهید.", "Error"
-                        )
-                        return ReDirect(
-                            URLFor("Verify", Action="phone_signup", ClientID=ClientID)
-                        )
-
-                    Client.IsPhoneVerified = 1
-                    Client.PhoneVerificationCode = None
-                    DbSession.commit()
-                    Flash(
-                        "شماره موبایل شما با موفقیت تایید شد! اکنون می‌توانید وارد شوید.",
-                        "Success",
-                    )
-                    return ReDirect(URLFor("Login"))
-                else:
-                    Flash("کد وارد شده صحیح نمی باشد.", "Error")
-                    return ReDirect(
-                        URLFor("Verify", Action="phone_signup", ClientID=ClientID)
-                    )
-
-        elif Action == "password_reset":
-            Identifier = Request.form.get("Identifier")
-            IdentifierType = Request.form.get("IdentifierType")
-            with Database.get_db_session() as db:
-                ResetRecord = (
-                    db.query(Models.PasswordReset)
-                    .filter(
-                        Models.PasswordReset.Identifier == Identifier,
-                        Models.PasswordReset.IdentifierType == IdentifierType,
-                        Models.PasswordReset.Code == Request.form.get("Code"),
-                    )
-                    .first()
-                )
-                if ResetRecord:
-                    if (
-                        Datetime.datetime.now(Datetime.timezone.utc)
-                        - ResetRecord.Timestamp
-                    ).total_seconds() > 900:
-                        db.delete(ResetRecord)
-                        db.commit()
-                        Flash("کد منقضی شده است. لطفا دوباره درخواست دهید.", "Error")
-                        return ReDirect(URLFor("ForgotPassword"))
-
-                    NewToken = Secrets.token_urlsafe(32)
-                    ResetRecord.Code = NewToken
-                    ResetRecord.Timestamp = Datetime.datetime.now(Datetime.timezone.utc)
-                    db.commit()
-                    return ReDirect(URLFor("ResetPassword", Token=NewToken))
-                else:
-                    Flash("کد وارد شده صحیح نمی باشد.", "Error")
-                    return ReDirect(
-                        URLFor(
-                            "Verify",
-                            Action="password_reset",
-                            Identifier=Identifier,
-                            IdentifierType=IdentifierType,
-                        )
-                    )
-
-        Flash("عملیات نامعتبر است.", "Error")
-        return ReDirect(URLFor("Login"))
-
-    Action = Request.args.get("Action")
-    Context = {"Action": Action, "Cooldown": 0}
-
-    if Action == "phone_signup":
-        ClientID = Request.args.get("ClientID")
-        if not ClientID:
-            Flash("شناسه کاربر نامعتبر است.", "Error")
-            return ReDirect(URLFor("Login"))
-        with Database.get_db_session() as DbSession:
-            Client = (
-                DbSession.query(Models.Client)
-                .filter(Models.Client.client_id == ClientID)
-                .first()
-            )
-            if Client and Client.VerificationCodeTimestamp:
-                SecondsPassed = (
-                    Datetime.datetime.now(Datetime.timezone.utc)
-                    - Client.VerificationCodeTimestamp
-                ).total_seconds()
-                if SecondsPassed < 180:
-                    Context["Cooldown"] = 180 - int(SecondsPassed)
-        Context["ClientID"] = ClientID
-
-    elif Action == "password_reset":
-        Identifier = Request.args.get("Identifier")
-        IdentifierType = Request.args.get("IdentifierType")
-        if not Identifier or not IdentifierType:
-            Flash("اطلاعات مورد نیاز برای تایید کد موجود نیست.", "Error")
-            return ReDirect(URLFor("ForgotPassword"))
-        with Database.get_db_session() as db:
-            ResetRecord = (
-                db.query(Models.PasswordReset)
-                .filter(Models.PasswordReset.Identifier == Identifier)
-                .first()
-            )
-            if not ResetRecord:
-                Flash("درخواست بازیابی یافت نشد یا منقضی شده است.", "Error")
-                return ReDirect(URLFor("ForgotPassword"))
-            if ResetRecord.Timestamp:
-                SecondsPassed = (
-                    Datetime.datetime.now(Datetime.timezone.utc) - ResetRecord.Timestamp
-                ).total_seconds()
-                if SecondsPassed < 180:
-                    Context["Cooldown"] = 180 - int(SecondsPassed)
-        Context["Identifier"] = Identifier
-        Context["IdentifierType"] = IdentifierType
-
-    else:
-        Flash("صفحه مورد نظر یافت نشد.", "Error")
-        return ReDirect(URLFor("Login"))
-
-    return RenderTemplate(Constants.ClientHTMLNamesData["Verify"], **Context)
-
-
-@App.FlaskApp.route("/ResendCode", methods=["POST"])
-@App.limiter.limit("5 per 15 minutes")
-def ResendCode():
-    RequestData = Request.get_json() or {}
-    Action = RequestData.get("Action")
-
-    if not Action:
-        return Jsonify({"Success": False, "Message": "عملیات نامعتبر است."}), 400
-
-    if Action == "phone_signup":
-        if not RequestData.get("ClientID"):
-            return (
-                Jsonify({"Success": False, "Message": "شناسه کاربر نامعتبر است."}),
-                400,
-            )
-
-        with Database.get_db_session() as DbSession:
-            Client = (
-                DbSession.query(Models.Client)
-                .filter(Models.Client.client_id == RequestData.get("ClientID"))
-                .first()
-            )
-            if not Client:
-                return Jsonify({"Success": False, "Message": "کاربر یافت نشد."}), 404
-
-            if (
-                Client.VerificationCodeTimestamp
-                and (
-                    Datetime.datetime.now(Datetime.timezone.utc)
-                    - Client.VerificationCodeTimestamp
-                ).total_seconds()
-                < 180
-            ):
-                return (
-                    Jsonify({"Success": False, "Message": "لطفا ۳ دقیقه صبر کنید."}),
-                    429,
-                )
-
-            NewCode = "".join(Random.choices(String.digits, k=6))
-            Client.PhoneVerificationCode = NewCode
-            Client.VerificationCodeTimestamp = Datetime.datetime.now(
-                Datetime.timezone.utc
-            )
-            DbSession.commit()
-
-            Thread(
-                target=Utils.SendTemplatedSMSAsync,
-                args=(
-                    App.FlaskApp,
-                    RequestData.get("ClientID"),
-                    Config.MelliPayamak["TemplateID_Verification"],
-                    NewCode,
-                    Config.MelliPayamak,
-                ),
-            ).start()
-
-    elif Action == "password_reset":
-        Identifier = RequestData.get("Identifier")
-        IdentifierType = RequestData.get("IdentifierType")
-        if not Identifier or not IdentifierType:
-            return Jsonify({"Success": False, "Message": "اطلاعات ناقص است."}), 400
-
-        with Database.get_db_session() as DbSession:
-            ResetRecord = (
-                DbSession.query(Models.PasswordReset)
-                .filter(Models.PasswordReset.Identifier == Identifier)
-                .first()
-            )
-            if (
-                ResetRecord
-                and ResetRecord.Timestamp
-                and (
-                    Datetime.datetime.now(Datetime.timezone.utc) - ResetRecord.Timestamp
-                ).total_seconds()
-                < 180
-            ):
-                return (
-                    Jsonify({"Success": False, "Message": "لطفا ۳ دقیقه صبر کنید."}),
-                    429,
-                )
-
-            Client = Database.GetClientBy(DbSession, IdentifierType, Identifier)
-            if not Client:
-                return Jsonify({"Success": False, "Message": "کاربر یافت نشد."}), 404
-
-            NewCode = "".join(Random.choices(String.digits, k=6))
-            if ResetRecord:
-                ResetRecord.Code = NewCode
-                ResetRecord.Timestamp = Datetime.datetime.now(Datetime.timezone.utc)
-            else:
-                NewResetRecord = Models.PasswordReset(
-                    Identifier=Identifier,
-                    IdentifierType=IdentifierType,
-                    Code=NewCode,
-                    Timestamp=Datetime.datetime.now(Datetime.timezone.utc),
-                )
-                DbSession.add(NewResetRecord)
-            DbSession.commit()
-
-            if IdentifierType == "Email":
-                Subject = "کد بازیابی رمز عبور آیروکاپ"
-                Body = f"کد بازیابی رمز عبور شما: {NewCode}"
-                Thread(
-                    target=Utils.SendAsyncEmail,
-                    args=(
-                        App.FlaskApp,
-                        Client.ClientID,
-                        Subject,
-                        Body,
-                        Config.MailConfiguration,
-                    ),
-                ).start()
-            elif IdentifierType == "PhoneNumber":
-                Thread(
-                    target=Utils.SendTemplatedSMSAsync,
-                    args=(
-                        App.FlaskApp,
-                        Client.ClientID,
-                        Config.MelliPayamak["TemplateID_PasswordReset"],
-                        NewCode,
-                        Config.MelliPayamak,
-                    ),
-                ).start()
-
-    else:
-        return Jsonify({"Success": False, "Message": "عملیات ناشناخته است."}), 400
-
-    return Jsonify({"Success": True, "Message": "کد جدید ارسال شد."})
-
-
-@App.FlaskApp.route("/ForgotPassword", methods=["GET", "POST"])
-@App.limiter.limit("5 per 15 minutes")
-def ForgotPassword():
-    if Request.method == "POST":
-        App.CSRF_Protector.protect()
-        Identifier = FaToEN(Request.form.get("Identifier", "").strip())
-        IdentifierType = (
-            "Email"
-            if Utils.IsValidEmail(Identifier)
-            else "PhoneNumber" if Utils.IsValidIranianPhone(Identifier) else None
-        )
-
-        SuccessMessage = "اگر کاربری با این مشخصات در سیستم وجود داشته باشد، کد بازیابی برایتان ارسال خواهد شد."
-
-        if not IdentifierType:
-            Flash("لطفا یک ایمیل یا شماره موبایل معتبر وارد کنید.", "Error")
-            return ReDirect(URLFor("ForgotPassword"))
-
-        with Database.get_db_session() as DbSession:
-            ClientCheck = Database.GetClientBy(DbSession, IdentifierType, Identifier)
-
-            if ClientCheck:
-                ResetCode = "".join(Random.choices(String.digits, k=6))
-                Timestamp = Datetime.datetime.now(Datetime.timezone.utc)
-
-                ResetRecord = (
-                    DbSession.query(Models.PasswordReset)
-                    .filter(Models.PasswordReset.Identifier == Identifier)
-                    .first()
-                )
-                if ResetRecord:
-                    ResetRecord.Code = ResetCode
-                    ResetRecord.Timestamp = Timestamp
-                else:
-                    NewResetRecord = Models.PasswordReset(
-                        Identifier=Identifier,
-                        IdentifierType=IdentifierType,
-                        Code=ResetCode,
-                        Timestamp=Timestamp,
-                    )
-                    DbSession.add(NewResetRecord)
-                DbSession.commit()
-
-                if IdentifierType == "Email":
-                    Subject = "بازیابی رمز عبور آیروکاپ"
-                    Body = f"کد بازیابی رمز عبور شما در آیروکاپ: {ResetCode}"
-                    Thread(
-                        target=Utils.SendAsyncEmail,
-                        args=(
-                            App.FlaskApp,
-                            ClientCheck.ClientID,
-                            Subject,
-                            Body,
-                            Config.MailConfiguration,
-                        ),
-                    ).start()
-
-                elif IdentifierType == "PhoneNumber":
-                    Thread(
-                        target=Utils.SendTemplatedSMSAsync,
-                        args=(
-                            App.FlaskApp,
-                            ClientCheck.ClientID,
-                            Config.MelliPayamak["TemplateID_PasswordReset"],
-                            ResetCode,
-                            Config.MelliPayamak,
-                        ),
-                    ).start()
-
-            Flash(SuccessMessage, "Info")
-            return ReDirect(
-                URLFor(
-                    "Verify",
-                    Action="password_reset",
-                    Identifier=Identifier,
-                    IdentifierType=IdentifierType,
-                )
-            )
-
-    return RenderTemplate(Constants.ClientHTMLNamesData["ForgotPassword"])
-
-
-@App.FlaskApp.route("/ResendPasswordCode", methods=["POST"])
-@App.limiter.limit("5 per 15 minutes")
-def ResendPasswordCode():
-    RequestData = Request.get_json() or {}
-    Identifier = RequestData.get("Identifier")
-    IdentifierType = RequestData.get("IdentifierType")
-
-    if not Identifier or not IdentifierType:
-        return Jsonify({"Success": False, "Message": "اطلاعات ناقص است."}), 400
-
-    with Database.get_db_session() as DbSession:
-        ResetRecord = (
-            DbSession.query(Models.PasswordReset)
-            .filter(Models.PasswordReset.Identifier == Identifier)
-            .first()
-        )
-
-        if ResetRecord and ResetRecord.Timestamp:
-            if (
-                Datetime.datetime.now(Datetime.timezone.utc) - ResetRecord.Timestamp
-            ).total_seconds() < 180:
-                return (
-                    Jsonify({"Success": False, "Message": "لطفا ۳ دقیقه صبر کنید."}),
-                    429,
-                )
-
-        Client = Database.GetClientBy(DbSession, IdentifierType, Identifier)
-        if not Client:
-            return Jsonify({"Success": False, "Message": "کاربر یافت نشد."}), 404
-
-        NewCode = "".join(Random.choices(String.digits, k=6))
-
-        if ResetRecord:
-            ResetRecord.Code = NewCode
-            ResetRecord.Timestamp = Datetime.datetime.now(Datetime.timezone.utc)
-        else:
-            NewResetRecord = Models.PasswordReset(
-                Identifier=Identifier,
-                IdentifierType=IdentifierType,
-                Code=NewCode,
-                Timestamp=Datetime.datetime.now(Datetime.timezone.utc),
-            )
-            DbSession.add(NewResetRecord)
-
-        DbSession.commit()
-
-        if IdentifierType == "Email":
-            Subject = "بازیابی رمز عبور آیروکاپ"
-            Body = f"کد بازیابی رمز عبور شما در آیروکاپ: {NewCode}"
-            Thread(
-                target=Utils.SendAsyncEmail,
-                args=(
-                    App.FlaskApp,
-                    Client.ClientID,
-                    Subject,
-                    Body,
-                    Config.MailConfiguration,
-                ),
-            ).start()
-        elif IdentifierType == "PhoneNumber":
-            Thread(
-                target=Utils.SendTemplatedSMSAsync,
-                args=(
-                    App.FlaskApp,
-                    Client.ClientID,
-                    Config.MelliPayamak["TemplateID_PasswordReset"],
-                    NewCode,
-                    Config.MelliPayamak,
-                ),
-            ).start()
-
-    return Jsonify({"Success": True, "Message": "کد جدید ارسال شد."})
-
-
-@App.FlaskApp.route("/ResendVerificationCode", methods=["POST"])
-@App.limiter.limit("5 per 15 minutes")
-def ResendVerificationCode():
-    RequestData = Request.get_json() or {}
-    ClientID = RequestData.get("ClientID")
-
-    if not ClientID:
-        return Jsonify({"Success": False, "Message": "خطای کلاینت."}), 400
-
-    with Database.get_db_session() as DbSession:
-        Client = (
-            DbSession.query(Models.Client)
-            .filter(Models.Client.client_id == ClientID)
-            .first()
-        )
-        if not Client:
-            return Jsonify({"Success": False, "Message": "کاربر یافت نشد."}), 404
-        if Client.VerificationCodeTimestamp:
-            if (
-                Datetime.datetime.now(Datetime.timezone.utc)
-                - Client.VerificationCodeTimestamp
-            ).total_seconds() < 180:
-                return (
-                    Jsonify({"Success": False, "Message": "لطفا ۳ دقیقه صبر کنید."}),
-                    429,
-                )
-
-        NewCode = "".join(Random.choices(String.digits, k=6))
-        Client.PhoneVerificationCode = NewCode
-        Client.VerificationCodeTimestamp = Datetime.datetime.now(Datetime.timezone.utc)
-        DbSession.commit()
-
-    Thread(
-        target=Utils.SendTemplatedSMSAsync,
-        args=(
-            App.FlaskApp,
-            ClientID,
-            Config.MelliPayamak["TemplateID_Verification"],
-            NewCode,
-            Config.MelliPayamak,
-        ),
-    ).start()
-
-    return Jsonify({"Success": True, "Message": "کد جدید ارسال شد."})
-
-
-@App.FlaskApp.route("/ResetPassword", methods=["GET", "POST"])
-def ResetPassword():
-    Token = Request.args.get("Token")
-    if not Token:
-        Flash("توکن بازیابی نامعتبر است یا وجود ندارد.", "Error")
-        return ReDirect(URLFor("ForgotPassword"))
-
-    if Request.method == "POST":
-        App.CSRF_Protector.protect()
-
-        NewPassword = Request.form.get("NewPassword")
-        IsValid, ErrorMessage = Utils.IsValidPassword(NewPassword)
-        if not IsValid:
-            Flash(ErrorMessage, "Error")
-            return ReDirect(URLFor("ResetPassword", Token=Token))
-
-        with Database.get_db_session() as DbSession:
-            ValidRecord = (
-                DbSession.query(Models.PasswordReset)
-                .filter(Models.PasswordReset.Code == Token)
-                .first()
-            )
-
-            if not ValidRecord:
-                Flash("توکن بازیابی نامعتبر است یا قبلا استفاده شده است.", "Error")
-                return ReDirect(URLFor("ForgotPassword"))
-
-            if (
-                Datetime.datetime.now(Datetime.timezone.utc) - ValidRecord.Timestamp
-            ).total_seconds() > 900:
-                DbSession.delete(ValidRecord)
-                DbSession.commit()
-                Flash("توکن بازیابی منقضی شده است. لطفا دوباره درخواست دهید.", "Error")
-                return ReDirect(URLFor("ForgotPassword"))
-
-            ClientToUpdate = Database.GetClientBy(
-                DbSession, ValidRecord.IdentifierType, ValidRecord.Identifier
-            )
-            if ClientToUpdate:
-                HashedPassword = BCrypt.hashpw(
-                    NewPassword.encode("utf-8"), BCrypt.gensalt()
-                )
-                ClientToUpdate.Password = HashedPassword.decode("utf-8")
-                DbSession.delete(ValidRecord)
-                DbSession.commit()
-
-                Flash("رمز عبور شما با موفقیت تغییر یافت.", "Success")
-                return ReDirect(URLFor("Login"))
-            else:
-                DbSession.delete(ValidRecord)
-                DbSession.commit()
-                Flash("کاربر مرتبط با این توکن یافت نشد.", "Error")
-                return ReDirect(URLFor("ForgotPassword"))
-
-    return RenderTemplate(Constants.ClientHTMLNamesData["ResetPassword"], Token=Token)
-
-
-@App.FlaskApp.route("/Team/<int:TeamID>/Payment", methods=["GET", "POST"])
-@App.LoginRequired
-def Payment(TeamID):
-    with Database.get_db_session() as DbSession:
-        Team = (
-            DbSession.query(Models.Team)
-            .filter(
-                Models.Team.TeamID == TeamID,
-                Models.Team.ClientID == session["ClientID"],
-                Models.Team.Status == Models.EntityStatus.Active,
-            )
-            .first()
-        )
-
-        if not Team:
-            Abort(404, "تیم پیدا نشد")
-
-        if Request.method == "POST":
-            App.CSRF_Protector.protect()
-            ReceiptFile = Request.files.get("receipt")
-            if not ReceiptFile or ReceiptFile.filename == "":
-                Flash("لطفا فایل رسید پرداخت را انتخاب کنید.", "Error")
-                return ReDirect(Request.url)
-
-            if Request.content_length > Constants.AppConfig.MaxImageSize:
-                Flash(
-                    f"حجم فایل رسید نباید بیشتر از {Constants.AppConfig.MaxImageSize / 1024 / 1024:.1f} مگابایت باشد.",
-                    "Error",
-                )
-                return ReDirect(Request.url)
-
-            ReceiptFile.stream.seek(0)
-            if not Utils.IsFileAllowed(ReceiptFile.stream):
-                Flash("نوع فایل مجاز نیست یا فایل خراب است.", "Error")
-                return ReDirect(Request.url)
-            ReceiptFile.stream.seek(0)
-
-            Filename = SecureFileName(ReceiptFile.filename)
-            Extension = Filename.rsplit(".", 1)[1].lower() if "." in Filename else ""
-            SecureName = f"{UUID.uuid4()}.{Extension}"
-
-            TotalCost = 0
-            MembersToPayFor = 0
-            if Database.CheckIfTeamIsPaid(DbSession, TeamID):
-                MembersToPayFor = Team.UnpaidMembersCount
-                if MembersToPayFor == 0:
-                    Flash("عضو جدیدی برای پرداخت وجود ندارد.", "Info")
-                    return ReDirect(URLFor("Dashboard"))
-                TotalCost = MembersToPayFor * Config.PaymentConfig["FeePerPerson"]
-            else:
-                MemberCount = (
-                    DbSession.query(Models.Member)
-                    .filter(
-                        Models.Member.TeamID == TeamID,
-                        Models.Member.Status == Models.EntityStatus.Active,
-                    )
-                    .count()
-                )
-                MembersToPayFor = MemberCount
-                MembersFee = MemberCount * Config.PaymentConfig["FeePerPerson"]
-                TotalCost = Config.PaymentConfig["FeeTeam"] + MembersFee
-
-                if Team.LeagueTwoID:
-                    DiscountPercent = Config.PaymentConfig["LeagueTwoDiscount"] / 100
-                    DiscountedMembersFee = MembersFee * (1 - DiscountPercent)
-                    TotalCost = (
-                        Config.PaymentConfig["FeeTeam"]
-                        + MembersFee
-                        + DiscountedMembersFee
-                    )
-
-            NewPayment = Models.Payment(
-                TeamID=TeamID,
-                ClientID=session["ClientID"],
-                Amount=TotalCost,
-                MembersPaidFor=MembersToPayFor,
-                ReceiptFilename=SecureName,
-                UploadDate=Datetime.datetime.now(Datetime.timezone.utc),
-                Status=Models.PaymentStatus.Pending,
-            )
-            DbSession.add(NewPayment)
-
-            try:
-                UserReceiptsFolder = OS.path.join(
-                    App.FlaskApp.config["UPLOAD_FOLDER_RECEIPTS"],
-                    str(session["ClientID"]),
-                )
-                OS.makedirs(UserReceiptsFolder, exist_ok=True)
-                ReceiptFile.save(OS.path.join(UserReceiptsFolder, SecureName))
-            except Exception as Error:
-                DbSession.rollback()
-                App.FlaskApp.logger.error(f"File save failed for payment: {Error}")
-                Flash(
-                    "خطایی در هنگام ذخیره فایل رسید رخ داد. لطفا دوباره تلاش کنید.",
-                    "Error",
-                )
-                return ReDirect(Request.url)
-            else:
-                DbSession.commit()
-                Flash(
-                    "متشکریم! رسید شما با موفقیت بارگذاری و برای بررسی ارسال شد.",
-                    "Success",
-                )
-                return ReDirect(URLFor("Dashboard"))
-
-        if Database.CheckIfTeamIsPaid(DbSession, TeamID):
-            UnpaidMembersCount = Team.UnpaidMembersCount
-            if UnpaidMembersCount == 0:
-                Flash("در حال حاضر عضو جدیدی برای پرداخت وجود ندارد.", "Info")
-                return ReDirect(URLFor("Dashboard"))
-            TotalFee = UnpaidMembersCount * Config.PaymentConfig["FeePerPerson"]
-            Context = {
-                "IsNewMemberPayment": True,
-                "MembersToPayFor": UnpaidMembersCount,
-                "TotalFee": TotalFee,
-            }
-        else:
-            NumMembers = (
-                DbSession.query(Models.Member)
-                .filter(
-                    Models.Member.TeamID == TeamID,
-                    Models.Member.Status == Models.EntityStatus.Active,
+                    models.Member.team_id == team_id,
+                    models.Member.status == models.EntityStatus.ACTIVE,
                 )
                 .count()
             )
 
-            MembersFee = NumMembers * Config.PaymentConfig["FeePerPerson"]
-            LeagueOneCost = MembersFee + Config.PaymentConfig["FeeTeam"]
-            TotalFee = LeagueOneCost
-            LeagueTwoCost, DiscountAmount = 0, 0
+            if current_member_count >= constants.AppConfig.max_members_per_team:
+                flash("خطا: شما به حداکثر تعداد اعضای تیم رسیده‌اید.", "error")
+                return redirect(url_for("Managemembers", team_id=team_id))
 
-            if Team.LeagueTwoID:
-                DiscountAmount = MembersFee * (
-                    Config.PaymentConfig["LeagueTwoDiscount"] / 100
+            success, message = utils.internal_add_member(db, team_id, request.form)
+
+            if success:
+                member_name = message
+                database.log_action(
+                    db,
+                    session["client_id"],
+                    f"Added new member '{member_name}' to Team ID {team_id}.",
                 )
-                LeagueTwoCost = MembersFee - DiscountAmount
-                TotalFee += LeagueTwoCost
 
-            Context = {
-                "IsNewMemberPayment": False,
-                "NumMembers": NumMembers,
-                "TotalFee": TotalFee,
-                "LeagueOneCost": LeagueOneCost,
-                "LeagueTwoCost": LeagueTwoCost,
-                "DiscountAmount": DiscountAmount,
-            }
+                if database.check_if_team_is_paid(db, team_id):
+                    team.unpaid_members_count = (team.unpaid_members_count or 0) + 1
+                    flash(
+                        "عضو جدید با موفقیت اضافه شد. لطفاً برای فعال‌سازی، "
+                        "هزینه عضو جدید را پرداخت نمایید.",
+                        "Warning",
+                    )
+                else:
+                    flash("عضو با موفقیت اضافه شد!", "Success")
 
-    return RenderTemplate(
-        Constants.ClientHTMLNamesData["Payment"], Team=Team, **Context
+                db.commit()
+                utils.update_team_stats(db, team_id)
+            else:
+                flash(message, "error")
+
+    except (exc.SQLAlchemyError, ValueError, TypeError) as error:
+        app.flask_app.logger.error("error adding member to Team %s: %s", team_id, error)
+        flash("خطایی در هنگام افزودن عضو رخ داد.", "error")
+
+    return redirect(url_for("Managemembers", team_id=team_id))
+
+
+@app.flask_app.route(
+    "/Team/<int:team_id>/EditMember/<int:member_id>", methods=["GET", "POST"]
+)
+@app.login_required
+def edit_member(team_id, member_id):
+    """Render and handle editing a member's information in a specific team."""
+    template_name = constants.client_html_names_data["EditMember"]
+
+    with database.get_db_session() as db:
+        team = (
+            db.query(models.Team)
+            .filter(
+                models.Team.team_id == team_id,
+                models.Team.client_id == session["client_id"],
+                models.Team.status == models.EntityStatus.ACTIVE,
+            )
+            .first()
+        )
+
+        if not team:
+            abort(404, "تیم مورد نظر پیدا نشد یا شما دسترسی به این تیم را ندارید")
+
+        member = (
+            db.query(models.Member)
+            .filter(
+                models.Member.member_id == member_id,
+                models.Member.team_id == team_id,
+                models.Member.status == models.EntityStatus.ACTIVE,
+            )
+            .first()
+        )
+
+        if not member:
+            flash("عضو مورد نظر یافت نشد.", "error")
+            return redirect(url_for("Managemembers", team_id=team_id))
+
+        if request.method == "POST":
+            app.CSRF_Protector.protect()
+
+            new_name = bleach.clean(request.form.get("Name", "").strip())
+            new_role_value = request.form.get("Role", "").strip()
+            new_national_id = fa_to_en(request.form.get("NationalID", "").strip())
+            new_city_name = request.form.get("City", "").strip()
+            new_province_name = request.form.get("Province", "").strip()
+
+            role_map = {Role.value: Role for Role in models.MemberRole}
+            new_role = role_map.get(new_role_value)
+
+            if (
+                not new_name
+                or not new_national_id
+                or not new_city_name
+                or not new_province_name
+            ):
+                flash("نام، کد ملی، استان و شهر الزامی هستند.", "error")
+                return render_template(
+                    template_name,
+                    Team=team,
+                    member=member,
+                    FormData=request.form,
+                    **utils.get_form_context(),
+                )
+
+            if new_role == models.MemberRole.LEADER:
+                if database.has_existing_leader(
+                    db, team_id, member_id_to_exclude=member_id
+                ):
+                    flash("خطا: این تیم از قبل یک سرپرست دارد.", "error")
+                    return redirect(
+                        url_for("EditMember", team_id=team_id, member_id=member_id)
+                    )
+
+            try:
+                new_city_id = (
+                    db.query(models.City.city_id)
+                    .join(models.Province)
+                    .filter(
+                        models.Province.name == new_province_name,
+                        models.City.name == new_city_name,
+                    )
+                    .scalar()
+                )
+
+                if not new_city_id:
+                    flash("استان یا شهر انتخاب شده معتبر نیست.", "error")
+                else:
+                    member.name = new_name
+                    if new_role is None:
+                        flash("نقش انتخاب شده نامعتبر است.", "error")
+                        return render_template(
+                            template_name,
+                            Team=team,
+                            member=member,
+                            FormData=request.form,
+                            **utils.get_form_context(),
+                        )
+                    member.role = new_role
+                    member.national_id = new_national_id
+                    member.city_id = new_city_id
+                    db.commit()
+
+                    utils.update_team_stats(db, team_id)
+                    database.log_action(
+                        db,
+                        session["client_id"],
+                        f"Edited member '{new_name}' (ID: {member_id}) in Team ID {team_id}.",
+                    )
+
+                    flash("اطلاعات عضو با موفقیت به‌روزرسانی شد.", "Success")
+                    return redirect(url_for("Managemembers", team_id=team_id))
+
+            except (exc.SQLAlchemyError, ValueError, TypeError) as error:
+                db.rollback()
+                app.flask_app.logger.error(
+                    "error updating member %s: %s", member_id, error
+                )
+                flash("خطایی در هنگام به‌روزرسانی اطلاعات عضو رخ داد.", "error")
+
+            return render_template(
+                template_name,
+                Team=team,
+                member=member,
+                FormData=request.form,
+                **utils.get_form_context(),
+            )
+
+    return render_template(
+        template_name, Team=team, member=member, **utils.get_form_context()
     )
 
 
-@App.FlaskApp.route("/Dashboard")
-@App.LoginRequired
-def Dashboard():
-    with Database.get_db_session() as DbSession:
-        Teams = (
-            DbSession.query(Models.Team)
-            .options(subqueryload(Models.Team.Members))
+@app.flask_app.route("/ReceiptUploads/<int:client_id>/<filename>")
+@app.login_required
+def get_receipt(client_id, filename):
+    "Return the requested receipt for a specific client"
+    if client_id != session.get("client_id") and not session.get("AdminLoggedIn"):
+        abort(403)
+    return send_from_directory(
+        os.path.join(app.flask_app.config["UPLOAD_FOLDER_RECEIPTS"], str(client_id)),
+        filename,
+    )
+
+
+@app.flask_app.route("/CreateTeam", methods=["GET", "POST"])
+@app.login_required
+def create_team():
+    "Render and handle the create team page"
+    with database.get_db_session() as db:
+        teams_count = (
+            db.query(models.Team)
             .filter(
-                Models.Team.ClientID == session.get("ClientID"),
-                Models.Team.Status == Models.EntityStatus.Active,
+                models.Team.client_id == session["client_id"],
+                models.Team.status == models.EntityStatus.ACTIVE,
             )
-            .order_by(Models.Team.TeamRegistrationDate.desc())
+            .count()
+        )
+        if teams_count >= constants.AppConfig.max_team_per_client:
+            flash("شما به حداکثر تعداد تیم مجاز رسیده‌اید.", "error")
+            return redirect(url_for("Dashboard"))
+
+        if request.method == "POST":
+            app.CSRF_Protector.protect()
+            team_name = bleach.clean(request.form.get("TeamName", "").strip())
+            form_context = utils.get_form_context()
+
+            is_valid, error_message = utils.is_valid_team_name(team_name)
+            if not is_valid:
+                flash(error_message, "error")
+                return render_template(
+                    constants.client_html_names_data["CreateTeam"],
+                    FormData=request.form,
+                    **form_context,
+                )
+
+            first_member_data, error = utils.create_member_from_form_data(
+                db, request.form
+            )
+            if error:
+                flash(error, "error")
+                return render_template(
+                    constants.client_html_names_data["CreateTeam"],
+                    FormData=request.form,
+                    **form_context,
+                )
+
+            try:
+                assert first_member_data is not None
+                reg_date = datetime.datetime.now(datetime.timezone.utc)
+                new_team = models.Team(
+                    client_id=session["client_id"],
+                    TeamName=team_name,
+                    TeamRegistrationDate=reg_date,
+                )
+                db.add(new_team)
+                db.flush()
+
+                new_member = models.Member(
+                    team_id=new_team.team_id, **first_member_data
+                )
+                db.add(new_member)
+                db.commit()
+
+                utils.update_team_stats(db, new_team.team_id)  # type: ignore[arg-type]
+
+                flash(f"تیم «{team_name}» با موفقیت ساخته شد!", "Success")
+                return redirect(url_for("Dashboard"))
+            except exc.IntegrityError:
+                db.rollback()
+                flash(
+                    "تیمی با این نام از قبل وجود دارد. لطفا نام دیگری انتخاب کنید.",
+                    "error",
+                )
+                return render_template(
+                    constants.client_html_names_data["CreateTeam"],
+                    FormData=request.form,
+                    **form_context,
+                )
+
+    form_context = utils.get_form_context()
+    return render_template(
+        constants.client_html_names_data["CreateTeam"], **form_context
+    )
+
+
+@app.flask_app.route("/Team/<int:team_id>/SelectLeague", methods=["GET", "POST"])
+@app.login_required
+def select_league(team_id):
+    "Render and handle the league selection page for a specific team"
+    with database.get_db_session() as db:
+        team = (
+            db.query(models.Team)
+            .filter(
+                models.Team.team_id == team_id,
+                models.Team.client_id == session["client_id"],
+                models.Team.status == models.EntityStatus.ACTIVE,
+            )
+            .first()
+        )
+
+        if not team:
+            abort(404, "تیم پیدا نشد")
+
+        if database.has_team_made_any_payment(db, team_id):
+            flash(
+                "از آنجایی که برای این تیم رسید پرداخت ارسال شده امکان تغییر لیگ‌ها وجود ندارد",
+                "Warning",
+            )
+            return redirect(url_for("Dashboard"))
+
+        if request.method == "POST":
+            app.CSRF_Protector.protect()
+            league_one_id = request.form.get("LeagueOne")
+            league_two_id = request.form.get("LeagueTwo")
+
+            if not league_one_id:
+                flash("لطفاً لیگ اول (اجباری) را انتخاب کنید.", "error")
+                return redirect(url_for("SelectLeague", team_id=team_id))
+
+            if league_two_id and league_one_id == league_two_id:
+                flash("شما نمی‌توانید یک لیگ را دو بار انتخاب کنید.", "error")
+                return redirect(url_for("SelectLeague", team_id=team_id))
+
+            team.league_one_id = int(league_one_id) if league_one_id else None  # type: ignore
+            team.league_two_id = int(league_two_id) if league_two_id else None  # type: ignore
+
+            db.commit()
+            flash("لیگ‌های تیم با موفقیت به‌روزرسانی شد.", "Success")
+            return redirect(url_for("Dashboard"))
+
+    return render_template(
+        constants.client_html_names_data["SelectLeague"],
+        Team=team,
+        Leagues=constants.leagues_list,
+    )
+
+
+@app.flask_app.route("/Verify", methods=["GET", "POST"])
+def verify_code():
+    """Render and handle the verification page."""
+    if request.method == "POST":
+        app.CSRF_Protector.protect()
+        action = request.form.get("action")
+        response_redirect_url = None
+        flash_message = None
+        flash_category = None
+
+        if action == "phone_signup":
+            client_id = request.form.get("client_id")
+            with database.get_db_session() as db:
+                client = (
+                    db.query(models.Client)
+                    .filter(models.Client.client_id == client_id)
+                    .first()
+                )
+                if client and client.phone_verification_code == request.form.get(  # type: ignore
+                    "code"
+                ):
+                    if (
+                        client.verification_code_timestamp is not None
+                        and (
+                            datetime.datetime.now(datetime.timezone.utc)
+                            - client.verification_code_timestamp
+                        ).total_seconds()
+                        > 900
+                    ):
+                        flash_message = (
+                            "کد تایید منقضی شده است. لطفا دوباره درخواست دهید."
+                        )
+                        flash_category = "error"
+                        response_redirect_url = url_for(
+                            "verify_code", action="phone_signup", client_id=client_id
+                        )
+                    else:
+                        client.is_phone_verified = True  # type: ignore
+                        client.phone_verification_code = ""  # type: ignore
+                        db.commit()
+                        flash_message = (
+                            "شماره موبایل شما با موفقیت تایید شد! اکنون می‌توانید وارد شوید."
+                        )
+                        flash_category = "Success"
+                        response_redirect_url = url_for("login_client")
+                else:
+                    flash_message = (
+                        "کد وارد شده صحیح نمی باشد."
+                    )
+                    flash_category = "error"
+                    response_redirect_url = url_for(
+                        "verify_code", action="phone_signup", client_id=client_id
+                    )
+
+        elif action == "password_reset":
+            identifier = request.form.get("identifier")
+            identifier_type = request.form.get("identifier_type")
+            with database.get_db_session() as db:
+                reset_record = (
+                    db.query(models.PasswordReset)
+                    .filter(
+                        models.PasswordReset.identifier == identifier,
+                        models.PasswordReset.identifier_type == identifier_type,
+                        models.PasswordReset.code == request.form.get("code"),
+                    )
+                    .first()
+                )
+                if reset_record:
+                    if (
+                        reset_record.timestamp is not None
+                        and (
+                            datetime.datetime.now(datetime.timezone.utc)
+                            - reset_record.timestamp
+                        ).total_seconds()
+                        > 900
+                    ):
+                        db.delete(reset_record)
+                        db.commit()
+                        flash_message = "کد منقضی شده است. لطفا دوباره درخواست دهید."
+                        flash_category = "error"
+                        response_redirect_url = url_for("ForgotPassword")
+                    else:
+                        new_token = secrets.token_urlsafe(32)
+                        reset_record.code = new_token  # type: ignore
+                        reset_record.timestamp = datetime.datetime.now(  # type: ignore
+                            datetime.timezone.utc
+                        )
+                        db.commit()
+                        response_redirect_url = url_for(
+                            "ResetPassword", token=new_token
+                        )
+                else:
+                    flash_message = "کد وارد شده صحیح نمی باشد."
+                    flash_category = "error"
+                    response_redirect_url = url_for(
+                        "verify_code",
+                        action="password_reset",
+                        identifier=identifier,
+                        identifier_type=identifier_type,
+                    )
+        else:
+            flash_message = "عملیات نامعتبر است."
+            flash_category = "error"
+            response_redirect_url = url_for("login_client")
+
+        if flash_message and flash_category:
+            flash(flash_message, flash_category)
+        return (
+            redirect(response_redirect_url)
+            if response_redirect_url
+            else redirect(url_for("login_client"))
+        )
+    action = request.args.get("action")
+    context = {"action": action, "Cooldown": 0}
+    redirect_to_login = False
+
+    if action == "phone_signup":
+        client_id = request.args.get("client_id")
+        if not client_id:
+            flash("شناسه کاربر نامعتبر است.", "error")
+            redirect_to_login = True
+        else:
+            with database.get_db_session() as db:
+                client = (
+                    db.query(models.Client)
+                    .filter(models.Client.client_id == client_id)
+                    .first()
+                )
+                if client and client.verification_code_timestamp is not None:
+                    seconds_passed = (
+                        datetime.datetime.now(datetime.timezone.utc)
+                        - client.verification_code_timestamp
+                    ).total_seconds()
+                    if seconds_passed < 180:
+                        context["Cooldown"] = 180 - int(seconds_passed)
+            context["client_id"] = client_id
+
+    elif action == "password_reset":
+        identifier = request.args.get("identifier")
+        identifier_type = request.args.get("identifier_type")
+        if not identifier or not identifier_type:
+            flash("اطلاعات مورد نیاز برای تایید کد موجود نیست.", "error")
+            redirect_to_login = True
+        else:
+            with database.get_db_session() as db:
+                reset_record = (
+                    db.query(models.PasswordReset)
+                    .filter(models.PasswordReset.identifier == identifier)
+                    .first()
+                )
+                if not reset_record:
+                    flash("درخواست بازیابی یافت نشد یا منقضی شده است.", "error")
+                    redirect_to_login = True
+                elif reset_record.timestamp is not None:
+                    seconds_passed = (
+                        datetime.datetime.now(datetime.timezone.utc)
+                        - reset_record.timestamp
+                    ).total_seconds()
+                    if seconds_passed < 180:
+                        context["Cooldown"] = 180 - int(seconds_passed)
+            context["identifier"] = identifier
+            context["identifier_type"] = identifier_type
+
+    else:
+        flash("صفحه مورد نظر یافت نشد.", "error")
+        redirect_to_login = True
+
+    if redirect_to_login:
+        return redirect(url_for("login_client"))
+    return render_template(constants.client_html_names_data["Verify"], **context)
+
+
+@app.flask_app.route("/ResendCode", methods=["POST"])
+@app.limiter.limit("5 per 15 minutes")
+def resend_code():
+    "Handle resending verification or password reset codes."
+    request_data = request.get_json() or {}
+    action = request_data.get("action")
+
+    response_data = {"Success": False, "Message": "عملیات نامعتبر است."}
+    status_code = 400
+
+    if not action:
+        response_data["Message"] = "عملیات نامعتبر است."
+        status_code = 400
+    elif action == "phone_signup":
+        client_id = request_data.get("client_id")
+        if not client_id:
+            response_data["Message"] = "شناسه کاربر نامعتبر است."
+            status_code = 400
+        else:
+            with database.get_db_session() as db:
+                client = (
+                    db.query(models.Client)
+                    .filter(models.Client.client_id == client_id)
+                    .first()
+                )
+                if not client:
+                    response_data["Message"] = "کاربر یافت نشد."
+                    status_code = 404
+                elif (
+                    client.verification_code_timestamp is not None
+                    and (
+                        datetime.datetime.now(datetime.timezone.utc)
+                        - client.verification_code_timestamp
+                    ).total_seconds()
+                    < 180
+                ):
+                    response_data["Message"] = "لطفا ۳ دقیقه صبر کنید."
+                    status_code = 429
+                else:
+                    new_code = "".join(random.choices(string.digits, k=6))
+                    client.phone_verification_code = new_code
+                    client.verification_code_timestamp = datetime.datetime.now(
+                        datetime.timezone.utc
+                    )
+                    db.commit()
+
+                    Thread(
+                        target=utils.send_templated_sms_async,
+                        args=(
+                            app.flask_app,
+                            client.client_id,
+                            config.melli_payamak["TemplateID_Verification"],
+                            new_code,
+                            config.melli_payamak,
+                        ),
+                    ).start()
+                    response_data = {"Success": True, "Message": "کد جدید ارسال شد."}
+                    status_code = 200
+
+    elif action == "password_reset":
+        identifier = request_data.get("identifier")
+        identifier_type = request_data.get("identifier_type")
+        if not identifier or not identifier_type:
+            response_data["Message"] = "اطلاعات ناقص است."
+            status_code = 400
+        else:
+            with database.get_db_session() as db:
+                reset_record = (
+                    db.query(models.PasswordReset)
+                    .filter(models.PasswordReset.identifier == identifier)
+                    .first()
+                )
+                if (
+                    reset_record
+                    and reset_record.timestamp is not None
+                    and (
+                        datetime.datetime.now(datetime.timezone.utc)
+                        - reset_record.timestamp
+                    ).total_seconds()
+                    < 180
+                ):
+                    response_data["Message"] = "لطفا ۳ دقیقه صبر کنید."
+                    status_code = 429
+                else:
+                    client = database.get_client_by(db, identifier_type, identifier)
+                    if not client:
+                        response_data["Message"] = "کاربر یافت نشد."
+                        status_code = 404
+                    else:
+                        new_code = "".join(random.choices(string.digits, k=6))
+                        if reset_record:
+                            reset_record.code = new_code
+                            reset_record.timestamp = datetime.datetime.now(
+                                datetime.timezone.utc
+                            )
+                        else:
+                            new_reset_record = models.PasswordReset(
+                                identifier=identifier,
+                                identifier_type=identifier_type,
+                                code=new_code,
+                                timestamp=datetime.datetime.now(datetime.timezone.utc),
+                            )
+                            db.add(new_reset_record)
+                        db.commit()
+
+                        if identifier_type == "Email":
+                            subject = "کد بازیابی رمز عبور آیروکاپ"
+                            body = f"کد بازیابی رمز عبور شما: {new_code}"
+                            Thread(
+                                target=utils.send_async_email,
+                                args=(
+                                    app.flask_app,
+                                    client.client_id,
+                                    subject,
+                                    body,
+                                    config.mail_configuration,
+                                ),
+                            ).start()
+                        elif identifier_type == "PhoneNumber":
+                            Thread(
+                                target=utils.send_templated_sms_async,
+                                args=(
+                                    app.flask_app,
+                                    client.client_id,
+                                    config.melli_payamak["TemplateID_PasswordReset"],
+                                    new_code,
+                                    config.melli_payamak,
+                                ),
+                            ).start()
+                        response_data = {
+                            "Success": True,
+                            "Message": "کد جدید ارسال شد.",
+                        }
+                        status_code = 200
+    else:
+        response_data["Message"] = "عملیات ناشناخته است."
+        status_code = 400
+
+    return jsonify(response_data), status_code
+
+
+@app.flask_app.route("/ForgotPassword", methods=["GET", "POST"])
+@app.limiter.limit("5 per 15 minutes")
+def forgot_password():
+    "Render and handle the forgot password page"
+    if request.method == "POST":
+        app.CSRF_Protector.protect()
+        identifier = fa_to_en(request.form.get("identifier", "").strip())
+        identifier_type = (
+            "Email"
+            if utils.is_valid_email(identifier)
+            else "PhoneNumber" if utils.is_valid_iranian_phone(identifier) else None
+        )
+
+        success_message = (
+            "اگر کاربری با این مشخصات در سیستم وجود داشته باشد، "
+            "کد بازیابی برایتان ارسال خواهد شد."
+        )
+
+        if not identifier_type:
+            flash("لطفا یک ایمیل یا شماره موبایل معتبر وارد کنید.", "error")
+            return redirect(url_for("forgot_password"))
+
+        with database.get_db_session() as db:
+            client_check = database.get_client_by(db, identifier_type, identifier)
+
+            if client_check:
+                reset_code = "".join(random.choices(string.digits, k=6))
+                timestamp = datetime.datetime.now(datetime.timezone.utc)
+
+                reset_record = (
+                    db.query(models.PasswordReset)
+                    .filter(models.PasswordReset.identifier == identifier)
+                    .first()
+                )
+                if reset_record:
+                    reset_record.code = reset_code
+                    reset_record.timestamp = timestamp
+                else:
+                    new_reset_record = models.PasswordReset(
+                        identifier=identifier,
+                        identifier_type=identifier_type,
+                        code=reset_code,
+                        timestamp=timestamp,
+                    )
+                    db.add(new_reset_record)
+                db.commit()
+
+                if identifier_type == "email":
+                    subject = "بازیابی رمز عبور آیروکاپ"
+                    body = f"کد بازیابی رمز عبور شما در آیروکاپ: {reset_code}"
+                    Thread(
+                        target=utils.send_async_email,
+                        args=(
+                            app.flask_app,
+                            client_check.client_id,
+                            subject,
+                            body,
+                            config.mail_configuration,
+                        ),
+                    ).start()
+
+                elif identifier_type == "phone_number":
+                    Thread(
+                        target=utils.send_templated_sms_async,
+                        args=(
+                            app.flask_app,
+                            client_check.client_id,
+                            config.melli_payamak["TemplateID_PasswordReset"],
+                            reset_code,
+                            config.melli_payamak,
+                        ),
+                    ).start()
+
+            flash(success_message, "Info")
+            return redirect(
+                url_for(
+                    "Verify",
+                    action="password_reset",
+                    identifier=identifier,
+                    identifier_type=identifier_type,
+                )
+            )
+
+    return render_template(constants.client_html_names_data["ForgotPassword"])
+
+
+@app.flask_app.route("/ResendPasswordCode", methods=["POST"])
+@app.limiter.limit("5 per 15 minutes")
+def resend_password_code():
+    "Handle resending password reset codes."
+    request_data = request.get_json() or {}
+    identifier = request_data.get("identifier")
+    identifier_type = request_data.get("identifier_type")
+
+    if not identifier or not identifier_type:
+        return jsonify({"Success": False, "Message": "اطلاعات ناقص است."}), 400
+
+    with database.get_db_session() as db:
+        reset_record = (
+            db.query(models.PasswordReset)
+            .filter(models.PasswordReset.identifier == identifier)
+            .first()
+        )
+
+        if reset_record and reset_record.timestamp is not None:
+            if (
+                datetime.datetime.now(datetime.timezone.utc) - reset_record.timestamp
+            ).total_seconds() < 180:
+                return (
+                    jsonify({"Success": False, "Message": "لطفا ۳ دقیقه صبر کنید."}),
+                    429,
+                )
+
+        client = database.get_client_by(db, identifier_type, identifier)
+        if not client:
+            return jsonify({"Success": False, "Message": "کاربر یافت نشد."}), 404
+
+        new_code = "".join(random.choices(string.digits, k=6))
+
+        if reset_record:
+            reset_record.code = new_code
+            reset_record.timestamp = datetime.datetime.now(datetime.timezone.utc)
+        else:
+            new_reset_record = models.PasswordReset(
+                identifier=identifier,
+                identifier_type=identifier_type,
+                code=new_code,
+                timestamp=datetime.datetime.now(datetime.timezone.utc),
+            )
+            db.add(new_reset_record)
+
+        db.commit()
+
+        if identifier_type == "Email":
+            subject = "بازیابی رمز عبور آیروکاپ"
+            body = f"کد بازیابی رمز عبور شما در آیروکاپ: {new_code}"
+            Thread(
+                target=utils.send_async_email,
+                args=(
+                    app.flask_app,
+                    client.client_id,
+                    subject,
+                    body,
+                    config.mail_configuration,
+                ),
+            ).start()
+        elif identifier_type == "PhoneNumber":
+            Thread(
+                target=utils.send_templated_sms_async,
+                args=(
+                    app.flask_app,
+                    client.client_id,
+                    config.melli_payamak["TemplateID_PasswordReset"],
+                    new_code,
+                    config.melli_payamak,
+                ),
+            ).start()
+
+    return jsonify({"Success": True, "Message": "کد جدید ارسال شد."})
+
+
+@app.flask_app.route("/ResendVerificationCode", methods=["POST"])
+@app.limiter.limit("5 per 15 minutes")
+def resend_verification_code():
+    "Handle resending verification codes"
+    request_data = request.get_json() or {}
+    client_id = request_data.get("client_id")
+
+    if not client_id:
+        return jsonify({"Success": False, "Message": "خطای کلاینت."}), 400
+
+    with database.get_db_session() as db:
+        client = (
+            db.query(models.Client).filter(models.Client.client_id == client_id).first()
+        )
+        if not client:
+            return jsonify({"Success": False, "Message": "کاربر یافت نشد."}), 404
+        if client.verification_code_timestamp is not None:
+            if (
+                datetime.datetime.now(datetime.timezone.utc)
+                - client.verification_code_timestamp
+            ).total_seconds() < 180:
+                return (
+                    jsonify({"Success": False, "Message": "لطفا ۳ دقیقه صبر کنید."}),
+                    429,
+                )
+
+        new_code = "".join(random.choices(string.digits, k=6))
+        client.phone_verification_code = new_code
+        client.verification_code_timestamp = datetime.datetime.now(
+            datetime.timezone.utc
+        )
+        db.commit()
+
+    Thread(
+        target=utils.send_templated_sms_async,
+        args=(
+            app.flask_app,
+            client_id,
+            config.melli_payamak["TemplateID_Verification"],
+            new_code,
+            config.melli_payamak,
+        ),
+    ).start()
+
+    return jsonify({"Success": True, "Message": "کد جدید ارسال شد."})
+
+
+@app.flask_app.route("/ResetPassword", methods=["GET", "POST"])
+def reset_password():
+    """Render and handle the reset password page."""
+    token = request.args.get("token")
+    if not token:
+        flash("توکن بازیابی نامعتبر است یا وجود ندارد.", "error")
+        return redirect(url_for("ForgotPassword"))
+
+    if request.method == "POST":
+        app.CSRF_Protector.protect()
+
+        flash_message = None
+        flash_category = None
+        redirect_url = None
+
+        new_password = request.form.get("NewPassword") or ""
+        is_valid, error_message = utils.is_valid_password(new_password)
+        if not is_valid:
+            flash_message = error_message or "خطای نامشخص در رمز عبور."
+            flash_category = "error"
+            redirect_url = url_for("reset_password", token=token)
+        else:
+            with database.get_db_session() as db:
+                valid_record = (
+                    db.query(models.PasswordReset)
+                    .filter(models.PasswordReset.code == token)
+                    .first()
+                )
+
+                if not valid_record:
+                    flash_message = "توکن بازیابی نامعتبر است یا قبلا استفاده شده است."
+                    flash_category = "error"
+                    redirect_url = url_for("ForgotPassword")
+                elif (
+                    datetime.datetime.now(datetime.timezone.utc)
+                    - valid_record.timestamp
+                ).total_seconds() > 900:
+                    db.delete(valid_record)
+                    db.commit()
+                    flash_message = (
+                        "توکن بازیابی منقضی شده است. لطفا دوباره درخواست دهید."
+                    )
+                    flash_category = "error"
+                    redirect_url = url_for("ForgotPassword")
+                    redirect_url = url_for("ForgotPassword")
+                else:
+                    client_to_update = database.get_client_by(
+                        db, valid_record.identifier_type, valid_record.identifier
+                    )
+                    if client_to_update:
+                        hashed_password = bcrypt.hashpw(
+                            request.form.get("NewPassword").encode("utf-8"),
+                            bcrypt.gensalt(),
+                        )
+                        client_to_update.password = hashed_password.decode("utf-8")
+                        db.delete(valid_record)
+                        db.commit()
+                        flash_message = "رمز عبور شما با موفقیت تغییر یافت."
+                        flash_category = "Success"
+                        redirect_url = url_for("Login")
+                    else:
+                        db.delete(valid_record)
+                        db.commit()
+                        flash_message = "کاربر مرتبط با این توکن یافت نشد."
+                        flash_category = "error"
+                        redirect_url = url_for("ForgotPassword")
+
+        if flash_message:
+            flash(flash_message, flash_category)
+        return (
+            redirect(redirect_url)
+            if redirect_url
+            else redirect(url_for("ForgotPassword"))
+        )
+
+    return render_template(
+        constants.client_html_names_data["ResetPassword"], token=token
+    )
+
+
+def _calculate_payment_details(db, team):
+    """Calculates payment details for a team based on its status and members."""
+    is_new_member_payment = database.check_if_team_is_paid(db, team.team_id)
+    total_cost = 0
+    members_to_pay_for = 0
+    num_members = 0
+    league_one_cost = 0
+    league_two_cost = 0
+    discount_amount = 0
+
+    if is_new_member_payment:
+        members_to_pay_for = (
+            team.unpaid_members_count if team.unpaid_members_count is not None else 0
+        )
+        if members_to_pay_for == 0:
+            return {}, "در حال حاضر عضو جدیدی برای پرداخت وجود ندارد.", "Info", True
+        total_cost = members_to_pay_for * config.payment_config["FeePerPerson"]
+    else:
+        num_members = (
+            db.query(models.Member)
+            .filter(
+                models.Member.team_id == team.team_id,
+                models.Member.status == models.EntityStatus.ACTIVE,
+            )
+            .count()
+        )
+        members_to_pay_for = num_members
+        members_fee = num_members * config.payment_config["FeePerPerson"]
+        league_one_cost = config.payment_config["FeeTeam"] + members_fee
+        total_cost = league_one_cost
+
+        if team.league_two_id is not None:
+            discount_percent = config.payment_config["LeagueTwoDiscount"] / 100
+            discount_amount = members_fee * discount_percent
+            league_two_cost = members_fee - discount_amount
+            total_cost += league_two_cost
+
+    context = {
+        "IsNewMemberPayment": is_new_member_payment,
+        "membersToPayFor": members_to_pay_for,
+        "TotalFee": total_cost,
+        "Nummembers": num_members,
+        "LeagueOneCost": league_one_cost,
+        "LeagueTwoCost": league_two_cost,
+        "DiscountAmount": discount_amount,
+    }
+    return context, None, None, False
+
+
+def _process_payment_submission(db, team, receipt_file, total_cost, members_to_pay_for):
+    """Handles saving the receipt file and creating a payment record."""
+    original_filename = secure_filename(receipt_file.filename)
+    extension = (
+        original_filename.rsplit(".", 1)[1].lower() if "." in original_filename else ""
+    )
+    secure_name = f"{uuid.uuid4()}.{extension}"
+
+    new_payment = models.Payment(
+        team_id=team.team_id,
+        client_id=session["client_id"],
+        Amount=total_cost,
+        membersPaidFor=members_to_pay_for,
+        ReceiptFilename=secure_name,
+        UploadDate=datetime.datetime.now(datetime.timezone.utc),
+        Status=models.PaymentStatus.PENDING,
+    )
+    db.add(new_payment)
+
+    try:
+        user_receipts_folder = os.path.join(
+            app.flask_app.config["UPLOAD_FOLDER_RECEIPTS"],
+            str(session["client_id"]),
+        )
+        os.makedirs(user_receipts_folder, exist_ok=True)
+        receipt_file.save(os.path.join(user_receipts_folder, secure_name))
+        db.commit()
+        return True, "متشکریم! رسید شما با موفقیت بارگذاری و برای بررسی ارسال شد."
+    except (IOError, OSError, exc.SQLAlchemyError) as error:
+        db.rollback()
+        app.flask_app.logger.error("File save failed for payment: %s", error)
+        return False, "خطایی در هنگام ذخیره فایل رسید رخ داد. لطفا دوباره تلاش کنید."
+
+
+@app.flask_app.route("/Team/<int:team_id>/Payment", methods=["GET", "POST"])
+@app.login_required
+def payment(team_id):
+    "Render and handle the payment page for a team"
+    with database.get_db_session() as db:
+        team = (
+            db.query(models.Team)
+            .filter(
+                models.Team.team_id == team_id,
+                models.Team.client_id == session["client_id"],
+                models.Team.status == models.EntityStatus.ACTIVE,
+            )
+            .first()
+        )
+        temp = constants.AppConfig.max_image_size
+        if not team:
+            abort(404, "تیم پیدا نشد")
+
+        if request.method == "POST":
+            app.CSRF_Protector.protect()
+            receipt_file = request.files.get("receipt")
+            if not receipt_file or receipt_file.filename == "":
+                flash("لطفا فایل رسید پرداخت را انتخاب کنید.", "error")
+                return redirect(request.url)
+
+            if request.content_length is None or request.content_length > temp:
+                flash(
+                    f"حجم فایل رسید نباید بیشتر از { temp / 1024 / 1024:.1f} مگابایت باشد.",
+                    "error",
+                )
+                return redirect(request.url)
+
+            receipt_file.stream.seek(0)
+            if not utils.is_file_allowed(receipt_file.stream):
+                flash("نوع فایل مجاز نیست یا فایل خراب است.", "error")
+                return redirect(request.url)
+            receipt_file.stream.seek(0)
+
+            (
+                payment_context,
+                flash_msg,
+                flash_cat,
+                should_redirect_dash,
+            ) = _calculate_payment_details(db, team)
+            if should_redirect_dash:
+                flash(flash_msg, flash_cat)
+                return redirect(url_for("Dashboard"))
+
+            total_cost = payment_context["TotalFee"]
+            members_to_pay_for = payment_context["membersToPayFor"]
+
+            success, message = _process_payment_submission(
+                db, team, receipt_file, total_cost, members_to_pay_for
+            )
+
+            flash(message, "Success" if success else "error")
+            return redirect(url_for("Dashboard"))
+
+        (
+            payment_context,
+            flash_msg,
+            flash_cat,
+            should_redirect_dash,
+        ) = _calculate_payment_details(db, team)
+        if should_redirect_dash:
+            flash(flash_msg, flash_cat)
+            return redirect(url_for("Dashboard"))
+
+        return render_template(
+            constants.client_html_names_data["Payment"], Team=team, **payment_context
+        )
+
+
+@app.flask_app.route("/Dashboard")
+@app.login_required
+def dashboard():
+    "Render the client dashboard page"
+    with database.get_db_session() as db:
+        teams = (
+            db.query(models.Team)
+            .options(subqueryload(models.Team.members))
+            .filter(
+                models.Team.client_id == session.get("client_id"),
+                models.Team.status == models.EntityStatus.ACTIVE,
+            )
+            .order_by(models.Team.team_registration_date.desc())
             .all()
         )
 
-        TeamIDs = [Team.TeamID for Team in Teams]
-        PaymentStatuses = {}
+        team_ids = [Team.team_id for Team in teams]
+        payment_statuses = {}
 
-        if TeamIDs:
-            Subquery = (
+        if team_ids:
+            subquery = (
                 select(
-                    Models.Payment.TeamID,
-                    Models.Payment.Status,
+                    models.Payment.team_id,
+                    models.Payment.status,
                     func.row_number()
                     .over(
-                        partition_by=Models.Payment.TeamID,
-                        order_by=Models.Payment.UploadDate.desc(),
+                        partition_by=models.Payment.team_id,
+                        order_by=models.Payment.upload_date.desc(),
                     )
                     .label("row_number"),
                 )
-                .where(Models.Payment.TeamID.in_(TeamIDs))
+                .where(models.Payment.team_id.in_(team_ids))
                 .subquery()
             )
 
-            LatestPayments = (
-                DbSession.query(Subquery).filter(Subquery.c.row_number == 1).all()
+            latest_payments = (
+                db.query(subquery).filter(subquery.c.row_number == 1).all()
             )
-            PaymentStatuses = {Row.TeamID: Row.Status for Row in LatestPayments}
+            payment_statuses = {row.team_id: row.status for row in latest_payments}
 
-        for Team in Teams:
-            Team.LastPaymentStatus = PaymentStatuses.get(Team.TeamID)
+        for team in teams:
+            setattr(team, "last_payment_status", payment_statuses.get(team.team_id))
 
-    return RenderTemplate(
-        Constants.ClientHTMLNamesData["Dashboard"],
-        Teams=Teams,
-        PaymentInfo=Constants.PaymentConfig,
+    return render_template(
+        constants.client_html_names_data["Dashboard"],
+        teams=teams,
+        PaymentInfo=config.payment_config,
     )

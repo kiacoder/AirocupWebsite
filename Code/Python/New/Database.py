@@ -144,9 +144,9 @@ def update_client_details(db: Session, client_id: int, clean_data: dict):
     if "Email" in clean_data:
         client_to_update.email = clean_data["Email"]
     if "Password" in clean_data:
-        client_to_update.password = bcrypt.hashpw(
+        client_to_update.password = bcrypt.hashpw(  # type: ignore
             clean_data["Password"].encode("utf-8"), bcrypt.gensalt()
-        ).decode("utf-8")
+        ).decode("utf-8")  # type: ignore
     db.commit()
 
 

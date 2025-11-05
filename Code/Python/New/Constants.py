@@ -29,7 +29,8 @@ class Path:
 
     database_dir = os.path.join(static_dir, "DataBase")
     database = os.path.join(database_dir, "Airocup.db")
-    guideline_file = os.path.join(database_dir, "GuideLine", "Guideline.pdf")
+    guideline_dir = os.path.join(database_dir, "GuideLine")
+    guideline_file = os.path.join(guideline_dir, "Guideline.pdf")
 
     class URLs:
         "Css And JS File Paths"
@@ -1065,7 +1066,7 @@ week_days = {
     "Friday": "جمعه",
 }
 
-TechnicalCommitteeMembers = [
+technical_committee_members = [
     {
         "Name": "دکتر سمیه سلطانی",
         "Role": "رئیس لیگ کاربرد هوش مصنوعی در علوم پزشکی و بهداشت",
