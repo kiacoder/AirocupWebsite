@@ -1,0 +1,64 @@
+{% extends "Global/Base.html" %}
+
+{% block Title %}اخبار و اطلاعیه‌ها | آیروکاپ{% endblock %}
+
+{% block SEO_Description %}
+<meta name="description" content="آخرین اخبار، اطلاعیه‌ها و رویدادهای مربوط به مسابقات ملی هوش مصنوعی و رباتیک آیروکاپ. از آخرین تحولات مطلع شوید." />
+{% endblock %}
+
+{% block Body %}
+<main class="AppContainer NewsPage">
+  <div class="Container">
+    <header class="PageHeader TextCenter">
+      <h1 class="PageTitle">اخبار و اطلاعیه‌ها</h1>
+      <p class="PageSubtitle">
+        در این بخش آخرین اخبار، اطلاعیه‌ها و رویدادهای مربوط به مسابقات آیروکاپ را دنبال کنید.
+      </p>
+    </header>
+
+    {% if Articles %}
+    <div class="NewsGrid">
+      {% for article in Articles %}
+      <div class="Card CardNews {% if loop.first %}CardNews--Featured{% endif %}">
+        <a href="{{ url_for('Global.ViewArticle', ArticleID=article.NewsID) }}" class="CardNews__Link" aria-label="ادامه مطلب درباره {{ article.Title }}">
+          {% if article.ImagePath %}
+          <div class="CardNews__ImageWrapper">
+            <img
+              src="{{ url_for('Global.UploadedNewsImage', filename=article.ImagePath) }}"
+              alt="تصویر خبر: {{ article.Title }}"
+              loading="lazy"
+              width="400"
+              height="225"
+            />
+          </div>
+          {% endif %}
+          <div class="CardNews__ContentWrapper">
+            <h2 class="CardNews__Title">{{ article.Title }}</h2>
+            <div class="CardNews__Meta">
+              <span>
+                <i class="fas fa-calendar-alt" aria-hidden="true"></i>
+                {{ article.PublishDate | formatdate }}
+              </span>
+            </div>
+            <p class="CardNews__Excerpt">
+              {{ article.Content | striptags | truncate(150) }}
+            </p>
+            <span class="ReadMoreLink">
+              ادامه مطلب
+              <i class="fas fa-arrow-left" aria-hidden="true"></i>
+            </span>
+          </div>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="Card EmptyStateCard">
+      <i class="fas fa-newspaper EmptyStateIcon"></i>
+      <h3>در حال حاضر هیچ خبری برای نمایش وجود ندارد.</h3>
+      <p>لطفاً بعداً دوباره به این صفحه سر بزنید.</p>
+    </div>
+    {% endif %}
+  </div>
+</main>
+{% endblock %}
