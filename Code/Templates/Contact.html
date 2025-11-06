@@ -1,0 +1,79 @@
+{% extends "Global/Base.html" %}
+
+{% block Title %}تماس با ما | آیروکاپ{% endblock %}
+
+{% block SEO_Description %}
+<meta name="description" content="راه های ارتباطی با تیم برگزاری آیروکاپ. آدرس، نقشه محل برگزاری و اطلاعات تماس برای پاسخگویی به سوالات و پیشنهادات شما." />
+{% endblock %}
+
+{% block Body %}
+<main class="AppContainer ContactPage">
+  <div class="Container">
+    <header class="PageHeader TextCenter">
+      <h1 class="PageTitle">با ما در ارتباط باشید</h1>
+      <p class="PageSubtitle">
+        تیم پشتیبانی آیروکاپ آماده پاسخگویی به سوالات، پیشنهادات و درخواست‌های همکاری شماست. لطفاً از طریق کانال‌های ارتباطی زیر با ما در تماس باشید.
+      </p>
+    </header>
+
+    <section class="ContactGrid" itemscope itemtype="https://schema.org/Organization">
+      <meta itemprop="name" content="آیروکاپ" />
+      <meta itemprop="url" content="{{ url_for('Global.Index', _external=True) }}" />
+
+      <div class="Card ContactDetailsCard">
+        <h3>راه‌های ارتباطی</h3>
+        <address>
+          {% for point in ContactPointsData %}
+          <a
+            href="{{ point.href }}"
+            class="ContactLink"
+            {% if point.target %}target="_blank" rel="noopener noreferrer"{% endif %}
+            itemprop="contactPoint"
+            itemscope
+            itemtype="https://schema.org/ContactPoint"
+          >
+            <i class="{{ point.icon }}" aria-hidden="true"></i>
+            <div class="ContactText">
+              <strong itemprop="name">{{ point.label }}:</strong>
+              <span itemprop="url">{{ point.display }}</span>
+            </div>
+          </a>
+          {% endfor %}
+        </address>
+      </div>
+
+      <div class="Card LocationCard" itemprop="address" itemscope itemtype="https://schema.org/PostalAddress">
+        <h3 itemprop="name">محل برگزاری رویداد</h3>
+        <p class="LocationAddress">
+          <i class="fas fa-map-marker-alt" aria-hidden="true"></i>
+          <span itemprop="streetAddress">{{ Location.Address }}</span>
+        </p>
+        <div class="MapContainer">
+          <iframe
+            src="{{ Location.GoogleMapURL }}"
+            height="450"
+            allowfullscreen=""
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+            title="نقشه گوگل نمایش‌دهنده محل برگزاری آیروکاپ در {{ Location.Address }}"
+          >
+          </iframe>
+        </div>
+      </div>
+    </section>
+
+    {% if session.get('ClientID') %}
+    <section class="CtaSection TextCenter">
+      <h2>نیاز به پشتیبانی فوری دارید؟</h2>
+      <p>
+        برای سوالات مربوط به حساب کاربری یا تیم خود، مستقیماً با ما گفتگو کنید.
+      </p>
+      <a href="{{ url_for('Client.SupportChat') }}" class="Btn BtnPrimary BtnLarge">
+        <i class="fas fa-headset" aria-hidden="true"></i>
+        مراجعه به چت پشتیبانی
+      </a>
+    </section>
+    {% endif %}
+  </div>
+</main>
+{% endblock %}
