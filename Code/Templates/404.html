@@ -1,0 +1,27 @@
+{% extends "Global/Base.html" %}
+
+{% block Title %}صفحه پیدا نشد (404) | آیروکاپ{% endblock %}
+
+{% block SEO_Description %}
+<meta name="description" content="صفحه خطای ۴۰۴ - صفحه‌ای که به دنبال آن بودید در وب‌سایت آیروکاپ یافت نشد." />
+{% endblock %}
+
+{% block Body %}
+<main class="ErrorPageContainer">
+  <div class="ErrorContent">
+    <div class="ErrorIconWrapper">
+      <i class="fas fa-map-signs" aria-hidden="true"></i>
+    </div>
+    <h1 class="ErrorTitle">خطای ۴۰۴: صفحه پیدا نشد</h1>
+    <p class="ErrorMessage">
+      متاسفانه صفحه‌ای که جستجو می‌کنید وجود ندارد. ممکن است آدرس را اشتباه وارد کرده باشید یا این صفحه برای همیشه حذف شده باشد.
+    </p>
+    <div class="ErrorButtons">
+      <a href="{{ url_for('Global.Index') }}" class="Btn BtnPrimary">
+        <i class="fas fa-home" aria-hidden="true"></i>
+        بازگشت به صفحه اصلی
+      </a>
+    </div>
+  </div>
+</main>
+{% endblock %}
