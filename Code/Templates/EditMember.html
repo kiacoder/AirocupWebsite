@@ -1,0 +1,57 @@
+{% extends "Global/Base.html" %}
+
+{% block Title %}ویرایش عضو: {{ Member.Name or 'عضو' }}{% endblock %}
+
+{% block Body %}
+<div class="AppContainer">
+  <div class="FormContainer">
+    <form method="POST" action="{{ url_for('Client.EditMember', TeamID=Team.TeamID, MemberID=Member.MemberID) }}" id="EditForm" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+      <h1 class="FormTitle">ویرایش عضو: {{ Member.Name or 'عضو' }}</h1>
+      <p class="FormSubtitle">
+        اطلاعات عضو تیم {{ Team.TeamName }} را ویرایش کنید.
+      </p>
+
+      <fieldset>
+        <legend>اطلاعات عضو</legend>
+        {% with IdPrefix='Edit-', MemberData=Member, FormData=FormData %}
+          {% include 'Client/MemberFormFields.html' %}
+        {% endwith %}
+      </fieldset>
+
+      <div class="FormGroup">
+        <button type="submit" id="submitBtn" class="Btn BtnPrimary Btn--fullWidth">
+          ذخیره تغییرات
+        </button>
+      </div>
+    </form>
+
+    <div class="SectionCta" style="text-align: center; margin-top: 1.5rem">
+      <a href="{{ url_for('Client.ManageMembers', TeamID=Team.TeamID) }}" class="Btn BtnSecondary">
+        انصراف و بازگشت به لیست اعضا
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block Scripts %}
+{{ super() }}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("EditForm");
+    if (form) {
+        FormHelpers.PopulateProvinces(form.querySelector('[name="Province"]'));
+        FormHelpers.SetupDatePicker(form);
+        FormHelpers.SetupProvinceCityListener(form);
+
+        // Pre-populate city dropdown based on existing data
+        const provinceSelect = form.querySelector('[name="Province"]');
+        if (provinceSelect.value) {
+            FormHelpers.PopulateCities(provinceSelect, "{{ Member.CityID }}");
+        }
+    }
+});
+</script>
+{% endblock %}
