@@ -1,0 +1,479 @@
+"Utility functions for validation, file handling, SMS/email sending etc..."
+
+import re
+import smtplib
+from email.mime.text import MIMEText
+import datetime
+from typing import Any, IO, Tuple, Optional
+import constants
+from sqlalchemy.orm import Session, subqueryload
+from sqlalchemy.exc import SQLAlchemyError
+import database
+import models
+import jdatetime  # type: ignore
+import filetype  # type: ignore
+from flask import Flask, session, current_app
+from persiantools.digits import fa_to_en  # type: ignore
+import requests  # type: ignore
+import bleach  # type: ignore
+
+
+def is_leap_year(year: int) -> bool:
+    "Determine if a given Persian year is a leap year"
+    return (year % 33) in [1, 5, 9, 13, 17, 22, 26, 30]
+
+
+def is_valid_name(name: str) -> bool:
+    "Check if the name contains at least two words"
+    return len(name.strip().split()) >= 2
+
+
+def is_valid_email(email: str) -> bool:
+    "Validate email format using regex"
+    return (
+        re.fullmatch(
+            r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$",
+            email,
+        )
+        is not None
+    )
+
+
+def is_valid_iranian_phone(phone: str) -> bool:
+    "Validate Iranian phone number format"
+    return phone.isdigit() and len(phone) == 11 and phone.startswith("09")
+
+
+def is_file_allowed(file_stream: IO[bytes]) -> bool:
+    "Check if the uploaded file is of an allowed type based on its content"
+    try:
+        kind = filetype.guess(file_stream)
+        if kind is None:
+            return False
+        return (
+            kind.extension in constants.AppConfig.allowed_extensions
+            and kind.mime in constants.AppConfig.allowed_mime_types
+        )
+    except IOError:
+        return False
+    finally:
+        file_stream.seek(0)
+
+
+def validate_persian_date(year: Any, month: Any, day: Any) -> Tuple[bool, str]:
+    "Validate a Persian date given year, month, and day"
+    try:
+        year_int, month_int, day_int = int(year), int(month), int(day)
+        allowed_years = constants.Date.get_allowed_years()
+        if year_int not in allowed_years:
+            return (
+                False,
+                f"سال باید بین {allowed_years[0]} و {allowed_years[-1]} باشد",
+            )
+        if not (1 <= month_int <= 12):
+            return False, "ماه باید بین ۱ تا ۱۲ باشد"
+        max_days = constants.Date.days_in_month.get(month_int, 30)
+        if month_int == 12 and is_leap_year(year_int):
+            max_days = 30
+        if not (1 <= day_int <= max_days):
+            return (
+                False,
+                f"روز برای ماه انتخاب شده باید بین ۱ تا {max_days} باشد",
+            )
+        return True, "تاریخ معتبر است"
+    except (ValueError, TypeError):
+        return False, "لطفاً اعداد معتبر برای تاریخ وارد کنید"
+
+
+def get_form_context() -> dict:
+    "Provide context data for forms"
+    return {
+        "Provinces": constants.provinces_data,
+        "PersianMonths": constants.Date.persian_months,
+        "AllowedYears": constants.Date.get_allowed_years(),
+        "DaysInMonth": constants.Date.days_in_month,
+    }
+
+
+def send_templated_sms_async(
+    app: Flask,
+    client_id: int,
+    template_id: int,
+    verification_code: str,
+    sms_config: dict,
+):
+    "Send a templated SMS asynchronously"
+    with app.app_context():
+        try:
+            rest_url = sms_config.get("RestURL")
+            if not isinstance(rest_url, str):
+                current_app.logger.error(
+                    "SMS configuration is missing or invalid for 'RestURL'."
+                )
+                return
+
+            with database.get_db_session() as db:
+                client = (
+                    db.query(models.Client)
+                    .filter(models.Client.client_id == client_id)
+                    .first()
+                )
+                if not client:
+                    current_app.logger.error(
+                        f"SMS error: Client with ID {client_id} not found."
+                    )
+                    return
+                recipient = client.phone_number
+
+            payload = {
+                "username": sms_config.get("Username"),
+                "password": sms_config.get("Password"),
+                "to": recipient,
+                "bodyId": template_id,
+                "text": verification_code,
+            }
+            response = requests.post(rest_url, json=payload, timeout=10)
+            response.raise_for_status()
+            api_response = response.json()
+
+            if api_response.get("RetStatus") == 1:
+                current_app.logger.info(
+                    f"SMS sent to {recipient}. "
+                    f"Response: {api_response.get('Value')}"
+                )
+            else:
+                current_app.logger.error(
+                    f"SMS API failure for {recipient}. "
+                    f"Status: {api_response.get('Value')}"
+                )
+
+        except requests.exceptions.RequestException as error:
+            current_app.logger.error(
+                f"SMS to client_id {client_id} failed due to a "
+                f"network error: {error}"
+            )
+        except (SQLAlchemyError, KeyError) as error:
+            current_app.logger.error(
+                "Unexpected error in send_templated_sms_async for "
+                f"client_id {client_id}: {error}"
+            )
+
+
+def update_team_stats(db: Session, team_id: int):
+    "Update average age and provinces of members in a team"
+    members = (
+        db.query(models.Member.birth_date, models.Province.name)
+        .join(models.City, models.Member.city_id == models.City.city_id)
+        .join(
+            models.Province,
+            models.City.province_id == models.Province.province_id,
+        )
+        .filter(
+            models.Member.team_id == team_id,
+            models.Member.status == models.EntityStatus.ACTIVE,
+            models.Member.birth_date.isnot(None),
+        )
+        .all()
+    )
+
+    if not members:
+        average_age = 0
+        average_provinces = ""
+    else:
+        total_age = 0
+        provinces = set()
+        today = datetime.date.today()
+        for birth_date, province_name in members:
+            if province_name:
+                provinces.add(province_name)
+            has_birthday_passed = (today.month, today.day) < (
+                birth_date.month,
+                birth_date.day,
+            )
+            age = today.year - birth_date.year - has_birthday_passed
+            total_age += age
+        average_age = round(total_age / len(members))
+        average_provinces = ", ".join(sorted(list(provinces)))
+
+    db.query(models.Team).filter(models.Team.team_id == team_id).update(
+        {"average_age": average_age, "average_provinces": average_provinces}
+    )
+
+
+def contains_forbidden_words(input_text: str) -> bool:
+    "Check if the input text contains forbidden words"
+    if not input_text:
+        return False
+    lowercased_input = input_text.lower()
+    for word in constants.ForbiddenContent.custom_words:
+        if re.search(r"\b" + re.escape(word.lower()) + r"\b", lowercased_input):
+            return True
+    return False
+
+
+def is_valid_team_name(team_name: str) -> Tuple[bool, str]:
+    "Validate team name against length, character set, and forbidden words"
+    if not (3 <= len(team_name) <= 30):
+        return False, "نام تیم باید بین ۳ تا ۳۰ کاراکتر باشد."
+    if not re.fullmatch(r"^[A-Za-z\u0600-\u06FF0-9_ ]+$", team_name):
+        return (
+            False,
+            "نام تیم فقط می‌تواند شامل حروف، اعداد، فاصله و خط زیر باشد.",
+        )
+    if contains_forbidden_words(team_name):
+        return False, "نام تیم حاوی کلمات غیرمجاز است."
+    return True, ""
+
+
+def is_valid_national_id(national_id: str) -> bool:
+    "Validate Iranian national ID"
+    if not re.fullmatch(r"^\d{10}$", national_id) or len(set(national_id)) == 1:
+        return False
+    s = sum(int(national_id[i]) * (10 - i) for i in range(9))
+    r = s % 11
+    return int(national_id[9]) == (r if r < 2 else 11 - r)
+
+
+def send_async_email(
+    app: Flask, client_id: int, subject: str, body: str, mail_config: dict
+):
+    "Send an email asynchronously to a client"
+    with app.app_context():
+        try:
+            with database.get_db_session() as db:
+                client = (
+                    db.query(models.Client)
+                    .filter(models.Client.client_id == client_id)
+                    .first()
+                )
+                if not client:
+                    current_app.logger.error(
+                        f"Email error: Client with ID {client_id} not found."
+                    )
+                    return
+                recipient_email = client.email
+
+            message = MIMEText(body, "html", "utf-8")
+            message["Subject"] = subject
+            message["From"] = mail_config["Username"]
+            message["To"] = str(recipient_email)
+
+            with smtplib.SMTP(
+                mail_config["Server"], int(mail_config["Port"]), timeout=15
+            ) as server:
+                server.starttls()
+                server.login(mail_config["Username"], mail_config["Password"])
+                server.sendmail(
+                    mail_config["Username"],
+                    [message["To"]],
+                    message.as_string(),
+                )
+            current_app.logger.info(f"Email successfully sent " f"to {recipient_email}")
+
+        except smtplib.SMTPException as error:
+            current_app.logger.error(
+                f"SMTP error for client_id {client_id}: " f"{error}"
+            )
+        except (KeyError, TypeError) as error:
+            current_app.logger.error(
+                f"Unexpected error in SendAsyncEmail for client_id "
+                f"{client_id}: {error}"
+            )
+
+
+def is_valid_password(password: str) -> Tuple[bool, Optional[str]]:
+    "Validate password complexity requirements"
+    if len(password) < 8:
+        return False, "رمز عبور باید حداقل ۸ کاراکتر باشد."
+    if not re.search(r"[A-Z]", password):
+        return False, "رمز عبور باید حداقل شامل یک حرف بزرگ انگلیسی باشد."
+    if not re.search(r"[a-z]", password):
+        return False, "رمز عبور باید حداقل شامل یک حرف کوچک انگلیسی باشد."
+    if not re.search(r"[0-9]", password):
+        return False, "رمز عبور باید حداقل شامل یک عدد باشد."
+    if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
+        return False, "رمز عبور باید حداقل شامل یک کاراکتر خاص باشد."
+    return True, None
+
+
+def create_member_from_form_data(
+    db: Session, form_data: dict
+) -> Tuple[Optional[dict], Optional[str]]:
+    "Create a member dictionary from form data after validation"
+    try:
+        name = bleach.clean(form_data.get("name", "").strip())
+        national_id = fa_to_en(form_data.get("national_id", "").strip())
+        role_value = form_data.get("role", "").strip()
+        province = form_data.get("province", "").strip()
+        city_name = form_data.get("city", "").strip()
+        birth_year = int(form_data.get("birth_year", 0))
+        birth_month = int(form_data.get("birth_month", 0))
+        birth_day = int(form_data.get("birth_day", 0))
+    except (ValueError, TypeError):
+        return None, "تاریخ تولد باید به صورت عددی وارد شود."
+
+    errors = database.validate_new_member_data(
+        db,
+        name,
+        national_id,
+        province,
+        city_name,
+        birth_year,
+        birth_month,
+        birth_day,
+        role_value,
+    )
+    if errors:
+        return None, " ".join(errors)
+
+    city_id = (
+        db.query(models.City.city_id)
+        .join(models.Province)
+        .filter(models.Province.name == province, models.City.name == city_name)
+        .scalar()
+    )
+
+    role = next((r for r in models.MemberRole if r.value == role_value), None)
+    persian_date = jdatetime.date(birth_year, birth_month, birth_day)
+    gregorian_date = persian_date.togregorian()
+
+    return {
+        "name": name,
+        "national_id": national_id,
+        "role": role,
+        "city_id": city_id,
+        "birth_date": gregorian_date,
+    }, None
+
+
+def validate_member_for_resolution(member: models.Member, education_level: str) -> dict:
+    "Validate a member's data for missing or invalid fields"
+    problems: dict[str, list[str]] = {"Missing": [], "Invalid": []}
+    if member.name is None:
+        problems["Missing"].append("Name")
+    if member.national_id is None:
+        problems["Missing"].append("NationalID")
+    if member.role is None:
+        problems["Missing"].append("Role")
+    if member.city_id is None:
+        problems["Missing"].append("City")
+    if member.birth_date is None:
+        problems["Missing"].append("BirthDate")
+
+    if member.birth_date is not None:
+        try:
+            today = datetime.date.today()
+            age = (
+                today.year
+                - member.birth_date.year
+                - (
+                    (today.month, today.day)
+                    < (member.birth_date.month, member.birth_date.day)
+                )
+            )
+            role_value = member.role.value
+
+            if role_value == models.MemberRole.LEADER.value and not (18 <= age <= 70):
+                problems["Invalid"].append(
+                    f"سن سرپرست باید بین 18 تا 70 باشد (سن فعلی: {age})"
+                )
+            elif role_value == models.MemberRole.COACH.value and not (16 <= age <= 70):
+                problems["Invalid"].append(
+                    f"سن مربی باید بین 16 تا 70 باشد (سن فعلی: {age})"
+                )
+
+            if education_level in constants.education_age_ranges:
+                min_age, max_age = constants.education_age_ranges[education_level]
+                if not (min_age <= age <= max_age):
+                    problems["Invalid"].append(
+                        f"سن عضو ({age}) با مقطع تحصیلی ({education_level}) "
+                        f"مطابقت ندارد. محدوده مجاز: {min_age}-{max_age} سال."
+                    )
+        except (ValueError, AttributeError):
+            problems["Invalid"].append("تاریخ تولد نامعتبر است")
+
+    return problems
+
+
+def check_for_data_completion_issues(db: Session, client_id: int) -> Tuple[bool, dict]:
+    "Check all teams and members for data completion issues"
+    client = (
+        db.query(models.Client).filter(models.Client.client_id == client_id).first()
+    )
+    if not client:
+        return False, {}
+
+    teams = (
+        db.query(models.Team)
+        .options(subqueryload(models.Team.members))
+        .filter(
+            models.Team.client_id == client_id,
+            models.Team.status == models.EntityStatus.ACTIVE,
+        )
+        .all()
+    )
+
+    problematic_members = {}
+    needs_resolution = False
+    for team in teams:
+        for member in filter(
+            lambda m: m.status == models.EntityStatus.ACTIVE, team.members
+        ):
+            problems = validate_member_for_resolution(
+                member, str(client.education_level)
+            )
+            if problems["Missing"] or problems["Invalid"]:
+                problematic_members[member.member_id] = problems
+                needs_resolution = True
+    return needs_resolution, problematic_members
+
+
+def internal_add_member(db: Session, team_id: int, form_data: dict) -> Tuple[bool, str]:
+    "Add a new member to a team after validating the data"
+    new_member_data, error = create_member_from_form_data(db, form_data)
+    if error:
+        return False, error
+    if not new_member_data:
+        return False, "خطایی ناشناخته در هنگام پردازش اطلاعات عضو رخ داد."
+
+    if new_member_data[
+        "role"
+    ] == models.MemberRole.LEADER and database.has_existing_leader(db, team_id):
+        return False, "خطا: این تیم از قبل یک سرپرست دارد."
+
+    has_conflict, error_message = database.is_member_league_conflict(
+        db, new_member_data["national_id"], team_id
+    )
+    if has_conflict:
+        return False, error_message
+
+    try:
+        new_member = models.Member(**new_member_data, team_id=team_id)
+        db.add(new_member)
+        return True, str(new_member.name)
+    except SQLAlchemyError as error:
+        db.rollback()
+        current_app.logger.error(
+            f"Internal error adding member to Team {team_id}: {error}"
+        )
+        return False, "خطایی داخلی در هنگام افزودن عضو رخ داد."
+
+
+def get_current_client() -> Optional[models.Client]:
+    "Retrieve the currently logged-in Client based on session data"
+    client_id = session.get("client_id")
+    if not client_id:
+        return None
+    try:
+        with database.get_db_session() as db:
+            return (
+                db.query(models.Client)
+                .filter(
+                    models.Client.client_id == client_id,
+                    models.Client.status == models.EntityStatus.ACTIVE,
+                )
+                .first()
+            )
+    except SQLAlchemyError as error:
+        current_app.logger.error(f"error fetching current Client: {error}")
+        return None
