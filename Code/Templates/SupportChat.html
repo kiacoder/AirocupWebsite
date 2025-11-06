@@ -1,0 +1,48 @@
+{% extends "Global/Base.html" %}
+
+{% block Title %}پشتیبانی و گفتگوی زنده | آیروکاپ{% endblock %}
+
+{% block Body %}
+<div class="ClientChatContainer" data-client-id="{{ User.ClientID }}" data-history-url="{{ url_for('Client.GetMyChatHistory') }}">
+  <div class="Container">
+    <div class="PageHeader">
+      <h1 class="SectionTitle">پشتیبانی و گفتگوی زنده</h1>
+      <p class="SectionSubtitle">
+        هرگونه سوال، مشکل یا نیاز به راهنمایی دارید؟ تیم پشتیبانی آیروکاپ آماده پاسخگویی است.
+      </p>
+    </div>
+
+    <div class="Card ChatWrapper">
+      <div class="ChatBox" id="chat-box" role="log" aria-live="polite">
+        <div class="Loader">در حال بارگذاری سابقه گفتگو...</div>
+      </div>
+
+      <div class="ChatInput">
+        <div class="MessageInputGroup">
+          <input type="text" id="message-input" placeholder="پیام خود را بنویسید..." autocomplete="off" aria-label="پیام" />
+          <button id="send-button" class="Btn BtnPrimary" aria-label="ارسال">
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="SectionCta" style="text-align: center; margin-top: 2rem; margin-bottom: 20px">
+      <a href="{{ url_for('Client.Dashboard') }}" class="Btn BtnSecondary">
+        <i class="fas fa-arrow-left"></i> بازگشت به داشبورد
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block Scripts %}
+{{ super() }}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        if (typeof ClientChat !== 'undefined') {
+            ClientChat.init();
+        }
+    });
+</script>
+{% endblock %}
