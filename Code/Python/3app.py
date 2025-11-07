@@ -53,20 +53,3 @@ def humanize_number_filter(num):
         return f"{int(num):,}"
     except (ValueError, TypeError):
         return num
-
-def login_required(decorated_route):
-    "@wraps decorator to ensure user login is required for a route"
-    @wraps(decorated_route)
-    def decorated_function(*args, **kwargs):
-        "Checks if user is logged in; redirects to login if not"
-        if "client_id" not in session:
-            flash("برای مشاهده این صفحه باید وارد شوید.", "Warning")
-            return redirect(url_for("Login", next=request.url))
-        if "client_idForResolution" in session:
-            flash(
-                "ابتدا باید اطلاعات حساب کاربری خود را تکمیل و اصلاح نمایید.", "Warning"
-            )
-            return redirect(url_for("ResolveDataIssues"))
-        return decorated_route(*args, **kwargs)
-
-    return decorated_function
