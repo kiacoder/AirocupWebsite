@@ -30,7 +30,7 @@ from flask import (
 )
 import constants
 import models
-import admin
+import Code.Python.New.admin as admin
 import client
 import globals as globals_file
 
