@@ -1,0 +1,11 @@
+Flask
+bcrypt
+jdatetime
+persiantools
+SQLAlchemy
+bleach
+Flask-Limiter
+Flask-WTF
+Flask-SocketIO
+waitress
+redis

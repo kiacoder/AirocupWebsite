@@ -1,0 +1,170 @@
+{% extends "Global/Base.html" %}
+
+{% block Title %}آیروکاپ - مسابقات ملی هوش مصنوعی و رباتیک{% endblock %}
+
+{% block Body %}
+<header class="HeroSection">
+  <div class="Container">
+    <div class="HeroContent">
+      <div class="HeroText">
+        <div class="UniversityLogo">
+          <img
+            src="{{ url_for('static', filename=Path.SponsorsLogos.University) }}"
+            alt="نشان دانشگاه علم و صنعت ایران"
+            width="120"
+            height="120"
+            style="border-radius: 20px"
+          />
+        </div>
+        <p class="Subtitle">دانشگاه علم و صنعت ایران برگزار می‌کند:</p>
+        <h1 class="HeroTitle">مسابقات ملی هوش مصنوعی و رباتیک آیروکاپ</h1>
+        <p class="Tagline">
+          نخستین رویداد ملی با محوریت کامل هوش مصنوعی و رباتیک در ایران
+        </p>
+
+        <div class="EventDetails">
+          <p><strong>مرحله اول:</strong> {{ Event.StageOne }}</p>
+          <p><strong>مرحله دوم:</strong> {{ Event.StageTwo }}</p>
+        </div>
+
+        <div class="OlympiadHighlight">
+          <i class="fas fa-star" aria-hidden="true"></i>
+          <span><strong>این مرحله، انتخابی المپیاد بین‌المللی هوش مصنوعی COMSTECH است</strong></span>
+        </div>
+
+        <div class="CtaButtons">
+          {% if session.get('ClientID') %}
+          <a href="{{ url_for('Client.Dashboard') }}" class="Btn BtnPrimary BtnLarge">
+            <i class="fas fa-tachometer-alt" aria-hidden="true"></i>
+            مشاهده داشبورد
+          </a>
+          {% else %}
+          <a href="{{ url_for('Client.SignUp') }}" class="Btn BtnPrimary BtnLarge">
+            <i class="fas fa-user-plus" aria-hidden="true"></i>
+            ثبت‌نام در مسابقات ({{ Event.RegistrationDeadline }})
+          </a>
+          <a href="#leagues-section" class="Btn BtnSecondary">
+            <i class="fas fa-list-ul" aria-hidden="true"></i>
+            مشاهده لیگ‌ها
+          </a>
+          {% endif %}
+        </div>
+      </div>
+      <div class="HeroImage">
+        <img
+          src="{{ url_for('static', filename=Path.URLs.Files.Poster) }}"
+          alt="پوستر رسمی رویداد آیروکاپ"
+          loading="eager"
+          fetchpriority="high"
+        />
+      </div>
+    </div>
+  </div>
+</header>
+
+<section id="about-section" class="VideoSection FadeInElement">
+  <div class="Container">
+    <h2 class="SectionTitle">درباره آیروکاپ</h2>
+    <p class="SectionSubtitle">
+      مسابقات ملی هوش مصنوعی و رباتیک آیروکاپ (AIROCUP)، رویدادی پیشرو در عرصه فناوری ایران است که با هدف کشف و پرورش استعدادهای نسل جوان در زمینه‌های هوش مصنوعی و رباتیک برگزار می‌شود. این رویداد با ارائه ۱۴ لیگ متنوع و نوآورانه، بستری آموزشی و رقابتی برای دانش‌آموزان و دانشجویان فراهم می‌کند.
+    </p>
+    <div class="VideoWrapper lazy-video" data-src="{{ Contact.AparatEmbedURL }}?recom=self">
+      <div class="VideoPlayButton" aria-label="پخش تیزر رسمی مسابقات">
+        <i class="fas fa-play"></i>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="leagues-section" class="LeaguesSection FadeInElement">
+  <div class="Container">
+    <h2 class="SectionTitle">لیگ‌های جذاب و نوآورانه</h2>
+    <a href="{{ url_for('Global.Leagues') }}" class="LeaguesGrid-LinkWrapper">
+      <div class="LeaguesGrid">
+        {% for item in LeaguesListData[:9] %}
+        <div class="Card CardLeague">
+          <div class="LeagueIcon" aria-hidden="true">
+            <i class="fas {{ item.Icon }}"></i>
+          </div>
+          <h3>{{ item.Name }}</h3>
+        </div>
+        {% endfor %}
+      </div>
+    </a>
+    <div class="SectionCta TextCenter">
+      <a href="{{ url_for('Global.Leagues') }}" class="Btn BtnSecondary">
+        مشاهده تمام {{ LeaguesListData|length }} لیگ
+        <i class="fas fa-arrow-left" aria-hidden="true"></i>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section id="sponsors-section" class="SponsorsSection FadeInElement">
+  <div class="Container">
+    <h2 class="SectionTitle">حامیان رسمی</h2>
+    <div class="SponsorsGrid">
+      {% for sponsor in HomepageSponsorsData %}
+      <div class="SponsorBox" title="{{ sponsor.alt_text }}">
+        <img
+          src="{{ url_for('static', filename=Path.SponsorsLogos[sponsor.logo_key]) }}"
+          alt="{{ sponsor.alt_text }}"
+          loading="lazy"
+          width="150"
+          height="150"
+        />
+      </div>
+      {% endfor %}
+      <a href="{{ url_for('Global.Cooperate') }}" class="SponsorBox BecomeSponsorBox" title="حامی ما شوید">
+        <div class="SponsorPlusIcon">
+          <i class="fas fa-plus" aria-hidden="true"></i>
+        </div>
+        <span>حامی ما شوید</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="FinalCta">
+  <div class="Container">
+    <h2>با آیروکاپ، آینده را با هوش مصنوعی کد بزنید</h2>
+    <p>
+      به بزرگترین رویداد هوش مصنوعی و رباتیک ایران بپیوندید و مهارت‌های خود را به نمایش بگذارید!
+    </p>
+    {% if not session.get('ClientID') %}
+    <a href="{{ url_for('Client.SignUp') }}" class="Btn BtnPrimary BtnLarge">
+      <i class="fas fa-rocket" aria-hidden="true"></i>
+      همین حالا ثبت‌نام کنید!
+    </a>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
+
+{% block Scripts %}
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const videoWrapper = document.querySelector(".VideoWrapper.lazy-video");
+    if (videoWrapper) {
+      videoWrapper.addEventListener(
+        "click",
+        () => {
+          const iframe = document.createElement("iframe");
+          iframe.setAttribute("src", videoWrapper.dataset.src + "&autoplay=1");
+          iframe.setAttribute("title", "تیزر رسمی مسابقات آیروکاپ");
+          iframe.setAttribute(
+            "allow",
+            "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          );
+          iframe.setAttribute("allowfullscreen", "");
+          iframe.setAttribute("loading", "lazy");
+          videoWrapper.innerHTML = "";
+          videoWrapper.appendChild(iframe);
+          videoWrapper.classList.remove("lazy-video");
+        },
+        { once: true }
+      );
+    }
+  });
+</script>
+{% endblock %}
