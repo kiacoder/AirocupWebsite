@@ -1,33 +1,42 @@
 "Backend application for the Airocup website using Flask framework"
-import getpass
 import os
 import sys
+import getpass
 import traceback
 import datetime
+import logging
+from functools import wraps
 import bcrypt
-
+import jdatetime
+from persiantools.digits import en_to_fa
 from sqlalchemy import exc, func
-import config
-import database
 import bleach
+from waitress import serve
+
 from flask import (
     Flask,
+    abort,
+    flash,
+    redirect,
     render_template,
     request,
     send_from_directory,
     session,
+    url_for,
     jsonify,
 )
+from flask_socketio import SocketIO, emit, join_room
+from flask_wtf.csrf import CSRFProtect, CSRFError
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from jinja2 import TemplateError
+import config
+import database
 import constants
 import models
 import admin
 import client
 import globals as globals_file
-from extensions import csrf_protector, limiter, socket_io
-from decorators import admin_required
-from waitress import serve
-from flask_socketio import join_room, emit # Added missing imports for socket_io functions
-from flask.templating import TemplateError # Added for more specific exception handling
 
 flask_app = Flask(
     __name__,
@@ -41,22 +50,66 @@ csrf_protector.init_app(flask_app)
 socket_io.init_app(flask_app)
 limiter.init_app(flask_app)
 
-
-flask_app.config["PERMANENT_SESSION_LIFETIME"] = config.permanent_session_lifetime
-flask_app.config["SESSION_COOKIE_HTTPONLY"] = True
-flask_app.config["SESSION_COOKIE_SECURE"] = True
-flask_app.config["UPLOAD_FOLDER_RECEIPTS"] = constants.Path.receipts_dir
-flask_app.config["MAX_CONTENT_LENGTH"] = constants.AppConfig.max_document_size
-flask_app.config["ALLOWED_EXTENSIONS"] = list(constants.AppConfig.allowed_extensions)
-flask_app.config["UPLOAD_FOLDER_DOCUMENTS"] = os.path.join(
-    constants.Path.uploads_dir, "Documents"
+flask_app.config.update(
+    PERMANENT_SESSION_LIFETIME=config.permanent_session_lifetime,
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SECURE=True,
+    UPLOAD_FOLDER_RECEIPTS=constants.Path.receipts_dir,
+    UPLOAD_FOLDER_DOCUMENTS=os.path.join(constants.Path.uploads_dir, "Documents"),
+    UPLOAD_FOLDER_NEWS=constants.Path.news_dir,
+    MAX_CONTENT_LENGTH=constants.AppConfig.max_document_size,
+    ALLOWED_EXTENSIONS=list(constants.AppConfig.allowed_extensions),
 )
-flask_app.config["UPLOAD_FOLDER_NEWS"] = constants.Path.news_dir
 
-os.makedirs(flask_app.config["UPLOAD_FOLDER_RECEIPTS"], exist_ok=True)
-os.makedirs(flask_app.config["UPLOAD_FOLDER_NEWS"], exist_ok=True)
-os.makedirs(flask_app.config["UPLOAD_FOLDER_DOCUMENTS"], exist_ok=True)
-os.makedirs(os.path.dirname(constants.Path.database_dir), exist_ok=True)
+for path in [
+    flask_app.config["UPLOAD_FOLDER_RECEIPTS"],
+    flask_app.config["UPLOAD_FOLDER_DOCUMENTS"],
+    flask_app.config["UPLOAD_FOLDER_NEWS"],
+    os.path.dirname(constants.Path.database_dir),
+]:
+    os.makedirs(path, exist_ok=True)
+
+CSRF_Protector = CSRFProtect(flask_app)
+SocketIOInstance = SocketIO(flask_app)
+limiter = Limiter(
+    app=flask_app,
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"],
+)
+
+
+@flask_app.context_processor
+def inject_global_variables():
+    """Injects global variables into the template context."""
+    airocup_data = {
+        "DaysInMonth": constants.Date.days_in_month,
+        "AllowedYears": constants.Date.get_allowed_years(),
+        "PersianMonths": constants.Date.persian_months,
+        "ForbiddenWords": list(constants.ForbiddenContent.custom_words),
+        "client_id": session.get("client_id"),
+        "provinces_data": constants.provinces_data,
+    }
+
+    return {
+        "Path": constants.Path,
+        "AppConfig": {
+            "MaxTeamPerClient": constants.AppConfig.max_team_per_client,
+            "MaxMembersPerTeam": constants.AppConfig.max_members_per_team,
+        },
+        "Contact": constants.Contact,
+        "Event": constants.Details,
+        "HTMLnames": constants.global_html_names_data,
+        "Location": constants.Details.address,
+        "ContactPoints": constants.contact_points_data,
+        "CooperationOpportunities": constants.cooperation_opportunities_data,
+        "jdatetime": jdatetime,
+        "AirocupData": airocup_data,
+        "Payment": config.payment_config,
+        "LeaguesList": constants.leagues_list,
+        "CommitteeMembers": constants.committee_members_data,
+        "TechnicalCommitteeMembers": constants.technical_committee_members,
+        "HomepageSponsors": constants.homepage_sponsors_data,
+    }
 
 
 @flask_app.template_filter("persian_digits")
@@ -73,16 +126,22 @@ def basename_filter(path_string):
 
 @flask_app.errorhandler(400)
 def handle_bad_request(error):
-    "Handles 400 Bad Request errors"
+    """Handles 400 Bad Request errors."""
     flask_app.logger.warning(
-        "Bad request (400) at %s from %s: %s", request.url, request.remote_addr, error
+        "Bad request (400) at %s from %s: %s",
+        request.url,
+        request.remote_addr,
+        error,
     )
-    return render_template(constants.global_html_names_data["400"], error=str(error)), 400
+    return render_template(
+        constants.global_html_names_data["400"],
+        error=str(error),
+    ), 400
 
 
 @flask_app.errorhandler(403)
 def handle_forbidden(error):
-    "Handles 403 Forbidden errors"
+    """Handles 403 Forbidden errors."""
     flask_app.logger.warning(
         "Forbidden (403) access attempt at %s by %s: %s",
         request.url,
@@ -90,9 +149,11 @@ def handle_forbidden(error):
         error,
     )
     return render_template(constants.global_html_names_data["403"]), 403
+
+
 @flask_app.errorhandler(500)
-def handle_server_error(_error): # Renamed 'error' to '_error' to mark as intentionally unused
-    "Handles 500 Internal Server errors"
+def handle_server_error(error):
+    """Handles 500 Internal Server errors."""
     flask_app.logger.error(
         "Internal Server Error (500) on %s %s from %s:\n%s",
         request.method,
@@ -100,10 +161,12 @@ def handle_server_error(_error): # Renamed 'error' to '_error' to mark as intent
         request.remote_addr,
         traceback.format_exc(),
     )
+
     if flask_app.debug:
         return (
             render_template(
-                constants.global_html_names_data["500 Debug"], error=traceback.format_exc()
+                constants.global_html_names_data["500 Debug"],
+                error=traceback.format_exc(),
             ),
             500,
         )
@@ -112,14 +175,16 @@ def handle_server_error(_error): # Renamed 'error' to '_error' to mark as intent
 
 @socket_io.on("join")
 def on_join_message(data_dictionary):
-    "Handles a user joining a chat room"
+    """Handles a user joining a chat room."""
     room_name = data_dictionary.get("Room")
     client_id = session.get("client_id")
 
     if session.get("AdminLoggedIn", False):
         join_room(room_name)
+        flask_app.logger.info("Admin joined room %s", room_name)
     elif client_id and str(client_id) == str(room_name):
         join_room(str(client_id))
+        flask_app.logger.info("Client %s joined their room", client_id)
     else:
         flask_app.logger.warning(
             "Unauthorized chat room join attempt by session %s for room %s",
@@ -131,7 +196,7 @@ def on_join_message(data_dictionary):
 
 @socket_io.on("send_message")
 def handle_send_message(json_data):
-    "Handles incoming chat messages and broadcasts them to the appropriate room"
+    """Handles incoming chat messages and broadcasts them to the appropriate room."""
     try:
         if not isinstance(json_data, dict):
             return
@@ -191,110 +256,151 @@ def to_iso_format_filter(date_object):
     return date_object.isoformat()
 
 
+def get_distribution_query(db, entity, join_chain, label="count", limit=10):
+    """Generic helper to build distribution queries for City/Province/etc."""
+    query = (
+        db.query(
+            entity.name.label("name"),
+            func.count(models.Member.member_id).label(label),
+        )
+        .join(*join_chain)
+        .filter(models.Member.status == models.EntityStatus.ACTIVE)
+        .group_by(entity.name)
+        .order_by(func.count(models.Member.member_id).desc())
+        .limit(limit)
+    )
+    return query.all()
+
+
 @flask_app.route("/API/AdminCityDistribution")
 @admin_required
 def api_city_distribution():
-    "Returns JSON data for city distribution of active members"
+    """Returns JSON data for city distribution of active members."""
     with database.get_db_session() as db:
-        city_data = (
-            db.query(
-                models.City.name,
-                func.count(models.Member.member_id).label("count"),
-            )
-            .join(models.City, models.Member.city_id == models.City.city_id)
-            .filter(
-                models.Member.status == models.EntityStatus.ACTIVE,
-            )
-            .group_by(models.City.name)
-            .order_by(func.count(models.Member.member_id).desc())
-            .limit(10)
-            .all()
+        city_data = get_distribution_query(
+            db,
+            models.City,
+            [models.City, models.Member.city_id == models.City.city_id],
         )
 
-    chart_data = {
-        "Labels": [row.name for row in city_data],
-        "Data": [row.count for row in city_data],
-    }
-    return jsonify(chart_data)
-def print_startup_message(server_host, server_port, server_mode): # Renamed parameters to avoid redefinition warnings
-    "Prints the startup message for the server"
-    print("=" * 60)
-    print("🚀 Airocup Backend Server is launching...")
-    print(f"   - Version: {config.app_version}")
-    print(f"   - Mode: {server_mode}")
-    print("   - Database: Verified and connected successfully.")
-    print(f"   - Listening on: http://{server_host}:{server_port}")
-    print("=" * 60)
-    print(f"   - Listening on: http://{host}:{port}")
-    print("=" * 60)
+    return jsonify(
+        {
+            "Labels": [row.name for row in city_data],
+            "Data": [row.count for row in city_data],
+        }
+    )
 
 
-def test_templates():
-    "Tests all HTML templates for rendering errors"
-    print("\n🔍 Starting template integrity check...")
+@flask_app.route("/API/admin/ProvinceDistribution")
+@admin_required
+def api_province_distribution():
+    """Returns JSON data for province distribution of active members."""
+    with database.get_db_session() as db:
+        province_data = get_distribution_query(
+            db,
+            models.Province,
+            [
+                (models.City, models.Member.city_id == models.City.city_id),
+                (models.Province, models.City.province_id == models.Province.province_id),
+            ],
+        )
+
+    return jsonify(
+        {
+            "Labels": [row.name for row in province_data],
+            "Data": [row.count for row in province_data],
+        }
+    )
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+
+logger = logging.getLogger(__name__)
+
+
+def print_startup_message(host: str, port: int, mode: str) -> None:
+    """Logs the startup message for the server."""
+    border = "=" * 60
+    logger.info(border)
+    logger.info("🚀 Airocup Backend Server is launching...")
+    logger.info("   - Version: %s", config.app_version)
+    logger.info("   - Mode: %s", mode)
+    logger.info("   - Database: Verified and connected successfully.")
+    logger.info("   - Listening on: http://%s:%s", host, port)
+    logger.info(border)
+
+
+def test_templates() -> None:
+    """Tests all HTML templates for rendering errors."""
+    logger.info("🔍 Starting template integrity check...")
     template_dir = constants.Path.templates_dir
     templates = [f for f in os.listdir(template_dir) if f.endswith(".html")]
-    success_count = 0
-    fail_count = 0
+    success_count, fail_count = 0, 0
 
     with flask_app.app_context():
         for template in templates:
             try:
                 render_template(template)
-            except TemplateError as e: # Changed to catch a more specific exception
-                print(f"  ❌ {template}: FAILED ({e})")
-                fail_count += 1
-                print(f"  ❌ {template}: FAILED ({e})")
+                logger.info("✅ %s: OK", template)
+                success_count += 1
+            except TemplateError as e:
+                logger.error("❌ %s: FAILED (%s)", template, e)
                 fail_count += 1
 
-    print(f"\nTemplate check finished. {success_count} successful, {fail_count} failed.")
+    logger.info(
+        "Template check finished. %d successful, %d failed.",
+        success_count,
+        fail_count,
+    )
     if fail_count > 0:
-        print("🚨 Please fix the failing templates before proceeding.")
+        logger.critical("🚨 Please fix the failing templates before proceeding.")
         sys.exit(1)
 
 
 @flask_app.cli.command("init-db")
-def initialize_database_command():
+def initialize_database_command() -> None:
     """Creates the database tables and populates geography data."""
     database.create_database()
     database.populate_geography_data()
-    print("database initialized successfully.")
+    logger.info("Database initialized successfully.")
+
+
 flask_app.register_blueprint(admin.admin_blueprint)
-flask_app.register_blueprint(client.client_blueprint)
-flask_app.register_blueprint(globals_file.global_blueprint)
 flask_app.register_blueprint(client.client_blueprint)
 flask_app.register_blueprint(globals_file.global_blueprint)
 
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "generate_hash":
         try:
-            AdminPassword = getpass.getpass("رمز عبور ادمین مورد نظر را وارد کنید: ")
-            if len(AdminPassword) > 0:
-                print("\n✅ هش ادمین شما با موفقیت ایجاد شد.")
-                print("خط زیر را کپی کرده و در فایل config.py خود جای‌گذاری کنید:")
-                print("-" * 50)
-                print(
-                    f"AdminPasswordHash = '{bcrypt.hashpw(AdminPassword.encode("utf-8"), bcrypt.gensalt()).decode('utf-8')}'"
+            admin_password = getpass.getpass("رمز عبور ادمین مورد نظر را وارد کنید: ")
+            if admin_password:
+                logger.info("✅ هش ادمین شما با موفقیت ایجاد شد.")
+                logger.info("خط زیر را کپی کرده و در فایل config.py خود جای‌گذاری کنید:")
+                logger.info("-" * 50)
+                logger.info(
+                    "AdminPasswordHash = '%s'",
+                    bcrypt.hashpw(
+                        admin_password.encode("utf-8"), bcrypt.gensalt()
+                    ).decode("utf-8"),
                 )
-                print("-" * 50)
+                logger.info("-" * 50)
             else:
-                print("رمز عبور نمی‌تواند خالی باشد.")
+                logger.warning("رمز عبور نمی‌تواند خالی باشد.")
         except (KeyboardInterrupt, EOFError, ValueError) as error:
-            print(f"خطایی رخ داد: {error}")
-
+            logger.error("خطایی رخ داد: %s", error)
         sys.exit()
+
+    host, port = "0.0.0.0", 5000
+    MODE = "✅ Debug" if config.debug else "⛔ Production"
+
+    if os.environ.get("WERKZEUG_RUN_MAIN") != "true":
+        print_startup_message(host, port, MODE)
+        test_templates()
+
+    if config.debug:
+        socket_io.run(flask_app, host=host, port=port, debug=config.debug)
     else:
-        host = "0.0.0.0"
-        port = 5000
-        mode = '✅ Debug' if config.flask_debug else '⛔ Production'
-
-        if os.environ.get("WERKZEUG_RUN_MAIN") != "true":
-            print_startup_message(host, port, mode)
-            test_templates()
-
-        if config.flask_debug:
-            socket_io.run(flask_app, host=host, port=port, debug=config.flask_debug)
-        if config.flask_debug:
-            socket_io.run(flask_app, host=host, port=port, debug=config.flask_debug)
-        else:
-            serve(socket_io.wsgi_app, host=host, port=port) # Corrected to pass the WSGI application wrapped by SocketIO
+        serve(socket_io.wsgi_app, host=host, port=port)
