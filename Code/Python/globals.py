@@ -13,8 +13,8 @@ from flask import (
 )
 from jinja2 import TemplateNotFound
 from werkzeug.security import safe_join
-import constants
-import database
+from . import constants
+from . import database
 
 global_blueprint = Blueprint("Global", __name__)
 

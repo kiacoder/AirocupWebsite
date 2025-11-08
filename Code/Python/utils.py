@@ -5,11 +5,11 @@ import smtplib
 from email.mime.text import MIMEText
 import datetime
 from typing import Any, IO, Tuple, Optional
-import constants
+from . import constants
 from sqlalchemy.orm import Session, subqueryload
 from sqlalchemy.exc import SQLAlchemyError
-import database
-import models
+from . import database
+from . import models
 import jdatetime  # type: ignore
 import filetype  # type: ignore
 from flask import Flask, session, current_app

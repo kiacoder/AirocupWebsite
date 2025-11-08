@@ -4,9 +4,9 @@ import os
 from contextlib import contextmanager
 from typing import Any, Iterator, List, Optional, Tuple
 import bcrypt
-import constants
-import models
-import utils
+from . import constants
+from . import models
+from . import utils
 from sqlalchemy import create_engine, func
 from sqlalchemy.orm import Session, sessionmaker
 

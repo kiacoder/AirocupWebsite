@@ -30,13 +30,17 @@ from flask_wtf.csrf import CSRFProtect, CSRFError
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from jinja2 import TemplateError
-import config
-import database
-import constants
-import models
+
+from . import config
+from . import database
+from . import constants
+from . import models
+from . import utils
 from . import admin
 from . import client
-import globals as globals_file
+from . import globals as globals_file
+
+from .auth import admin_required
 
 flask_app = Flask(
     __name__,
@@ -77,42 +81,6 @@ for path in [
 ]:
     os.makedirs(path, exist_ok=True)
 
-
-def login_required(decorated_route):
-    "Decorator to ensure user login is required for a route"
-
-    @wraps(decorated_route)
-    def decorated_function(*args, **kwargs):
-        """Checks if user is logged in; redirects to login if not."""
-        if "client_id" not in session:
-            flash("برای مشاهده این صفحه باید وارد شوید.", "Warning")
-            return redirect(url_for("client.login_client", next=request.url))
-
-        if "client_idForResolution" in session:
-            flash(
-                "ابتدا باید اطلاعات حساب کاربری خود را تکمیل و اصلاح نمایید.",
-                "Warning",
-            )
-            return redirect(url_for("client.resolve_data_issues"))
-
-        return decorated_route(*args, **kwargs)
-
-    return decorated_function
-
-
-def admin_required(decorated_route):
-    """Decorator to ensure admin access is required for a route."""
-
-    @wraps(decorated_route)
-    def decorated_function(*args, **kwargs):
-        """Checks if admin is logged in; redirects to admin login if not."""
-        if not session.get("AdminLoggedIn"):
-            return redirect(url_for("AdminLogin"))
-        return decorated_route(*args, **kwargs)
-
-    return decorated_function
-
-
 @flask_app.template_filter("formatdate")
 def format_date_filter(date_object):
     """Formats a datetime object to a Persian date string (YYYY-MM-DD)."""
@@ -128,39 +96,6 @@ def humanize_number_filter(num):
         return f"{int(num):,}"
     except (ValueError, TypeError):
         return num
-
-
-def resolution_required(f):
-    """Decorator to ensure user is in data resolution state."""
-
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if "client_idForResolution" not in session:
-            flash("شما در وضعیت اصلاح اطلاعات قرار ندارید.", "Info")
-            return redirect(url_for("client.login_client", next=request.url))
-        return f(*args, **kwargs)
-
-    return decorated_function
-
-
-def admin_action_required(decorated_route):
-    """Decorator to ensure admin action is required for a route."""
-
-    @wraps(decorated_route)
-    def decorated_function(*args, **kwargs):
-        """Checks if admin is logged in and protects against CSRF."""
-        if not session.get("AdminLoggedIn"):
-            return redirect(url_for("AdminLogin"))
-
-        try:
-            csrf_protector.protect()
-        except CSRFError:
-            abort(400, "توکن امنیتی نامعتبر است (CSRF).")
-
-        return decorated_route(*args, **kwargs)
-
-    return decorated_function
-
 
 @flask_app.context_processor
 def inject_global_variables():
