@@ -34,8 +34,8 @@ import config
 import database
 import constants
 import models
-import admin
-import client
+from . import admin
+from . import client
 import globals as globals_file
 
 flask_app = Flask(

@@ -34,8 +34,8 @@ import database
 import constants
 import models
 import utils
-from decorators import login_required, resolution_required
-from extensions import csrf_protector, limiter
+from app import login_required, resolution_required
+from app import csrf_protector, limiter
 
 client_blueprint = Blueprint("client", __name__)
 
