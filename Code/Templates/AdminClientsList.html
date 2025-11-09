@@ -74,11 +74,11 @@
     {% if TotalPagesCount > 1 %}
     <div class="Pagination">
       {% if CurrentPage > 1 %}
-      <a href="{{ url_for('Admin.AdminClientsList', page=CurrentPage-1) }}" class="Btn BtnSecondary">&laquo; قبلی</a>
+      <a href="{{ url_for('admin.admin_clients_list', page=CurrentPage-1) }}" class="Btn BtnSecondary">&laquo; قبلی</a>
       {% endif %}
       <span class="Pagination__info">صفحه {{ CurrentPage | persian_digits }} از {{ TotalPagesCount | persian_digits }}</span>
       {% if CurrentPage < TotalPagesCount %}
-      <a href="{{ url_for('Admin.AdminClientsList', page=CurrentPage+1) }}" class="Btn BtnSecondary">بعدی &raquo;</a>
+      <a href="{{ url_for('admin.admin_clients_list', page=CurrentPage+1) }}" class="Btn BtnSecondary">بعدی &raquo;</a>
       {% endif %}
     </div>
     {% endif %}

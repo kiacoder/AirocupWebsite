@@ -6,16 +6,16 @@ endblock %} {% block Body %}
   </div>
 
   <div class="QuickLinks">
-    <a href="{{ url_for('Admin.AdminClientsList') }}" class="Btn BtnSecondary"
+    <a href="{{ url_for('Admin.admin.admin_clients_list') }}" class="Btn BtnSecondary"
       ><i class="fas fa-users"></i> مدیریت کاربران</a
     >
-    <a href="{{ url_for('Admin.AdminManageNews') }}" class="Btn BtnSecondary"
+    <a href="{{ url_for('admin.admin_manage_news') }}" class="Btn BtnSecondary"
       ><i class="fas fa-newspaper"></i> مدیریت اخبار</a
     >
-    <a href="{{ url_for('Admin.AdminSelectChat') }}" class="Btn BtnSecondary">
+    <a href="{{ url_for('admin.admin_select_chat') }}" class="Btn BtnSecondary">
       <i class="fas fa-envelope"></i> پیام‌ها
     </a>
-    <a href="{{ url_for('Admin.AdminManageTeams') }}" class="Btn BtnSecondary"
+    <a href="{{ url_for('admin.admin_manage_teams') }}" class="Btn BtnSecondary"
       ><i class="fas fa-layer-group"></i> مدیریت تیم‌ها</a
     >
   </div>

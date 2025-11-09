@@ -10,18 +10,18 @@
         >داشبورد</a
       >
       <a
-        href="{{ url_for('AdminClientsList') }}"
-        class="{{ 'Active' if request.endpoint == 'AdminClientsList' else '' }}"
+        href="{{ url_for('admin.admin_clients_list') }}"
+        class="{{ 'Active' if request.endpoint == 'admin.admin_clients_list' else '' }}"
         >کاربران</a
       >
       <a
-        href="{{ url_for('AdminManageTeams') }}"
-        class="{{ 'Active' if request.endpoint == 'AdminManageTeams' else '' }}"
+        href="{{ url_for('admin.admin_manage_teams') }}"
+        class="{{ 'Active' if request.endpoint == 'admin.admin_manage_teams' else '' }}"
         >تیم‌ها</a
       >
       <a
-        href="{{ url_for('AdminManageNews') }}"
-        class="{{ 'Active' if request.endpoint == 'AdminManageNews' else '' }}"
+        href="{{ url_for('admin.admin_manage_news') }}"
+        class="{{ 'Active' if request.endpoint == 'admin.admin_manage_news' else '' }}"
         >اخبار</a
       >
       <a href="{{ url_for('Logout') }}" class="Btn BtnSecondary">خروج</a>
