@@ -148,7 +148,7 @@
     <header class="SiteHeader" role="banner">
       <div class="TopHeader Container">
         <div class="Logo" itemscope itemtype="https://schema.org/Organization">
-          <a href="{{ url_for('Index') }}" itemprop="url">
+          <a href="{{ url_for('Global.index') }}" itemprop="url">
             {% if Path is defined and Path.TransparentLogos is defined %}
             <img
               src="{{ url_for('static', filename=Path.TransparentLogos['TransparentWhite']) }}"
@@ -164,8 +164,8 @@
           <ul id="MainNav" class="NavItems">
             <li>
               <a
-                href="{{ url_for('Index') }}"
-                class="{{ 'Active' if (request is defined and request.endpoint == 'Index') else '' }}"
+                href="{{ url_for('Global.index') }}"
+                class="{{ 'Active' if (request is defined and request.endpoint == 'Global.index') else '' }}"
               >
                 صفحه اصلی
               </a>
@@ -309,7 +309,7 @@
             itemscope
             itemtype="https://schema.org/Organization"
           >
-            <a href="{{ url_for('Index') }}" class="FooterLogo" itemprop="url">
+            <a href="{{ url_for('Global.index') }}" class="FooterLogo" itemprop="url">
               {% if Path is defined and Path.TransparentLogos is defined %}
               <img
                 src="{{ url_for('static', filename=Path.TransparentLogos['TransparentWhite']) }}"
@@ -328,7 +328,7 @@
           <div class="FooterLinks">
             <h3>دسترسی سریع</h3>
             <ul>
-              <li><a href="{{ url_for('Index') }}">صفحه اصلی</a></li>
+              <li><a href="{{ url_for('Global.index') }}">صفحه اصلی</a></li>
               <li><a href="{{ url_for('Leagues') }}">لیگ‌ها</a></li>
               <li><a href="{{ url_for('SignUp') }}">ثبت نام</a></li>
               <li><a href="{{ url_for('Login') }}">ورود</a></li>
