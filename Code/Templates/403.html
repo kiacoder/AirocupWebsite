@@ -16,8 +16,8 @@
       مدیران یا کاربرانی با سطح دسترسی خاص باشد.
     </p>
     <div class="ErrorButtons">
-      {% if session.get('ClientID') %}
-      <a href="{{ url_for('Dashboard') }}" class="Btn BtnPrimary">
+      {% if session.get('client_id') %}
+      <a href="{{ url_for('client.dashboard') }}" class="Btn BtnPrimary">
         <i class="fas fa-tachometer-alt" aria-hidden="true"></i>
         بازگشت به داشبورد
       </a>

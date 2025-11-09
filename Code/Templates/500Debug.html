@@ -10,6 +10,10 @@ endblock %} {% block BodyClass %}ErrorDebug{% endblock %} {% block Body %}
     داده می‌شود.
   </p>
 
+  <a href="{{ url_for('Global.index') }}" class="Btn BtnPrimary">
+    <i class="fas fa-home" aria-hidden="true"></i> بازگشت به صفحه اصلی
+  </a>
+
   <div class="TracebackWrapper">
     <button
       id="copyTracebackBtn"
@@ -42,7 +46,7 @@ endblock %} {% block BodyClass %}ErrorDebug{% endblock %} {% block Body %}
           })
           .catch((err) => {
             console.error("Failed to copy traceback:", err);
-            alert("Could not copy to clipboard.");
+            alert("امکان کپی کردن وجود ندارد.");
           });
       });
     }
