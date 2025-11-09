@@ -5,7 +5,7 @@
 {% block Body %}
 <main class="AppContainer">
   <div class="FormContainer FormContainer--small">
-    <form method="POST" id="SignUpForm" action="{{ url_for('Client.SignUp') }}" novalidate>
+    <form method="POST" id="SignUpForm" action="{{ url_for('client.signup') }}" novalidate>
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
       <h1 class="FormTitle">ایجاد حساب کاربری جدید</h1>
@@ -79,7 +79,7 @@
       <div class="FormLinks">
         <p>
           قبلاً ثبت‌نام کرده‌اید؟
-          <a href="{{ url_for('Client.Login') }}">از اینجا وارد شوید</a>.
+          <a href="{{ url_for('client.login') }}">از اینجا وارد شوید</a>.
         </p>
       </div>
     </form>

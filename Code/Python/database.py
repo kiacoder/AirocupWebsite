@@ -181,28 +181,54 @@ def log_login_attempt(db: Session, identifier: str, ip_address: str, is_success:
     "Log a login attempt to the database"
     db.add(
         models.LoginAttempt(
-            Identifier=identifier,
-            IPAddress=ip_address,
-            Timestamp=datetime.datetime.now(datetime.timezone.utc),
-            IsSuccess=is_success,
+            identifier=identifier,
+            ip_address=ip_address,
+            timestamp=datetime.datetime.now(datetime.timezone.utc),
+            is_success=is_success,
         )
     )
 
 
-def populate_geography_data():
+def populate_leagues(db: Session):
+    "Populate Leagues table from constants if it is empty"
+    if db.query(models.League).first():
+        return
+    print("Populating Leagues table...")
+
+    leagues_data = getattr(constants, "leagues_list", [])
+    if not leagues_data:
+        print("Warning: constants.leagues_list is empty. No leagues to populate.")
+        return
+
+    for league_dict in leagues_data:
+        if not isinstance(league_dict, dict):
+            continue
+
+        new_league = models.League(
+            league_id=league_dict.get("id"),
+            name=league_dict.get("name"),
+            icon=league_dict.get("icon"),
+            description=league_dict.get("description"),
+        )
+        db.add(new_league)
+
+    db.commit()
+    print("Leagues data populated successfully.")
+
+
+def populate_geography_data(db: Session):
     "Populate Provinces and Cities tables from constants if they are empty"
-    with get_db_session() as db:
-        if db.query(models.Province).first():
-            return
-        print("Populating Provinces and Cities tables...")
-        for province_name, cities in constants.provinces_data.items():
-            new_province = models.Province(Name=province_name)
-            db.add(new_province)
-            db.flush()
-            for city_name in cities:
-                db.add(models.City(Name=city_name, ProvinceID=new_province.province_id))
-        db.commit()
-        print("Geography data populated successfully.")
+    if db.query(models.Province).first():
+        return
+    print("Populating Provinces and Cities tables...")
+    for province_name, cities in constants.provinces_data.items():
+        new_province = models.Province(name=province_name)
+        db.add(new_province)
+        db.flush()
+        for city_name in cities:
+            db.add(models.City(name=city_name, province_id=new_province.province_id))
+    db.commit()
+    print("Geography data populated successfully.")
 
 
 def validate_new_member_data(
@@ -218,17 +244,27 @@ def validate_new_member_data(
 ) -> List[str]:
     "Validate new member data and return a list of error messages if any"
     errors = []
+
     if not utils.is_valid_name(name):
         errors.append("نام و نام خانوادگی معتبر نیست. لطفاً نام کامل را وارد کنید.")
 
     if not utils.is_valid_national_id(national_id):
         errors.append("کد ملی وارد شده معتبر نیست.")
-    elif (
-        db.query(models.Member.member_id)
-        .filter(models.Member.national_id == national_id)
-        .first()
-    ):
-        errors.append("این کد ملی قبلاً برای عضو دیگری در سیستم ثبت شده است.")
+
+    elif role_value == models.MemberRole.MEMBER.value:
+        existing_member = (
+            db.query(models.Member.member_id)
+            .filter(
+                models.Member.national_id == national_id,
+                models.Member.role == models.MemberRole.MEMBER,
+                models.Member.status == models.EntityStatus.ACTIVE,
+            )
+            .first()
+        )
+        if existing_member:
+            errors.append(
+                "این کد ملی قبلاً برای (عضو) دیگری در یک تیم فعال ثبت شده است."
+            )
 
     if not (
         db.query(models.City.city_id)
@@ -238,7 +274,9 @@ def validate_new_member_data(
     ):
         errors.append("استان یا شهر انتخاب شده معتبر نیست.")
 
-    is_valid_date, date_error = utils.validate_persian_date(birth_year, birth_month, birth_day)
+    is_valid_date, date_error = utils.validate_persian_date(
+        birth_year, birth_month, birth_day
+    )
     if not is_valid_date:
         errors.append(date_error)
 

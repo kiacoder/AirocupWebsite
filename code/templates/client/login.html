@@ -5,7 +5,7 @@
 {% block Body %}
 <div class="AppContainer">
   <div class="FormContainer FormContainer--large">
-    <form method="POST" action="{{ url_for('Client.Login') }}" id="LoginForm" novalidate>
+    <form method="POST" action="{{ url_for('client.login_client') }}" id="LoginForm" novalidate>
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
       <input type="hidden" name="next" value="{{ next_url or '' }}" />
 
@@ -35,11 +35,11 @@
 
       <div class="FormLinks" style="text-align: center">
         <p>
-          <a href="{{ url_for('Client.ForgotPassword') }}">رمز عبور خود را فراموش کرده‌اید؟</a>
+          <a href="{{ url_for('client.forgot_password') }}">رمز عبور خود را فراموش کرده‌اید؟</a>
         </p>
         <p>
           هنوز حساب کاربری ندارید؟
-          <a href="{{ url_for('Client.SignUp') }}">اینجا ثبت‌نام کنید.</a>
+          <a href="{{ url_for('client.signup') }}">اینجا ثبت‌نام کنید.</a>
         </p>
       </div>
     </form>

@@ -7,7 +7,7 @@ endblock %} {% block Body %}
 
   <div class="QuickLinks">
     <a
-      href="{{ url_for('admin.admin_manage_clients') }}"
+      href="{{ url_for('admin.admin_manage_client', client_id=Client.ClientID) }}"
       class="Btn BtnSecondary"
     >
       <i class="fas fa-users"></i> مدیریت کاربران

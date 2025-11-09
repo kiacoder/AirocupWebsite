@@ -1,89 +1,77 @@
-"containing various constants used throughout the Airocup application"
+"containing various constants used throughout the airocup application"
+
 import os
 import datetime
 from typing import Dict, Optional, Tuple
-from better_profanity import profanity # type: ignore
+from better_profanity import profanity  # type: ignore
 
 
 class Path:
     "Define All Paths Of Files"
+
     base_dir = os.path.dirname(os.path.abspath(__file__))
     root_dir = os.path.abspath(os.path.join(base_dir, "..", ".."))
-    static_dir = os.path.join(root_dir, "Static")
-    css_dir = os.path.join(static_dir, "CSS")
-    js_dir = os.path.join(static_dir, "JS")
-    templates_dir = os.path.join(root_dir, "Code", "Templates")
-    admin_templates_dir = os.path.join(templates_dir, "Admin")
-    client_templates_dir = os.path.join(templates_dir, "Client")
-    global_templates_dir = os.path.join(templates_dir, "Global")
-    uploads_dir = os.path.join(static_dir, "Uploads")
-    images_dir = os.path.join(static_dir, "Images")
-    receipts_dir = os.path.join(uploads_dir, "Receipts")
-    news_dir = os.path.join(uploads_dir, "News")
-    gallery_dir = os.path.join(images_dir, "Gallery")
-    committee_dir = os.path.join(images_dir, "Committee")
-    technical_committee_dir = os.path.join(images_dir, "TechnicalCommittee")
-
-    database_dir = os.path.join(static_dir, "DataBase")
-    database = os.path.join(database_dir, "Airocup.db")
-    guideline_dir = os.path.join(database_dir, "GuideLine")
-    guideline_file = os.path.join(guideline_dir, "AiroCup Leagues Guideline.pdf")
-
-    class URLs:
-        "Css And JS File Paths"
-
-        css_style = "CSS/Style.css"
-        css_admin = "CSS/Admin.css"
-        js_main = "JS/Main.js"
-        js_admin = "JS/Admin.js"
-
-        class Images:
-            "Define Images Path"
-
-            logo = "Images/Logo/"
-            gallery = "Images/Gallery/"
-            committee = "Images/Committee/"
-            technical_committee = "Images/TechnicalCommittee/"
-            poster = "Images/Poster/"
-            sponsors = "Images/Logo/Sponsors/"
-
-        class Files:
-            "Define Files Path"
-
-            poster = "Images/Poster/Poster.png"
-            guideline = "DataBase/GuideLine/Guideline.pdf"
-            site_web_manifest = "site.webmanifest"
-
+    static_dir = os.path.join(root_dir, "static")
+    css_dir = os.path.join(static_dir, "css")
+    js_dir = os.path.join(static_dir, "js")
+    templates_dir = os.path.join(root_dir, "code", "templates")
+    admin_templates_dir = os.path.join(templates_dir, "admin")
+    client_templates_dir = os.path.join(templates_dir, "client")
+    global_templates_dir = os.path.join(templates_dir, "global")
+    uploads_dir = os.path.join(static_dir, "uploads")
+    images_dir = os.path.join(static_dir, "images")
+    receipts_dir = os.path.join(uploads_dir, "receipts")
+    news_dir = os.path.join(uploads_dir, "news")
+    gallery_dir = os.path.join(images_dir, "gallery")
+    committee_dir = os.path.join(images_dir, "committee")
+    technical_committee_dir = os.path.join(images_dir, "technical_committee")
+    database_dir = os.path.join(static_dir, "database")
+    database = os.path.join(database_dir, "airocup.db")
+    guideline_dir = os.path.join(database_dir, "guideline")
+    guideline_file = os.path.join(guideline_dir, "guideline.pdf")
+    css_style = "css/style.css"
+    js_main = "js/main.js"
+    logo = "images/logo/"
+    gallery = "images/gallery/"
+    committee = "images/committee/"
+    technical_committee = "images/technical_committee/"
+    sponsors = "images/logo/sponsors/"
+    poster = "images/poster/poster.png"
+    guideline = "database/guideline/guideline.pdf"
+    site_web_manifest = "site.webmanifest"
     solid_logos = {
-        "MainFest 512": "Images/Logo/Solid/Airocup Logo MainFest 512.png",
-        "SolidPurpleGlowCrop": "Images/Logo/Solid/SPG Airocup Logo Crop.png",
-        "SolidPurpleGlow": "Images/Logo/Solid/SPG Airocup Logo.png",
-        "SolidWhite": "Images/Logo/Solid/SW Airocup Logo.png",
-        "SolidWhiteFavicon": "Images/Logo/Solid/SWF Airocup Logo.ico",
+        "main_fest_192": "images/logo/solid/airocup_logo_mainfest_192.png",
+        "main_fest_512": "images/logo/solid/airocup_logo_mainfest_512.png",
+        "solid_purple_glow_crop": "images/logo/solid/spg_airocup_logo_crop.png",
+        "solid_purple_glow": "images/logo/solid/spg_airocup_logo.png",
+        "solid_white": "images/logo/solid/sw_airocup_logo.png",
+        "solid_white_favicon": "images/logo/solid/swf_airocup_logo.ico",
     }
 
     transparent_logos = {
-        "TransparentBlack": "Images/Logo/Transparent/TB Airocup Logo.png",
-        "TransparentPurple": "Images/Logo/Transparent/TP Airocup Logo.png",
-        "TransparentWhite": "Images/Logo/Transparent/TW Airocup Logo.png",
+        "transparent_black": "images/logo/transparent/tb_airocup_logo.png",
+        "transparent_purple": "images/logo/transparent/tp_airocup_logo.png",
+        "transparent_white": "images/logo/transparent/tw_airocup_logo.png",
+        "favicon": "images/logo/transparent/favicon.svg",
     }
 
     sponsors_logos = {
-        "EducationMinistry": "Images/Logo/Sponsors/Amoozsh Parvarsh.png",
-        "InteriorMinistry": (
-            "Images/Logo/Sponsors/Ministry Of The Interior Of Iran.png"
+        "education_ministry": "images/logo/sponsors/amoozsh_parvarsh.png",
+        "interior_ministry": (
+            "images/logo/sponsors/ministry_of_the_interior_of_iran.png"
         ),
-        "StudentResearchCenter": ("Images/Logo/Sponsors/Student Research Center.png"),
-        "StudentResearchCenterTehran": (
-            "Images/Logo/Sponsors/Student Research Center Tehran.png"
+        "student_research_center": ("images/logo/sponsors/student_research_center.png"),
+        "student_research_center_tehran": (
+            "images/logo/sponsors/student_research_center.png"
         ),
-        "ScienceMinistry": (
-            "Images/Logo/Sponsors/Ministry Of Science And Technology.png"
+        "science_ministry": (
+            "images/logo/sponsors/ministry_of_science_and_technology.png"
         ),
-        "EducationDepartmentTehran": (
-            "Images/Logo/Sponsors/Education Department Tehran.png"
+        "education_department_tehran": (
+            "images/logo/sponsors/education_department_tehran.png"
         ),
-        "University": "Images/Logo/Sponsors/University Logo.png",
+        "university": "images/logo/sponsors/university_logo.png",
+        "water_waste": "images/logo/sponsors/water_and_waste.png",
     }
 
 
@@ -1054,27 +1042,27 @@ education_age_ranges = {
 }
 
 week_days = {
-    "Saturday": "شنبه",
-    "Sunday": "یکشنبه",
-    "Monday": "دوشنبه",
-    "Tuesday": "سه‌شنبه",
-    "Wednesday": "چهارشنبه",
-    "Thursday": "پنجشنبه",
-    "Friday": "جمعه",
+    "saturday": "شنبه",
+    "sunday": "یکشنبه",
+    "monday": "دوشنبه",
+    "tuesday": "سه‌شنبه",
+    "wednesday": "چهارشنبه",
+    "thursday": "پنجشنبه",
+    "friday": "جمعه",
 }
 
 technical_committee_members = [
     {
         "name": "دکتر سمیه سلطانی",
         "role": "رئیس لیگ کاربرد هوش مصنوعی در علوم پزشکی و بهداشت",
-        "Description": "استاد دانشگاه تبریز",
-        "image": os.path.join(Path.technical_committee_dir, "Somaieh Soltani.png"),
+        "description": "استاد دانشگاه تبریز",
+        "image": os.path.join(Path.technical_committee_dir, "somaieh_soltani.png"),
     },
     {
         "name": "مهندس امیر حسین کرمی",
         "role": "مدیر امور استان ها",
-        "Description": "هماهنگی٬ برنامه ریزی و پیگیری امور استان ها",
-        "image": os.path.join(Path.technical_committee_dir, "Amir Hossain.png"),
+        "description": "هماهنگی٬ برنامه ریزی و پیگیری امور استان ها",
+        "image": os.path.join(Path.technical_committee_dir, "amir_hossain.png"),
     },
 ]
 
@@ -1124,7 +1112,7 @@ class ForbiddenContent:
         "bitch",
         "cock",
         "cunt",
-        "dick", 
+        "dick",
         "nigger",
         "pussy",
         "shit",
@@ -1135,17 +1123,17 @@ class ForbiddenContent:
         "wanker",
         "bollocks",
         "fucking",
-        "dammit", 
+        "dammit",
         "douche",
         "twat",
         "dickhead",
         "fag",
-        "bastard",   
+        "bastard",
         "slut",
-        "goddamn",        
-        "damn", 
+        "goddamn",
+        "damn",
         "bloody",
-        "fuckface",            
+        "fuckface",
         "crap",
         "shithead",
         "bullshit",
@@ -1154,11 +1142,10 @@ class ForbiddenContent:
         "hell",
         "fucked",
         "god",
-        "motherfucker",                 
+        "motherfucker",
         "retard",
         "nigga",
         "piss",
-        "image",
     }
 
     filter_loaded = False
@@ -1186,22 +1173,12 @@ class ForbiddenContent:
         return profanity.contains_profanity(text)
 
 
+# Add this line to your imports at the top of constants.py
+import jdatetime 
+
+
 class Date:
     "Date-related constants and methods for the application"
-    days_in_month = {
-        1: 31,
-        2: 31,
-        3: 31,
-        4: 31,
-        5: 31,
-        6: 31,
-        7: 30,
-        8: 30,
-        9: 30,
-        10: 30,
-        11: 30,
-        12: 29,
-    }
     persian_months = {
         1: "فروردین",
         2: "اردیبهشت",
@@ -1219,7 +1196,7 @@ class Date:
 
     @staticmethod
     def get_allowed_years():
-        "Returns a list of allowed birth years for participants"
+        "Returns a list of allowed Gregorian birth years for participants based on age limits (5-80)."
         current_year = datetime.datetime.now(datetime.timezone.utc).year
         min_age = 5
         max_age = 80
@@ -1271,8 +1248,7 @@ class AppConfig:
 
 
 class Details:
-    "Details for Airocup event"
-
+    "Details for airocup event"
     address = "دانشگاه علم و صنعت ایران، تهران، ایران"
     google_map_url = "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3238.3671459295647!2d51.50422711222071!3d35.74177972652958!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3f8e032fd49e3809%3A0x470e49fef97ae303!2sIran%20University%20of%20Science%20and%20Technology%20(IUST)!5e0!3m2!1sen!2snl!4v1762083993443!5m2!1sen!2snl"
     stage_one = "مجازی (لیگ ۲ ۳٬ ۴٬ ۵٬)"
@@ -1281,7 +1257,7 @@ class Details:
 
 
 class Contact:
-    "Contact information for Airocup"
+    "Contact information for airocup"
 
     phone = "09352117339"
     email_primary = "airocupiran@gmail.com"
@@ -1337,7 +1313,7 @@ contact_points_data = [
         "href": f"https://{Contact.linked_in}",
         "icon": "fab fa-linkedin",
         "label": "لینکدین",
-        "display": "Airocup LinkedIn",
+        "display": "airocup LinkedIn",
         "target": "_blank",
     },
     {
@@ -1438,25 +1414,25 @@ committee_members_data = [
         "name": "دکتر بهروز مینایی بیدگلی",
         "role": "رئیس مسابقات",
         "description": "رهبری کلی مسابقات و نظارت بر اجرای صحیح تمامی مراحل برگزاری",
-        "image": os.path.join(Path.committee_dir, "Minayi.png"),
+        "image": os.path.join(Path.committee_dir, "minayi.png"),
     },
     {
         "name": "دکتر داوود زارع",
         "role": "رئیس کمیته ملی مسابقات",
         "description": "هماهنگی و نظارت بر کلیه فعالیت‌های کمیته‌های تخصصی",
-        "image": os.path.join(Path.committee_dir, "Davood.png"),
+        "image": os.path.join(Path.committee_dir, "davood.png"),
     },
     {
         "name": "مهندس زهرا سعادتی داریان",
         "role": "دبیر کمیته علمی",
         "description": "مسئولیت ارزیابی علمی پروژه‌ها و تنظیم معیارهای داوری",
-        "image": os.path.join(Path.committee_dir, "Saadati.png"),
+        "image": os.path.join(Path.committee_dir, "saadati.png"),
     },
     {
         "name": "مهندس محمدرضا ریاحی سامانی",
         "role": "دبیر کمیته رباتیک",
         "description": "مسئولیت برگزاری لیگ‌های رباتیک و ارزیابی ربات‌ها",
-        "image": os.path.join(Path.committee_dir, "Riyahi.png"),
+        "image": os.path.join(Path.committee_dir, "riyahi.png"),
     },
     {
         "name": "مهندس پوریا حداد",
@@ -1467,25 +1443,25 @@ committee_members_data = [
     {
         "name": "دکتر محمد خلیل پور",
         "role": "دبیر کمیته پشتیبانی",
-        "Description": "مسئولیت پشتیبانی فنی و حل مشکلات شرکت‌کنندگان",
-        "image": os.path.join(Path.committee_dir, "KhalilPore.png"),
+        "description": "مسئولیت پشتیبانی فنی و حل مشکلات شرکت‌کنندگان",
+        "image": os.path.join(Path.committee_dir, "khalil_pore.png"),
     },
 ]
 
 homepage_sponsors_data = [
-    {"logo_key": "InteriorMinistry", "alt_text": "وزارت کشور جمهوری اسلامی ایران"},
-    {"logo_key": "ScienceMinistry", "alt_text": "وزارت علوم، تحقیقات و فناوری"},
-    {"logo_key": "EducationMinistry", "alt_text": "وزارت آموزش و پرورش"},
+    {"logo_key": "interior_ministry", "alt_text": "وزارت کشور جمهوری اسلامی ایران"},
+    {"logo_key": "science_ministry", "alt_text": "وزارت علوم، تحقیقات و فناوری"},
+    {"logo_key": "education_ministry", "alt_text": "وزارت آموزش و پرورش"},
     {
-        "logo_key": "EducationDepartmentTehran",
+        "logo_key": "education_department_tehran",
         "alt_text": "اداره کل آموزش و پرورش شهر تهران",
     },
-    {"logo_key": "StudentResearchCenter", "alt_text": "پژوهش سرای دانش‌آموزی"},
+    {"logo_key": "student_research_center", "alt_text": "پژوهش سرای دانش‌آموزی"},
     {
-        "logo_key": "StudentResearchCenterTehran",
+        "logo_key": "student_research_center_tehran",
         "alt_text": "پژوهش سرای دانش‌آموزی تهران",
     },
-    {"logo_key": "WaterWaste", "alt_text": "شرکت مهندسی آب و فاضلاب کشور"},
+    {"logo_key": "water_waste", "alt_text": "شرکت مهندسی آب و فاضلاب کشور"},
 ]
 
 gallery_videos_data = [
@@ -1508,54 +1484,54 @@ gallery_videos_data = [
 ]
 
 global_html_names_data = {
-    "About": "Global/About.html",
-    "Base": "Global/Base.html",
-    "Committee": "Global/Committee.html",
-    "TechnicalCommittee": "Global/TechnicalCommittee.html",
-    "Contact": "Global/Contact.html",
-    "Cooperate": "Global/Cooperate.html",
-    "Gallery": "Global/Gallery.html",
-    "Index": "Global/Index.html",
-    "Leagues": "Global/Leagues.html",
-    "News": "Global/News.html",
-    "Sponsors": "Global/Sponsors.html",
-    "404": "Global/404.html",
-    "500": "Global/500.html",
-    "400": "Global/400.html",
-    "403": "Global/403.html",
-    "500 Debug": "Global/500Debug.html",
-    "Article": "Global/Article.html",
+    "about": "global/about.html",
+    "base": "global/base.html",
+    "committee": "global/committee.html",
+    "technical_committee": "global/technical_committee.html",
+    "contact": "global/contact.html",
+    "cooperate": "global/cooperate.html",
+    "gallery": "global/gallery.html",
+    "index": "global/index.html",
+    "leagues": "global/leagues.html",
+    "news": "global/news.html",
+    "sponsors": "global/sponsors.html",
+    "404": "global/404.html",
+    "500": "global/500.html",
+    "400": "global/400.html",
+    "403": "global/403.html",
+    "500_debug": "global/500_debug.html",
+    "article": "global/article.html",
 }
 
 client_html_names_data = {
-    "CreateTeam": "Client/CreateTeam.html",
-    "Dashboard": "Client/Dashboard.html",
-    "ForgotPassword": "Client/ForgotPassword.html",
-    "Login": "Client/Login.html",
-    "MemberFormFields": "Client/MemberFormFields.html",
-    "Members": "Client/Members.html",
-    "Payment": "Client/Payment.html",
-    "ResetPassword": "Client/ResetPassword.html",
-    "SelectLeague": "Client/SelectLeague.html",
-    "SignUp": "Client/SignUp.html",
-    "Null": "Client/Null.html",
-    "SupportChat": "Client/SupportChat.html",
-    "UpdateTeam": "Client/UpdateTeam.html",
-    "Verify": "Client/Verify.html",
-    "EditMember": "Client/EditMember.html",
-    "MyHistory": "Client/MyHistory.html",
+    "create_team": "client/create_team.html",
+    "dashboard": "client/dashboard.html",
+    "forgot_password": "client/forgot_password.html",
+    "login": "client/login.html",
+    "member_form_fields": "client/member_form_fields.html",
+    "members": "client/members.html",
+    "payment": "client/payment.html",
+    "reset_password": "client/reset_password.html",
+    "select_league": "client/select_league.html",
+    "sign_up": "client/sign_up.html",
+    "null": "client/null.html",
+    "support_chat": "client/support_chat.html",
+    "update_team": "client/update_team.html",
+    "verify": "client/verify.html",
+    "edit_member": "client/edit_member.html",
+    "my_history": "client/my_history.html",
 }
 
 admin_html_names_data = {
-    "AdminChat": "Admin/AdminChat.html",
-    "AdminChatList": "Admin/AdminChatList.html",
-    "AdminClientsList": "Admin/AdminClientsList.html",
-    "AdminDashboard": "Admin/AdminDashboard.html",
-    "AdminEditNews": "Admin/AdminEditNews.html",
-    "AdminEditTeam": "Admin/AdminEditTeam.html",
-    "AdminLogin": "Admin/AdminLogin.html",
-    "AdminManageClient": "Admin/AdminManageClient.html",
-    "AdminManageNews": "Admin/AdminManageNews.html",
-    "AdminManageTeams": "Admin/AdminManageTeams.html",
-    "AdminAddMember": "Admin/AdminAddMember.html",
+    "admin_chat": "admin/admin_chat.html",
+    "admin_chat_list": "admin/admin_chat_list.html",
+    "admin_clients_list": "admin/admin_clients_list.html",
+    "admin_dashboard": "admin/admin_dashboard.html",
+    "admin_edit_news": "admin/admin_edit_news.html",
+    "admin_edit_team": "admin/admin_edit_team.html",
+    "admin_login": "admin/admin_login.html",
+    "admin_manage_client": "admin/admin_manage_client.html",
+    "admin_manage_news": "admin/admin_manage_news.html",
+    "admin_manage_teams": "admin/admin_manage_teams.html",
+    "admin_add_member": "admin/admin_add_member.html",
 }

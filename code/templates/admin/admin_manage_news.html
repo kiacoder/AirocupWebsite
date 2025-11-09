@@ -15,7 +15,7 @@
     <h2 class="FormTitle">
       <i class="fas fa-plus-circle"></i> افزودن مقاله جدید
     </h2>
-    <form method="POST" action="{{ url_for('Admin.AdminManageNews') }}" enctype="multipart/form-data">
+    <form method="POST" action="{{ url_for('admin.admin_manage_news') }}" enctype="multipart/form-data">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
       <div class="FormGroup">
         <label for="Title">عنوان مقاله</label>

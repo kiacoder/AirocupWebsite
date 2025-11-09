@@ -14,7 +14,7 @@
       <p class="PageSubtitle">
         برای مشاهده جزئیات کامل، آئین‌نامه‌ها و قوانین هر لیگ، می‌توانید سند راهنمای جامع را از طریق دکمه زیر دانلود کنید.
       </p>
-      <a href="{{ url_for('Global.DownloadPDF') }}" class="Btn BtnPrimary BtnLarge">
+      <a href="{{ url_for('Global.download_pdf') }}" class="Btn BtnPrimary BtnLarge">
         <i class="fas fa-file-pdf" aria-hidden="true"></i>
         دانلود راهنمای کامل لیگ‌ها (PDF)
       </a>
@@ -63,7 +63,7 @@
       <p>
         به بزرگترین رویداد هوش مصنوعی و رباتیک ایران بپیوندید و مهارت‌های خود را به نمایش بگذارید!
       </p>
-      <a href="{{ url_for('Client.SignUp') }}" class="Btn BtnPrimary BtnLarge">
+      <a href="{{ url_for(''client.signup') }}" class="Btn BtnPrimary BtnLarge">
         <i class="fas fa-rocket" aria-hidden="true"></i>
         همین حالا ثبت‌نام کنید
       </a>

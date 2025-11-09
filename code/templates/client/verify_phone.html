@@ -1,32 +1,36 @@
 {% extends "Global/Base.html" %}
 
-{% block Title %}تایید کد | آیروکاپ{% endblock %}
+{% block Title %}تایید شماره موبایل | آیروکاپ{% endblock %}
 
 {% block Body %}
-<div class="AppContainer">
+<main class="AppContainer">
   <div class="FormContainer FormContainer--small">
-    <form method="POST" action="{{ url_for('Client.Verify') }}">
+    <form
+      method="POST"
+      action="{{ url_for('client.verify_code') }}"
+      id="verificationForm"
+      data-cooldown="{{ Cooldown or 0 }}"
+      data-client-id="{{ ClientID or '' }}"
+      data-action="phone_signup"
+      data-resend-url="{{ url_for('client.resend_code') }}"
+      data-csrf-token="{{ csrf_token() }}"
+    >
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-      <input type="hidden" name="Action" value="{{ Action }}" />
+      <input type="hidden" name="Action" value="phone_signup" />
       <input type="hidden" name="ClientID" value="{{ ClientID or '' }}" />
-      <input type="hidden" name="Identifier" value="{{ Identifier or '' }}" />
-      <input type="hidden" name="IdentifierType" value="{{ IdentifierType or '' }}" />
 
-      <h1 class="FormTitle">تایید کد</h1>
+      <h1 class="FormTitle">تایید شماره موبایل</h1>
       <p class="FormSubtitle">
-        {% if Action == 'phone_signup' %}
-          یک کد ۶ رقمی به شماره موبایل شما ارسال شد. لطفا آن را وارد کنید.
-        {% elif Action == 'password_reset' %}
-          یک کد ۶ رقمی به {{ 'ایمیل' if IdentifierType == 'Email' else 'شماره موبایل' }} شما ارسال شد. لطفا آن را وارد کنید.
-        {% endif %}
+        یک کد ۶ رقمی به شماره موبایل شما ارسال شد. لطفا آن را در کادر زیر وارد کنید.
       </p>
 
       <div class="FormGroup">
-        <label for="Code">کد تایید:</label>
+        <label for="code">کد تایید<span class="RequiredStar">*</span></label>
         <input
           type="text"
-          id="Code"
+          id="code"
           name="Code"
+          class="FormControl"
           placeholder="کد ۶ رقمی"
           required
           autofocus
@@ -34,53 +38,54 @@
           maxlength="6"
           pattern="\d{6}"
           inputmode="numeric"
+          autocomplete="one-time-code"
           title="لطفا یک کد ۶ رقمی وارد کنید."
         />
       </div>
 
       <div class="FormGroup">
         <button type="submit" class="Btn BtnPrimary Btn--fullWidth">
-          تایید کد
+          تایید و فعال‌سازی حساب
         </button>
       </div>
-      <div class="FormLinks" style="margin-top: 1rem; text-align: center">
-        <button type="button" id="resendButton" class="LinkButton">
+
+      <div class="ResendContainer">
+        <button type="button" id="resendButton" class="Btn Btn--link">
           ارسال مجدد کد
         </button>
-        <span id="timerDisplay" style="margin-right: 10px; color: #666"></span>
+        <span id="timerDisplay"></span>
       </div>
     </form>
   </div>
-</div>
+</main>
 {% endblock %}
 
 {% block Scripts %}
 <script>
   document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("verificationForm");
     const resendButton = document.getElementById("resendButton");
     const timerDisplay = document.getElementById("timerDisplay");
-    const action = "{{ Action }}";
-    const clientID = "{{ ClientID or '' }}";
-    const identifier = "{{ Identifier or '' }}";
-    const identifierType = "{{ IdentifierType or '' }}";
-    let countdown = {{ Cooldown or 0 }};
+
+    if (!form || !resendButton || !timerDisplay) return;
+
+    const clientID = form.dataset.clientId;
+    const resendUrl = form.dataset.resendUrl;
+    const csrfToken = form.dataset.csrfToken;
+    const action = form.dataset.action;
+    let countdown = parseInt(form.dataset.cooldown, 10) || 0;
 
     const resendCode = async function () {
       if (countdown > 0) return;
 
       try {
-        const response = await fetch("{{ url_for('Client.ResendCode') }}", {
+        const response = await fetch(resendUrl, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "X-CSRFToken": "{{ csrf_token() }}",
+            "X-CSRFToken": csrfToken,
           },
-          body: JSON.stringify({
-            Action: action,
-            ClientID: clientID,
-            Identifier: identifier,
-            IdentifierType: identifierType,
-          }),
+          body: JSON.stringify({ ClientID: clientID, Action: action }),
         });
 
         const data = await response.json();

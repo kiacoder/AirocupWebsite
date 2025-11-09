@@ -22,7 +22,7 @@
 {% block Body %}
 <div class="AppContainer">
     <div class="FormContainer FormContainer--large">
-        <form method="POST" action="{{ url_for('SubmitDataResolution') }}" novalidate>
+        <form method="POST" action="{{ url_for('client.submit_data_resolution') }}" novalidate>
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
             <div style="text-align: center; margin-bottom: 2rem;">

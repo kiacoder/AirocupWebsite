@@ -1,7 +1,4 @@
-"""
-Admin panel routes and functionalities for managing clients, teams, members, news, and chat.
-This file is a cleaned, single-version of the previously duplicated admin.py.
-"""
+"""Admin panel routes and functionalities for managing clients, teams, members, news, and chat"""
 
 import os
 import math
@@ -27,31 +24,29 @@ import bleach
 import bcrypt
 from werkzeug.utils import secure_filename
 
-# Local imports (assumes package-style relative imports)
 from . import config
 from . import database
 from . import constants
 from . import models
 from . import utils
-import persiantools.digits  # type: ignore
+import persiantools.digits
 from .auth import admin_required, admin_action_required
 
-admin_blueprint = Blueprint("admin", __name__, template_folder="Admin")
+admin_blueprint = Blueprint("admin", __name__, template_folder="admin")
 
 
 @admin_blueprint.route("/UploadsGallery/<filename>")
 def uploaded_gallery_image(filename):
-    "Serve uploaded gallery images securely"
+    """Serve uploaded gallery images securely"""
     return send_from_directory(constants.Path.gallery_dir, filename)
 
 
 def get_admin_personas():
-    "Get list of admin personas for chat — robustly accept 'Name' or 'name' keys"
+    """Get list of admin personas for chat"""
     personas = []
     for member in getattr(constants, "committee_members_data", []):
         if isinstance(member, dict):
             personas.append(member.get("Name") or member.get("name"))
-    # Filter any None and extend with fixed personas
     personas = [p for p in personas if p]
     personas.extend(["Website Dev", "Admin"])
     return personas
@@ -59,26 +54,24 @@ def get_admin_personas():
 
 @admin_blueprint.route("/AdminLogin", methods=["GET", "POST"])
 def admin_login():
-    "Admin login page and authentication"
+    """Admin login page and authentication"""
     if request.method == "POST":
-        # Use current_app's csrf_protector if present
         csrf = getattr(current_app, "csrf_protector", None)
         if csrf:
             csrf.protect()
 
-        admin_pass = request.form.get("Password") or request.form.get("password") or ""
+        admin_pass = request.form.get("password") or request.form.get("password") or ""
         if config.admin_password_hash and bcrypt.checkpw(
             admin_pass.encode("utf-8"),
             config.admin_password_hash.encode("utf-8"),
         ):
             session["AdminLoggedIn"] = True
             flash("ورود به پنل مدیریت با موفقیت انجام شد.", "success")
-            # keep original endpoint name for dashboard if referenced elsewhere
             return redirect(url_for("admin.admin_dashboard"))
         else:
             flash("رمز عبور ادمین نامعتبر است.", "error")
 
-    return render_template(constants.admin_html_names_data["AdminLogin"])
+    return render_template(constants.admin_html_names_data["admin_login"])
 
 
 @admin_blueprint.route("/Admin/GetChatHistory/<int:client_id>")
@@ -123,7 +116,7 @@ def admin_chat(client_id):
         flash("کاربر مورد نظر یافت نشد یا غیرفعال است.", "error")
         return redirect(url_for("admin.admin_select_chat"))
     return render_template(
-        constants.admin_html_names_data["AdminChat"],
+        constants.admin_html_names_data["admin_chat"],
         client=client,
         personas=get_admin_personas(),
     )
@@ -186,7 +179,8 @@ def admin_select_chat():
         )
 
     return render_template(
-        constants.admin_html_names_data["AdminChatList"], Clients=clients_query.all()
+        constants.admin_html_names_data["admin_select_chat"],
+        Clients=clients_query.all(),
     )
 
 
@@ -266,7 +260,7 @@ def admin_delete_team(team_id):
         except exc.SQLAlchemyError as error:
             db.rollback()
             current_app.logger.error(
-                "error in AdminDeleteTeam for Team %s: %s", team_id, error
+                "error in admin_delete_team for Team %s: %s", team_id, error
             )
             flash("خطایی در هنگام آرشیو تیم رخ داد.", "error")
 
@@ -392,14 +386,14 @@ def admin_manage_news():
 
         articles_list = database.get_all_articles(db)
     return render_template(
-        constants.admin_html_names_data["AdminManageNews"], articles=articles_list
+        constants.admin_html_names_data["admin_manage_news"], articles=articles_list
     )
 
 
 @admin_blueprint.route("/Admin/EditNews/<int:article_id>", methods=["GET", "POST"])
 @admin_required
 def admin_edit_news(article_id):
-    "Edit an existing news article"
+    """Edit an existing news article"""
     with database.get_db_session() as db:
         article = (
             db.query(models.News).filter(models.News.news_id == article_id).first()
@@ -409,33 +403,11 @@ def admin_edit_news(article_id):
 
         if request.method == "POST":
             try:
-                setattr(
-                    article,
-                    "template_path",
-                    (
-                        request.form.get("TemplatePath")
-                        or request.form.get("template_path")
-                        or ""
-                    ).strip(),
-                )
-                new_title = bleach.clean(
-                    (
-                        request.form.get("Title") or request.form.get("title") or ""
-                    ).strip()
-                )
-                setattr(
-                    article,
-                    "content",
-                    bleach.clean(
-                        (
-                            request.form.get("Content")
-                            or request.form.get("content")
-                            or ""
-                        ).strip()
-                    ),
-                )
+                article.template_path = request.form.get("template_path", "").strip()
+                article.content = bleach.clean(request.form.get("content", "").strip())
+                new_title = bleach.clean(request.form.get("title", "").strip())
 
-                if new_title and new_title != getattr(article, "title"):
+                if new_title and new_title != article.title:
                     existing_news = (
                         db.query(models.News)
                         .filter(
@@ -449,9 +421,12 @@ def admin_edit_news(article_id):
                         return redirect(
                             url_for("admin.admin_edit_news", article_id=article_id)
                         )
-                    setattr(article, "title", new_title)
 
-                image_file = request.files.get("Image") or request.files.get("image")
+                    # Use direct assignment
+                    article.title = new_title
+
+                # Use snake_case key for the file
+                image_file = request.files.get("image")
                 if image_file and image_file.filename:
                     image_file.stream.seek(0)
                     if not utils.is_file_allowed(image_file.stream):
@@ -469,10 +444,11 @@ def admin_edit_news(article_id):
                     )
 
                     old_image_path = None
-                    if getattr(article, "image_path"):
+                    # Use direct access for the attribute
+                    if article.image_path:
                         old_image_path = os.path.join(
                             current_app.config["UPLOAD_FOLDER_NEWS"],
-                            getattr(article, "image_path"),
+                            article.image_path,
                         )
 
                     image_file.save(new_image_path)
@@ -485,7 +461,8 @@ def admin_edit_news(article_id):
                                 "failed to remove old news image %s", old_image_path
                             )
 
-                    setattr(article, "image_path", secure_name)
+                    # Use direct assignment
+                    article.image_path = secure_name
 
                 db.commit()
                 flash("خبر با موفقیت ویرایش شد.", "success")
@@ -495,9 +472,9 @@ def admin_edit_news(article_id):
                 flash("خطایی در ویرایش خبر رخ داد.", "error")
                 return redirect(url_for("admin.admin_edit_news", article_id=article_id))
 
-    return render_template(
-        constants.admin_html_names_data["AdminEditNews"], Article=article
-    )
+        return render_template(
+            constants.admin_html_names_data["admin_edit_news"], Article=article
+        )
 
 
 @admin_blueprint.route("/Admin/ManageClient/<int:client_id>")

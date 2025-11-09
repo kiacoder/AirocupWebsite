@@ -381,9 +381,13 @@ def test_templates() -> None:
 
 @flask_app.cli.command("init-db")
 def initialize_database_command() -> None:
-    """Creates the database tables and populates geography data."""
+    """Creates the database tables and populates geography/league data."""
     database.create_database()
-    database.populate_geography_data()
+
+    with database.get_db_session() as db:
+        database.populate_geography_data(db)
+        database.populate_leagues(db)
+
     logger.info("Database initialized successfully.")
 
 

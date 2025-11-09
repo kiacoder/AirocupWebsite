@@ -18,11 +18,6 @@ import requests  # type: ignore
 import bleach  # type: ignore
 
 
-def is_leap_year(year: int) -> bool:
-    "Determine if a given Persian year is a leap year"
-    return (year % 33) in [1, 5, 9, 13, 17, 22, 26, 30]
-
-
 def is_valid_name(name: str) -> bool:
     "Check if the name contains at least two words"
     return len(name.strip().split()) >= 2
@@ -61,7 +56,7 @@ def is_file_allowed(file_stream: IO[bytes]) -> bool:
 
 
 def validate_persian_date(year: Any, month: Any, day: Any) -> Tuple[bool, str]:
-    "Validate a Persian date given year, month, and day"
+    """Validate a Persian date given year, month, and day"""
     try:
         year_int, month_int, day_int = int(year), int(month), int(day)
         allowed_years = constants.Date.get_allowed_years()
@@ -70,28 +65,22 @@ def validate_persian_date(year: Any, month: Any, day: Any) -> Tuple[bool, str]:
                 False,
                 f"سال باید بین {allowed_years[0]} و {allowed_years[-1]} باشد",
             )
-        if not (1 <= month_int <= 12):
-            return False, "ماه باید بین ۱ تا ۱۲ باشد"
-        max_days = constants.Date.days_in_month.get(month_int, 30)
-        if month_int == 12 and is_leap_year(year_int):
-            max_days = 30
-        if not (1 <= day_int <= max_days):
-            return (
-                False,
-                f"روز برای ماه انتخاب شده باید بین ۱ تا {max_days} باشد",
-            )
+
+        jdatetime.date(year_int, month_int, day_int)
+
         return True, "تاریخ معتبر است"
-    except (ValueError, TypeError):
+    except ValueError:
+        return False, "لطفاً تاریخ معتبر را انتخاب کنید (روز و ماه صحیح باشد)"
+    except TypeError:
         return False, "لطفاً اعداد معتبر برای تاریخ وارد کنید"
 
 
 def get_form_context() -> dict:
-    "Provide context data for forms"
+    "Provide context data for forms (excluding hardcoded days_in_month)"
     return {
         "Provinces": constants.provinces_data,
         "PersianMonths": constants.Date.persian_months,
         "AllowedYears": constants.Date.get_allowed_years(),
-        "DaysInMonth": constants.Date.days_in_month,
     }
 
 
@@ -105,10 +94,10 @@ def send_templated_sms_async(
     "Send a templated SMS asynchronously"
     with app.app_context():
         try:
-            rest_url = sms_config.get("RestURL")
+            rest_url = sms_config.get("rest_url")
             if not isinstance(rest_url, str):
                 current_app.logger.error(
-                    "SMS configuration is missing or invalid for 'RestURL'."
+                    "SMS configuration is missing or invalid for 'rest_url'."
                 )
                 return
 
@@ -126,13 +115,13 @@ def send_templated_sms_async(
                 recipient = client.phone_number
 
             payload = {
-                "username": sms_config.get("Username"),
-                "password": sms_config.get("Password"),
+                "username": sms_config.get("username"),
+                "password": sms_config.get("password"),
                 "to": recipient,
                 "bodyId": template_id,
                 "text": verification_code,
             }
-            response = requests.post(rest_url, json=payload, timeout=10)
+            response = requests.post(rest_url, data=payload, timeout=10)
             response.raise_for_status()
             api_response = response.json()
 
@@ -182,15 +171,15 @@ def update_team_stats(db: Session, team_id: int):
     else:
         total_age = 0
         provinces = set()
-        today = datetime.date.today()
+        today_gregorian = datetime.date.today()
         for birth_date, province_name in members:
             if province_name:
                 provinces.add(province_name)
-            has_birthday_passed = (today.month, today.day) < (
+            has_birthday_passed = (today_gregorian.month, today_gregorian.day) < (
                 birth_date.month,
                 birth_date.day,
             )
-            age = today.year - birth_date.year - has_birthday_passed
+            age = today_gregorian.year - birth_date.year - has_birthday_passed
             total_age += age
         average_age = round(total_age / len(members))
         average_provinces = ", ".join(sorted(list(provinces)))
@@ -257,11 +246,15 @@ def send_async_email(
             message["Subject"] = subject
             message["From"] = mail_config["Username"]
             message["To"] = str(recipient_email)
+            use_ssl = mail_config.get("UseSSL", False)
+            server_class = smtplib.SMTP_SSL if use_ssl else smtplib.SMTP
 
-            with smtplib.SMTP(
-                mail_config["Server"], int(mail_config["Port"]), timeout=15
+            with server_class(
+                mail_config["Server"], mail_config["Port"], timeout=15
             ) as server:
-                server.starttls()
+                if not use_ssl:
+                    server.starttls()
+
                 server.login(mail_config["Username"], mail_config["Password"])
                 server.sendmail(
                     mail_config["Username"],
@@ -276,7 +269,7 @@ def send_async_email(
             )
         except (KeyError, TypeError) as error:
             current_app.logger.error(
-                f"Unexpected error in SendAsyncEmail for client_id "
+                f"Unexpected error in send_async_email for client_id "
                 f"{client_id}: {error}"
             )
 
@@ -348,17 +341,17 @@ def create_member_from_form_data(
 
 def validate_member_for_resolution(member: models.Member, education_level: str) -> dict:
     "Validate a member's data for missing or invalid fields"
-    problems: dict[str, list[str]] = {"Missing": [], "Invalid": []}
+    problems: dict[str, list[str]] = {"missing": [], "invalid": []}
     if member.name is None:
-        problems["Missing"].append("Name")
+        problems["missing"].append("name")
     if member.national_id is None:
-        problems["Missing"].append("NationalID")
+        problems["missing"].append("national_id")
     if member.role is None:
-        problems["Missing"].append("Role")
+        problems["missing"].append("role")
     if member.city_id is None:
-        problems["Missing"].append("City")
+        problems["missing"].append("city")
     if member.birth_date is None:
-        problems["Missing"].append("BirthDate")
+        problems["missing"].append("birth_date")
 
     if member.birth_date is not None:
         try:
@@ -371,26 +364,25 @@ def validate_member_for_resolution(member: models.Member, education_level: str) 
                     < (member.birth_date.month, member.birth_date.day)
                 )
             )
-            role_value = member.role.value
 
-            if role_value == models.MemberRole.LEADER.value and not (18 <= age <= 70):
-                problems["Invalid"].append(
+            if member.role == models.MemberRole.LEADER and not (18 <= age <= 70):
+                problems["invalid"].append(
                     f"سن سرپرست باید بین 18 تا 70 باشد (سن فعلی: {age})"
                 )
-            elif role_value == models.MemberRole.COACH.value and not (16 <= age <= 70):
-                problems["Invalid"].append(
+            elif member.role == models.MemberRole.COACH and not (16 <= age <= 70):
+                problems["invalid"].append(
                     f"سن مربی باید بین 16 تا 70 باشد (سن فعلی: {age})"
                 )
 
             if education_level in constants.education_age_ranges:
                 min_age, max_age = constants.education_age_ranges[education_level]
                 if not (min_age <= age <= max_age):
-                    problems["Invalid"].append(
+                    problems["invalid"].append(
                         f"سن عضو ({age}) با مقطع تحصیلی ({education_level}) "
                         f"مطابقت ندارد. محدوده مجاز: {min_age}-{max_age} سال."
                     )
         except (ValueError, AttributeError):
-            problems["Invalid"].append("تاریخ تولد نامعتبر است")
+            problems["invalid"].append("تاریخ تولد نامعتبر است")
 
     return problems
 
