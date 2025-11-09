@@ -1,12 +1,12 @@
 <header class="AdminHeader">
   <div class="AdminHeader__container">
-    <a href="{{ url_for('AdminDashboard') }}" class="AdminHeader__logo"
+    <a href="{{ url_for('admin.admin_dashboard') }}" class="AdminHeader__logo"
       >پنل مدیریت آیروکاپ</a
     >
     <nav class="AdminHeader__nav" id="admin-nav">
       <a
-        href="{{ url_for('AdminDashboard') }}"
-        class="{{ 'Active' if request.endpoint == 'AdminDashboard' else '' }}"
+        href="{{ url_for('admin.admin_dashboard') }}"
+        class="{{ 'Active' if request.endpoint == 'admin.admin_dashboard' else '' }}"
         >داشبورد</a
       >
       <a

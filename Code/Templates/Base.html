@@ -125,11 +125,11 @@
     {% if _is_admin %}
     <header class="AdminHeader">
       <div class="AdminHeader__container">
-        <a href="{{ url_for('AdminDashboard') }}" class="AdminHeader__logo"
+        <a href="{{ url_for('admin.admin_dashboard') }}" class="AdminHeader__logo"
           >پنل مدیریت آیروکاپ</a
         >
         <nav class="AdminHeader__nav" id="admin-nav">
-          <a href="{{ url_for('AdminDashboard') }}">داشبورد</a>
+          <a href="{{ url_for('admin.admin_dashboard') }}">داشبورد</a>
           <a href="{{ url_for('AdminManageClients') }}">کاربران</a>
           <a href="{{ url_for('AdminManageTeams') }}">تیم‌ها</a>
           <a href="{{ url_for('AdminManageNews') }}">اخبار</a>
