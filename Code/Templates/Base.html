@@ -172,56 +172,56 @@
             </li>
             <li>
               <a
-                href="{{ url_for('Leagues') }}"
-                class="{{ 'Active' if (request is defined and request.endpoint == 'Leagues') else '' }}"
+                href="{{ url_for('Global.leagues') }}"
+                class="{{ 'Active' if (request is defined and request.endpoint == 'Global.leagues') else '' }}"
               >
                 لیگ‌ها
               </a>
             </li>
             <li>
               <a
-                href="{{ url_for('Committee') }}"
-                class="{{ 'Active' if (request is defined and request.endpoint == 'Committee') else '' }}"
+                href="{{ url_for('Global.committee') }}"
+                class="{{ 'Active' if (request is defined and request.endpoint == 'Global.committee') else '' }}"
               >
                 کمیته
               </a>
             </li>
             <li>
               <a
-                href="{{ url_for('Sponsors') }}"
-                class="{{ 'Active' if (request is defined and request.endpoint == 'Sponsors') else '' }}"
+                href="{{ url_for('Global.sponsors') }}"
+                class="{{ 'Active' if (request is defined and request.endpoint == 'Global.sponsors') else '' }}"
               >
                 حامیان
               </a>
             </li>
             <li>
               <a
-                href="{{ url_for('Gallery') }}"
-                class="{{ 'Active' if (request is defined and request.endpoint == 'Gallery') else '' }}"
+                href="{{ url_for('Global.gallery') }}"
+                class="{{ 'Active' if (request is defined and request.endpoint == 'Global.gallery') else '' }}"
               >
                 گالری
               </a>
             </li>
             <li>
               <a
-                href="{{ url_for('News') }}"
-                class="{{ 'Active' if (request is defined and request.endpoint == 'News') else '' }}"
+                href="{{ url_for('Global.news') }}"
+                class="{{ 'Active' if (request is defined and request.endpoint == 'Global.news') else '' }}"
               >
                 اخبار
               </a>
             </li>
             <li>
               <a
-                href="{{ url_for('About') }}"
-                class="{{ 'Active' if (request is defined and request.endpoint == 'About') else '' }}"
+                href="{{ url_for('Global.about') }}"
+                class="{{ 'Active' if (request is defined and request.endpoint == 'Global.about') else '' }}"
               >
                 درباره ما
               </a>
             </li>
             <li>
               <a
-                href="{{ url_for('Contact') }}"
-                class="{{ 'Active' if (request is defined and request.endpoint == 'Contact') else '' }}"
+                href="{{ url_for('Global.contact') }}"
+                class="{{ 'Active' if (request is defined and request.endpoint == 'Global.contact') else '' }}"
               >
                 تماس با ما
               </a>
@@ -229,15 +229,15 @@
 
             <div class="NavActionItems">
               {% if 'Client ID' in session %}
-              <a href="{{ url_for('Dashboard') }}" class="Btn BtnSecondary"
+              <a href="{{ url_for('Client.dashboard') }}" class="Btn BtnSecondary"
                 >داشبورد</a
               >
-              <a href="{{ url_for('SupportChat') }}" class="Btn BtnPrimary"
+              <a href="{{ url_for('Client.support_chat') }}" class="Btn BtnPrimary"
                 >پشتیبانی</a
               >
               {% else %}
-              <a href="{{ url_for('Login') }}" class="Btn BtnSecondary">ورود</a>
-              <a href="{{ url_for('SignUp') }}" class="Btn BtnPrimary"
+              <a href="{{ url_for('Global.login') }}" class="Btn BtnSecondary">ورود</a>
+              <a href="{{ url_for('Global.signup') }}" class="Btn BtnPrimary"
                 >ثبت نام</a
               >
               {% endif %}
@@ -248,15 +248,15 @@
         <div class="HeaderRight">
           <div class="UserActions">
             {% if 'Client ID' in session %}
-            <a href="{{ url_for('Dashboard') }}" class="Btn BtnSecondary"
+            <a href="{{ url_for('Client.dashboard') }}" class="Btn BtnSecondary"
               >داشبورد</a
             >
-            <a href="{{ url_for('SupportChat') }}" class="Btn BtnPrimary"
+            <a href="{{ url_for('Client.support_chat') }}" class="Btn BtnPrimary"
               >پشتیبانی</a
             >
             {% else %}
-            <a href="{{ url_for('Login') }}" class="Btn BtnSecondary">ورود</a>
-            <a href="{{ url_for('SignUp') }}" class="Btn BtnPrimary">ثبت نام</a>
+            <a href="{{ url_for('Global.login') }}" class="Btn BtnSecondary">ورود</a>
+            <a href="{{ url_for('Global.signup') }}" class="Btn BtnPrimary">ثبت نام</a>
             {% endif %}
           </div>
           <button
@@ -329,10 +329,10 @@
             <h3>دسترسی سریع</h3>
             <ul>
               <li><a href="{{ url_for('Global.index') }}">صفحه اصلی</a></li>
-              <li><a href="{{ url_for('Leagues') }}">لیگ‌ها</a></li>
-              <li><a href="{{ url_for('SignUp') }}">ثبت نام</a></li>
-              <li><a href="{{ url_for('Login') }}">ورود</a></li>
-              <li><a href="{{ url_for('Cooperate') }}">همکاری با ما</a></li>
+              <li><a href="{{ url_for('Global.leagues') }}">لیگ‌ها</a></li>
+              <li><a href="{{ url_for('Global.signup') }}">ثبت نام</a></li>
+              <li><a href="{{ url_for('Global.login') }}">ورود</a></li>
+              <li><a href="{{ url_for('Global.cooperate') }}">همکاری با ما</a></li>
             </ul>
           </div>
           <div
