@@ -117,7 +117,7 @@
     not
     _is_admin
     %}
-    data-client-id="{{ session.get('Client ID', '') }}"
+    data-client-id="{{ session.get('client_id', '') }}"
     {%
     endif
     %}
@@ -125,15 +125,19 @@
     {% if _is_admin %}
     <header class="AdminHeader">
       <div class="AdminHeader__container">
-        <a href="{{ url_for('admin.admin_dashboard') }}" class="AdminHeader__logo"
+        <a
+          href="{{ url_for('admin.admin_dashboard') }}"
+          class="AdminHeader__logo"
           >پنل مدیریت آیروکاپ</a
         >
         <nav class="AdminHeader__nav" id="admin-nav">
           <a href="{{ url_for('admin.admin_dashboard') }}">داشبورد</a>
-          <a href="{{ url_for('AdminManageClients') }}">کاربران</a>
-          <a href="{{ url_for('AdminManageTeams') }}">تیم‌ها</a>
-          <a href="{{ url_for('AdminManageNews') }}">اخبار</a>
-          <a href="{{ url_for('Logout') }}" class="Btn BtnSecondary">خروج</a>
+          <a href="{{ url_for('admin.admin_manage_clients') }}">کاربران</a>
+          <a href="{{ url_for('admin.admin_manage_teams') }}">تیم‌ها</a>
+          <a href="{{ url_for('admin.admin_manage_news') }}">اخبار</a>
+          <a href="{{ url_for('Global.logout') }}" class="Btn BtnSecondary"
+            >خروج</a
+          >
         </nav>
         <button
           class="AdminHeader__mobile-toggle"
@@ -228,15 +232,23 @@
             </li>
 
             <div class="NavActionItems">
-              {% if 'Client ID' in session %}
-              <a href="{{ url_for('Client.dashboard') }}" class="Btn BtnSecondary"
+              {% if 'client_id' in session %}
+              <a
+                href="{{ url_for('client.dashboard') }}"
+                class="Btn BtnSecondary"
                 >داشبورد</a
               >
-              <a href="{{ url_for('Client.support_chat') }}" class="Btn BtnPrimary"
+              <a
+                href="{{ url_for('client.support_chat') }}"
+                class="Btn BtnPrimary"
                 >پشتیبانی</a
               >
               {% else %}
-              <a href="{{ url_for('client.login_client') }}" class="Btn BtnSecondary">ورود</a>
+              <a
+                href="{{ url_for('client.login_client') }}"
+                class="Btn BtnSecondary"
+                >ورود</a
+              >
               <a href="{{ url_for('client.signup') }}" class="Btn BtnPrimary"
                 >ثبت نام</a
               >
@@ -247,16 +259,24 @@
 
         <div class="HeaderRight">
           <div class="UserActions">
-            {% if 'Client ID' in session %}
-            <a href="{{ url_for('Client.dashboard') }}" class="Btn BtnSecondary"
+            {% if 'client_id' in session %}
+            <a href="{{ url_for('client.dashboard') }}" class="Btn BtnSecondary"
               >داشبورد</a
             >
-            <a href="{{ url_for('Client.support_chat') }}" class="Btn BtnPrimary"
+            <a
+              href="{{ url_for('client.support_chat') }}"
+              class="Btn BtnPrimary"
               >پشتیبانی</a
             >
             {% else %}
-            <a href="{{ url_for('client.login_client') }}" class="Btn BtnSecondary">ورود</a>
-            <a href="{{ url_for('client.signup') }}" class="Btn BtnPrimary">ثبت نام</a>
+            <a
+              href="{{ url_for('client.login_client') }}"
+              class="Btn BtnSecondary"
+              >ورود</a
+            >
+            <a href="{{ url_for('client.signup') }}" class="Btn BtnPrimary"
+              >ثبت نام</a
+            >
             {% endif %}
           </div>
           <button
@@ -309,7 +329,11 @@
             itemscope
             itemtype="https://schema.org/Organization"
           >
-            <a href="{{ url_for('Global.index') }}" class="FooterLogo" itemprop="url">
+            <a
+              href="{{ url_for('Global.index') }}"
+              class="FooterLogo"
+              itemprop="url"
+            >
               {% if Path is defined and Path.TransparentLogos is defined %}
               <img
                 src="{{ url_for('static', filename=Path.TransparentLogos['TransparentWhite']) }}"
@@ -332,7 +356,9 @@
               <li><a href="{{ url_for('Global.leagues') }}">لیگ‌ها</a></li>
               <li><a href="{{ url_for('client.signup') }}">ثبت نام</a></li>
               <li><a href="{{ url_for('client.login_client') }}">ورود</a></li>
-              <li><a href="{{ url_for('Global.cooperate') }}">همکاری با ما</a></li>
+              <li>
+                <a href="{{ url_for('Global.cooperate') }}">همکاری با ما</a>
+              </li>
             </ul>
           </div>
           <div

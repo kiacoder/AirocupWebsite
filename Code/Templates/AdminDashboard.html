@@ -6,18 +6,24 @@ endblock %} {% block Body %}
   </div>
 
   <div class="QuickLinks">
-    <a href="{{ url_for('Admin.admin.admin_clients_list') }}" class="Btn BtnSecondary"
-      ><i class="fas fa-users"></i> مدیریت کاربران</a
+    <a
+      href="{{ url_for('admin.admin_manage_clients') }}"
+      class="Btn BtnSecondary"
     >
-    <a href="{{ url_for('admin.admin_manage_news') }}" class="Btn BtnSecondary"
-      ><i class="fas fa-newspaper"></i> مدیریت اخبار</a
-    >
+      <i class="fas fa-users"></i> مدیریت کاربران
+    </a>
+    <a href="{{ url_for('admin.admin_manage_news') }}" class="Btn BtnSecondary">
+      <i class="fas fa-newspaper"></i> مدیریت اخبار
+    </a>
     <a href="{{ url_for('admin.admin_select_chat') }}" class="Btn BtnSecondary">
       <i class="fas fa-envelope"></i> پیام‌ها
     </a>
-    <a href="{{ url_for('admin.admin_manage_teams') }}" class="Btn BtnSecondary"
-      ><i class="fas fa-layer-group"></i> مدیریت تیم‌ها</a
+    <a
+      href="{{ url_for('admin.admin_manage_teams') }}"
+      class="Btn BtnSecondary"
     >
+      <i class="fas fa-layer-group"></i> مدیریت تیم‌ها
+    </a>
   </div>
 
   <div class="StatsGrid">
@@ -123,7 +129,7 @@ endblock %} {% block Body %}
             </td>
             <td data-label="رسید">
               <a
-                href="{{ url_for('Client.GetReceipt', ClientID=payment.ClientID, filename=payment.ReceiptFilename) }}"
+                href="{{ url_for('client.get_receipt', client_id=payment.ClientID, filename=payment.ReceiptFilename) }}"
                 target="_blank"
                 class="Btn BtnSmall BtnSecondary"
               >
@@ -132,7 +138,7 @@ endblock %} {% block Body %}
             </td>
             <td class="Actions">
               <form
-                action="{{ url_for('Admin.AdminManagePayment', PaymentID=payment.PaymentID, Action='approve') }}"
+                action="{{ url_for('admin.admin_manage_payment', payment_id=payment.PaymentID, action='approve') }}"
                 method="POST"
                 style="display: inline"
                 class="ConfirmAction"
@@ -148,7 +154,7 @@ endblock %} {% block Body %}
                 </button>
               </form>
               <form
-                action="{{ url_for('Admin.AdminManagePayment', PaymentID=payment.PaymentID, Action='reject') }}"
+                action="{{ url_for('admin.admin_manage_payment', payment_id=payment.PaymentID, action='reject') }}"
                 method="POST"
                 style="display: inline"
                 class="ConfirmAction"
@@ -182,8 +188,10 @@ endblock %} {% block Body %}
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     if (typeof AdminCharts !== "undefined") {
-      AdminCharts.initProvinceChart("{{ url_for('ApiProvinceDistribution') }}");
-      AdminCharts.initCityChart("{{ url_for('ApiCityDistribution') }}");
+      AdminCharts.initProvinceChart(
+        "{{ url_for('api.province_distribution') }}"
+      );
+      AdminCharts.initCityChart("{{ url_for('api.city_distribution') }}");
     }
     if (typeof FormHelpers !== "undefined") {
       FormHelpers.setupConfirmDialogs();
