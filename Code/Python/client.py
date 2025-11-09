@@ -36,9 +36,10 @@ from . import models
 from . import utils
 from . import auth
 from .extensions import csrf_protector, limiter
-from .auth import login_required, resolution_required
+from .auth import login_required
 
 client_blueprint = Blueprint("client", __name__)
+
 
 @client_blueprint.route("/signup", methods=["GET", "POST"])
 def signup():
@@ -904,7 +905,7 @@ def edit_member(team_id, member_id):
             return redirect(url_for("client.manage_members", team_id=team_id))
 
         if request.method == "POST":
-            auth.csrf_protector.protect()
+            csrf_protector.protect()
 
             new_name = bleach.clean(request.form.get("Name", "").strip())
             new_role_value = request.form.get("Role", "").strip()
@@ -1845,7 +1846,7 @@ def payment(team_id):
             abort(404, "تیم پیدا نشد")
 
         if request.method == "POST":
-            auth.csrf_protector.protect()
+            csrf_protector.protect()
             receipt_file = request.files.get("receipt")
             if not receipt_file or receipt_file.filename == "":
                 flash("لطفا فایل رسید پرداخت را انتخاب کنید.", "error")
