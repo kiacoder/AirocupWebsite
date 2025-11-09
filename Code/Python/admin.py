@@ -36,7 +36,6 @@ from . import utils
 import persiantools.digits  # type: ignore
 from .auth import admin_required, admin_action_required
 
-# single blueprint used for all routes in this module
 admin_blueprint = Blueprint("admin", __name__, template_folder="Admin")
 
 

@@ -35,10 +35,10 @@ from . import constants
 from . import models
 from . import utils
 from . import auth
-from .app import csrf_protector, limiter
+from .extensions import csrf_protector, limiter
+from .auth import login_required, resolution_required
 
 client_blueprint = Blueprint("client", __name__)
-
 
 @client_blueprint.route("/signup", methods=["GET", "POST"])
 def signup():

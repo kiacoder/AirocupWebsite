@@ -6,7 +6,6 @@ import getpass
 import traceback
 import datetime
 import logging
-from functools import wraps
 import bcrypt
 import jdatetime
 from persiantools.digits import en_to_fa
@@ -15,22 +14,15 @@ import bleach
 from waitress import serve
 from flask import (
     Flask,
-    abort,
-    flash,
-    redirect,
     render_template,
     request,
     send_from_directory,
     session,
-    url_for,
     jsonify,
+    has_request_context,
 )
-from flask_socketio import SocketIO, emit, join_room
-from flask_wtf.csrf import CSRFProtect, CSRFError
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
+from flask_socketio import emit, join_room
 from jinja2 import TemplateError
-
 from . import config
 from . import database
 from . import constants
@@ -39,8 +31,8 @@ from . import utils
 from . import admin
 from . import client
 from . import globals as globals_file
-
 from .auth import admin_required
+from .extensions import csrf_protector, limiter, socket_io
 
 flask_app = Flask(
     __name__,
@@ -48,19 +40,10 @@ flask_app = Flask(
     template_folder=constants.Path.templates_dir,
     static_url_path="",
 )
-
-csrf_protector = CSRFProtect()
-limiter = Limiter(key_func=get_remote_address, storage_uri="redis://localhost:6379")
-socket_io = SocketIO()
 flask_app.secret_key = config.secret_key
 csrf_protector.init_app(flask_app)
 socket_io.init_app(flask_app)
 limiter.init_app(flask_app)
-limiter = Limiter(
-    app=flask_app,
-    key_func=get_remote_address,
-    default_limits=["200 per day", "50 per hour"],
-)
 
 flask_app.config.update(
     PERMANENT_SESSION_LIFETIME=config.permanent_session_lifetime,
@@ -73,6 +56,10 @@ flask_app.config.update(
     ALLOWED_EXTENSIONS=list(constants.AppConfig.allowed_extensions),
 )
 
+flask_app.register_blueprint(admin.admin_blueprint)
+flask_app.register_blueprint(client.client_blueprint)
+flask_app.register_blueprint(globals_file.global_blueprint)
+
 for path in [
     flask_app.config["UPLOAD_FOLDER_RECEIPTS"],
     flask_app.config["UPLOAD_FOLDER_DOCUMENTS"],
@@ -80,6 +67,7 @@ for path in [
     os.path.dirname(constants.Path.database_dir),
 ]:
     os.makedirs(path, exist_ok=True)
+
 
 @flask_app.template_filter("formatdate")
 def format_date_filter(date_object):
@@ -97,6 +85,7 @@ def humanize_number_filter(num):
     except (ValueError, TypeError):
         return num
 
+
 @flask_app.context_processor
 def inject_global_variables():
     """Injects global variables into the template context."""
@@ -105,7 +94,7 @@ def inject_global_variables():
         "AllowedYears": constants.Date.get_allowed_years(),
         "PersianMonths": constants.Date.persian_months,
         "ForbiddenWords": list(constants.ForbiddenContent.custom_words),
-        "client_id": session.get("client_id"),
+        "client_id": session.get("client_id") if has_request_context() else None,
         "provinces_data": constants.provinces_data,
     }
 
@@ -368,7 +357,7 @@ def print_startup_message(host: str, port: int, mode: str) -> None:
 
 
 def test_templates() -> None:
-    """Tests all HTML templates for rendering errors."""
+    """Tests all templates for rendering errors"""
     logger.info("🔍 Starting template integrity check...")
     template_dir = constants.Path.templates_dir
     templates = [f for f in os.listdir(template_dir) if f.endswith(".html")]
@@ -377,18 +366,15 @@ def test_templates() -> None:
     with flask_app.app_context():
         for template in templates:
             try:
-                render_template(template)
+                with flask_app.test_request_context("/"):
+                    render_template(template)
                 logger.info("✅ %s: OK", template)
                 success_count += 1
             except TemplateError as e:
                 logger.error("❌ %s: FAILED (%s)", template, e)
                 fail_count += 1
 
-    logger.info(
-        "Template check finished. %d successful, %d failed.",
-        success_count,
-        fail_count,
-    )
+    logger.info("Template check finished. %d successful, %d failed.", success_count, fail_count)
     if fail_count > 0:
         logger.critical("🚨 Please fix the failing templates before proceeding.")
         sys.exit(1)
@@ -401,10 +387,6 @@ def initialize_database_command() -> None:
     database.populate_geography_data()
     logger.info("Database initialized successfully.")
 
-
-flask_app.register_blueprint(admin.admin_blueprint)
-flask_app.register_blueprint(client.client_blueprint)
-flask_app.register_blueprint(globals_file.global_blueprint)
 
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "generate_hash":
