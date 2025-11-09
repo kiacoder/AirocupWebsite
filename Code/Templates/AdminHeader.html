@@ -24,7 +24,7 @@
         class="{{ 'Active' if request.endpoint == 'admin.admin_manage_news' else '' }}"
         >اخبار</a
       >
-      <a href="{{ url_for('Logout') }}" class="Btn BtnSecondary">خروج</a>
+      <a href="{{ url_for('Global.logout') }}" class="Btn BtnSecondary">خروج</a>
     </nav>
     <button
       class="AdminHeader__mobile-toggle"
