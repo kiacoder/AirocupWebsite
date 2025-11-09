@@ -236,8 +236,8 @@
                 >پشتیبانی</a
               >
               {% else %}
-              <a href="{{ url_for('Global.login') }}" class="Btn BtnSecondary">ورود</a>
-              <a href="{{ url_for('Global.signup') }}" class="Btn BtnPrimary"
+              <a href="{{ url_for('client.login_client') }}" class="Btn BtnSecondary">ورود</a>
+              <a href="{{ url_for('client.signup') }}" class="Btn BtnPrimary"
                 >ثبت نام</a
               >
               {% endif %}
@@ -255,8 +255,8 @@
               >پشتیبانی</a
             >
             {% else %}
-            <a href="{{ url_for('Global.login') }}" class="Btn BtnSecondary">ورود</a>
-            <a href="{{ url_for('Global.signup') }}" class="Btn BtnPrimary">ثبت نام</a>
+            <a href="{{ url_for('client.login_client') }}" class="Btn BtnSecondary">ورود</a>
+            <a href="{{ url_for('client.signup') }}" class="Btn BtnPrimary">ثبت نام</a>
             {% endif %}
           </div>
           <button
@@ -330,8 +330,8 @@
             <ul>
               <li><a href="{{ url_for('Global.index') }}">صفحه اصلی</a></li>
               <li><a href="{{ url_for('Global.leagues') }}">لیگ‌ها</a></li>
-              <li><a href="{{ url_for('Global.signup') }}">ثبت نام</a></li>
-              <li><a href="{{ url_for('Global.login') }}">ورود</a></li>
+              <li><a href="{{ url_for('client.signup') }}">ثبت نام</a></li>
+              <li><a href="{{ url_for('client.login_client') }}">ورود</a></li>
               <li><a href="{{ url_for('Global.cooperate') }}">همکاری با ما</a></li>
             </ul>
           </div>
