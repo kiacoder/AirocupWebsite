@@ -67,8 +67,6 @@ class Client(Base):
     """Represents a registered user account (client)."""
 
     __tablename__ = "clients"
-
-    # Standardized to Mapped style with explicit String lengths and datetime.UTC
     client_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     phone_number: Mapped[str] = mapped_column(String(11), nullable=False, unique=True)
     email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
@@ -221,7 +219,6 @@ class Member(Base):
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     birth_date: Mapped[datetime.date] = mapped_column(Date, nullable=False)
-    # Added String(10) constraint for Iranian National ID
     national_id: Mapped[str] = mapped_column(String(10), nullable=False)
     role: Mapped[MemberRole] = mapped_column(
         sql_alchemy_enum(MemberRole),
@@ -239,7 +236,6 @@ class Member(Base):
     team = relationship("Team", back_populates="members")
     city = relationship("City", back_populates="members")
 
-    # The index with sqlite_where is kept but remember it's SQLite-specific
     __table_args__ = (
         Index(
             "one_leader_per_team_idx",
