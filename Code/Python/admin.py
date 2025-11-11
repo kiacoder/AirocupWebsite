@@ -42,7 +42,7 @@ def uploaded_gallery_image(filename):
 
 
 def get_admin_personas():
-    """Get list of admin personas for chat"""
+    """Get list of admin personas for chat."""
     personas = []
     for member in getattr(constants, "committee_members_data", []):
         if isinstance(member, dict):
@@ -234,12 +234,12 @@ def admin_delete_team(team_id):
                 abort(404)
 
             team.status = models.EntityStatus.INACTIVE
-            for member in getattr(team, "members", []):
+            for member in team.members:
                 member.status = models.EntityStatus.WITHDRAWN
 
             database.log_action(
                 db,
-                getattr(team, "client_id"),
+                team.client_id,
                 f"Admin archived Team '{team.team_name}' (ID: {team_id}) as withdrawn.",
                 is_admin_action=True,
             )
@@ -949,7 +949,7 @@ def admin_manage_payment(payment_id, action):
                     {"status": models.EntityStatus.ACTIVE}, synchronize_session=False
                 )
 
-                members_just_paid_for = getattr(payment, "members_paid_for", 0) or 0
+                members_just_paid_for = payment.members_paid_for or 0
                 db_session.query(models.Team).filter(
                     models.Team.team_id == payment.team_id
                 ).update(
@@ -961,7 +961,7 @@ def admin_manage_payment(payment_id, action):
                 )
                 database.log_action(
                     db_session,
-                    getattr(payment, "client_id"),
+                    payment.client_id,
                     f"Admin Approved Payment ID {payment_id} for Team ID {payment.team_id}.",
                     is_admin_action=True,
                 )
@@ -971,7 +971,7 @@ def admin_manage_payment(payment_id, action):
                 payment.status = models.PaymentStatus.REJECTED
                 database.log_action(
                     db_session,
-                    getattr(payment, "client_id"),
+                    payment.client_id,
                     f"Admin Rejected Payment ID {payment_id} for Team ID {payment.team_id}.",
                     is_admin_action=True,
                 )
