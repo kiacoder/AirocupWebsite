@@ -177,7 +177,7 @@ def resolve_data_issues():
             return redirect(url_for("client.login_client"))
 
     return render_template(
-        constants.client_html_names_data["null"],
+        constants.client_html_names_data["resolve_issues"],
         client=client,
         problems=session.get("resolution_problems", {}),
         **utils.get_form_context(),
@@ -434,7 +434,7 @@ def support_chat():
 @auth.login_required
 def edit_member(team_id, member_id):
     """Render and handle editing a member's information in a specific team."""
-    template_name = constants.client_html_names_data["EditMember"]
+    template_name = constants.client_html_names_data["edit_member"]
 
     with database.get_db_session() as db:
         team = (
@@ -467,13 +467,13 @@ def edit_member(team_id, member_id):
         if request.method == "POST":
             csrf_protector.protect()
 
-            new_name = bleach.clean(request.form.get("Name", "").strip())
-            new_role_value = request.form.get("Role", "").strip()
-            new_national_id = fa_to_en(request.form.get("NationalID", "").strip())
-            new_city_name = request.form.get("City", "").strip()
-            new_province_name = request.form.get("Province", "").strip()
+            new_name = bleach.clean(request.form.get("name", "").strip())
+            new_role_value = request.form.get("role", "").strip()
+            new_national_id = fa_to_en(request.form.get("national_id", "").strip())
+            new_city_name = request.form.get("city", "").strip()
+            new_province_name = request.form.get("province", "").strip()
 
-            role_map = {Role.value: Role for Role in models.MemberRole}
+            role_map = {role.value: role for role in models.MemberRole}
             new_role = role_map.get(new_role_value)
 
             if (
@@ -485,9 +485,9 @@ def edit_member(team_id, member_id):
                 flash("نام، کد ملی، استان و شهر الزامی هستند.", "error")
                 return render_template(
                     template_name,
-                    Team=team,
+                    team=team,
                     member=member,
-                    FormData=request.form,
+                    form_data=request.form,
                     **utils.get_form_context(),
                 )
 
@@ -521,9 +521,9 @@ def edit_member(team_id, member_id):
                         flash("نقش انتخاب شده نامعتبر است.", "error")
                         return render_template(
                             template_name,
-                            Team=team,
+                            team=team,
                             member=member,
-                            FormData=request.form,
+                            form_data=request.form,
                             **utils.get_form_context(),
                         )
                     member.role = new_role
@@ -550,14 +550,14 @@ def edit_member(team_id, member_id):
 
             return render_template(
                 template_name,
-                Team=team,
+                team=team,
                 member=member,
-                FormData=request.form,
+                form_data=request.form,
                 **utils.get_form_context(),
             )
 
     return render_template(
-        template_name, Team=team, member=member, **utils.get_form_context()
+        template_name, team=team, member=member, **utils.get_form_context()
     )
 
 
@@ -954,7 +954,6 @@ def reset_password():
                     )
                     flash_category = "error"
                     redirect_url = url_for("client.forgot_password")
-                    redirect_url = url_for("client.forgot_password")
                 else:
                     client_to_update = database.get_client_by(
                         db, valid_record.identifier_type, valid_record.identifier
@@ -986,14 +985,14 @@ def reset_password():
         )
 
     return render_template(
-        constants.client_html_names_data["ResetPassword"], token=token
+        constants.client_html_names_data["reset_password"], token=token
     )
 
 
 @client_blueprint.route("/Team/<int:team_id>/Payment", methods=["GET", "POST"])
 @auth.login_required
 def payment(team_id):
-    "Render and handle the payment page for a team"
+    """Render and handle the payment page for a team."""
     with database.get_db_session() as db:
         team = (
             db.query(models.Team)
@@ -1004,7 +1003,7 @@ def payment(team_id):
             )
             .first()
         )
-        temp = constants.AppConfig.max_image_size
+        max_size = constants.AppConfig.max_image_size
         if not team:
             abort(404, "تیم پیدا نشد")
 
@@ -1015,9 +1014,9 @@ def payment(team_id):
                 flash("لطفا فایل رسید پرداخت را انتخاب کنید.", "error")
                 return redirect(request.url)
 
-            if request.content_length is None or request.content_length > temp:
+            if request.content_length is None or request.content_length > max_size:
                 flash(
-                    f"حجم فایل رسید نباید بیشتر از { temp / 1024 / 1024:.1f} مگابایت باشد.",
+                    f"حجم فایل رسید نباید بیشتر از { max_size / 1024 / 1024:.1f} مگابایت باشد.",
                     "error",
                 )
                 return redirect(request.url)
@@ -1038,8 +1037,8 @@ def payment(team_id):
                 flash(flash_msg, flash_cat)
                 return redirect(url_for("client.dashboard"))
 
-            total_cost = payment_context["TotalFee"]
-            members_to_pay_for = payment_context["membersToPayFor"]
+            total_cost = payment_context.get("total_fee", 0)
+            members_to_pay_for = payment_context.get("members_to_pay_for", 0)
 
             success, message = _process_payment_submission(
                 db, team, receipt_file, total_cost, members_to_pay_for
@@ -1059,8 +1058,148 @@ def payment(team_id):
             return redirect(url_for("client.dashboard"))
 
         return render_template(
-            constants.client_html_names_data["Payment"], Team=team, **payment_context
+            constants.client_html_names_data["payment"], team=team, **payment_context
         )
+
+
+@client_blueprint.route("/ResendCode", methods=["POST"])
+@limiter.limit("5 per 15 minutes")
+def resend_code():
+    """Handle resending verification or password reset codes via a single endpoint"""
+    request_data = request.get_json() or {}
+    action = request_data.get("action")
+
+    response_data = {"success": False, "message": "عملیات نامعتبر است."}
+    status_code = 400
+
+    if not action:
+        response_data["message"] = "عملیات نامعتبر است."
+        return jsonify(response_data), status_code
+
+    if action == "phone_signup":
+        client_id = request_data.get("client_id")
+        if not client_id:
+            response_data["message"] = "شناسه کاربر نامعتبر است."
+        else:
+            with database.get_db_session() as db:
+                client = (
+                    db.query(models.Client)
+                    .filter(models.Client.client_id == client_id)
+                    .first()
+                )
+                if not client:
+                    response_data["message"] = "کاربر یافت نشد."
+                    status_code = 404
+                elif (
+                    client.verification_code_timestamp is not None
+                    and (
+                        datetime.datetime.now(datetime.timezone.utc)
+                        - client.verification_code_timestamp
+                    ).total_seconds()
+                    < 180
+                ):
+                    response_data["message"] = "لطفا ۳ دقیقه صبر کنید."
+                    status_code = 429
+                else:
+                    new_code = "".join(random.choices(string.digits, k=6))
+                    client.phone_verification_code = new_code
+                    client.verification_code_timestamp = datetime.datetime.now(
+                        datetime.timezone.utc
+                    )
+                    db.commit()
+
+                    Thread(
+                        target=utils.send_templated_sms_async,
+                        args=(
+                            current_app._get_current_object(),
+                            client.client_id,
+                            config.melli_payamak["template_id_verification"],
+                            new_code,
+                            config.melli_payamak,
+                        ),
+                    ).start()
+                    response_data = {"success": True, "message": "کد جدید ارسال شد."}
+                    status_code = 200
+
+    elif action == "password_reset":
+        identifier = request_data.get("identifier")
+        identifier_type = request_data.get("identifier_type")
+        if not identifier or not identifier_type:
+            response_data["message"] = "اطلاعات ناقص است."
+        else:
+            with database.get_db_session() as db:
+                reset_record = (
+                    db.query(models.PasswordReset)
+                    .filter(models.PasswordReset.identifier == identifier)
+                    .first()
+                )
+                if (
+                    reset_record
+                    and reset_record.timestamp is not None
+                    and (
+                        datetime.datetime.now(datetime.timezone.utc)
+                        - reset_record.timestamp
+                    ).total_seconds()
+                    < 180
+                ):
+                    response_data["message"] = "لطفا ۳ دقیقه صبر کنید."
+                    status_code = 429
+                else:
+                    client = database.get_client_by(db, identifier_type, identifier)
+                    if not client:
+                        response_data["message"] = "کاربر یافت نشد."
+                        status_code = 404
+                    else:
+                        new_code = "".join(random.choices(string.digits, k=6))
+                        timestamp = datetime.datetime.now(datetime.timezone.utc)
+                        if reset_record:
+                            reset_record.code = new_code
+                            reset_record.timestamp = timestamp
+                        else:
+                            db.add(
+                                models.PasswordReset(
+                                    identifier=identifier,
+                                    identifier_type=identifier_type,
+                                    code=new_code,
+                                    timestamp=timestamp,
+                                )
+                            )
+                        db.commit()
+
+                        if identifier_type == "email":
+                            subject = "کد بازیابی رمز عبور آیروکاپ"
+                            body = f"کد بازیابی رمز عبور شما: {new_code}"
+                            Thread(
+                                target=utils.send_async_email,
+                                args=(
+                                    current_app._get_current_object(),
+                                    client.client_id,
+                                    subject,
+                                    body,
+                                    config.mail_configuration,
+                                ),
+                            ).start()
+                        elif identifier_type == "phone_number":
+                            Thread(
+                                target=utils.send_templated_sms_async,
+                                args=(
+                                    current_app._get_current_object(),
+                                    client.client_id,
+                                    config.melli_payamak["template_id_password_reset"],
+                                    new_code,
+                                    config.melli_payamak,
+                                ),
+                            ).start()
+
+                        response_data = {
+                            "success": True,
+                            "message": "کد جدید ارسال شد.",
+                        }
+                        status_code = 200
+    else:
+        response_data["message"] = "عملیات ناشناخته است."
+
+    return jsonify(response_data), status_code
 
 
 @client_blueprint.route("/Dashboard")
@@ -1116,7 +1255,7 @@ def dashboard():
 @client_blueprint.route("/SubmitResolution", methods=["POST"])
 @auth.resolution_required
 def submit_data_resolution():
-    """Handle submission of data resolution form."""
+    """Handle submission of the data resolution form."""
     csrf_protector.protect()
     with database.get_db_session() as db:
         try:
@@ -1186,7 +1325,7 @@ def submit_data_resolution():
                         except (ValueError, TypeError):
                             flash(
                                 f"تاریخ تولد نامعتبر برای عضو '{member.name}' نادیده گرفته شد.",
-                                "Warning",
+                                "warning",
                             )
 
             db.commit()
@@ -1199,11 +1338,11 @@ def submit_data_resolution():
                 flash("خطا: شناسه کاربری برای اصلاح اطلاعات نامعتبر است.", "error")
                 return redirect(url_for("client.login_client"))
 
-            needs_archiving, new_problems = utils.check_for_data_completion_issues(
+            needs_resolution, new_problems = utils.check_for_data_completion_issues(
                 db, client_id_for_resolution
             )
 
-            if not needs_archiving:
+            if not needs_resolution:
                 client = (
                     db.query(models.Client)
                     .filter(models.Client.client_id == client_id_for_resolution)
@@ -1384,7 +1523,7 @@ def get_my_chat_history():
 @client_blueprint.route("/Team/<int:team_id>/UploadDocument", methods=["POST"])
 @login_required
 def upload_document(team_id):
-    "Handle document upload for a specific team"
+    """Handle document upload for a specific team."""
     csrf_protector.protect()
 
     with database.get_db_session() as db:
@@ -1409,17 +1548,19 @@ def upload_document(team_id):
             flash("شما اجازه بارگذاری مستندات برای این تیم را ندارید.", "error")
             return redirect(url_for("client.update_team", team_id=team_id))
 
-        if "File" not in request.files:
+        if "file" not in request.files:
             flash("فایلی برای بارگذاری انتخاب نشده است.", "error")
             return redirect(url_for("client.update_team", team_id=team_id))
-        temp = constants.AppConfig.max_document_size
-        file = request.files["File"]
+
+        max_size = constants.AppConfig.max_document_size
+        file = request.files["file"]
+
         if not file or not file.filename:
             flash("نام فایل نامعتبر است.", "error")
             return redirect(url_for("client.update_team", team_id=team_id))
-        if request.content_length is None or request.content_length > temp:
+        if request.content_length is None or request.content_length > max_size:
             flash(
-                f"حجم فایل سند نباید بیشتر از {temp / 1024 / 1024:.1f} مگابایت باشد.",
+                f"حجم فایل سند نباید بیشتر از {max_size / 1024 / 1024:.1f} مگابایت باشد.",
                 "error",
             )
             return redirect(url_for("client.update_team", team_id=team_id))
@@ -1441,9 +1582,9 @@ def upload_document(team_id):
         new_document = models.TeamDocument(
             team_id=team_id,
             client_id=session["client_id"],
-            FileName=secure_name,
-            FileType=extension,
-            UploadDate=datetime.datetime.now(datetime.timezone.utc),
+            file_name=secure_name,
+            file_type=extension,
+            upload_date=datetime.datetime.now(datetime.timezone.utc),
         )
 
         try:
@@ -1609,269 +1750,6 @@ def select_league(team_id):
     )
 
 
-@client_blueprint.route("/ResendCode", methods=["POST"])
-@limiter.limit("5 per 15 minutes")
-def resend_code():
-    "Handle resending verification or password reset codes."
-    request_data = request.get_json() or {}
-    action = request_data.get("action")
-
-    response_data = {"success": False, "message": "عملیات نامعتبر است."}
-    status_code = 400
-
-    if not action:
-        response_data["message"] = "عملیات نامعتبر است."
-        status_code = 400
-    elif action == "phone_signup":
-        client_id = request_data.get("client_id")
-        if not client_id:
-            response_data["message"] = "شناسه کاربر نامعتبر است."
-            status_code = 400
-        else:
-            with database.get_db_session() as db:
-                client = (
-                    db.query(models.Client)
-                    .filter(models.Client.client_id == client_id)
-                    .first()
-                )
-                if not client:
-                    response_data["message"] = "کاربر یافت نشد."
-                    status_code = 404
-                elif (
-                    client.verification_code_timestamp is not None
-                    and (
-                        datetime.datetime.now(datetime.timezone.utc)
-                        - client.verification_code_timestamp
-                    ).total_seconds()
-                    < 180
-                ):
-                    response_data["message"] = "لطفا ۳ دقیقه صبر کنید."
-                    status_code = 429
-                else:
-                    new_code = "".join(random.choices(string.digits, k=6))
-                    client.phone_verification_code = new_code
-                    client.verification_code_timestamp = datetime.datetime.now(
-                        datetime.timezone.utc
-                    )
-                    db.commit()
-
-                    Thread(
-                        target=utils.send_templated_sms_async,
-                        args=(
-                            current_app._get_current_object(),
-                            client.client_id,
-                            config.melli_payamak["template_id_phone_verification"],
-                            new_code,
-                            config.melli_payamak,
-                        ),
-                    ).start()
-                    response_data = {"success": True, "message": "کد جدید ارسال شد."}
-                    status_code = 200
-
-    elif action == "password_reset":
-        identifier = request_data.get("identifier")
-        identifier_type = request_data.get("identifier_type")
-        if not identifier or not identifier_type:
-            response_data["message"] = "اطلاعات ناقص است."
-            status_code = 400
-        else:
-            with database.get_db_session() as db:
-                reset_record = (
-                    db.query(models.PasswordReset)
-                    .filter(models.PasswordReset.identifier == identifier)
-                    .first()
-                )
-                if (
-                    reset_record
-                    and reset_record.timestamp is not None
-                    and (
-                        datetime.datetime.now(datetime.timezone.utc)
-                        - reset_record.timestamp
-                    ).total_seconds()
-                    < 180
-                ):
-                    response_data["message"] = "لطفا ۳ دقیقه صبر کنید."
-                    status_code = 429
-                else:
-                    client = database.get_client_by(db, identifier_type, identifier)
-                    if not client:
-                        response_data["message"] = "کاربر یافت نشد."
-                        status_code = 404
-                    else:
-                        new_code = "".join(random.choices(string.digits, k=6))
-                        if reset_record:
-                            reset_record.code = new_code
-                            reset_record.timestamp = datetime.datetime.now(
-                                datetime.timezone.utc
-                            )
-                        else:
-                            new_reset_record = models.PasswordReset(
-                                identifier=identifier,
-                                identifier_type=identifier_type,
-                                code=new_code,
-                                timestamp=datetime.datetime.now(datetime.timezone.utc),
-                            )
-                            db.add(new_reset_record)
-                        db.commit()
-
-                        if identifier_type == "Email":
-                            subject = "کد بازیابی رمز عبور آیروکاپ"
-                            body = f"کد بازیابی رمز عبور شما: {new_code}"
-                            Thread(
-                                target=utils.send_async_email,
-                                args=(
-                                    current_app._get_current_object(),
-                                    client.client_id,
-                                    subject,
-                                    body,
-                                    config.mail_configuration,
-                                ),
-                            ).start()
-                        elif identifier_type == "phone_number":
-                            Thread(
-                                target=utils.send_templated_sms_async,
-                                args=(
-                                    current_app._get_current_object(),
-                                    client.client_id,
-                                    config.melli_payamak["template_id_password_reset"],
-                                    new_code,
-                                    config.melli_payamak,
-                                ),
-                            ).start()
-                        response_data = {
-                            "success": True,
-                            "message": "کد جدید ارسال شد.",
-                        }
-                        status_code = 200
-    else:
-        response_data["message"] = "عملیات ناشناخته است."
-        status_code = 400
-
-    return jsonify(response_data), status_code
-
-
-@client_blueprint.route("/ResendPasswordCode", methods=["POST"])
-@limiter.limit("5 per 15 minutes")
-def resend_password_code():
-    "Handle resending password reset codes."
-    request_data = request.get_json() or {}
-    identifier = request_data.get("identifier")
-    identifier_type = request_data.get("identifier_type")
-
-    if not identifier or not identifier_type:
-        return jsonify({"success": False, "message": "اطلاعات ناقص است."}), 400
-
-    with database.get_db_session() as db:
-        reset_record = (
-            db.query(models.PasswordReset)
-            .filter(models.PasswordReset.identifier == identifier)
-            .first()
-        )
-
-        if reset_record and reset_record.timestamp is not None:
-            if (
-                datetime.datetime.now(datetime.timezone.utc) - reset_record.timestamp
-            ).total_seconds() < 180:
-                return (
-                    jsonify({"success": False, "message": "لطفا ۳ دقیقه صبر کنید."}),
-                    429,
-                )
-
-        client = database.get_client_by(db, identifier_type, identifier)
-        if not client:
-            return jsonify({"success": False, "message": "کاربر یافت نشد."}), 404
-
-        new_code = "".join(random.choices(string.digits, k=6))
-
-        if reset_record:
-            reset_record.code = new_code
-            reset_record.timestamp = datetime.datetime.now(datetime.timezone.utc)
-        else:
-            new_reset_record = models.PasswordReset(
-                identifier=identifier,
-                identifier_type=identifier_type,
-                code=new_code,
-                timestamp=datetime.datetime.now(datetime.timezone.utc),
-            )
-            db.add(new_reset_record)
-
-        db.commit()
-
-        if identifier_type == "Email":
-            subject = "بازیابی رمز عبور آیروکاپ"
-            body = f"کد بازیابی رمز عبور شما در آیروکاپ: {new_code}"
-            Thread(
-                target=utils.send_async_email,
-                args=(
-                    current_app._get_current_object(),
-                    client.client_id,
-                    subject,
-                    body,
-                    config.mail_configuration,
-                ),
-            ).start()
-        elif identifier_type == "phone_number":
-            Thread(
-                target=utils.send_templated_sms_async,
-                args=(
-                    current_app._get_current_object(),
-                    client.client_id,
-                    config.melli_payamak["template_id_password_reset"],
-                    new_code,
-                    config.melli_payamak,
-                ),
-            ).start()
-
-    return jsonify({"success": True, "message": "کد جدید ارسال شد."})
-
-
-@client_blueprint.route("/ResendVerificationCode", methods=["POST"])
-@limiter.limit("5 per 15 minutes")
-def resend_verification_code():
-    "Handle resending verification codes"
-    request_data = request.get_json() or {}
-    client_id = request_data.get("client_id")
-
-    if not client_id:
-        return jsonify({"success": False, "message": "خطای کلاینت."}), 400
-
-    with database.get_db_session() as db:
-        client = (
-            db.query(models.Client).filter(models.Client.client_id == client_id).first()
-        )
-        if not client:
-            return jsonify({"success": False, "message": "کاربر یافت نشد."}), 404
-        if client.verification_code_timestamp is not None:
-            if (
-                datetime.datetime.now(datetime.timezone.utc)
-                - client.verification_code_timestamp
-            ).total_seconds() < 180:
-                return (
-                    jsonify({"success": False, "message": "لطفا ۳ دقیقه صبر کنید."}),
-                    429,
-                )
-
-        new_code = "".join(random.choices(string.digits, k=6))
-        client.phone_verification_code = new_code
-        client.verification_code_timestamp = datetime.datetime.now(
-            datetime.timezone.utc
-        )
-        db.commit()
-
-    Thread(
-        target=utils.send_templated_sms_async,
-        args=(
-            current_app._get_current_object(),
-            client_id,
-            config.melli_payamak["template_id_verification"],
-            new_code,
-            config.melli_payamak,
-        ),
-    ).start()
-
-    return jsonify({"success": True, "message": "کد جدید ارسال شد."})
-
-
 def _calculate_payment_details(db, team):
     """Calculates payment details for a team based on its status and members."""
     is_new_member_payment = database.check_if_team_is_paid(db, team.team_id)
@@ -1910,13 +1788,13 @@ def _calculate_payment_details(db, team):
             total_cost += league_two_cost
 
     context = {
-        "IsNewMemberPayment": is_new_member_payment,
-        "membersToPayFor": members_to_pay_for,
-        "TotalFee": total_cost,
-        "Nummembers": num_members,
-        "LeagueOneCost": league_one_cost,
-        "LeagueTwoCost": league_two_cost,
-        "DiscountAmount": discount_amount,
+        "is_new_member_payment": is_new_member_payment,
+        "members_to_pay_for": members_to_pay_for,
+        "total_fee": total_cost,
+        "num_members": num_members,
+        "league_one_cost": league_one_cost,
+        "league_two_cost": league_two_cost,
+        "discount_amount": discount_amount,
     }
     return context, None, None, False
 
@@ -1932,11 +1810,11 @@ def _process_payment_submission(db, team, receipt_file, total_cost, members_to_p
     new_payment = models.Payment(
         team_id=team.team_id,
         client_id=session["client_id"],
-        Amount=total_cost,
-        membersPaidFor=members_to_pay_for,
-        ReceiptFilename=secure_name,
-        UploadDate=datetime.datetime.now(datetime.timezone.utc),
-        Status=models.PaymentStatus.PENDING,
+        amount=total_cost,
+        members_paid_for=members_to_pay_for,
+        receipt_filename=secure_name,
+        upload_date=datetime.datetime.now(datetime.timezone.utc),
+        status=models.PaymentStatus.PENDING,
     )
     db.add(new_payment)
 
