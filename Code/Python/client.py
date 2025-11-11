@@ -1079,7 +1079,7 @@ def dashboard():
             .all()
         )
 
-        team_ids = [Team.team_id for Team in teams]
+        team_ids = [team.team_id for team in teams]
         payment_statuses = {}
 
         if team_ids:
@@ -1107,7 +1107,7 @@ def dashboard():
             setattr(team, "last_payment_status", payment_statuses.get(team.team_id))
 
     return render_template(
-        constants.client_html_names_data["Dashboard"],
+        constants.client_html_names_data["dashboard"],
         teams=teams,
         payment_info=config.payment_config["fee_per_person"],
     )
@@ -1585,8 +1585,8 @@ def select_league(team_id):
 
         if request.method == "POST":
             csrf_protector.protect()
-            league_one_id = request.form.get("LeagueOne")
-            league_two_id = request.form.get("LeagueTwo")
+            league_one_id = request.form.get("league_one")
+            league_two_id = request.form.get("league_two")
 
             if not league_one_id:
                 flash("لطفاً لیگ اول (اجباری) را انتخاب کنید.", "error")
@@ -1597,15 +1597,15 @@ def select_league(team_id):
                 return redirect(url_for("client.select_league", team_id=team_id))
 
             team.league_one_id = int(league_one_id) if league_one_id else None
-
+            team.league_two_id = int(league_two_id) if league_two_id else None
             db.commit()
             flash("لیگ‌های تیم با موفقیت به‌روزرسانی شد.", "success")
             return redirect(url_for("client.dashboard"))
 
     return render_template(
-        constants.client_html_names_data["SelectLeague"],
-        Team=team,
-        Leagues=constants.leagues_list,
+        constants.client_html_names_data["select_league"],
+        team=team,
+        leagues=constants.leagues_list,
     )
 
 
