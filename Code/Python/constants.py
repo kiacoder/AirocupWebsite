@@ -1509,7 +1509,7 @@ client_html_names_data = {
     "reset_password": "client/reset_password.html",
     "select_league": "client/select_league.html",
     "sign_up": "client/sign_up.html",
-    "null": "client/null.html",
+    "resolve_issues": "client/resolve_issues.html",
     "support_chat": "client/support_chat.html",
     "update_team": "client/update_team.html",
     "verify": "client/verify.html",
