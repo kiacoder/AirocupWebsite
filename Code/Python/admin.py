@@ -54,13 +54,11 @@ def get_admin_personas():
 
 @admin_blueprint.route("/AdminLogin", methods=["GET", "POST"])
 def admin_login():
-    """Admin login page and authentication"""
+    """Admin login page and authentication."""
     if request.method == "POST":
-        csrf = getattr(current_app, "csrf_protector", None)
-        if csrf:
-            csrf.protect()
+        csrf_protector.protect()  # this needs fix
 
-        admin_pass = request.form.get("password") or request.form.get("password") or ""
+        admin_pass = request.form.get("password", "")
         if config.admin_password_hash and bcrypt.checkpw(
             admin_pass.encode("utf-8"),
             config.admin_password_hash.encode("utf-8"),
@@ -187,12 +185,9 @@ def admin_select_chat():
 @admin_blueprint.route("/Admin/UpdatePaymentStatus/<int:team_id>", methods=["POST"])
 @admin_action_required
 def admin_update_payment_status(team_id):
-    "Update the status of a payment for a specific team"
+    """Update the status of a payment for a specific team."""
     try:
-        new_status_str = (
-            request.form.get("NewStatus") or request.form.get("new_status") or ""
-        )
-        new_status_str = new_status_str.strip()
+        new_status_str = request.form.get("new_status", "").strip()
         if not new_status_str:
             raise ValueError
         new_status = getattr(models.PaymentStatus, new_status_str)
@@ -309,22 +304,13 @@ def admin_delete_member(team_id, member_id):
 @admin_blueprint.route("/Admin/ManageNews", methods=["GET", "POST"])
 @admin_required
 def admin_manage_news():
-    "Manage news articles: create, list, and edit"
+    """Manage news articles: create, list, and edit."""
     with database.get_db_session() as db:
         if request.method == "POST":
-            template_path = (
-                request.form.get("TemplatePath")
-                or request.form.get("template_path")
-                or ""
-            )
-            template_path = template_path.strip()
-            title_string = bleach.clean(
-                request.form.get("Title") or request.form.get("title") or ""
-            ).strip()
-            content_string = bleach.clean(
-                request.form.get("Content") or request.form.get("content") or ""
-            ).strip()
-            image_file = request.files.get("Image") or request.files.get("image")
+            template_path = request.form.get("template_path", "").strip()
+            title_string = bleach.clean(request.form.get("title", "")).strip()
+            content_string = bleach.clean(request.form.get("content", "")).strip()
+            image_file = request.files.get("image")
 
             if not title_string or not content_string:
                 flash("عنوان و محتوای خبر نمی‌توانند خالی باشند.", "error")
@@ -622,7 +608,7 @@ def admin_add_member(team_id):
 @admin_blueprint.route("/Admin/EditTeam/<int:team_id>", methods=["GET", "POST"])
 @admin_required
 def admin_edit_team(team_id):
-    "Edit a team's details"
+    """Edit a team's details."""
     with database.get_db_session() as db:
         team = db.query(models.Team).filter(models.Team.team_id == team_id).first()
         if not team:
@@ -631,12 +617,8 @@ def admin_edit_team(team_id):
         if request.method == "POST":
             try:
                 new_team_name = bleach.clean(request.form.get("team_name", "").strip())
-                league_one_id = request.form.get("LeagueOneID") or request.form.get(
-                    "league_one_id"
-                )
-                league_two_id = request.form.get("LeagueTwoID") or request.form.get(
-                    "league_two_id"
-                )
+                league_one_id = request.form.get("league_one_id")
+                league_two_id = request.form.get("league_two_id")
 
                 is_valid, error_message = utils.is_valid_team_name(new_team_name)
                 if not is_valid:
@@ -682,9 +664,9 @@ def admin_edit_team(team_id):
         form_context = utils.get_form_context()
 
     return render_template(
-        constants.admin_html_names_data["AdminEditTeam"],
-        Team=team,
-        Members=members,
+        constants.admin_html_names_data["admin_edit_team"],
+        team=team,
+        members=members,
         **form_context,
     )
 
@@ -694,7 +676,7 @@ def admin_edit_team(team_id):
 )
 @admin_required
 def admin_edit_member(team_id, member_id):
-    "Edit a team member's details"
+    """Edit a team member's details."""
     with database.get_db_session() as db:
         updated_member_data, error = utils.create_member_from_form_data(
             db, request.form
@@ -705,7 +687,7 @@ def admin_edit_member(team_id, member_id):
             if not updated_member_data:
                 return redirect(url_for("admin.admin_edit_team", team_id=team_id))
 
-            if updated_member_data["Role"] == models.MemberRole.LEADER:
+            if updated_member_data["role"] == models.MemberRole.LEADER:
                 if database.has_existing_leader(db, team_id, member_id):
                     flash("خطا: این تیم از قبل یک سرپرست دارد.", "error")
                     return redirect(url_for("admin.admin_edit_team", team_id=team_id))
@@ -716,11 +698,11 @@ def admin_edit_member(team_id, member_id):
                 .first()
             )
             if member_to_update:
-                member_to_update.name = updated_member_data["Name"]
-                member_to_update.birth_date = updated_member_data["BirthDate"]
-                member_to_update.national_id = updated_member_data["NationalID"]
-                member_to_update.role = updated_member_data["Role"]
-                member_to_update.city_id = updated_member_data["CityID"]
+                member_to_update.name = updated_member_data["name"]
+                member_to_update.birth_date = updated_member_data["birth_date"]
+                member_to_update.national_id = updated_member_data["national_id"]
+                member_to_update.role = updated_member_data["role"]
+                member_to_update.city_id = updated_member_data["city_id"]
 
                 db.commit()
                 utils.update_team_stats(db, team_id)
@@ -879,7 +861,7 @@ def admin_delete_client(client_id):
 @admin_blueprint.route("/AdminDashboard")
 @admin_required
 def admin_dashboard():
-    "Admin dashboard with statistics and pending payments"
+    """Admin dashboard with statistics and pending payments"""
     with database.get_db_session() as db:
         total_clients = (
             db.query(models.Client)
@@ -920,12 +902,12 @@ def admin_dashboard():
         )
 
         stats = {
-            "TotalClients": total_clients,
-            "TotalTeams": total_teams,
-            "ApprovedTeams": approved_teams,
-            "TotalMembers": total_members,
-            "TotalLeaders": total_leaders,
-            "TotalCoaches": total_coaches,
+            "total_clients": total_clients,
+            "total_teams": total_teams,
+            "approved_teams": approved_teams,
+            "total_members": total_members,
+            "total_leaders": total_leaders,
+            "total_coaches": total_coaches,
         }
 
         pending_payments = (
@@ -938,7 +920,7 @@ def admin_dashboard():
         )
 
     return render_template(
-        constants.admin_html_names_data["AdminDashboard"],
+        constants.admin_html_names_data["admin_dashboard"],
         stats=stats,
         pending_payments=pending_payments,
     )
