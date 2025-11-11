@@ -46,7 +46,7 @@ def get_admin_personas():
     personas = []
     for member in getattr(constants, "committee_members_data", []):
         if isinstance(member, dict):
-            personas.append(member.get("Name") or member.get("name"))
+            personas.append(member.get("name"))
     personas = [p for p in personas if p]
     personas.extend(["Website Dev", "Admin"])
     return personas
@@ -408,10 +408,8 @@ def admin_edit_news(article_id):
                             url_for("admin.admin_edit_news", article_id=article_id)
                         )
 
-                    # Use direct assignment
                     article.title = new_title
 
-                # Use snake_case key for the file
                 image_file = request.files.get("image")
                 if image_file and image_file.filename:
                     image_file.stream.seek(0)
@@ -430,7 +428,6 @@ def admin_edit_news(article_id):
                     )
 
                     old_image_path = None
-                    # Use direct access for the attribute
                     if article.image_path:
                         old_image_path = os.path.join(
                             current_app.config["UPLOAD_FOLDER_NEWS"],
@@ -447,7 +444,6 @@ def admin_edit_news(article_id):
                                 "failed to remove old news image %s", old_image_path
                             )
 
-                    # Use direct assignment
                     article.image_path = secure_name
 
                 db.commit()
@@ -510,9 +506,9 @@ def admin_manage_client(client_id):
             teams_with_status.append(team)
 
     return render_template(
-        constants.admin_html_names_data["AdminManageClient"],
-        Client=client,
-        Teams=teams_with_status,
+        constants.admin_html_names_data["admin_manage_client"],
+        client=client,
+        teams=teams_with_status,
     )
 
 
@@ -745,9 +741,9 @@ def admin_clients_list():
 @admin_required
 def admin_add_client():
     "Add a new client to the database"
-    email = (request.form.get("Email") or "").strip().lower()
-    phone = (request.form.get("PhoneNumber") or "").strip()
-    password = request.form.get("Password") or ""
+    email = (request.form.get("email") or "").strip().lower()
+    phone = (request.form.get("phone_number") or "").strip()
+    password = request.form.get("password") or ""
 
     if not all(
         [
