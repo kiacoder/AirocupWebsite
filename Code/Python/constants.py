@@ -3,8 +3,8 @@
 import os
 import datetime
 from typing import Dict, Optional, Tuple
-from better_profanity import profanity  # type: ignore
-
+from better_profanity import profanity
+import jdatetime 
 
 class Path:
     "Define All Paths Of Files"
@@ -1171,11 +1171,6 @@ class ForbiddenContent:
         "Checks if text contains any profane word"
         ForbiddenContent._initialize_filter()
         return profanity.contains_profanity(text)
-
-
-# Add this line to your imports at the top of constants.py
-import jdatetime 
-
 
 class Date:
     "Date-related constants and methods for the application"
