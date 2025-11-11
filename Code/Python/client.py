@@ -576,7 +576,7 @@ def get_receipt(client_id, filename):
 @client_blueprint.route("/CreateTeam", methods=["GET", "POST"])
 @auth.login_required
 def create_team():
-    "Render and handle the create team page"
+    """Render and handle the create team page"""
     with database.get_db_session() as db:
         teams_count = (
             db.query(models.Team)
@@ -592,15 +592,15 @@ def create_team():
 
         if request.method == "POST":
             csrf_protector.protect()
-            team_name = bleach.clean(request.form.get("TeamName", "").strip())
+            team_name = bleach.clean(request.form.get("team_name", "").strip())
             form_context = utils.get_form_context()
 
             is_valid, error_message = utils.is_valid_team_name(team_name)
             if not is_valid:
                 flash(error_message, "error")
                 return render_template(
-                    constants.client_html_names_data["CreateTeam"],
-                    FormData=request.form,
+                    constants.client_html_names_data["create_team"],
+                    form_data=request.form,
                     **form_context,
                 )
 
@@ -610,8 +610,8 @@ def create_team():
             if error:
                 flash(error, "error")
                 return render_template(
-                    constants.client_html_names_data["CreateTeam"],
-                    FormData=request.form,
+                    constants.client_html_names_data["create_team"],
+                    form_data=request.form,
                     **form_context,
                 )
 
@@ -620,8 +620,8 @@ def create_team():
                 reg_date = datetime.datetime.now(datetime.timezone.utc)
                 new_team = models.Team(
                     client_id=session["client_id"],
-                    TeamName=team_name,
-                    TeamRegistrationDate=reg_date,
+                    team_name=team_name,
+                    team_registration_date=reg_date,
                 )
                 db.add(new_team)
                 db.flush()
@@ -643,14 +643,14 @@ def create_team():
                     "error",
                 )
                 return render_template(
-                    constants.client_html_names_data["CreateTeam"],
-                    FormData=request.form,
+                    constants.client_html_names_data["create_team"],
+                    form_data=request.form,
                     **form_context,
                 )
 
     form_context = utils.get_form_context()
     return render_template(
-        constants.client_html_names_data["CreateTeam"], **form_context
+        constants.client_html_names_data["create_team"], **form_context
     )
 
 
@@ -765,7 +765,7 @@ def verify_code():
             else redirect(url_for("client.login_client"))
         )
     action = request.args.get("action")
-    context = {"action": action, "Cooldown": 0}
+    context = {"action": action, "cooldown": 0}
     redirect_to_login = False
 
     if action == "phone_signup":
@@ -786,7 +786,7 @@ def verify_code():
                         - client.verification_code_timestamp
                     ).total_seconds()
                     if seconds_passed < 180:
-                        context["Cooldown"] = 180 - int(seconds_passed)
+                        context["cooldown"] = 180 - int(seconds_passed)
             context["client_id"] = client_id
 
     elif action == "password_reset":
@@ -811,7 +811,7 @@ def verify_code():
                         - reset_record.timestamp
                     ).total_seconds()
                     if seconds_passed < 180:
-                        context["Cooldown"] = 180 - int(seconds_passed)
+                        context["cooldown"] = 180 - int(seconds_passed)
             context["identifier"] = identifier
             context["identifier_type"] = identifier_type
 
@@ -821,18 +821,18 @@ def verify_code():
 
     if redirect_to_login:
         return redirect(url_for("client.login_client"))
-    return render_template(constants.client_html_names_data["Verify"], **context)
+    return render_template(constants.client_html_names_data["verify"], **context)
 
 
 @client_blueprint.route("/ForgotPassword", methods=["GET", "POST"])
 @limiter.limit("5 per 15 minutes")
 def forgot_password():
-    "Render and handle the forgot password page"
+    """Render and handle the forgot password page"""
     if request.method == "POST":
         csrf_protector.protect()
         identifier = fa_to_en(request.form.get("identifier", "").strip())
         identifier_type = (
-            "Email"
+            "email"
             if utils.is_valid_email(identifier)
             else "phone_number" if utils.is_valid_iranian_phone(identifier) else None
         )
@@ -907,7 +907,7 @@ def forgot_password():
                 )
             )
 
-    return render_template(constants.client_html_names_data["ForgotPassword"])
+    return render_template(constants.client_html_names_data["forgot_password"])
 
 
 @client_blueprint.route("/ResetPassword", methods=["GET", "POST"])
