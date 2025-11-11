@@ -56,8 +56,6 @@ def get_admin_personas():
 def admin_login():
     """Admin login page and authentication."""
     if request.method == "POST":
-        csrf_protector.protect()  # this needs fix
-
         admin_pass = request.form.get("password", "")
         if config.admin_password_hash and bcrypt.checkpw(
             admin_pass.encode("utf-8"),
@@ -178,7 +176,7 @@ def admin_select_chat():
 
     return render_template(
         constants.admin_html_names_data["admin_select_chat"],
-        Clients=clients_query.all(),
+        clients=clients_query.all(),
     )
 
 
@@ -455,7 +453,7 @@ def admin_edit_news(article_id):
                 return redirect(url_for("admin.admin_edit_news", article_id=article_id))
 
         return render_template(
-            constants.admin_html_names_data["admin_edit_news"], Article=article
+            constants.admin_html_names_data["admin_edit_news"], article=article
         )
 
 
@@ -545,12 +543,12 @@ def admin_manage_teams():
         )
 
     return render_template(
-        constants.admin_html_names_data["AdminManageTeams"], Teams=all_teams
+        constants.admin_html_names_data["admin_manage_teams"], teams=all_teams
     )
 
 
 @admin_blueprint.route("/Admin/Team/<int:team_id>/AddMember", methods=["GET", "POST"])
-@admin_required
+@admin_action_required
 def admin_add_member(team_id):
     "Add a new member to a specific team"
     with database.get_db_session() as db:
@@ -559,10 +557,6 @@ def admin_add_member(team_id):
             abort(404)
 
         if request.method == "POST":
-            csrf = getattr(current_app, "csrf_protector", None)
-            if csrf:
-                csrf.protect()
-
             try:
                 success, message = utils.internal_add_member(db, team_id, request.form)
                 if success:
@@ -591,13 +585,13 @@ def admin_add_member(team_id):
             except exc.SQLAlchemyError as error:
                 db.rollback()
                 current_app.logger.error(
-                    "error in AdminAddMember for Team %s: %s", team_id, error
+                    "error in admin_add_member for Team %s: %s", team_id, error
                 )
                 flash("خطایی در هنگام افزودن عضو رخ داد.", "error")
 
     form_context = utils.get_form_context()
     return render_template(
-        constants.admin_html_names_data["AdminAddMember"], Team=team, **form_context
+        constants.admin_html_names_data["admin_add_member"], team=team, **form_context
     )
 
 
@@ -731,9 +725,9 @@ def admin_clients_list():
         ) or 0
 
     return render_template(
-        constants.admin_html_names_data["AdminClientsList"],
-        Clients=clients,
-        TotalPagesCount=math.ceil(total_active / per_page),
+        constants.admin_html_names_data["admin_clients_list"],
+        clients=clients,
+        total_pages_count=math.ceil(total_active / per_page),
     )
 
 
@@ -776,7 +770,7 @@ def admin_add_client():
                         password.encode("utf-8"), bcrypt.gensalt()
                     ).decode("utf-8"),
                     registration_date=datetime.datetime.now(datetime.timezone.utc),
-                    is_phone_verified=1,
+                    is_phone_verified=True,
                 )
             )
             db.commit()
