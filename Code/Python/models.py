@@ -73,7 +73,6 @@ class Client(Base):
     password: Mapped[str] = mapped_column(String(255), nullable=False)
     registration_date: Mapped[datetime.datetime] = mapped_column(
         DateTime,
-        # FIX: Changed datetime.UTC to datetime.timezone.utc for compatibility
         default=lambda: datetime.datetime.now(datetime.timezone.utc),
     )
     education_level: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
@@ -146,7 +145,6 @@ class Team(Base):
     )
     team_registration_date: Mapped[datetime.datetime] = mapped_column(
         DateTime,
-        # FIX: Changed datetime.UTC to datetime.timezone.utc for compatibility
         default=lambda: datetime.datetime.now(datetime.timezone.utc),
     )
     average_age: Mapped[int] = mapped_column(default=0)
@@ -280,7 +278,6 @@ class LoginAttempt(Base):
     __tablename__ = "login_attempts"
     attempt_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     identifier: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    # Increased string length for IPv6 compatibility
     ip_address: Mapped[str] = mapped_column(String(45), nullable=False)
     timestamp: Mapped[datetime.datetime] = mapped_column(
         DateTime, nullable=False, index=True
@@ -293,7 +290,6 @@ class News(Base):
 
     __tablename__ = "news"
     news_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    # Changed title to a max-length String
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     content: Mapped[str] = mapped_column(TEXT, nullable=False)
     image_path: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)

@@ -1,4 +1,3 @@
-# Code/Python/extensions.py
 from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter
 from flask_socketio import SocketIO

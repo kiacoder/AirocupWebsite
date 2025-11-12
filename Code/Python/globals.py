@@ -78,7 +78,7 @@ def news():
     "News page"
     with database.get_db_session() as db:
         articles = database.get_all_articles(db)
-    return render_template(constants.global_html_names_data["News"], Articles=articles)
+    return render_template(constants.global_html_names_data["News"], articles=articles)
 
 
 @global_blueprint.route("/News/<int:ArticleID>")
