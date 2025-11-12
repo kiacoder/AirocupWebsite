@@ -1,20 +1,22 @@
-{% extends "Global/Base.html" %}
-
-{% block Title %}لیگ‌ها | آیروکاپ{% endblock %}
-
+{% extends "global/base.html" %} {% block Title %}لیگ‌ها | آیروکاپ{% endblock %}
 {% block SEO_Description %}
-<meta name="description" content="آشنایی با ۱۴ لیگ جذاب و نوآورانه مسابقات ملی هوش مصنوعی و رباتیک آیروکاپ. لیگ‌های تخصصی برای دانش‌آموزان و دانشجویان." />
-{% endblock %}
-
-{% block Body %}
+<meta
+  name="description"
+  content="آشنایی با ۱۴ لیگ جذاب و نوآورانه مسابقات ملی هوش مصنوعی و رباتیک آیروکاپ. لیگ‌های تخصصی برای دانش‌آموزان و دانشجویان."
+/>
+{% endblock %} {% block Body %}
 <main class="AppContainer LeaguesPage">
   <div class="Container">
     <header class="PageHeader TextCenter">
       <h1 class="PageTitle">لیگ‌های مسابقات آیروکاپ</h1>
       <p class="PageSubtitle">
-        برای مشاهده جزئیات کامل، آئین‌نامه‌ها و قوانین هر لیگ، می‌توانید سند راهنمای جامع را از طریق دکمه زیر دانلود کنید.
+        برای مشاهده جزئیات کامل، آئین‌نامه‌ها و قوانین هر لیگ، می‌توانید سند
+        راهنمای جامع را از طریق دکمه زیر دانلود کنید.
       </p>
-      <a href="{{ url_for('Global.download_pdf') }}" class="Btn BtnPrimary BtnLarge">
+      <a
+        href="{{ url_for('Global.download_pdf') }}"
+        class="Btn BtnPrimary BtnLarge"
+      >
         <i class="fas fa-file-pdf" aria-hidden="true"></i>
         دانلود راهنمای کامل لیگ‌ها (PDF)
       </a>
@@ -23,35 +25,49 @@
     <div class="LeagueFilterContainer">
       <div class="InputGroup">
         <i class="fas fa-search InputIcon"></i>
-        <input type="search" id="leagueFilter" class="FormControl" placeholder="جستجو در نام یا توضیحات لیگ‌ها..." />
+        <input
+          type="search"
+          id="leagueFilter"
+          class="FormControl"
+          placeholder="جستجو در نام یا توضیحات لیگ‌ها..."
+        />
       </div>
     </div>
 
     <section class="AccordionContainer" aria-label="لیست لیگ‌های مسابقات">
-      {% for league in LeaguesList %}
+      {% for league in leagues_list %}
       <div class="Card AccordionItem">
         <div class="AccordionHeader">
           <button
             class="AccordionButton"
             aria-expanded="false"
-            aria-controls="league-panel-{{ league.ID }}"
-            id="league-header-{{ league.ID }}"
+            aria-controls="league-panel-{{ league.id }}"
+            id="league-header-{{ league.id }}"
           >
             <span class="AccordionTitle">
-              <i class="fas {{ league.Icon }}" aria-hidden="true"></i>
-              {{ league.Name }}
+              <i class="fas {{ league.icon }}" aria-hidden="true"></i>
+              {{ league.name }}
             </span>
             <i class="fas fa-chevron-down AccordionIcon" aria-hidden="true"></i>
           </button>
         </div>
-        <div id="league-panel-{{ league.ID }}" class="AccordionContent" role="region" aria-labelledby="league-header-{{ league.ID }}">
+        <div
+          id="league-panel-{{ league.id }}"
+          class="AccordionContent"
+          role="region"
+          aria-labelledby="league-header-{{ league.id }}"
+        >
           <div class="LeagueDetailsBody">
-            <p>{{ league.Description }}</p>
+            <p>{{ league.description }}</p>
           </div>
         </div>
       </div>
       {% endfor %}
-      <div id="noResultsMessage" class="Card EmptyStateCard" style="display: none">
+      <div
+        id="noResultsMessage"
+        class="Card EmptyStateCard"
+        style="display: none"
+      >
         <i class="fas fa-search EmptyStateIcon"></i>
         <h3>هیچ لیگی با عبارت جستجو شده مطابقت ندارد.</h3>
         <p>لطفاً عبارت دیگری را امتحان کنید.</p>
@@ -61,18 +77,17 @@
     <section class="CtaSection TextCenter">
       <h2>آماده رقابت هستید؟</h2>
       <p>
-        به بزرگترین رویداد هوش مصنوعی و رباتیک ایران بپیوندید و مهارت‌های خود را به نمایش بگذارید!
+        به بزرگترین رویداد هوش مصنوعی و رباتیک ایران بپیوندید و مهارت‌های خود را
+        به نمایش بگذارید!
       </p>
-      <a href="{{ url_for(''client.signup') }}" class="Btn BtnPrimary BtnLarge">
+      <a href="{{ url_for('client.signup') }}" class="Btn BtnPrimary BtnLarge">
         <i class="fas fa-rocket" aria-hidden="true"></i>
         همین حالا ثبت‌نام کنید
       </a>
     </section>
   </div>
 </main>
-{% endblock %}
-
-{% block Scripts %}
+{% endblock %} {% block Scripts %}
 <script>
   document.addEventListener("DOMContentLoaded", () => {
     const accordionContainer = document.querySelector(".AccordionContainer");
@@ -82,20 +97,28 @@
       const button = event.target.closest(".AccordionButton");
       if (!button) return;
 
-      const content = document.getElementById(button.getAttribute("aria-controls"));
+      const content = document.getElementById(
+        button.getAttribute("aria-controls")
+      );
       const isExpanded = button.getAttribute("aria-expanded") === "true";
 
-      accordionContainer.querySelectorAll(".AccordionButton").forEach((otherButton) => {
-        if (otherButton !== button) {
-          otherButton.setAttribute("aria-expanded", "false");
-          const otherContent = document.getElementById(otherButton.getAttribute("aria-controls"));
-          if (otherContent) otherContent.style.maxHeight = null;
-        }
-      });
+      accordionContainer
+        .querySelectorAll(".AccordionButton")
+        .forEach((otherButton) => {
+          if (otherButton !== button) {
+            otherButton.setAttribute("aria-expanded", "false");
+            const otherContent = document.getElementById(
+              otherButton.getAttribute("aria-controls")
+            );
+            if (otherContent) otherContent.style.maxHeight = null;
+          }
+        });
 
       button.setAttribute("aria-expanded", String(!isExpanded));
       if (content) {
-        content.style.maxHeight = isExpanded ? null : content.scrollHeight + "px";
+        content.style.maxHeight = isExpanded
+          ? null
+          : content.scrollHeight + "px";
       }
     });
 
@@ -103,10 +126,16 @@
       if (window.location.hash) {
         const targetId = window.location.hash.substring(1);
         const buttonToOpen = document.getElementById(targetId);
-        if (buttonToOpen && buttonToOpen.classList.contains("AccordionButton")) {
+        if (
+          buttonToOpen &&
+          buttonToOpen.classList.contains("AccordionButton")
+        ) {
           buttonToOpen.click();
           setTimeout(() => {
-            buttonToOpen.scrollIntoView({ behavior: "smooth", block: "center" });
+            buttonToOpen.scrollIntoView({
+              behavior: "smooth",
+              block: "center",
+            });
           }, 300);
         }
       }
@@ -116,7 +145,9 @@
 
     const filterInput = document.getElementById("leagueFilter");
     const noResultsMessage = document.getElementById("noResultsMessage");
-    const allItems = Array.from(accordionContainer.querySelectorAll(".AccordionItem"));
+    const allItems = Array.from(
+      accordionContainer.querySelectorAll(".AccordionItem")
+    );
 
     if (filterInput) {
       filterInput.addEventListener("input", (event) => {

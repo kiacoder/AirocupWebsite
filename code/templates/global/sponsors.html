@@ -1,17 +1,16 @@
-{% extends "Global/Base.html" %}
-
-{% block Title %}حامیان رسمی | آیروکاپ{% endblock %}
-
-{% block SEO_Description %}
-<meta name="description" content="با حامیان رسمی آیروکاپ آشنا شوید. موفقیت این رویداد ملی مدیون حمایت و مشارکت سازمان‌های پیشرو در صنعت فناوری ایران است." />
-{% endblock %}
-
-{% block Body %}
+{% extends "global/base.html" %} {% block Title %}حامیان رسمی | آیروکاپ{%
+endblock %} {% block SEO_Description %}
+<meta
+  name="description"
+  content="با حامیان رسمی آیروکاپ آشنا شوید. موفقیت این رویداد ملی مدیون حمایت و مشارکت سازمان‌های پیشرو در صنعت فناوری ایران است."
+/>
+{% endblock %} {% block Body %}
 <main class="AppContainer SponsorsPage">
   <header class="PageHeader TextCenter">
     <h1 class="PageTitle">حامیان رسمی آیروکاپ</h1>
     <p class="PageSubtitle">
-      موفقیت آیروکاپ بدون حمایت و مشارکت حامیان ارزشمند ما ممکن نبود. ما عمیقاً از اعتماد و سرمایه‌گذاری آن‌ها در نسل آینده نوآوران ایران سپاسگزاریم.
+      موفقیت آیروکاپ بدون حمایت و مشارکت حامیان ارزشمند ما ممکن نبود. ما عمیقاً
+      از اعتماد و سرمایه‌گذاری آن‌ها در نسل آینده نوآوران ایران سپاسگزاریم.
     </p>
   </header>
 
@@ -19,25 +18,27 @@
     <div class="Container">
       <h2 id="sponsors-list-title" class="VisuallyHidden">لیست حامیان</h2>
       <div class="SponsorsGrid">
-        {% if HomepageSponsors %}
-          {% for sponsor in HomepageSponsors %}
-            <div class="SponsorBox" title="{{ sponsor.alt_text }}">
-              <img
-                src="{{ url_for('static', filename=Path.SponsorsLogos[sponsor.logo_key]) }}"
-                alt="{{ sponsor.alt_text }}"
-                loading="lazy"
-                width="150"
-                height="150"
-              />
-            </div>
-          {% endfor %}
-        {% else %}
-          <div class="Card EmptyStateCard">
-            <p>لیست حامیان به زودی اعلام خواهد شد.</p>
-          </div>
+        {% if homepage_sponsors %} {% for sponsor in homepage_sponsors %}
+        <div class="SponsorBox" title="{{ sponsor.alt_text }}">
+          <img
+            src="{{ url_for('static', filename=path.sponsors_logos[sponsor.logo_key]) }}"
+            alt="{{ sponsor.alt_text }}"
+            loading="lazy"
+            width="150"
+            height="150"
+          />
+        </div>
+        {% endfor %} {% else %}
+        <div class="Card EmptyStateCard">
+          <p>لیست حامیان به زودی اعلام خواهد شد.</p>
+        </div>
         {% endif %}
 
-        <a href="{{ url_for('Global.Cooperate') }}" class="SponsorBox BecomeSponsorBox" title="حامی ما شوید">
+        <a
+          href="{{ url_for('Global.cooperate') }}"
+          class="SponsorBox BecomeSponsorBox"
+          title="حامی ما شوید"
+        >
           <div class="SponsorPlusIcon">
             <i class="fas fa-plus" aria-hidden="true"></i>
           </div>
@@ -47,14 +48,21 @@
     </div>
   </section>
 
-  <section class="SponsorshipBenefits Section--Light" aria-labelledby="benefits-title">
+  <section
+    class="SponsorshipBenefits Section--Light"
+    aria-labelledby="benefits-title"
+  >
     <div class="Container">
-      <h2 id="benefits-title" class="SectionTitle">چرا از آیروکاپ حمایت کنیم؟</h2>
+      <h2 id="benefits-title" class="SectionTitle">
+        چرا از آیروکاپ حمایت کنیم؟
+      </h2>
       <div class="BenefitsGrid">
         <div class="BenefitsText">
           <h3>سرمایه‌گذاری بر روی آینده‌سازان ایران</h3>
           <p>
-            حمایت از آیروکاپ فرصتی بی‌نظیر برای ارتباط مستقیم با هزاران نخبه، دانشجو و علاقه‌مند به فناوری است. حامیان ما نقشی کلیدی در یکی از مهم‌ترین رویدادهای علمی کشور ایفا می‌کنند.
+            حمایت از آیروکاپ فرصتی بی‌نظیر برای ارتباط مستقیم با هزاران نخبه،
+            دانشجو و علاقه‌مند به فناوری است. حامیان ما نقشی کلیدی در یکی از
+            مهم‌ترین رویدادهای علمی کشور ایفا می‌کنند.
           </p>
           <ul class="BenefitsList">
             <li>
@@ -81,7 +89,11 @@
           </ul>
         </div>
         <div class="BenefitsImage">
-          <img src="{{ url_for('static', filename='Images/collaboration.svg') }}" alt="تصویر مفهومی همکاری و حمایت" loading="lazy" />
+          <img
+            src="{{ url_for('static', filename='images/collaboration.svg') }}"
+            alt="تصویر مفهومی همکاری و حمایت"
+            loading="lazy"
+          />
         </div>
       </div>
     </div>
@@ -91,9 +103,10 @@
     <div class="Container">
       <h2>به خانواده حامیان آیروکاپ بپیوندید</h2>
       <p>
-        برای کسب اطلاعات بیشتر در مورد فرصت‌های حمایتی و دریافت پکیج اسپانسرشیپ، لطفاً با ما در تماس باشید.
+        برای کسب اطلاعات بیشتر در مورد فرصت‌های حمایتی و دریافت پکیج اسپانسرشیپ،
+        لطفاً با ما در تماس باشید.
       </p>
-      <a href="{{ url_for('Global.Contact') }}" class="Btn BtnPrimary BtnLarge">
+      <a href="{{ url_for('Global.contact') }}" class="Btn BtnPrimary BtnLarge">
         <i class="fas fa-envelope" aria-hidden="true"></i>
         اطلاعات تماس و همکاری
       </a>

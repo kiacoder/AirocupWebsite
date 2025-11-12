@@ -1,17 +1,17 @@
-{% extends "Global/Base.html" %}
-
-{% block Title %}همکاری با ما | آیروکاپ{% endblock %}
-
-{% block SEO_Description %}
-<meta name="description" content="با آیروکاپ همکاری کنید. فرصت‌های اسپانسرشیپ، تعریف چالش‌های صنعتی و مشارکت در بزرگترین رویداد ملی هوش مصنوعی و رباتیک ایران." />
-{% endblock %}
-
-{% block Body %}
+{% extends "Global/Base.html" %} {% block Title %}همکاری با ما | آیروکاپ{%
+endblock %} {% block SEO_Description %}
+<meta
+  name="description"
+  content="با آیروکاپ همکاری کنید. فرصت‌های اسپانسرشیپ، تعریف چالش‌های صنعتی و مشارکت در بزرگترین رویداد ملی هوش مصنوعی و رباتیک ایران."
+/>
+{% endblock %} {% block Body %}
 <main class="AppContainer CooperatePage">
   <header class="PageHeader TextCenter">
     <h1 class="PageTitle">آینده را با ما بسازید</h1>
     <p class="PageSubtitle">
-      در آیروکاپ، ما معتقدیم بزرگترین دستاوردها از همکاری‌های بزرگ حاصل می‌شوند. ما به دنبال افراد، شرکت‌ها و سازمان‌های پیشرو هستیم تا با اشتیاق و تخصص خود، به ما در شکل‌دهی آینده هوش مصنوعی و رباتیک در ایران کمک کنند.
+      در آیروکاپ، ما معتقدیم بزرگترین دستاوردها از همکاری‌های بزرگ حاصل می‌شوند.
+      ما به دنبال افراد، شرکت‌ها و سازمان‌های پیشرو هستیم تا با اشتیاق و تخصص
+      خود، به ما در شکل‌دهی آینده هوش مصنوعی و رباتیک در ایران کمک کنند.
     </p>
   </header>
 
@@ -19,27 +19,27 @@
     <section class="CooperateGrid" aria-labelledby="cooperation-title">
       <h2 id="cooperation-title" class="VisuallyHidden">فرصت‌های همکاری</h2>
 
-      {% if CooperationOpportunitiesData %}
-        {% for item in CooperationOpportunitiesData %}
-        <div class="Card CooperateCard">
-          <div class="CooperateIcon">
-            <i class="fas {{ item.icon }}" aria-hidden="true"></i>
-          </div>
-          <h3>{{ item.title }}</h3>
-          <p>{{ item.description }}</p>
+      {% if cooperation_opportunities %} {% for item in
+      cooperation_opportunities %}
+      <div class="Card CooperateCard">
+        <div class="CooperateIcon">
+          <i class="fas {{ item.icon }}" aria-hidden="true"></i>
         </div>
-        {% endfor %}
-      {% else %}
-        <div class="Card EmptyStateCard">
-          <p>فرصت‌های همکاری به زودی در این بخش اعلام خواهد شد.</p>
-        </div>
+        <h3>{{ item.title }}</h3>
+        <p>{{ item.description }}</p>
+      </div>
+      {% endfor %} {% else %}
+      <div class="Card EmptyStateCard">
+        <p>فرصت‌های همکاری به زودی در این بخش اعلام خواهد شد.</p>
+      </div>
       {% endif %}
     </section>
 
     <section class="CtaSection TextCenter">
       <h2>آماده همکاری هستید؟</h2>
       <p>
-        ما مشتاقانه منتظر شنیدن ایده‌ها و پیشنهادات شما هستیم. برای شروع یک گفتگوی سازنده، لطفاً با ما در تماس باشید.
+        ما مشتاقانه منتظر شنیدن ایده‌ها و پیشنهادات شما هستیم. برای شروع یک
+        گفتگوی سازنده، لطفاً با ما در تماس باشید.
       </p>
       <a href="{{ url_for('Global.contact') }}" class="Btn BtnPrimary BtnLarge">
         <i class="fas fa-envelope" aria-hidden="true"></i>

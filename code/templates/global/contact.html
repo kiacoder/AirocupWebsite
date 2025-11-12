@@ -1,33 +1,46 @@
-{% extends "Global/Base.html" %}
-
-{% block Title %}تماس با ما | آیروکاپ{% endblock %}
-
-{% block SEO_Description %}
-<meta name="description" content="راه های ارتباطی با تیم برگزاری آیروکاپ. آدرس، نقشه محل برگزاری و اطلاعات تماس برای پاسخگویی به سوالات و پیشنهادات شما." />
-{% endblock %}
-
-{% block Body %}
+{% extends "Global/Base.html" %} {% block Title %}تماس با ما | آیروکاپ{%
+endblock %} {% block SEO_Description %}
+<meta
+  name="description"
+  content="راه های ارتباطی با تیم برگزاری آیروکاپ. آدرس، نقشه محل برگزاری و اطلاعات تماس برای پاسخگویی به سوالات و پیشنهادات شما."
+/>
+{% endblock %} {% block Body %}
 <main class="AppContainer ContactPage">
   <div class="Container">
     <header class="PageHeader TextCenter">
       <h1 class="PageTitle">با ما در ارتباط باشید</h1>
       <p class="PageSubtitle">
-        تیم پشتیبانی آیروکاپ آماده پاسخگویی به سوالات، پیشنهادات و درخواست‌های همکاری شماست. لطفاً از طریق کانال‌های ارتباطی زیر با ما در تماس باشید.
+        تیم پشتیبانی آیروکاپ آماده پاسخگویی به سوالات، پیشنهادات و درخواست‌های
+        همکاری شماست. لطفاً از طریق کانال‌های ارتباطی زیر با ما در تماس باشید.
       </p>
     </header>
 
-    <section class="ContactGrid" itemscope itemtype="https://schema.org/Organization">
+    <section
+      class="ContactGrid"
+      itemscope
+      itemtype="https://schema.org/Organization"
+    >
       <meta itemprop="name" content="آیروکاپ" />
-      <meta itemprop="url" content="{{ url_for('Global.index', _external=True) }}" />
+      <meta
+        itemprop="url"
+        content="{{ url_for('Global.index', _external=True) }}"
+      />
 
       <div class="Card ContactDetailsCard">
         <h3>راه‌های ارتباطی</h3>
         <address>
-          {% for point in ContactPointsData %}
+          {% for point in contact_points %}
           <a
             href="{{ point.href }}"
             class="ContactLink"
-            {% if point.target %}target="_blank" rel="noopener noreferrer"{% endif %}
+            {%
+            if
+            point.target
+            %}target="_blank"
+            rel="noopener noreferrer"
+            {%
+            endif
+            %}
             itemprop="contactPoint"
             itemscope
             itemtype="https://schema.org/ContactPoint"
@@ -42,33 +55,41 @@
         </address>
       </div>
 
-      <div class="Card LocationCard" itemprop="address" itemscope itemtype="https://schema.org/PostalAddress">
+      <div
+        class="Card LocationCard"
+        itemprop="address"
+        itemscope
+        itemtype="https://schema.org/PostalAddress"
+      >
         <h3 itemprop="name">محل برگزاری رویداد</h3>
         <p class="LocationAddress">
           <i class="fas fa-map-marker-alt" aria-hidden="true"></i>
-          <span itemprop="streetAddress">{{ Location.Address }}</span>
+          <span itemprop="streetAddress">{{ event_details.address }}</span>
         </p>
         <div class="MapContainer">
           <iframe
-            src="{{ Location.GoogleMapURL }}"
+            src="{{ event_details.google_map_url }}"
             height="450"
             allowfullscreen=""
             loading="lazy"
             referrerpolicy="no-referrer-when-downgrade"
-            title="نقشه گوگل نمایش‌دهنده محل برگزاری آیروکاپ در {{ Location.Address }}"
+            title="نقشه گوگل نمایش‌دهنده محل برگزاری آیروکاپ در {{ event_details.address }}"
           >
           </iframe>
         </div>
       </div>
     </section>
 
-    {% if session.get('ClientID') %}
+    {% if session.get('client_id') %}
     <section class="CtaSection TextCenter">
       <h2>نیاز به پشتیبانی فوری دارید؟</h2>
       <p>
         برای سوالات مربوط به حساب کاربری یا تیم خود، مستقیماً با ما گفتگو کنید.
       </p>
-      <a href="{{ url_for('Client.SupportChat') }}" class="Btn BtnPrimary BtnLarge">
+      <a
+        href="{{ url_for('client.support_chat') }}"
+        class="Btn BtnPrimary BtnLarge"
+      >
         <i class="fas fa-headset" aria-hidden="true"></i>
         مراجعه به چت پشتیبانی
       </a>

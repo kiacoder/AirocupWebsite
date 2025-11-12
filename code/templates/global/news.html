@@ -1,4 +1,4 @@
-{% extends "Global/Base.html" %}
+{% extends "global/base.html" %}
 
 {% block Title %}اخبار و اطلاعیه‌ها | آیروکاپ{% endblock %}
 
@@ -16,16 +16,16 @@
       </p>
     </header>
 
-    {% if Articles %}
+    {% if articles %}
     <div class="NewsGrid">
-      {% for article in Articles %}
+      {% for article in articles %}
       <div class="Card CardNews {% if loop.first %}CardNews--Featured{% endif %}">
-        <a href="{{ url_for('Global.ViewArticle', ArticleID=article.NewsID) }}" class="CardNews__Link" aria-label="ادامه مطلب درباره {{ article.Title }}">
-          {% if article.ImagePath %}
+        <a href="{{ url_for('Global.view_article', article_id=article.news_id) }}" class="CardNews__Link" aria-label="ادامه مطلب درباره {{ article.title }}">
+          {% if article.image_path %}
           <div class="CardNews__ImageWrapper">
             <img
-              src="{{ url_for('Global.UploadedNewsImage', filename=article.ImagePath) }}"
-              alt="تصویر خبر: {{ article.Title }}"
+              src="{{ url_for('Global.uploaded_news_image', filename=article.image_path) }}"
+              alt="تصویر خبر: {{ article.title }}"
               loading="lazy"
               width="400"
               height="225"
@@ -33,15 +33,15 @@
           </div>
           {% endif %}
           <div class="CardNews__ContentWrapper">
-            <h2 class="CardNews__Title">{{ article.Title }}</h2>
+            <h2 class="CardNews__Title">{{ article.title }}</h2>
             <div class="CardNews__Meta">
               <span>
                 <i class="fas fa-calendar-alt" aria-hidden="true"></i>
-                {{ article.PublishDate | formatdate }}
+                {{ article.publish_date | formatdate }}
               </span>
             </div>
             <p class="CardNews__Excerpt">
-              {{ article.Content | striptags | truncate(150) }}
+              {{ article.content | striptags | truncate(150) }}
             </p>
             <span class="ReadMoreLink">
               ادامه مطلب

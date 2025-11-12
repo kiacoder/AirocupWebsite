@@ -1,49 +1,58 @@
-{% extends "Global/Base.html" %}
-
-{% block Title %}کمیته فنی | آیروکاپ{% endblock %}
-
-{% block SEO_Description %}
-<meta name="description" content="آشنایی با کمیته فنی آیروکاپ. تیمی از متخصصان ارشد که مسئولیت طراحی چالش‌ها و نظارت بر فرآیندهای داوری مسابقات را بر عهده دارند." />
-{% endblock %}
-
-{% block Body %}
+{% extends "global/base.html" %} {% block Title %}کمیته فنی | آیروکاپ{% endblock
+%} {% block SEO_Description %}
+<meta
+  name="description"
+  content="آشنایی با کمیته فنی آیروکاپ. تیمی از متخصصان ارشد که مسئولیت طراحی چالش‌ها و نظارت بر فرآیندهای داوری مسابقات را بر عهده دارند."
+/>
+{% endblock %} {% block Body %}
 <main class="AppContainer CommitteePage">
   <div class="Container">
     <header class="PageHeader TextCenter">
       <h1 class="PageTitle">کمیته فنی و هماهنگی</h1>
       <p class="PageSubtitle">
-        اعضای کمیته فنی آیروکاپ، متشکل از متخصصان ارشد و اساتید برجسته، مسئولیت تضمین بالاترین استانداردهای علمی و فنی مسابقات را بر عهده دارند. این تیم بر طراحی چالش‌ها، تدوین مقررات داوری و نظارت بر فرآیند ارزیابی نتایج نظارت می‌کند تا بستری شفاف و عادلانه برای رقابت استعدادها فراهم آورد.
+        اعضای کمیته فنی آیروکاپ، متشکل از متخصصان ارشد و اساتید برجسته، مسئولیت
+        تضمین بالاترین استانداردهای علمی و فنی مسابقات را بر عهده دارند. این تیم
+        بر طراحی چالش‌ها، تدوین مقررات داوری و نظارت بر فرآیند ارزیابی نتایج
+        نظارت می‌کند تا بستری شفاف و عادلانه برای رقابت استعدادها فراهم آورد.
       </p>
     </header>
 
-    <section class="CommitteeGrid" aria-labelledby="technical-committee-members-title">
-      <h2 id="technical-committee-members-title" class="VisuallyHidden">اعضای کمیته فنی</h2>
-      
-      {% if TechnicalCommitteeMembersData %}
-        {% for member in TechnicalCommitteeMembersData %}
-        <div class="Card CommitteeMember" itemscope itemtype="https://schema.org/Person">
-          <div class="CommitteePhoto">
-            <img
-              src="{{ url_for('static', filename=member.Image) }}"
-              alt="تصویر پرسنلی {{ member.Name }}"
-              loading="lazy"
-              itemprop="image"
-              onerror="this.onerror=null; this.src='{{ url_for('static', filename='Images/placeholder-avatar.png') }}';"
-            />
-          </div>
-          <div class="CommitteeInfo">
-            <h3 itemprop="name">{{ member.Name }}</h3>
-            <p class="CommitteeRole" itemprop="jobTitle">{{ member.Role }}</p>
-            <p class="CommitteeDescription" itemprop="description">
-              {{ member.Description }}
-            </p>
-          </div>
+    <section
+      class="CommitteeGrid"
+      aria-labelledby="technical-committee-members-title"
+    >
+      <h2 id="technical-committee-members-title" class="VisuallyHidden">
+        اعضای کمیته فنی
+      </h2>
+
+      {% if technical_committee_members %} {% for member in
+      technical_committee_members %}
+      <div
+        class="Card CommitteeMember"
+        itemscope
+        itemtype="https://schema.org/Person"
+      >
+        <div class="CommitteePhoto">
+          <img
+            src="{{ url_for('static', filename=member.image) }}"
+            alt="تصویر پرسنلی {{ member.name }}"
+            loading="lazy"
+            itemprop="image"
+            onerror="this.onerror=null; this.src='{{ url_for('static', filename='images/placeholder-avatar.png') }}';"
+          />
         </div>
-        {% endfor %}
-      {% else %}
-        <div class="Card EmptyStateCard">
-          <p>اطلاعات اعضای کمیته فنی به زودی در این بخش قرار خواهد گرفت.</p>
+        <div class="CommitteeInfo">
+          <h3 itemprop="name">{{ member.name }}</h3>
+          <p class="CommitteeRole" itemprop="jobTitle">{{ member.role }}</p>
+          <p class="CommitteeDescription" itemprop="description">
+            {{ member.description }}
+          </p>
         </div>
+      </div>
+      {% endfor %} {% else %}
+      <div class="Card EmptyStateCard">
+        <p>اطلاعات اعضای کمیته فنی به زودی در این بخش قرار خواهد گرفت.</p>
+      </div>
       {% endif %}
     </section>
 
@@ -51,6 +60,57 @@
       <a href="{{ url_for('Global.committee') }}" class="Btn BtnSecondary">
         <i class="fas fa-arrow-right" aria-hidden="true"></i>
         بازگشت به کمیته برگزاری
+      </a>
+    </section>
+  </div>
+</main>
+{% endblock %}``` --- ### 3. Corrected `cooperate.html` ```html {% extends
+"global/base.html" %} {% block Title %}همکاری با ما | آیروکاپ{% endblock %} {%
+block SEO_Description %}
+<meta
+  name="description"
+  content="با آیروکاپ همکاری کنید. فرصت‌های اسپانسرشیپ، تعریف چالش‌های صنعتی و مشارکت در بزرگترین رویداد ملی هوش مصنوعی و رباتیک ایران."
+/>
+{% endblock %} {% block Body %}
+<main class="AppContainer CooperatePage">
+  <header class="PageHeader TextCenter">
+    <h1 class="PageTitle">آینده را با ما بسازید</h1>
+    <p class="PageSubtitle">
+      در آیروکاپ، ما معتقدیم بزرگترین دستاوردها از همکاری‌های بزرگ حاصل می‌شوند.
+      ما به دنبال افراد، شرکت‌ها و سازمان‌های پیشرو هستیم تا با اشتیاق و تخصص
+      خود، به ما در شکل‌دهی آینده هوش مصنوعی و رباتیک در ایران کمک کنند.
+    </p>
+  </header>
+
+  <div class="Container">
+    <section class="CooperateGrid" aria-labelledby="cooperation-title">
+      <h2 id="cooperation-title" class="VisuallyHidden">فرصت‌های همکاری</h2>
+
+      {% if cooperation_opportunities %} {% for item in
+      cooperation_opportunities %}
+      <div class="Card CooperateCard">
+        <div class="CooperateIcon">
+          <i class="fas {{ item.icon }}" aria-hidden="true"></i>
+        </div>
+        <h3>{{ item.title }}</h3>
+        <p>{{ item.description }}</p>
+      </div>
+      {% endfor %} {% else %}
+      <div class="Card EmptyStateCard">
+        <p>فرصت‌های همکاری به زودی در این بخش اعلام خواهد شد.</p>
+      </div>
+      {% endif %}
+    </section>
+
+    <section class="CtaSection TextCenter">
+      <h2>آماده همکاری هستید؟</h2>
+      <p>
+        ما مشتاقانه منتظر شنیدن ایده‌ها و پیشنهادات شما هستیم. برای شروع یک
+        گفتگوی سازنده، لطفاً با ما در تماس باشید.
+      </p>
+      <a href="{{ url_for('Global.contact') }}" class="Btn BtnPrimary BtnLarge">
+        <i class="fas fa-envelope" aria-hidden="true"></i>
+        ارسال درخواست همکاری
       </a>
     </section>
   </div>
