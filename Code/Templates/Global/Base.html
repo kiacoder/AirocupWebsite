@@ -3,99 +3,91 @@
   <head>
     <link
       rel="manifest"
-      href="{{ url_for('static', filename=Path.URLs.Files.SiteWebManifest) }}"
+      href="{{ url_for('static', filename=path.site_web_manifest) }}"
     />
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    {% set _is_admin = is_admin if (is_admin is defined) else (request.blueprint
-    == 'admin' if request is defined else False) %}
+    {% set _is_admin = request.blueprint == 'admin' %}
     <meta
       name="robots"
-      content="{{ 'noindex, nofollow' if _is_admin else (robots if robots is defined else 'index, follow') }}"
+      content="{{ 'noindex, nofollow' if _is_admin else 'index, follow' }}"
     />
 
     <title>
-      {% block Title %} {% if _is_admin %} پنل مدیریت آیروکاپ {% else %} {{
-      page_title if page_title is defined else 'آیروکاپ' }} {% endif %} {%
-      endblock %}
+      {% block title %}{{ page_title if page_title is defined else 'صفحه اصلی'
+      }}{% endblock %} | آیروکاپ
     </title>
-    {% block HTMLTitle %}{% endblock %}{% if not _is_admin %}
 
+    {% if not _is_admin %}
     <meta
       name="description"
-      content="{{ seo_description if seo_description is defined else '...' }}"
+      content="{{ seo_description if seo_description is defined else 'آیروکاپ، بزرگترین رویداد ملی هوش مصنوعی و رباتیک ایران به میزبانی دانشگاه علم و صنعت. در لیگ‌های متنوع شرکت کنید، نوآوری کنید و آینده را بسازید.' }}"
     />
     <meta
       name="keywords"
-      content="{{ seo_keywords if seo_keywords is defined else 'آیروکاپ, مسابقات هوش مصنوعی, رباتیک, مسابقات ملی, Airocup, AI competitions, robotics, national competitions, الذكاء الاصطناعي, الروبوتات, المسابقات الوطنية' }}"
+      content="{{ seo_keywords if seo_keywords is defined else 'آیروکاپ, مسابقات هوش مصنوعی, رباتیک, دانشگاه علم و صنعت, مسابقات ملی, Airocup, AI competitions, robotics' }}"
     />
     <meta name="author" content="Airocup" />
     <meta name="theme-color" content="#7b4baa" />
 
-    <meta property="og:title" content="{{ page_title|striptags|trim }}" />
+    <meta
+      property="og:title"
+      content="{% block og_title %}{{ page_title|striptags|trim if page_title is defined else 'آیروکاپ' }}{% endblock %}"
+    />
     <meta
       property="og:description"
       content="{{ seo_description if seo_description is defined else 'به بزرگترین رویداد هوش مصنوعی و رباتیک ایران به میزبانی دانشگاه علم و صنعت ایران بپیوندید.' }}"
     />
-    {% if Path is defined and Path.SolidLogos is defined %}
     <meta
       property="og:image"
-      content="{{ url_for('static', filename=Path.SolidLogos['SolidPurpleGlow'], _external=True) }}"
+      content="{{ url_for('static', filename=path.solid_logos['solid_purple_glow'], _external=True) }}"
     />
-    <meta
-      name="twitter:image"
-      content="{{ url_for('static', filename=Path.SolidLogos['SolidPurpleGlow'], _external=True) }}"
-    />
-    {% endif %}
-    <meta
-      property="og:url"
-      content="{{ request.base_url if request is defined else '' }}"
-    />
+    <meta property="og:url" content="{{ request.base_url }}" />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="fa_IR" />
     <meta property="og:site_name" content="آیروکاپ" />
+
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="{{ page_title|striptags|trim }}" />
+    <meta
+      name="twitter:title"
+      content="{% block twitter_title %}{{ page_title|striptags|trim if page_title is defined else 'آیروکاپ' }}{% endblock %}"
+    />
     <meta
       name="twitter:description"
       content="{{ seo_description if seo_description is defined else 'آیروکاپ، نخستین رویداد ملی هوش مصنوعی و رباتیک ایران' }}"
     />
-    {% if Contact is defined and Contact.Instagram %}
-    <meta name="twitter:site" content="{{ Contact.Instagram }}" />
+    <meta
+      name="twitter:image"
+      content="{{ url_for('static', filename=path.solid_logos['solid_purple_glow'], _external=True) }}"
+    />
+    <meta name="twitter:site" content="{{ contact.instagram }}" />
+
+    <link rel="canonical" href="{{ request.base_url }}" />
+    <link rel="alternate" href="{{ request.base_url }}" hreflang="fa-IR" />
     {% endif %}
 
-    <link
-      rel="canonical"
-      href="{{ request.base_url if request is defined else '' }}"
-    />
-    <link
-      rel="alternate"
-      href="{{ request.base_url if request is defined else '' }}"
-      hreflang="fa-IR"
-    />
-    {% endif %}
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
     <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com" />
 
     <link
       rel="stylesheet"
-      href="{{ url_for('static', filename=Path.URLs.CSS_Style) }}"
+      href="{{ url_for('static', filename=path.css_style) }}"
     />
 
-    {% if not _is_admin and Path is defined and Path.SolidLogos is defined %}
+    {% if not _is_admin %}
     <link
       rel="icon"
-      href="{{ url_for('static', filename=Path.SolidLogos['SolidWhiteFavicon']) }}"
+      href="{{ url_for('static', filename=path.solid_logos['solid_white_favicon']) }}"
       type="image/x-icon"
     />
     <link
       rel="icon"
       type="image/png"
-      href="{{ url_for('static', filename=Path.SolidLogos['MainFest 192']) }}"
+      href="{{ url_for('static', filename=path.solid_logos['main_fest_192']) }}"
     />
     <link
       rel="apple-touch-icon"
-      href="{{ url_for('static', filename=Path.SolidLogos['MainFest 192']) }}"
+      href="{{ url_for('static', filename=path.solid_logos['main_fest_192']) }}"
     />
     {% endif %}
 
@@ -107,11 +99,62 @@
       referrerpolicy="no-referrer"
     />
 
-    {% block Head %}{% endblock %}
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "آیروکاپ",
+        "url": "{{ url_for('Global.index', _external=True) }}",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": {
+            "@type": "EntryPoint",
+            "urlTemplate": "{{ url_for('Global.index', _external=True) }}search?q={search_term_string}"
+          },
+          "query-input": "required name=search_term_string"
+        },
+        "mainEntity": {
+          "@type": "SiteNavigationElement",
+          "name": "Main Navigation",
+          "potentialAction": [
+            {
+              "@type": "Action",
+              "name": "لیگ‌ها",
+              "url": "{{ url_for('Global.leagues', _external=True) }}"
+            },
+            {
+              "@type": "Action",
+              "name": "کمیته",
+              "url": "{{ url_for('Global.committee', _external=True) }}"
+            },
+            {
+              "@type": "Action",
+              "name": "حامیان",
+              "url": "{{ url_for('Global.sponsors', _external=True) }}"
+            },
+            {
+              "@type": "Action",
+              "name": "اخبار",
+              "url": "{{ url_for('Global.news', _external=True) }}"
+            },
+            {
+              "@type": "Action",
+              "name": "درباره ما",
+              "url": "{{ url_for('Global.about', _external=True) }}"
+            },
+            {
+              "@type": "Action",
+              "name": "تماس با ما",
+              "url": "{{ url_for('Global.contact', _external=True) }}"
+            }
+          ]
+        }
+      }
+    </script>
+    {% block head %}{% endblock %}
   </head>
-
   <body
-    class="{{ 'AdminBody' if _is_admin else 'ClientPage' }}"
+    class="{{ 'admin-body' if _is_admin else 'client-page' }}"
     {%
     if
     not
@@ -123,24 +166,24 @@
     %}
   >
     {% if _is_admin %}
-    <header class="AdminHeader">
-      <div class="AdminHeader__container">
+    <header class="admin-header">
+      <div class="admin-header__container">
         <a
           href="{{ url_for('admin.admin_dashboard') }}"
-          class="AdminHeader__logo"
+          class="admin-header__logo"
           >پنل مدیریت آیروکاپ</a
         >
-        <nav class="AdminHeader__nav" id="admin-nav">
+        <nav class="admin-header__nav" id="admin-nav">
           <a href="{{ url_for('admin.admin_dashboard') }}">داشبورد</a>
-          <a href="{{ url_for('admin.admin_manage_clients') }}">کاربران</a>
+          <a href="{{ url_for('admin.admin_clients_list') }}">کاربران</a>
           <a href="{{ url_for('admin.admin_manage_teams') }}">تیم‌ها</a>
           <a href="{{ url_for('admin.admin_manage_news') }}">اخبار</a>
-          <a href="{{ url_for('Global.logout') }}" class="Btn BtnSecondary"
+          <a href="{{ url_for('Global.logout') }}" class="btn btn-secondary"
             >خروج</a
           >
         </nav>
         <button
-          class="AdminHeader__mobile-toggle"
+          class="admin-header__mobile-toggle"
           aria-controls="admin-nav"
           aria-expanded="false"
         >
@@ -149,141 +192,129 @@
       </div>
     </header>
     {% else %}
-    <header class="SiteHeader" role="banner">
-      <div class="TopHeader Container">
-        <div class="Logo" itemscope itemtype="https://schema.org/Organization">
+    <header class="site-header" role="banner">
+      <div class="top-header container">
+        <div class="logo" itemscope itemtype="https://schema.org/Organization">
           <a href="{{ url_for('Global.index') }}" itemprop="url">
-            {% if Path is defined and Path.TransparentLogos is defined %}
             <img
-              src="{{ url_for('static', filename=Path.TransparentLogos['TransparentWhite']) }}"
+              src="{{ url_for('static', filename=path.transparent_logos['transparent_white']) }}"
               alt="لوگو آیروکاپ - مسابقات ملی هوش مصنوعی و رباتیک"
               itemprop="logo"
             />
-            {% else %}
-            <span class="SiteTitle">آیروکاپ</span>
-            {% endif %}
           </a>
         </div>
-        <nav class="MainNav" aria-label="منوی اصلی سایت" role="navigation">
-          <ul id="MainNav" class="NavItems">
+        <nav class="main-nav" aria-label="منوی اصلی سایت" role="navigation">
+          <ul id="main-nav-list" class="nav-items">
             <li>
               <a
                 href="{{ url_for('Global.index') }}"
-                class="{{ 'Active' if (request is defined and request.endpoint == 'Global.index') else '' }}"
+                class="{{ 'active' if request.endpoint == 'Global.index' }}"
+                >صفحه اصلی</a
               >
-                صفحه اصلی
-              </a>
             </li>
             <li>
               <a
                 href="{{ url_for('Global.leagues') }}"
-                class="{{ 'Active' if (request is defined and request.endpoint == 'Global.leagues') else '' }}"
+                class="{{ 'active' if request.endpoint == 'Global.leagues' }}"
+                >لیگ‌ها</a
               >
-                لیگ‌ها
-              </a>
             </li>
             <li>
               <a
                 href="{{ url_for('Global.committee') }}"
-                class="{{ 'Active' if (request is defined and request.endpoint == 'Global.committee') else '' }}"
+                class="{{ 'active' if request.endpoint == 'Global.committee' }}"
+                >کمیته</a
               >
-                کمیته
-              </a>
             </li>
             <li>
               <a
                 href="{{ url_for('Global.sponsors') }}"
-                class="{{ 'Active' if (request is defined and request.endpoint == 'Global.sponsors') else '' }}"
+                class="{{ 'active' if request.endpoint == 'Global.sponsors' }}"
+                >حامیان</a
               >
-                حامیان
-              </a>
             </li>
             <li>
               <a
                 href="{{ url_for('Global.gallery') }}"
-                class="{{ 'Active' if (request is defined and request.endpoint == 'Global.gallery') else '' }}"
+                class="{{ 'active' if request.endpoint == 'Global.gallery' }}"
+                >گالری</a
               >
-                گالری
-              </a>
             </li>
             <li>
               <a
                 href="{{ url_for('Global.news') }}"
-                class="{{ 'Active' if (request is defined and request.endpoint == 'Global.news') else '' }}"
+                class="{{ 'active' if request.endpoint == 'Global.news' }}"
+                >اخبار</a
               >
-                اخبار
-              </a>
             </li>
             <li>
               <a
                 href="{{ url_for('Global.about') }}"
-                class="{{ 'Active' if (request is defined and request.endpoint == 'Global.about') else '' }}"
+                class="{{ 'active' if request.endpoint == 'Global.about' }}"
+                >درباره ما</a
               >
-                درباره ما
-              </a>
             </li>
             <li>
               <a
                 href="{{ url_for('Global.contact') }}"
-                class="{{ 'Active' if (request is defined and request.endpoint == 'Global.contact') else '' }}"
+                class="{{ 'active' if request.endpoint == 'Global.contact' }}"
+                >تماس با ما</a
               >
-                تماس با ما
-              </a>
             </li>
-
-            <div class="NavActionItems">
+            <div class="nav-action-items">
               {% if 'client_id' in session %}
               <a
                 href="{{ url_for('client.dashboard') }}"
-                class="Btn BtnSecondary"
+                class="btn btn-secondary"
                 >داشبورد</a
               >
               <a
                 href="{{ url_for('client.support_chat') }}"
-                class="Btn BtnPrimary"
+                class="btn btn-primary"
                 >پشتیبانی</a
               >
               {% else %}
               <a
                 href="{{ url_for('client.login_client') }}"
-                class="Btn BtnSecondary"
+                class="btn btn-secondary"
                 >ورود</a
               >
-              <a href="{{ url_for('client.signup') }}" class="Btn BtnPrimary"
+              <a href="{{ url_for('client.signup') }}" class="btn btn-primary"
                 >ثبت نام</a
               >
               {% endif %}
             </div>
           </ul>
         </nav>
-
-        <div class="HeaderRight">
-          <div class="UserActions">
+        <div class="header-right">
+          <div class="user-actions">
             {% if 'client_id' in session %}
-            <a href="{{ url_for('client.dashboard') }}" class="Btn BtnSecondary"
+            <a
+              href="{{ url_for('client.dashboard') }}"
+              class="btn btn-secondary"
               >داشبورد</a
             >
             <a
               href="{{ url_for('client.support_chat') }}"
-              class="Btn BtnPrimary"
+              class="btn btn-primary"
               >پشتیبانی</a
             >
             {% else %}
             <a
               href="{{ url_for('client.login_client') }}"
-              class="Btn BtnSecondary"
+              class="btn btn-secondary"
               >ورود</a
             >
-            <a href="{{ url_for('client.signup') }}" class="Btn BtnPrimary"
+            <a href="{{ url_for('client.signup') }}" class="btn btn-primary"
               >ثبت نام</a
             >
             {% endif %}
           </div>
           <button
-            class="MobileMenuBtn"
+            class="mobile-menu-btn"
             aria-label="منوی موبایل"
             aria-expanded="false"
-            aria-controls="MainNav"
+            aria-controls="main-nav-list"
           >
             <i
               class="fas fa-bars"
@@ -296,18 +327,18 @@
     </header>
     {% endif %} {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
-    <div id="FlashContainer" aria-live="polite" aria-atomic="true">
-      {% set category_map = { 'Success': {'icon': 'fa-check-circle', 'class':
-      'FlashSuccess'}, 'Error': {'icon': 'fa-exclamation-triangle', 'class':
-      'FlashError'}, 'Warning': {'icon': 'fa-exclamation-circle', 'class':
-      'FlashWarning'}, 'Info': {'icon': 'fa-info-circle', 'class': 'FlashInfo'}
-      } %} {% for category, message in messages %} {% set flash =
-      category_map.get(category, category_map['Info']) %}
-      <div class="FlashMessage {{ flash.class }}" role="alert">
+    <div id="flash-container" aria-live="polite" aria-atomic="true">
+      {% set category_map = { 'success': {'icon': 'fa-check-circle', 'class':
+      'flash-success'}, 'error': {'icon': 'fa-exclamation-triangle', 'class':
+      'flash-error'}, 'warning': {'icon': 'fa-exclamation-circle', 'class':
+      'flash-warning'}, 'info': {'icon': 'fa-info-circle', 'class':
+      'flash-info'} } %} {% for category, message in messages %} {% set flash =
+      category_map.get(category, category_map['info']) %}
+      <div class="flash-message {{ flash.class }}" role="alert">
         <i class="fas {{ flash.icon }}" aria-hidden="true"></i>
         <span>{{ message }}</span>
         <button
-          class="FlashCloseBtn"
+          class="flash-close-btn"
           data-action="dismiss-flash"
           aria-label="بستن اعلان"
         >
@@ -318,38 +349,36 @@
     </div>
     {% endif %} {% endwith %}
 
-    <main class="MainContent">{% block Body %}{% endblock %}</main>
+    <main class="main-content">
+      {% block breadcrumbs %}{% endblock %} {% block body %}{% endblock %}
+    </main>
 
     {% if not _is_admin %}
-    <footer class="SiteFooter" role="contentinfo">
-      <div class="Container">
-        <div class="FooterContent">
+    <footer class="site-footer" role="contentinfo">
+      <div class="container">
+        <div class="footer-content">
           <div
-            class="FooterAbout"
+            class="footer-about"
             itemscope
             itemtype="https://schema.org/Organization"
           >
             <a
               href="{{ url_for('Global.index') }}"
-              class="FooterLogo"
+              class="footer-logo"
               itemprop="url"
             >
-              {% if Path is defined and Path.TransparentLogos is defined %}
               <img
-                src="{{ url_for('static', filename=Path.TransparentLogos['TransparentWhite']) }}"
+                src="{{ url_for('static', filename=path.transparent_logos['transparent_white']) }}"
                 alt="لوگو آیروکاپ در فوتر - مسابقات ملی هوش مصنوعی"
                 itemprop="logo"
               />
-              {% else %}
-              <span class="FooterTitle">آیروکاپ</span>
-              {% endif %}
             </a>
             <p itemprop="description">
               آیروکاپ، پیشگام در آینده هوشمند ایران. نخستین رویداد ملی با محوریت
               کامل هوش مصنوعی و رباتیک.
             </p>
           </div>
-          <div class="FooterLinks">
+          <div class="footer-links">
             <h3>دسترسی سریع</h3>
             <ul>
               <li><a href="{{ url_for('Global.index') }}">صفحه اصلی</a></li>
@@ -362,7 +391,7 @@
             </ul>
           </div>
           <div
-            class="FooterContact"
+            class="footer-contact"
             itemscope
             itemtype="https://schema.org/ContactPoint"
           >
@@ -377,46 +406,41 @@
                 ایران
               </p>
               <p itemprop="telephone">
-                <i class="fas fa-phone"></i> {{ Contact.Phone if Contact is
-                defined else '' }}
+                <i class="fas fa-phone"></i> {{ contact.phone }}
               </p>
             </address>
-            <div class="SocialMedia">
-              {% if Contact is defined and Contact.Instagram %}
+            <div class="social-media">
               <a
-                href="https://instagram.com/{{ Contact.Instagram|replace('@','') }}"
+                href="https://instagram.com/{{ contact.instagram|replace('@','') }}"
                 title="صفحه اینستاگرام آیروکاپ"
                 target="_blank"
                 rel="noopener noreferrer nofollow"
                 itemprop="sameAs"
                 ><i class="fab fa-instagram"></i
               ></a>
-              {% endif %} {% if Contact is defined and Contact.Bale %}
               <a
-                href="{{ Contact.Bale }}"
+                href="{{ contact.bale }}"
                 title="کانال بله آیروکاپ"
                 target="_blank"
                 rel="noopener noreferrer nofollow"
                 itemprop="sameAs"
                 ><i class="fas fa-comment-dots"></i
               ></a>
-              {% endif %} {% if Contact is defined and Contact.AparatPlaylist %}
               <a
-                href="{{ Contact.AparatPlaylist }}"
+                href="{{ contact.aparat_playlist }}"
                 title="کانال آپارات آیروکاپ"
                 target="_blank"
                 rel="noopener noreferrer nofollow"
                 itemprop="sameAs"
                 ><i class="fas fa-play-circle"></i
               ></a>
-              {% endif %}
             </div>
           </div>
         </div>
-        <div class="Copyright">
+        <div class="copyright">
           <p>
-            &copy; {{ JDateTime.datetime.now().year if JDateTime is defined else
-            '' }} تمامی حقوق برای آیروکاپ محفوظ است.
+            &copy; {{ jdatetime.datetime.now().year }} تمامی حقوق برای آیروکاپ
+            محفوظ است.
           </p>
         </div>
       </div>
@@ -431,14 +455,11 @@
 
     {% if not _is_admin %}
     <script>
-      window.AirocupData = {{ AirocupData | default({}) | tojson | safe }};
+      window.AirocupData = {{ airocup_data | tojson | safe }};
     </script>
     {% endif %}
-    <script
-      src="{{ url_for('static', filename=Path.URLs.JS_Main) }}"
-      defer
-    ></script>
+    <script src="{{ url_for('static', filename=path.js_main) }}" defer></script>
 
-    {% block Scripts %}{% endblock %}
+    {% block scripts %}{% endblock %}
   </body>
 </html>
