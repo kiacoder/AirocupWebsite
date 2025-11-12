@@ -19,7 +19,7 @@ db_engine = create_engine(
 def create_database():
     "Create the database and its tables if they do not exist"
     os.makedirs(os.path.dirname(constants.Path.database), exist_ok=True)
-    models.DeclarativeBase.metadata.create_all(bind=db_engine)
+    models.Base.metadata.create_all(bind=db_engine)
 
 
 @contextmanager

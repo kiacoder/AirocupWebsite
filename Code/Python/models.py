@@ -18,6 +18,7 @@ from sqlalchemy import (
     Boolean,
     Index,
     Date,
+    text,
 )
 
 
@@ -241,7 +242,7 @@ class Member(Base):
             "one_leader_per_team_idx",
             "team_id",
             unique=True,
-            sqlite_where=f"role = '{MemberRole.LEADER.value}'",
+            sqlite_where=text(f"role = '{MemberRole.LEADER.value}'"),
         ),
     )
 
