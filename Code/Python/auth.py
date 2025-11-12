@@ -38,7 +38,7 @@ def admin_required(decorated_route):
     """Decorator to ensure that an admin is logged in."""
     @wraps(decorated_route)
     def decorated_function(*args, **kwargs):
-        if not session.get("AdminLoggedIn"):
+        if not session.get("admin_logged_in"):
             return redirect(url_for("admin.admin_login"))
 
         return decorated_route(*args, **kwargs)
@@ -49,7 +49,7 @@ def admin_action_required(decorated_route):
     """Decorator to ensure an admin is logged in and CSRF protection is applied."""
     @wraps(decorated_route)
     def decorated_function(*args, **kwargs):
-        if not session.get("AdminLoggedIn"):
+        if not session.get("admin_logged_in"):
             return redirect(url_for("admin.admin_login"))
 
         try:

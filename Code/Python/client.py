@@ -238,7 +238,7 @@ def login_client():
                 ).start()
                 flash(
                     "حساب شما هنوز فعال نشده است. یک کد تایید جدید به شماره موبایل شما ارسال شد.",
-                    "Warning",
+                    "warning",
                 )
                 return redirect(
                     url_for(
@@ -565,7 +565,7 @@ def edit_member(team_id, member_id):
 @auth.login_required
 def get_receipt(client_id, filename):
     "Return the requested receipt for a specific client"
-    if client_id != session.get("client_id") and not session.get("AdminLoggedIn"):
+    if client_id != session.get("client_id") and not session.get("admin_logged_in"):
         abort(403)
     return send_from_directory(
         os.path.join(current_app.config["UPLOAD_FOLDER_RECEIPTS"], str(client_id)),
@@ -1540,7 +1540,7 @@ def upload_document(team_id):
             abort(404)
 
         if team.client_id != session.get("client_id") and not session.get(
-            "AdminLoggedIn"
+            "admin_logged_in"
         ):
             abort(403)
 
@@ -1617,18 +1617,18 @@ def get_document(team_id, filename):
 
         if not team or (
             team.client_id != session.get("client_id")
-            and not session.get("AdminLoggedIn")
+            and not session.get("admin_logged_in")
         ):
             abort(403)
 
     filepath = safe_join(
-        os.path.join(constants.Path.uploads_dir, "Documents", str(team_id)), filename
+        os.path.join(constants.Path.uploads_dir, "documents", str(team_id)), filename
     )
     if filepath is None or not os.path.exists(filepath):
         abort(404)
 
     return send_from_directory(
-        os.path.join(constants.Path.uploads_dir, "Documents", str(team_id)),
+        os.path.join(constants.Path.uploads_dir, "documents", str(team_id)),
         filename,
         as_attachment=True,
     )
@@ -1719,7 +1719,7 @@ def select_league(team_id):
         if database.has_team_made_any_payment(db, team_id):
             flash(
                 "از آنجایی که برای این تیم رسید پرداخت ارسال شده امکان تغییر لیگ‌ها وجود ندارد",
-                "Warning",
+                "warning",
             )
             return redirect(url_for("client.dashboard"))
 
