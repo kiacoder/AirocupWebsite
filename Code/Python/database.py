@@ -197,7 +197,7 @@ def populate_leagues(db: Session):
 
     leagues_data = getattr(constants, "leagues_list", [])
     if not leagues_data:
-        print("Warning: constants.leagues_list is empty. No leagues to populate.")
+        print("warning: constants.leagues_list is empty. No leagues to populate.")
         return
 
     for league_dict in leagues_data:
