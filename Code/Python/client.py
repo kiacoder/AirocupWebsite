@@ -1666,31 +1666,30 @@ def add_member(team_id):
             if current_member_count >= constants.AppConfig.max_members_per_team:
                 flash("خطا: شما به حداکثر تعداد اعضای تیم رسیده‌اید.", "error")
                 return redirect(url_for("client.manage_members", team_id=team_id))
+            new_member, error_message = utils.internal_add_member(
+                db, team_id, request.form
+            )
 
-            success, message = utils.internal_add_member(db, team_id, request.form)
-
-            if success:
-                member_name = message
+            if error_message:
+                flash(error_message, "error")
+            else:
                 database.log_action(
                     db,
                     session["client_id"],
-                    f"Added new member '{member_name}' to Team ID {team_id}.",
+                    f"Added new member '{new_member.name}' to Team ID {team_id}.",
                 )
 
                 if database.check_if_team_is_paid(db, team_id):
                     team.unpaid_members_count = (team.unpaid_members_count or 0) + 1
                     flash(
-                        "عضو جدید با موفقیت اضافه شد. لطفاً برای فعال‌سازی، "
-                        "هزینه عضو جدید را پرداخت نمایید.",
-                        "Warning",
+                        f"عضو «{new_member.name}» با موفقیت اضافه شد. لطفاً برای فعال‌سازی، هزینه عضو جدید را پرداخت نمایید.",
+                        "warning",
                     )
                 else:
-                    flash("عضو با موفقیت اضافه شد!", "success")
+                    flash(f"عضو «{new_member.name}» با موفقیت اضافه شد!", "success")
 
                 db.commit()
                 utils.update_team_stats(db, team_id)
-            else:
-                flash(message, "error")
 
     except (exc.SQLAlchemyError, ValueError, TypeError) as error:
         current_app.logger.error("error adding member to Team %s: %s", team_id, error)

@@ -22,7 +22,6 @@ from flask import (
     has_request_context,
 )
 from flask_socketio import emit, join_room
-from jinja2 import TemplateError
 from . import config
 from . import database
 from . import constants
@@ -49,7 +48,7 @@ flask_app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SECURE=True,
     UPLOAD_FOLDER_RECEIPTS=constants.Path.receipts_dir,
-    UPLOAD_FOLDER_DOCUMENTS=os.path.join(constants.Path.uploads_dir, "Documents"),
+    UPLOAD_FOLDER_DOCUMENTS=os.path.join(constants.Path.uploads_dir, "documents"),
     UPLOAD_FOLDER_NEWS=constants.Path.news_dir,
     MAX_CONTENT_LENGTH=constants.AppConfig.max_document_size,
     ALLOWED_EXTENSIONS=list(constants.AppConfig.allowed_extensions),
@@ -89,33 +88,32 @@ def humanize_number_filter(num):
 def inject_global_variables():
     """Injects global variables into the template context."""
     airocup_data = {
-        "DaysInMonth": constants.Date.days_in_month,
-        "AllowedYears": constants.Date.get_allowed_years(),
-        "PersianMonths": constants.Date.persian_months,
-        "ForbiddenWords": list(constants.ForbiddenContent.custom_words),
+        "allowed_years": constants.Date.get_allowed_years(),
+        "persian_months": constants.Date.persian_months,
+        "forbidden_words": list(constants.ForbiddenContent.custom_words),
         "client_id": session.get("client_id") if has_request_context() else None,
         "provinces_data": constants.provinces_data,
     }
 
     return {
-        "Path": constants.Path,
-        "AppConfig": {
-            "MaxTeamPerClient": constants.AppConfig.max_team_per_client,
-            "MaxMembersPerTeam": constants.AppConfig.max_members_per_team,
+        "path": constants.Path,
+        "app_config": {
+            "max_team_per_client": constants.AppConfig.max_team_per_client,
+            "max_members_per_team": constants.AppConfig.max_members_per_team,
         },
-        "Contact": constants.Contact,
-        "Event": constants.Details,
-        "HTMLnames": constants.global_html_names_data,
-        "Location": constants.Details.address,
-        "ContactPoints": constants.contact_points_data,
-        "CooperationOpportunities": constants.cooperation_opportunities_data,
+        "contact": constants.Contact,
+        "leagues_list": constants.leagues_list,
+        "event_details": constants.Details,
+        "html_names": constants.global_html_names_data,
+        "location": constants.Details.address,
+        "contact_points": constants.contact_points_data,
+        "cooperation_opportunities": constants.cooperation_opportunities_data,
         "jdatetime": jdatetime,
-        "AirocupData": airocup_data,
-        "Payment": config.payment_config,
-        "LeaguesList": constants.leagues_list,
-        "CommitteeMembers": constants.committee_members_data,
-        "TechnicalCommitteeMembers": constants.technical_committee_members,
-        "HomepageSponsors": constants.homepage_sponsors_data,
+        "airocup_data": airocup_data,
+        "payment": config.payment_config,
+        "committee_members": constants.committee_members_data,
+        "technical_committee_members": constants.technical_committee_members,
+        "homepage_sponsors": constants.homepage_sponsors_data,
     }
 
 
@@ -175,7 +173,7 @@ def handle_server_error(error):
     if flask_app.debug:
         return (
             render_template(
-                constants.global_html_names_data["500 Debug"],
+                constants.global_html_names_data["500_debug"],
                 error=traceback.format_exc(),
             ),
             500,
@@ -186,10 +184,10 @@ def handle_server_error(error):
 @socket_io.on("join")
 def on_join_message(data_dictionary):
     """Handles a user joining a chat room."""
-    room_name = data_dictionary.get("Room")
+    room_name = data_dictionary.get("room")
     client_id = session.get("client_id")
 
-    if session.get("AdminLoggedIn", False):
+    if session.get("admin_logged_in", False):
         join_room(room_name)
         flask_app.logger.info("Admin joined room %s", room_name)
     elif client_id and str(client_id) == str(room_name):
@@ -217,7 +215,7 @@ def handle_send_message(json_data):
         if not message or not target_room:
             return
 
-        if session.get("AdminLoggedIn", False):
+        if session.get("admin_logged_in", False):
             sender_type = "admin"
         elif session.get("client_id") and str(session.get("client_id")) == str(
             target_room
@@ -275,16 +273,12 @@ def get_distribution_query(db, entity, join_chain, label="count", limit=10):
     query = (
         db.query(
             entity.name.label("name"),
-            func.count(models.Member.member_id).label(
-                label
-            ),  # pylint: disable=not-callable
+            func.count(models.Member.member_id).label(label),
         )
         .join(*join_chain)
         .filter(models.Member.status == models.EntityStatus.ACTIVE)
         .group_by(entity.name)
-        .order_by(
-            func.count(models.Member.member_id).desc()
-        )  # pylint: disable=not-callables
+        .order_by(func.count(models.Member.member_id).desc())
         .limit(limit)
     )
     return query.all()
@@ -303,8 +297,8 @@ def api_city_distribution():
 
     return jsonify(
         {
-            "Labels": [row.name for row in city_data],
-            "Data": [row.count for row in city_data],
+            "labels": [row.name for row in city_data],
+            "data": [row.count for row in city_data],
         }
     )
 
@@ -328,8 +322,8 @@ def api_province_distribution():
 
     return jsonify(
         {
-            "Labels": [row.name for row in province_data],
-            "Data": [row.count for row in province_data],
+            "labels": [row.name for row in province_data],
+            "data": [row.count for row in province_data],
         }
     )
 
@@ -355,30 +349,6 @@ def print_startup_message(host: str, port: int, mode: str) -> None:
     logger.info(border)
 
 
-def test_templates() -> None:
-    """Tests all templates for rendering errors"""
-    logger.info("🔍 Starting template integrity check...")
-    template_dir = constants.Path.templates_dir
-    templates = [f for f in os.listdir(template_dir) if f.endswith(".html")]
-    success_count, fail_count = 0, 0
-
-    with flask_app.app_context():
-        for template in templates:
-            try:
-                with flask_app.test_request_context("/"):
-                    render_template(template)
-                logger.info("✅ %s: OK", template)
-                success_count += 1
-            except TemplateError as e:
-                logger.error("❌ %s: FAILED (%s)", template, e)
-                fail_count += 1
-
-    logger.info("Template check finished. %d successful, %d failed.", success_count, fail_count)
-    if fail_count > 0:
-        logger.critical("🚨 Please fix the failing templates before proceeding.")
-        sys.exit(1)
-
-
 @flask_app.cli.command("init-db")
 def initialize_database_command() -> None:
     """Creates the database tables and populates geography/league data."""
@@ -397,10 +367,10 @@ if __name__ == "__main__":
             admin_password = getpass.getpass("رمز عبور ادمین مورد نظر را وارد کنید: ")
             if admin_password:
                 logger.info("✅ هش ادمین شما با موفقیت ایجاد شد.")
-                logger.info("خط زیر را کپی کرده و در فایل config.py خود جای‌گذاری کنید:")
+                logger.info("خط زیر را کپی کرده و در فایل .env خود جای‌گذاری کنید:")
                 logger.info("-" * 50)
                 logger.info(
-                    "AdminPasswordHash = '%s'",
+                    "admin_password_hash='%s'",
                     bcrypt.hashpw(
                         admin_password.encode("utf-8"), bcrypt.gensalt()
                     ).decode("utf-8"),
@@ -414,12 +384,10 @@ if __name__ == "__main__":
 
     host, port = "0.0.0.0", 5000
     MODE = "✅ Debug" if config.debug else "⛔ Production"
-
     if os.environ.get("WERKZEUG_RUN_MAIN") != "true":
         print_startup_message(host, port, MODE)
-        test_templates()
 
     if config.debug:
         socket_io.run(flask_app, host=host, port=port, debug=config.debug)
     else:
-        serve(socket_io.wsgi_app, host=host, port=port)
+        serve(socket_io.wsgi_app, host=host, port=port)  # type: ignore

@@ -414,13 +414,16 @@ def check_for_data_completion_issues(db: Session, client_id: int) -> Tuple[bool,
             problems = validate_member_for_resolution(
                 member, str(client.education_level)
             )
-            if problems["Missing"] or problems["Invalid"]:
+            if problems["missing"] or problems["invalid"]:
                 problematic_members[member.member_id] = problems
                 needs_resolution = True
+
     return needs_resolution, problematic_members
 
 
-def internal_add_member(db: Session, team_id: int, form_data: dict) -> Tuple[bool, str]:
+def internal_add_member(
+    db: Session, team_id: int, form_data: dict
+) -> Tuple[Optional[models.Member], Optional[str]]:
     "Add a new member to a team after validating the data"
     new_member_data, error = create_member_from_form_data(db, form_data)
     if error:
@@ -442,13 +445,13 @@ def internal_add_member(db: Session, team_id: int, form_data: dict) -> Tuple[boo
     try:
         new_member = models.Member(**new_member_data, team_id=team_id)
         db.add(new_member)
-        return True, str(new_member.name)
+        return new_member, None
     except SQLAlchemyError as error:
         db.rollback()
         current_app.logger.error(
             f"Internal error adding member to Team {team_id}: {error}"
         )
-        return False, "خطایی داخلی در هنگام افزودن عضو رخ داد."
+        return None, "خطایی داخلی در هنگام افزودن عضو رخ داد."
 
 
 def get_current_client() -> Optional[models.Client]:

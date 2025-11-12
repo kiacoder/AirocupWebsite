@@ -73,7 +73,8 @@ class Client(Base):
     password: Mapped[str] = mapped_column(String(255), nullable=False)
     registration_date: Mapped[datetime.datetime] = mapped_column(
         DateTime,
-        default=lambda: datetime.datetime.now(datetime.UTC),
+        # FIX: Changed datetime.UTC to datetime.timezone.utc for compatibility
+        default=lambda: datetime.datetime.now(datetime.timezone.utc),
     )
     education_level: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     status: Mapped[EntityStatus] = mapped_column(
@@ -145,7 +146,8 @@ class Team(Base):
     )
     team_registration_date: Mapped[datetime.datetime] = mapped_column(
         DateTime,
-        default=lambda: datetime.datetime.now(datetime.UTC),
+        # FIX: Changed datetime.UTC to datetime.timezone.utc for compatibility
+        default=lambda: datetime.datetime.now(datetime.timezone.utc),
     )
     average_age: Mapped[int] = mapped_column(default=0)
     average_provinces: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)

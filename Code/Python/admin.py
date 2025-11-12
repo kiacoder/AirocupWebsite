@@ -61,7 +61,7 @@ def admin_login():
             admin_pass.encode("utf-8"),
             config.admin_password_hash.encode("utf-8"),
         ):
-            session["AdminLoggedIn"] = True
+            session["admin_logged_in"] = True
             flash("ورود به پنل مدیریت با موفقیت انجام شد.", "success")
             return redirect(url_for("admin.admin_dashboard"))
         else:
@@ -130,12 +130,11 @@ def admin_add_team(client_id):
 
     with database.get_db_session() as db:
         try:
-            new_team = models.Team(
+            db.add(models.Team(
                 client_id=client_id,
                 team_name=team_name,
                 team_registration_date=datetime.datetime.now(datetime.timezone.utc),
-            )
-            db.add(new_team)
+            ))
             db.commit()
             flash(f"تیم «{team_name}» با موفقیت برای این کاربر ساخته شد.", "success")
         except exc.IntegrityError:
@@ -550,44 +549,36 @@ def admin_manage_teams():
 @admin_blueprint.route("/Admin/Team/<int:team_id>/AddMember", methods=["GET", "POST"])
 @admin_action_required
 def admin_add_member(team_id):
-    "Add a new member to a specific team"
+    "Add a new member to a specific team from the admin panel"
     with database.get_db_session() as db:
         team = database.get_team_by_id(db, team_id)
         if not team:
             abort(404)
 
         if request.method == "POST":
-            try:
-                success, message = utils.internal_add_member(db, team_id, request.form)
-                if success:
-                    if database.check_if_team_is_paid(db, team_id):
-                        db.query(models.Team).filter(
-                            models.Team.team_id == team_id
-                        ).update(
-                            {
-                                models.Team.unpaid_members_count: models.Team.unpaid_members_count
-                                + 1
-                            },
-                            synchronize_session=False,
-                        )
-                        flash(
-                            "عضو جدید با موفقیت اضافه شد (تیم پرداخت شده، هزینه عضو جدید محاسبه شود)",
-                            "warning",
-                        )
-                    else:
-                        flash("عضو جدید با موفقیت توسط ادمین اضافه شد.", "success")
+            new_member, error_message = utils.internal_add_member(
+                db, team_id, request.form
+            )
 
-                    db.commit()
-                    utils.update_team_stats(db, team_id)
-                    return redirect(url_for("admin.admin_edit_team", team_id=team_id))
+            if error_message:
+                flash(error_message, "error")
+            else:
+
+                if database.check_if_team_is_paid(db, team_id):
+                    team.unpaid_members_count = (team.unpaid_members_count or 0) + 1
+                    flash(
+                        f"عضو «{new_member.name}» اضافه شد. لطفاً هزینه عضو جدید را برای فعال‌سازی پرداخت نمایید.",
+                        "warning",
+                    )
                 else:
-                    flash(message, "error")
-            except exc.SQLAlchemyError as error:
-                db.rollback()
-                current_app.logger.error(
-                    "error in admin_add_member for Team %s: %s", team_id, error
-                )
-                flash("خطایی در هنگام افزودن عضو رخ داد.", "error")
+                    flash(
+                        f"عضو «{new_member.name}» با موفقیت توسط ادمین اضافه شد.",
+                        "success",
+                    )
+
+                db.commit()
+                utils.update_team_stats(db, team_id)
+                return redirect(url_for("admin.admin_edit_team", team_id=team_id))
 
     form_context = utils.get_form_context()
     return render_template(
@@ -954,8 +945,7 @@ def admin_manage_payment(payment_id, action):
                     models.Team.team_id == payment.team_id
                 ).update(
                     {
-                        "unpaid_members_count": models.Team.unpaid_members_count
-                        - members_just_paid_for
+                        "unpaid_members_count": models.Team.unpaid_members_count - members_just_paid_for
                     },
                     synchronize_session=False,
                 )

@@ -135,5 +135,5 @@ def download_pdf():
 def logout():
     "Log out the current user"
     session.clear()
-    flash("شما از حساب کاربری خود خارج شدید.", "Info")
+    flash("شما از حساب کاربری خود خارج شدید.", "info")
     return redirect(url_for("Global.index"))
