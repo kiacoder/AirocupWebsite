@@ -1056,13 +1056,13 @@ technical_committee_members = [
         "name": "دکتر سمیه سلطانی",
         "role": "رئیس لیگ کاربرد هوش مصنوعی در علوم پزشکی و بهداشت",
         "description": "استاد دانشگاه تبریز",
-        "image": os.path.join(Path.technical_committee_dir, "somaieh_soltani.png"),
+        "image": "images/technical_committee/somaieh_soltani.png",
     },
     {
         "name": "مهندس امیر حسین کرمی",
         "role": "مدیر امور استان ها",
         "description": "هماهنگی٬ برنامه ریزی و پیگیری امور استان ها",
-        "image": os.path.join(Path.technical_committee_dir, "amir_hossain.png"),
+        "image": "images/technical_committee/amir_hossain.png",
     },
 ]
 
@@ -1409,37 +1409,37 @@ committee_members_data = [
         "name": "دکتر بهروز مینایی بیدگلی",
         "role": "رئیس مسابقات",
         "description": "رهبری کلی مسابقات و نظارت بر اجرای صحیح تمامی مراحل برگزاری",
-        "image": os.path.join(Path.committee_dir, "minayi.png"),
+        "image": "images/committee/minayi.png",
     },
     {
         "name": "دکتر داوود زارع",
         "role": "رئیس کمیته ملی مسابقات",
         "description": "هماهنگی و نظارت بر کلیه فعالیت‌های کمیته‌های تخصصی",
-        "image": os.path.join(Path.committee_dir, "davood.png"),
+        "image": "images/committee/davood.png",
     },
     {
         "name": "مهندس زهرا سعادتی داریان",
         "role": "دبیر کمیته علمی",
         "description": "مسئولیت ارزیابی علمی پروژه‌ها و تنظیم معیارهای داوری",
-        "image": os.path.join(Path.committee_dir, "saadati.png"),
+        "image": "images/committee/saadati.png",
     },
     {
         "name": "مهندس محمدرضا ریاحی سامانی",
         "role": "دبیر کمیته رباتیک",
         "description": "مسئولیت برگزاری لیگ‌های رباتیک و ارزیابی ربات‌ها",
-        "image": os.path.join(Path.committee_dir, "riyahi.png"),
+        "image": "images/committee/riyahi.png",
     },
     {
         "name": "مهندس پوریا حداد",
         "role": "دبیر کمیته هوش مصنوعی",
         "description": "مسئولیت برگزاری لیگ‌های هوش مصنوعی و ارزیابی پروژه‌ها",
-        "image": os.path.join(Path.committee_dir, "Poria.png"),
+        "image": "images/committee/Poria.png",
     },
     {
         "name": "دکتر محمد خلیل پور",
         "role": "دبیر کمیته پشتیبانی",
         "description": "مسئولیت پشتیبانی فنی و حل مشکلات شرکت‌کنندگان",
-        "image": os.path.join(Path.committee_dir, "khalil_pore.png"),
+        "image": "images/committee/khalil_pore.png",
     },
 ]
 

@@ -124,8 +124,8 @@ def uploaded_news_image(filename):
 def download_pdf():
     "Download the guideline PDF file"
     return send_from_directory(
-        os.path.dirname(constants.Path.guideline_dir),
-        os.path.basename(constants.Path.guideline_dir),
+        constants.Path.guideline_dir,
+        os.path.basename(constants.Path.guideline_file),
         as_attachment=True,
     )
 

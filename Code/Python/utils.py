@@ -427,20 +427,20 @@ def internal_add_member(
     "Add a new member to a team after validating the data"
     new_member_data, error = create_member_from_form_data(db, form_data)
     if error:
-        return False, error
+        return None, error
     if not new_member_data:
-        return False, "خطایی ناشناخته در هنگام پردازش اطلاعات عضو رخ داد."
+        return None, "خطایی ناشناخته در هنگام پردازش اطلاعات عضو رخ داد."
 
     if new_member_data[
         "role"
     ] == models.MemberRole.LEADER and database.has_existing_leader(db, team_id):
-        return False, "خطا: این تیم از قبل یک سرپرست دارد."
+        return None, "خطا: این تیم از قبل یک سرپرست دارد."
 
     has_conflict, error_message = database.is_member_league_conflict(
         db, new_member_data["national_id"], team_id
     )
     if has_conflict:
-        return False, error_message
+        return None, error_message
 
     try:
         new_member = models.Member(**new_member_data, team_id=team_id)
