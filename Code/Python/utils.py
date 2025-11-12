@@ -237,7 +237,7 @@ def send_async_email(
                 )
                 if not client:
                     current_app.logger.error(
-                        f"Email error: Client with ID {client_id} not found."
+                        f"email error: Client with ID {client_id} not found."
                     )
                     return
                 recipient_email = client.email
@@ -261,7 +261,7 @@ def send_async_email(
                     [message["To"]],
                     message.as_string(),
                 )
-            current_app.logger.info(f"Email successfully sent " f"to {recipient_email}")
+            current_app.logger.info(f"email successfully sent " f"to {recipient_email}")
 
         except smtplib.SMTPException as error:
             current_app.logger.error(

@@ -1,4 +1,5 @@
 """DataBase Code For Adding Editing And Deleting Members, Teams and Clients"""
+
 import datetime
 import os
 from contextlib import contextmanager
@@ -24,9 +25,7 @@ def create_database():
 @contextmanager
 def get_db_session() -> Iterator[Session]:
     "Get a database session"
-    session_local = sessionmaker(
-        autocommit=False, autoflush=False, bind=db_engine
-    )
+    session_local = sessionmaker(autocommit=False, autoflush=False, bind=db_engine)
     db = session_local()
     try:
         yield db
@@ -80,7 +79,7 @@ def validate_client_update(
     if not client_to_update:
         return None, ["اطلاعات کاربر مورد نظر یافت نشد."]
 
-    new_email = form_data.get("Email", "").strip()
+    new_email = form_data.get("email", "").strip()
     if new_email and new_email != client_to_update.email:
         if not is_valid_email(new_email):
             errors.append("فرمت ایمیل وارد شده معتبر نیست.")
@@ -96,9 +95,9 @@ def validate_client_update(
             if existing_client:
                 errors.append("این ایمیل قبلاً توسط کاربر دیگری ثبت شده است.")
             else:
-                clean_data["Email"] = new_email
+                clean_data["email"] = new_email
 
-    new_phone_number = fa_to_en(form_data.get("PhoneNumber", "").strip())
+    new_phone_number = fa_to_en(form_data.get("phone_number", "").strip())
     if new_phone_number and new_phone_number != client_to_update.phone_number:
         if not is_valid_iranian_phone(new_phone_number):
             errors.append("شماره تلفن وارد شده معتبر نیست.")
@@ -114,15 +113,15 @@ def validate_client_update(
             if existing_client:
                 errors.append("این شماره تلفن قبلاً توسط کاربر دیگری ثبت شده است.")
             else:
-                clean_data["PhoneNumber"] = new_phone_number
+                clean_data["phone_number"] = new_phone_number
 
-    new_password = form_data.get("Password")
+    new_password = form_data.get("password")
     if new_password:
         is_valid, error_message = is_valid_password(new_password)
         if not is_valid:
             errors.append(error_message)
         else:
-            clean_data["Password"] = new_password
+            clean_data["password"] = new_password
 
     if errors:
         return None, errors
@@ -132,20 +131,18 @@ def validate_client_update(
 def update_client_details(db: Session, client_id: int, clean_data: dict):
     "Update client details in the database"
     client_to_update = (
-        db.query(models.Client)
-        .filter(models.Client.client_id == client_id)
-        .first()
+        db.query(models.Client).filter(models.Client.client_id == client_id).first()
     )
     if not client_to_update:
         return
 
-    if "PhoneNumber" in clean_data:
-        client_to_update.phone_number = clean_data["PhoneNumber"]
-    if "Email" in clean_data:
-        client_to_update.email = clean_data["Email"]
-    if "Password" in clean_data:
+    if "phone_number" in clean_data:
+        client_to_update.phone_number = clean_data["phone_number"]
+    if "email" in clean_data:
+        client_to_update.email = clean_data["email"]
+    if "password" in clean_data:
         client_to_update.password = bcrypt.hashpw(
-            clean_data["Password"].encode("utf-8"), bcrypt.gensalt()
+            clean_data["password"].encode("utf-8"), bcrypt.gensalt()
         ).decode("utf-8")
     db.commit()
 
@@ -312,7 +309,9 @@ def save_chat_message(db: Session, client_id: int, message_text: str, sender: st
     )
 
 
-def get_chat_history_by_client_id(db: Session, client_id: int) -> list[models.ChatMessage]:
+def get_chat_history_by_client_id(
+    db: Session, client_id: int
+) -> list[models.ChatMessage]:
     "Retrieve chat history for a specific client"
     return (
         db.query(models.ChatMessage)
@@ -354,7 +353,9 @@ def is_member_league_conflict(
         )
         .first()
     )
-    if not target_team or (not target_team.league_one_id and not target_team.league_two_id):
+    if not target_team or (
+        not target_team.league_one_id and not target_team.league_two_id
+    ):
         return False, ""
 
     target_league_ids = {target_team.league_one_id, target_team.league_two_id} - {None}
