@@ -447,9 +447,13 @@
     </footer>
     {% endif %}
 
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js" defer></script>
     <script
-      src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"
+      src="{{ url_for('static', filename='js/socket.io.min.js') }}"
+      defer
+    ></script>
+
+    <script
+      src="{{ url_for('static', filename='js/chart.umd.min.js') }}"
       defer
     ></script>
 

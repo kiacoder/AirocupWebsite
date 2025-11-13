@@ -2,108 +2,108 @@
   font-family: "IRANYekanX";
   font-style: normal;
   font-weight: 300;
-  src: url("Fonts/woff2/IRANYekanX-Light.woff2") format("woff2"),
-    url("Fonts/woff/IRANYekanX-Light.woff") format("woff");
+  src: url("fonts/woff2/IRANYekanX-Light.woff2") format("woff2"),
+    url("fonts/woff/IRANYekanX-Light.woff") format("woff");
 }
 @font-face {
   font-family: "IRANYekanX";
   font-style: normal;
   font-weight: 400;
-  src: url("Fonts/woff2/IRANYekanX-Regular.woff2") format("woff2"),
-    url("Fonts/woff/IRANYekanX-Regular.woff") format("woff");
+  src: url("fonts/woff2/IRANYekanX-Regular.woff2") format("woff2"),
+    url("fonts/woff/IRANYekanX-Regular.woff") format("woff");
 }
 @font-face {
   font-family: "IRANYekanX";
   font-style: normal;
   font-weight: 700;
-  src: url("Fonts/woff2/IRANYekanX-Bold.woff2") format("woff2"),
-    url("Fonts/woff/IRANYekanX-Bold.woff") format("woff");
+  src: url("fonts/woff2/IRANYekanX-Bold.woff2") format("woff2"),
+    url("fonts/woff/IRANYekanX-Bold.woff") format("woff");
 }
 @font-face {
   font-family: "IRANYekanX";
   font-style: normal;
   font-weight: 900;
-  src: url("Fonts/woff2/IRANYekanX-Black.woff2") format("woff2"),
-    url("Fonts/woff/IRANYekanX-Black.woff") format("woff");
+  src: url("fonts/woff2/IRANYekanX-Black.woff2") format("woff2"),
+    url("fonts/woff/IRANYekanX-Black.woff") format("woff");
 }
 @font-face {
   font-family: "IRANYekanX";
   font-style: normal;
   font-weight: 950;
-  src: url("Fonts/woff2/IRANYekanX-ExtraBlack.woff2") format("woff2"),
-    url("Fonts/woff/IRANYekanX-ExtraBlack.woff") format("woff");
+  src: url("fonts/woff2/IRANYekanX-ExtraBlack.woff2") format("woff2"),
+    url("fonts/woff/IRANYekanX-ExtraBlack.woff") format("woff");
 }
 
 @font-face {
   font-family: "IRANYekanX-FaNum";
   font-style: normal;
   font-weight: 300;
-  src: url("Fonts/woff2/IRANYekanXFaNum-Light.woff2") format("woff2"),
-    url("Fonts/woff/IRANYekanXFaNum-Light.woff") format("woff");
+  src: url("fonts/woff2/IRANYekanXFaNum-Light.woff2") format("woff2"),
+    url("fonts/woff/IRANYekanXFaNum-Light.woff") format("woff");
 }
 @font-face {
   font-family: "IRANYekanX-FaNum";
   font-style: normal;
   font-weight: 400;
-  src: url("Fonts/woff2/IRANYekanXFaNum-Regular.woff2") format("woff2"),
-    url("Fonts/woff/IRANYekanXFaNum-Regular.woff") format("woff");
+  src: url("fonts/woff2/IRANYekanXFaNum-Regular.woff2") format("woff2"),
+    url("fonts/woff/IRANYekanXFaNum-Regular.woff") format("woff");
 }
 @font-face {
   font-family: "IRANYekanX-FaNum";
   font-style: normal;
   font-weight: 700;
-  src: url("Fonts/woff2/IRANYekanXFaNum-Bold.woff2") format("woff2"),
-    url("Fonts/woff/IRANYekanXFaNum-Bold.woff") format("woff");
+  src: url("fonts/woff2/IRANYekanXFaNum-Bold.woff2") format("woff2"),
+    url("fonts/woff/IRANYekanXFaNum-Bold.woff") format("woff");
 }
 @font-face {
   font-family: "IRANYekanX-FaNum";
   font-style: normal;
   font-weight: 900;
-  src: url("Fonts/woff2/IRANYekanXFaNum-Black.woff2") format("woff2"),
-    url("Fonts/woff/IRANYekanXFaNum-Black.woff") format("woff");
+  src: url("fonts/woff2/IRANYekanXFaNum-Black.woff2") format("woff2"),
+    url("fonts/woff/IRANYekanXFaNum-Black.woff") format("woff");
 }
 @font-face {
   font-family: "IRANYekanX-FaNum";
   font-style: normal;
   font-weight: 950;
-  src: url("Fonts/woff2/IRANYekanXFaNum-ExtraBlack.woff2") format("woff2"),
-    url("Fonts/woff/IRANYekanXFaNum-ExtraBlack.woff") format("woff");
+  src: url("fonts/woff2/IRANYekanXFaNum-ExtraBlack.woff2") format("woff2"),
+    url("fonts/woff/IRANYekanXFaNum-ExtraBlack.woff") format("woff");
 }
 
 @font-face {
   font-family: "IRANYekanX-NoEn";
   font-style: normal;
   font-weight: 300;
-  src: url("Fonts/woff2/IRANYekanXNoEn-Light.woff2") format("woff2"),
-    url("Fonts/woff/IRANYekanXNoEn-Light.woff") format("woff");
+  src: url("fonts/woff2/IRANYekanXNoEn-Light.woff2") format("woff2"),
+    url("fonts/woff/IRANYekanXNoEn-Light.woff") format("woff");
 }
 @font-face {
   font-family: "IRANYekanX-NoEn";
   font-style: normal;
   font-weight: 400;
-  src: url("Fonts/woff2/IRANYekanXNoEn-Regular.woff2") format("woff2"),
-    url("Fonts/woff/IRANYekanXNoEn-Regular.woff") format("woff");
+  src: url("fonts/woff2/IRANYekanXNoEn-Regular.woff2") format("woff2"),
+    url("fonts/woff/IRANYekanXNoEn-Regular.woff") format("woff");
 }
 @font-face {
   font-family: "IRANYekanX-NoEn";
   font-style: normal;
   font-weight: 700;
-  src: url("Fonts/woff2/IRANYekanXNoEn-Bold.woff2") format("woff2"),
-    url("Fonts/woff/IRANYekanXNoEn-Bold.woff") format("woff");
+  src: url("fonts/woff2/IRANYekanXNoEn-Bold.woff2") format("woff2"),
+    url("fonts/woff/IRANYekanXNoEn-Bold.woff") format("woff");
 }
 @font-face {
   font-family: "IRANYekanX-NoEn";
   font-style: normal;
   font-weight: 900;
-  src: url("Fonts/woff2/IRANYekanXNoEn-Black.woff2") format("woff2"),
-    url("Fonts/woff/IRANYekanXNoEn-Black.woff") format("woff");
+  src: url("fonts/woff2/IRANYekanXNoEn-Black.woff2") format("woff2"),
+    url("fonts/woff/IRANYekanXNoEn-Black.woff") format("woff");
 }
 @font-face {
   font-family: "IRANYekanX-NoEn";
   font-style: normal;
   font-weight: 950;
-  src: url("Fonts/woff2/IRANYekanXNoEn-ExtraBlack.woff2") format("woff2"),
-    url("Fonts/woff/IRANYekanXNoEn-ExtraBlack.woff") format("woff");
+  src: url("fonts/woff2/IRANYekanXNoEn-ExtraBlack.woff2") format("woff2"),
+    url("fonts/woff/IRANYekanXNoEn-ExtraBlack.woff") format("woff");
 }
 
 :root {
