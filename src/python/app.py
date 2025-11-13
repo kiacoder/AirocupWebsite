@@ -38,6 +38,7 @@ flask_app = Flask(
     template_folder=constants.Path.templates_dir,
     static_url_path="",
 )
+
 flask_app.secret_key = config.secret_key
 csrf_protector.init_app(flask_app)
 socket_io.init_app(flask_app)
