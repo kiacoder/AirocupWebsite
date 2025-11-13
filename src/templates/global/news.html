@@ -20,11 +20,11 @@
     <div class="NewsGrid">
       {% for article in articles %}
       <div class="Card CardNews {% if loop.first %}CardNews--Featured{% endif %}">
-        <a href="{{ url_for('Global.view_article', article_id=article.news_id) }}" class="CardNews__Link" aria-label="ادامه مطلب درباره {{ article.title }}">
+        <a href="{{ url_for('global.view_article', article_id=article.news_id) }}" class="CardNews__Link" aria-label="ادامه مطلب درباره {{ article.title }}">
           {% if article.image_path %}
           <div class="CardNews__ImageWrapper">
             <img
-              src="{{ url_for('Global.uploaded_news_image', filename=article.image_path) }}"
+              src="{{ url_for('global.uploaded_news_image', filename=article.image_path) }}"
               alt="تصویر خبر: {{ article.title }}"
               loading="lazy"
               width="400"

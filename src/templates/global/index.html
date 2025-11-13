@@ -1,4 +1,4 @@
-{% extends "Global/base.html" %} {% block title %}آیروکاپ - مسابقات ملی هوش
+{% extends "global/base.html" %} {% block title %}آیروکاپ - مسابقات ملی هوش
 مصنوعی و رباتیک{% endblock %} {% block page_title %}آیروکاپ - مسابقات ملی هوش
 مصنوعی و رباتیک{% endblock %} {% block body %}
 <header class="hero-section">
@@ -176,7 +176,7 @@
 <section id="leagues-section" class="leagues-section fade-in-element">
   <div class="container">
     <h2 class="section-title">لیگ‌های جذاب و نوآورانه</h2>
-    <a href="{{ url_for('Global.leagues') }}" class="leagues-grid-link-wrapper">
+    <a href="{{ url_for('global.leagues') }}" class="leagues-grid-link-wrapper">
       <div class="leagues-grid">
         {% for item in leagues_list[:9] %}
         <div class="card card-league">
@@ -189,7 +189,7 @@
       </div>
     </a>
     <div class="section-cta text-center">
-      <a href="{{ url_for('Global.leagues') }}" class="btn btn-secondary">
+      <a href="{{ url_for('global.leagues') }}" class="btn btn-secondary">
         مشاهده تمام {{ leagues_list|length }} لیگ
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -227,7 +227,8 @@
       </div>
       {% endfor %}
       <a
-        href="{{ url_for('Global.cooperate') }}"
+        href="{{ url_for('
+        .cooperate') }}"
         class="sponsor-box become-sponsor-box"
         title="حامی ما شوید"
         aria-label="Become a sponsor"

@@ -1,4 +1,4 @@
-{% extends "Global/Base.html" %}
+{% extends "global/Base.html" %}
 {% block Title %}خطای داخلی سرور (500) | آیروکاپ{% endblock %}
 {% block SEO_Description %}
 <meta name="description" content="صفحه خطای ۵۰۰ - مشکلی فنی در سرورهای آیروکاپ رخ داده است. تیم ما در حال بررسی آن است." />
@@ -14,7 +14,7 @@
       متاسفیم، یک خطای غیرمنتظره در سیستم رخ داده است. تیم فنی ما به صورت خودکار از این مشکل مطلع شده و در حال رفع آن است. لطفاً چند دقیقه دیگر دوباره تلاش کنید یا به صفحه اصلی بازگردید.
     </p>
     <div class="ErrorButtons">
-      <a href="{{ url_for('Global.index') }}" class="Btn BtnPrimary">
+      <a href="{{ url_for('global.index') }}" class="Btn BtnPrimary">
         <i class="fas fa-home" aria-hidden="true"></i>
         بازگشت به صفحه اصلی
       </a>

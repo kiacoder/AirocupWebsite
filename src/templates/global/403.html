@@ -1,4 +1,4 @@
-{% extends "Global/Base.html" %} {% block Title %}دسترسی غیرمجاز (403) |
+{% extends "global/Base.html" %} {% block Title %}دسترسی غیرمجاز (403) |
 آیروکاپ{% endblock %} {% block SEO_Description %}
 <meta
   name="description"
@@ -21,12 +21,12 @@
         <i class="fas fa-tachometer-alt" aria-hidden="true"></i>
         بازگشت به داشبورد
       </a>
-      <a href="{{ url_for('Global.logout') }}" class="Btn BtnSecondary">
+      <a href="{{ url_for('global.logout') }}" class="Btn BtnSecondary">
         <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
         خروج از حساب
       </a>
       {% else %}
-      <a href="{{ url_for('Global.index') }}" class="Btn BtnPrimary">
+      <a href="{{ url_for('global.index') }}" class="Btn BtnPrimary">
         <i class="fas fa-home" aria-hidden="true"></i>
         بازگشت به صفحه اصلی
       </a>

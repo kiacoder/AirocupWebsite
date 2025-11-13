@@ -1,4 +1,4 @@
-{% extends "Global/Base.html" %}
+{% extends "global/Base.html" %}
 
 {% block Title %}{{ article.Title }} | اخبار آیروکاپ{% endblock %}
 
@@ -11,7 +11,7 @@
   <div class="Container">
     <nav aria-label="breadcrumb" class="BreadcrumbNav">
       <ol>
-        <li><a href="{{ url_for('Global.index') }}">خانه</a></li>
+        <li><a href="{{ url_for('global.index') }}">خانه</a></li>
         <li><a href="{{ url_for('Global.News') }}">اخبار</a></li>
         <li aria-current="page">{{ article.Title }}</li>
       </ol>

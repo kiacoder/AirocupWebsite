@@ -1,4 +1,4 @@
-{% extends "Global/Base.html" %} {% block Title %}خطای سرور (500) - حالت دیباگ{%
+{% extends "global/Base.html" %} {% block Title %}خطای سرور (500) - حالت دیباگ{%
 endblock %} {% block BodyClass %}ErrorDebug{% endblock %} {% block Body %}
 <main class="Container ErrorDebugContainer">
   <h1 class="ErrorDebugTitle">
@@ -10,7 +10,7 @@ endblock %} {% block BodyClass %}ErrorDebug{% endblock %} {% block Body %}
     داده می‌شود.
   </p>
 
-  <a href="{{ url_for('Global.index') }}" class="Btn BtnPrimary">
+  <a href="{{ url_for('global.index') }}" class="Btn BtnPrimary">
     <i class="fas fa-home" aria-hidden="true"></i> بازگشت به صفحه اصلی
   </a>
 

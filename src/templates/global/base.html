@@ -104,12 +104,12 @@
         "@context": "https://schema.org",
         "@type": "WebSite",
         "name": "آیروکاپ",
-        "url": "{{ url_for('Global.index', _external=True) }}",
+        "url": "{{ url_for('global.index', _external=True) }}",
         "potentialAction": {
           "@type": "SearchAction",
           "target": {
             "@type": "EntryPoint",
-            "urlTemplate": "{{ url_for('Global.index', _external=True) }}search?q={search_term_string}"
+            "urlTemplate": "{{ url_for('global.index', _external=True) }}search?q={search_term_string}"
           },
           "query-input": "required name=search_term_string"
         },
@@ -120,32 +120,32 @@
             {
               "@type": "Action",
               "name": "لیگ‌ها",
-              "url": "{{ url_for('Global.leagues', _external=True) }}"
+              "url": "{{ url_for('global.leagues', _external=True) }}"
             },
             {
               "@type": "Action",
               "name": "کمیته",
-              "url": "{{ url_for('Global.committee', _external=True) }}"
+              "url": "{{ url_for('global.committee', _external=True) }}"
             },
             {
               "@type": "Action",
               "name": "حامیان",
-              "url": "{{ url_for('Global.sponsors', _external=True) }}"
+              "url": "{{ url_for('global.sponsors', _external=True) }}"
             },
             {
               "@type": "Action",
               "name": "اخبار",
-              "url": "{{ url_for('Global.news', _external=True) }}"
+              "url": "{{ url_for('global.news', _external=True) }}"
             },
             {
               "@type": "Action",
               "name": "درباره ما",
-              "url": "{{ url_for('Global.about', _external=True) }}"
+              "url": "{{ url_for('global.about', _external=True) }}"
             },
             {
               "@type": "Action",
               "name": "تماس با ما",
-              "url": "{{ url_for('Global.contact', _external=True) }}"
+              "url": "{{ url_for('global.contact', _external=True) }}"
             }
           ]
         }
@@ -178,7 +178,7 @@
           <a href="{{ url_for('admin.admin_clients_list') }}">کاربران</a>
           <a href="{{ url_for('admin.admin_manage_teams') }}">تیم‌ها</a>
           <a href="{{ url_for('admin.admin_manage_news') }}">اخبار</a>
-          <a href="{{ url_for('Global.logout') }}" class="btn btn-secondary"
+          <a href="{{ url_for('global.logout') }}" class="btn btn-secondary"
             >خروج</a
           >
         </nav>
@@ -195,7 +195,7 @@
     <header class="site-header" role="banner">
       <div class="top-header container">
         <div class="logo" itemscope itemtype="https://schema.org/Organization">
-          <a href="{{ url_for('Global.index') }}" itemprop="url">
+          <a href="{{ url_for('global.index') }}" itemprop="url">
             <img
               src="{{ url_for('static', filename=path.transparent_logos['transparent_white']) }}"
               alt="لوگو آیروکاپ - مسابقات ملی هوش مصنوعی و رباتیک"
@@ -207,57 +207,57 @@
           <ul id="main-nav-list" class="nav-items">
             <li>
               <a
-                href="{{ url_for('Global.index') }}"
-                class="{{ 'active' if request.endpoint == 'Global.index' }}"
+                href="{{ url_for('global.index') }}"
+                class="{{ 'active' if request.endpoint == 'global.index' }}"
                 >صفحه اصلی</a
               >
             </li>
             <li>
               <a
-                href="{{ url_for('Global.leagues') }}"
-                class="{{ 'active' if request.endpoint == 'Global.leagues' }}"
+                href="{{ url_for('global.leagues') }}"
+                class="{{ 'active' if request.endpoint == 'global.leagues' }}"
                 >لیگ‌ها</a
               >
             </li>
             <li>
               <a
-                href="{{ url_for('Global.committee') }}"
-                class="{{ 'active' if request.endpoint == 'Global.committee' }}"
+                href="{{ url_for('global.committee') }}"
+                class="{{ 'active' if request.endpoint == 'global.committee' }}"
                 >کمیته</a
               >
             </li>
             <li>
               <a
-                href="{{ url_for('Global.sponsors') }}"
-                class="{{ 'active' if request.endpoint == 'Global.sponsors' }}"
+                href="{{ url_for('global.sponsors') }}"
+                class="{{ 'active' if request.endpoint == 'global.sponsors' }}"
                 >حامیان</a
               >
             </li>
             <li>
               <a
-                href="{{ url_for('Global.gallery') }}"
-                class="{{ 'active' if request.endpoint == 'Global.gallery' }}"
+                href="{{ url_for('global.gallery') }}"
+                class="{{ 'active' if request.endpoint == 'global.gallery' }}"
                 >گالری</a
               >
             </li>
             <li>
               <a
-                href="{{ url_for('Global.news') }}"
-                class="{{ 'active' if request.endpoint == 'Global.news' }}"
+                href="{{ url_for('global.news') }}"
+                class="{{ 'active' if request.endpoint == 'global.news' }}"
                 >اخبار</a
               >
             </li>
             <li>
               <a
-                href="{{ url_for('Global.about') }}"
-                class="{{ 'active' if request.endpoint == 'Global.about' }}"
+                href="{{ url_for('global.about') }}"
+                class="{{ 'active' if request.endpoint == 'global.about' }}"
                 >درباره ما</a
               >
             </li>
             <li>
               <a
-                href="{{ url_for('Global.contact') }}"
-                class="{{ 'active' if request.endpoint == 'Global.contact' }}"
+                href="{{ url_for('global.contact') }}"
+                class="{{ 'active' if request.endpoint == 'global.contact' }}"
                 >تماس با ما</a
               >
             </li>
@@ -363,7 +363,7 @@
             itemtype="https://schema.org/Organization"
           >
             <a
-              href="{{ url_for('Global.index') }}"
+              href="{{ url_for('global.index') }}"
               class="footer-logo"
               itemprop="url"
             >
@@ -381,12 +381,12 @@
           <div class="footer-links">
             <h3>دسترسی سریع</h3>
             <ul>
-              <li><a href="{{ url_for('Global.index') }}">صفحه اصلی</a></li>
-              <li><a href="{{ url_for('Global.leagues') }}">لیگ‌ها</a></li>
+              <li><a href="{{ url_for('global.index') }}">صفحه اصلی</a></li>
+              <li><a href="{{ url_for('global.leagues') }}">لیگ‌ها</a></li>
               <li><a href="{{ url_for('client.signup') }}">ثبت نام</a></li>
               <li><a href="{{ url_for('client.login_client') }}">ورود</a></li>
               <li>
-                <a href="{{ url_for('Global.cooperate') }}">همکاری با ما</a>
+                <a href="{{ url_for('global.cooperate') }}">همکاری با ما</a>
               </li>
             </ul>
           </div>
