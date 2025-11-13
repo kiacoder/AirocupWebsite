@@ -5,14 +5,14 @@ import os
 from contextlib import contextmanager
 from typing import Any, Iterator, List, Optional, Tuple
 import bcrypt
+from sqlalchemy import create_engine, func
+from sqlalchemy.orm import Session, sessionmaker
 from . import constants
 from . import models
 from . import utils
-from sqlalchemy import create_engine, func
-from sqlalchemy.orm import Session, sessionmaker
 
 db_engine = create_engine(
-    f"sqlite:///{constants.Path.database}", connect_args={"check_same_thread": False}
+    f"sqlite:///{constants.Path.database.replace('\\', '/')}", connect_args={"check_same_thread": False}
 )
 
 

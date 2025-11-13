@@ -171,7 +171,7 @@ def admin_select_chat():
             .filter(models.ChatMessage.sender.notin_(get_admin_personas()))
             .group_by(models.Client.client_id)
             .order_by(func.max(models.ChatMessage.timestamp).desc())
-        )
+        ).all()
 
     return render_template(
         constants.admin_html_names_data["admin_select_chat"],

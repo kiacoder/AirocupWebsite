@@ -16,7 +16,7 @@ from jinja2 import TemplateNotFound
 from . import constants
 from . import database
 
-global_blueprint = Blueprint("Global", __name__)
+global_blueprint = Blueprint("global", __name__)
 
 gallery_images = sorted(
     [
@@ -83,7 +83,7 @@ def news():
     return render_template(constants.global_html_names_data["news"], articles=articles)
 
 
-@global_blueprint.route("/News/<int:ArticleID>")
+@global_blueprint.route("/News/<int:article_id>")
 def view_article(article_id):
     "View a specific news article"
     with database.get_db_session() as db:

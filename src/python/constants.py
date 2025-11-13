@@ -14,7 +14,7 @@ class Path:
     static_dir = os.path.join(root_dir, "static")
     css_dir = os.path.join(static_dir, "css")
     js_dir = os.path.join(static_dir, "js")
-    templates_dir = os.path.join(root_dir, "code", "templates")
+    templates_dir = os.path.join(root_dir, "src", "templates")
     admin_templates_dir = os.path.join(templates_dir, "admin")
     client_templates_dir = os.path.join(templates_dir, "client")
     global_templates_dir = os.path.join(templates_dir, "global")
