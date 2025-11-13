@@ -1336,48 +1336,71 @@ const airocupApp = {
       );
     },
 
+    // This function should be placed inside the main airocupApp object,
+    // alongside helpers, ui, and forms.
     initializeChat(container) {
       const elements = {
-        chatBox: container.querySelector(
-          airocupApp.constants.SELECTORS.CHAT_BOX
-        ),
+        chatBox: container.querySelector(this.constants.SELECTORS.CHAT_BOX),
         messageInput: container.querySelector(
-          airocupApp.constants.SELECTORS.MESSAGE_INPUT
+          this.constants.SELECTORS.MESSAGE_INPUT
         ),
         sendButton: container.querySelector(
-          airocupApp.constants.SELECTORS.SEND_BUTTON
+          this.constants.SELECTORS.SEND_BUTTON
         ),
       };
-      if (!elements.chatBox || !elements.messageInput || !elements.sendButton)
+      if (!elements.chatBox || !elements.messageInput || !elements.sendButton) {
+        console.error("Chat UI elements not found.");
         return;
+      }
 
       const state = {
         roomId: container.dataset.clientId,
-        historyUrl: `/Admin/GetChatHistory/${container.dataset.clientId}`,
-        isClient: false,
-        socket: airocupApp.helpers.safeSocket(),
+        isClient: container.matches(
+          this.constants.SELECTORS.CLIENT_CHAT_CONTAINER
+        ),
+        socket: this.helpers.safeSocket(),
       };
-      if (!state.roomId || !state.historyUrl) return;
+
+      if (!state.roomId) {
+        console.error("Chat Error: Missing client ID.");
+        return;
+      }
+
+      state.historyUrl = state.isClient
+        ? "/get_my_chat_history"
+        : `/Admin/GetChatHistory/${state.roomId}`;
 
       const scrollToBottom = () => {
         elements.chatBox.scrollTop = elements.chatBox.scrollHeight;
       };
 
-      const addMessage = (msg) => {
-        const isSentByUser = msg.sender !== "client";
+      const addMessage = (msg, isLocalSend = false) => {
+        const isSentByThisUser =
+          isLocalSend ||
+          (state.isClient ? msg.sender === "client" : msg.sender !== "client");
+        const senderName = isLocalSend
+          ? "شما"
+          : isSentByThisUser
+          ? state.isClient
+            ? "شما"
+            : msg.sender
+          : state.isClient
+          ? "پشتیبانی"
+          : "کاربر";
+
         const messageEl = document.createElement("div");
         messageEl.className = `chat-message ${
-          isSentByUser ? "message-sent" : "message-received"
+          isSentByThisUser ? "message-sent" : "message-received"
         }`;
 
-        const senderName = isSentByUser ? msg.sender : "کاربر";
-
         messageEl.innerHTML = `
-          <div class="message-meta">
-              <strong>${senderName}</strong>
-              <time>${new Date(msg.timestamp).toLocaleTimeString()}</time>
-          </div>
-          <p class="message-text">${msg.message_text}</p>
+        <div class="message-meta">
+            <strong>${senderName}</strong>
+            <time data-timestamp="${msg.timestamp}">${new Date(
+          msg.timestamp
+        ).toLocaleTimeString("fa-IR")}</time>
+        </div>
+        <p class="message-text">${msg.message_text || msg.message}</p> 
       `;
         elements.chatBox.appendChild(messageEl);
       };
@@ -1386,20 +1409,23 @@ const airocupApp = {
         const messageText = elements.messageInput.value.trim();
         if (!messageText || !state.socket) return;
 
-        const sender =
-          container.querySelector("#personaSelect")?.value || "Admin";
+        const sender = state.isClient
+          ? "client"
+          : container.querySelector("#personaSelect")?.value || "Admin";
 
         state.socket.emit("send_message", {
           room: state.roomId,
           message: messageText,
-          sender: sender,
         });
 
-        addMessage({
-          sender: sender,
-          message_text: messageText,
-          timestamp: new Date().toISOString(),
-        });
+        addMessage(
+          {
+            message_text: messageText,
+            timestamp: new Date().toISOString(),
+          },
+          true
+        );
+
         elements.messageInput.value = "";
         elements.messageInput.focus();
         scrollToBottom();
@@ -1415,9 +1441,7 @@ const airocupApp = {
 
       if (state.socket) {
         state.socket.on("connect", () =>
-          state.socket.emit("join", {
-            room: state.roomId,
-          })
+          state.socket.emit("join", { room: state.roomId })
         );
         state.socket.on("new_message", (data) => {
           addMessage(data);
@@ -1425,12 +1449,12 @@ const airocupApp = {
         });
       }
 
-      airocupApp.helpers
+      this.helpers
         .fetchJSON(state.historyUrl)
         .then((data) => {
           elements.chatBox.innerHTML = "";
-          if (data.messages && data.messages.length > 0) {
-            data.messages.forEach(addMessage);
+          if (data.messages?.length) {
+            data.messages.forEach((msg) => addMessage(msg));
           } else {
             elements.chatBox.innerHTML =
               '<div class="chat-empty-state">هنوز پیامی وجود ندارد.</div>';
