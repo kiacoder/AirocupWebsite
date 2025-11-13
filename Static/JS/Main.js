@@ -438,6 +438,101 @@ const airocupApp = {
       });
     },
   },
+  formHelpers: {
+    populateProvinces(selectElement) {
+      if (!selectElement) return;
+      const provinces = window.AirocupData?.provinces_data || {};
+      const fragment = document.createDocumentFragment();
+      fragment.appendChild(new Option("استان را انتخاب کنید", ""));
+      Object.keys(provinces)
+        .sort((a, b) => a.localeCompare(b, "fa"))
+        .forEach((name) => fragment.appendChild(new Option(name, name)));
+      selectElement.innerHTML = "";
+      selectElement.appendChild(fragment);
+    },
+
+    updateCities(provinceName, citySelectElement) {
+      if (!citySelectElement) return;
+      const cities =
+        (window.AirocupData?.provinces_data || {})[provinceName] || [];
+      citySelectElement.innerHTML = "";
+      citySelectElement.add(new Option("شهر را انتخاب کنید", ""));
+      citySelectElement.disabled = !cities.length;
+      cities.forEach((name) => citySelectElement.add(new Option(name, name)));
+    },
+    setupDatePicker(formElement) {
+      if (!formElement) return;
+
+      const daySelect = formElement.querySelector('[name="birth_day"]');
+      const monthSelect = formElement.querySelector('[name="birth_month"]');
+      const yearSelect = formElement.querySelector('[name="birth_year"]');
+
+      if (!daySelect || !monthSelect || !yearSelect) return;
+      if (monthSelect.options.length <= 1) {
+        const months = window.AirocupData?.persian_months || {};
+        for (const [num, name] of Object.entries(months)) {
+          monthSelect.add(new Option(name, num));
+        }
+      }
+      if (yearSelect.options.length <= 1) {
+        const years = window.AirocupData?.allowed_years || [];
+        years.forEach((year) => yearSelect.add(new Option(year, year)));
+      }
+
+      const isLeapYear = (year) => {
+        const remainder = (year + 12) % 33;
+        return [1, 5, 9, 13, 17, 22, 26, 30].includes(remainder);
+      };
+
+      const updateDays = () => {
+        const selectedMonth = parseInt(monthSelect.value, 10);
+        const selectedYear = parseInt(yearSelect.value, 10);
+        let maxDays = 31;
+
+        if (selectedMonth >= 7 && selectedMonth <= 11) {
+          maxDays = 30;
+        } else if (selectedMonth === 12) {
+          maxDays = isLeapYear(selectedYear) ? 30 : 29;
+        }
+
+        const currentDay = daySelect.value;
+        daySelect.innerHTML = "";
+        daySelect.add(new Option("روز", ""));
+        for (let day = 1; day <= maxDays; day++) {
+          daySelect.add(new Option(day, day));
+        }
+
+        if (currentDay && parseInt(currentDay, 10) <= maxDays) {
+          daySelect.value = currentDay;
+        }
+      };
+
+      yearSelect.addEventListener("change", updateDays);
+      monthSelect.addEventListener("change", updateDays);
+      updateDays();
+    },
+
+    initializeDynamicSelects(formElement) {
+      if (!formElement) return;
+      const provinceSelect = formElement.querySelector('[name="province"]');
+      const citySelect = formElement.querySelector('[name="city"]');
+
+      if (provinceSelect && citySelect) {
+        this.populateProvinces(provinceSelect);
+        provinceSelect.addEventListener("change", () => {
+          this.updateCities(provinceSelect.value, citySelect);
+        });
+
+        if (provinceSelect.dataset.initialValue) {
+          provinceSelect.value = provinceSelect.dataset.initialValue;
+          this.updateCities(provinceSelect.value, citySelect);
+          if (citySelect.dataset.initialValue) {
+            citySelect.value = citySelect.dataset.initialValue;
+          }
+        }
+      }
+    },
+  },
 
   forms: {
     init() {
@@ -491,6 +586,31 @@ const airocupApp = {
         }
       });
     },
+    initializePasswordConfirmation(form, passwordInput, confirmInput) {
+      if (!form || !passwordInput || !confirmInput) return;
+
+      const validateMatch = () => {
+        const isMatch = passwordInput.value === confirmInput.value;
+        confirmInput.classList.toggle(
+          airocupApp.constants.CLASSES.INVALID,
+          !isMatch && confirmInput.value.length > 0
+        );
+        return isMatch;
+      };
+
+      form.addEventListener("submit", (event) => {
+        if (!validateMatch()) {
+          event.preventDefault();
+          airocupApp.ui.createFlash(
+            "error",
+            "رمز عبور و تکرار آن یکسان نیستند."
+          );
+        }
+      });
+
+      passwordInput.addEventListener("input", validateMatch);
+      confirmInput.addEventListener("input", validateMatch);
+    },
 
     validatePasswordStrength(passwordInput, validatorElement) {
       if (!passwordInput || !validatorElement) return false;
@@ -517,6 +637,120 @@ const airocupApp = {
     },
   },
 
+  initializeChat(container) {
+    const elements = {
+      chatBox: container.querySelector(this.constants.SELECTORS.CHAT_BOX),
+      messageInput: container.querySelector(
+        this.constants.SELECTORS.MESSAGE_INPUT
+      ),
+      sendButton: container.querySelector(this.constants.SELECTORS.SEND_BUTTON),
+    };
+    if (!elements.chatBox || !elements.messageInput || !elements.sendButton)
+      return;
+
+    const state = {
+      roomId: container.dataset.clientId,
+      historyUrl: container.dataset.historyUrl,
+      isClient: container.matches(
+        this.constants.SELECTORS.CLIENT_CHAT_CONTAINER
+      ),
+      socket: this.helpers.safeSocket(),
+    };
+    if (!state.roomId || !state.historyUrl) return;
+
+    const scrollToBottom = () =>
+      (elements.chatBox.scrollTop = elements.chatBox.scrollHeight);
+
+    const addMessage = (msg, isLocal = false) => {
+      const isSentByCurrentUser =
+        isLocal ||
+        (state.isClient ? msg.sender === "client" : msg.sender !== "client");
+      const messageEl = document.createElement("div");
+      messageEl.className = `chat-message ${
+        isSentByCurrentUser ? "message-sent" : "message-received"
+      }`;
+
+      const senderName = isLocal
+        ? "شما"
+        : state.isClient
+        ? isSentByCurrentUser
+          ? "شما"
+          : "پشتیبانی"
+        : isSentByCurrentUser
+        ? msg.sender
+        : "کاربر";
+
+      messageEl.innerHTML = `
+            <div class="message-meta">
+                <strong>${senderName}</strong>
+                <time>${new Date(msg.timestamp).toLocaleTimeString(
+                  "fa-IR"
+                )}</time>
+            </div>
+            <p class="message-text">${msg.message_text}</p>
+        `;
+      elements.chatBox.appendChild(messageEl);
+    };
+
+    const sendMessage = () => {
+      const messageText = elements.messageInput.value.trim();
+      if (!messageText || !state.socket) return;
+
+      const sender = state.isClient
+        ? "client"
+        : container.querySelector("#personaSelect")?.value || "Admin";
+
+      state.socket.emit("send_message", {
+        room: state.roomId,
+        message: messageText,
+        sender: sender,
+      });
+      addMessage(
+        { message_text: messageText, timestamp: new Date().toISOString() },
+        true
+      );
+
+      elements.messageInput.value = "";
+      elements.messageInput.focus();
+      scrollToBottom();
+    };
+
+    elements.sendButton.addEventListener("click", sendMessage);
+    elements.messageInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    if (state.socket) {
+      state.socket.on("connect", () =>
+        state.socket.emit("join", { room: state.roomId })
+      );
+      state.socket.on("new_message", (data) => {
+        addMessage(data);
+        scrollToBottom();
+      });
+    }
+
+    this.helpers
+      .fetchJSON(state.historyUrl)
+      .then((data) => {
+        elements.chatBox.innerHTML = "";
+        data.messages?.forEach((msg) => addMessage(msg));
+        if (!data.messages || data.messages.length === 0) {
+          elements.chatBox.innerHTML =
+            '<div class="chat-empty-state">هنوز پیامی وجود ندارد.</div>';
+        }
+        scrollToBottom();
+      })
+      .catch((err) => {
+        console.error("Failed to load chat history:", err);
+        elements.chatBox.innerHTML =
+          '<div class="chat-error-state">خطا در بارگذاری تاریخچه گفتگو.</div>';
+      });
+  },
+
   client: {
     init() {
       this.initializeMobileMenu();
@@ -532,7 +766,10 @@ const airocupApp = {
       const chatContainer = document.querySelector(
         airocupApp.constants.SELECTORS.CLIENT_CHAT_CONTAINER
       );
-      if (chatContainer) this.initializeChat(chatContainer);
+      if (chatContainer) airocupApp.initializeChat(chatContainer);
+      this.initializeMembersPage();
+      this.initializeLeagueSelector();
+      this.initializeFileUploadValidation();
     },
 
     initializeMobileMenu() {
@@ -706,6 +943,102 @@ const airocupApp = {
       );
     },
 
+    initializeMembersPage() {
+      const page = document.querySelector(".members-page");
+      if (!page) return;
+
+      const addForm = page.querySelector("#addMemberForm");
+      if (addForm) {
+        airocupApp.formHelpers.initializeDynamicSelects(addForm);
+        airocupApp.formHelpers.setupDatePicker(addForm);
+      }
+
+      const editModal = document.querySelector("#editMemberModal");
+      const editForm = editModal?.querySelector("form");
+      if (!editModal || !editForm) return;
+
+      airocupApp.formHelpers.initializeDynamicSelects(editForm);
+
+      page.addEventListener("click", (e) => {
+        const editBtn = e.target.closest(
+          '[data-modal-target="editMemberModal"]'
+        );
+        if (!editBtn) return;
+
+        const data = editBtn.dataset;
+        editForm.action = `/Team/${data.teamId}/EditMember/${data.memberId}`;
+
+        Object.keys(data).forEach((key) => {
+          const input = editForm.querySelector(`[name="${key}"]`);
+          if (input) {
+            if (key === "province" || key === "city") {
+              input.dataset.initialValue = data[key];
+            } else {
+              input.value = data[key];
+            }
+          }
+        });
+
+        airocupApp.formHelpers.initializeDynamicSelects(editForm);
+
+        airocupApp.ui.openModal(editModal, editBtn);
+      });
+    },
+
+    initializeLeagueSelector() {
+      const form = document.querySelector("#selectLeagueForm");
+      if (!form) return;
+
+      const leagueOne = form.querySelector('[name="league_one"]');
+      const leagueTwo = form.querySelector('[name="league_two"]');
+
+      const syncOptions = () => {
+        Array.from(leagueTwo.options).forEach(
+          (opt) => (opt.disabled = opt.value && opt.value === leagueOne.value)
+        );
+        Array.from(leagueOne.options).forEach(
+          (opt) => (opt.disabled = opt.value && opt.value === leagueTwo.value)
+        );
+      };
+
+      leagueOne.addEventListener("change", syncOptions);
+      leagueTwo.addEventListener("change", syncOptions);
+      syncOptions();
+    },
+
+    initializeFileUploadValidation() {
+      const form = document.querySelector("#documentUploadForm");
+      if (!form) return;
+
+      const fileInput = form.querySelector('input[type="file"]');
+      fileInput.addEventListener("change", () => {
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        const maxSizeMB = parseInt(fileInput.dataset.maxSizeMb) || 100;
+        if (file.size > maxSizeMB * 1024 * 1024) {
+          airocupApp.ui.createFlash(
+            "error",
+            `حجم فایل نباید بیشتر از ${maxSizeMB} مگابایت باشد.`
+          );
+          fileInput.value = "";
+        }
+      });
+    },
+
+    initializeResetForm() {
+      const form = document.querySelector("#resetPasswordForm");
+      if (!form) return;
+
+      const passwordInput = form.querySelector('input[name="new_password"]');
+      const confirmInput = form.querySelector('input[name="confirm_password"]');
+
+      airocupApp.forms.initializePasswordConfirmation(
+        form,
+        passwordInput,
+        confirmInput
+      );
+    },
     initializeChat(container) {
       const elements = {
         chatBox: container.querySelector(
@@ -827,20 +1160,28 @@ const airocupApp = {
     init() {
       this.initializeMenu();
 
-      const provinceChart = document.querySelector(
-        airocupApp.constants.SELECTORS.PROVINCE_CHART
-      );
-      if (provinceChart) this.initializeDashboardCharts();
+      if (
+        document.querySelector(airocupApp.constants.SELECTORS.PROVINCE_CHART)
+      ) {
+        this.initializeDashboardCharts();
+      }
 
-      const searchInput = document.querySelector(
-        airocupApp.constants.SELECTORS.CLIENT_SEARCH_INPUT
-      );
-      if (searchInput) this.initializeClientSearch();
+      if (
+        document.querySelector(
+          airocupApp.constants.SELECTORS.CLIENT_SEARCH_INPUT
+        )
+      ) {
+        this.initializeClientSearch();
+      }
 
       const chatContainer = document.querySelector(
         airocupApp.constants.SELECTORS.ADMIN_CHAT_CONTAINER
       );
-      if (chatContainer) this.initializeChat(chatContainer);
+      if (chatContainer) {
+        airocupApp.initializeChat(chatContainer);
+      }
+
+      this.initializeAdminMembersPage();
     },
 
     initializeMenu() {
@@ -861,6 +1202,51 @@ const airocupApp = {
         if (icon) {
           icon.className = isOpen ? "fas fa-times" : "fas fa-bars";
         }
+      });
+    },
+
+    initializeAdminMembersPage() {
+      const page = document.querySelector(".admin-edit-team-page");
+      if (!page) return;
+      const addForm = page.querySelector("#adminAddMemberForm");
+      if (addForm) {
+        airocupApp.formHelpers.initializeDynamicSelects(addForm);
+        airocupApp.formHelpers.setupDatePicker(addForm);
+      }
+      const editModal = document.querySelector("#editMemberModal");
+      const editForm = editModal?.querySelector("form");
+      if (!editModal || !editForm) return;
+
+      airocupApp.formHelpers.initializeDynamicSelects(editForm);
+      airocupApp.formHelpers.setupDatePicker(editForm);
+
+      page.addEventListener("click", (e) => {
+        const editBtn = e.target.closest(
+          '[data-modal-target="editMemberModal"]'
+        );
+        if (!editBtn) return;
+
+        const data = editBtn.dataset;
+
+        Object.keys(data).forEach((key) => {
+          const input = editForm.querySelector(`[name="${key}"]`);
+          if (input) {
+            if (key === "province" || key === "city") {
+              input.dataset.initialValue = data[key];
+            } else {
+              input.value = data[key];
+            }
+          }
+        });
+
+        const [year, month, day] = (data.birthDate || "0-0-0").split("-");
+        editForm.querySelector('[name="birth_year"]').value = year;
+        editForm.querySelector('[name="birth_month"]').value = month;
+        editForm.querySelector('[name="birth_day"]').value = day;
+        airocupApp.formHelpers.initializeDynamicSelects(editForm);
+        airocupApp.formHelpers.setupDatePicker(editForm);
+
+        airocupApp.ui.openModal(editModal, editBtn);
       });
     },
 
