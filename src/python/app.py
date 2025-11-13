@@ -88,6 +88,7 @@ def humanize_number_filter(num):
 @flask_app.context_processor
 def inject_global_variables():
     """Injects global variables into the template context."""
+    
     airocup_data = {
         "allowed_years": constants.Date.get_allowed_years(),
         "persian_months": constants.Date.persian_months,

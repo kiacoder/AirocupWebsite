@@ -281,53 +281,76 @@
 
     {% if not _is_admin %}
     <footer class="site-footer">
-      <!-- thin blue line above footer -->
-      <div class="footer-top-line" aria-hidden="true"></div>
+      <!-- Top Blue Line -->
+      <div class="footer-top-line"></div>
 
       <div class="container footer-content">
-        <!-- animated cards row (logo / quick-links / contact) -->
+        <!-- Footer Cards -->
         <div class="footer-cards">
-          <div class="footer-card" aria-label="اطلاعات تماس">
-            <h4>اطلاعات تماس</h4>
-            <p>
-              <i class="fas fa-map-marker-alt"></i> تهران، دانشگاه علم و صنعت
-              ایران
-            </p>
-            <p><i class="fas fa-phone"></i> {{ contact.phone }}</p>
-          </div>
-
-          <div class="footer-card footer-card--logo" aria-label="لوگو آیروکاپ">
-            <img
-              src="{{ url_for('static', filename=path.transparent_logos['transparent_white']) }}"
-              alt="Airocup logo"
-              class="footer-card-logo"
-            />
-            <p class="footer-card-caption">
-              آیروکاپ — پیشگام در آینده هوشمند ایران
-            </p>
-          </div>
-
-          <div class="footer-card" aria-label="دسترسی سریع">
-            <h4>دسترسی سریع</h4>
+          <!-- Quick Access -->
+          <div class="footer-card fade-up">
+            <h3 style="color: var(--color-header);">دسترسی سریع</h3>
             <ul>
               <li><a href="{{ url_for('global.index') }}">صفحه اصلی</a></li>
               <li><a href="{{ url_for('global.leagues') }}">لیگ‌ها</a></li>
               <li><a href="{{ url_for('client.signup') }}">ثبت‌نام</a></li>
               <li><a href="{{ url_for('client.login_client') }}">ورود</a></li>
+              <li><a href="{{ url_for('global.news') }}">اخبار</a></li>
+              <li><a href="{{ url_for('global.about') }}">درباره ما</a></li>
+              <li><a href="{{ url_for('global.contact') }}">تماس با ما</a></li>
+              <li>
+                <a href="{{ url_for('global.cooperate') }}">همکاری با ما</a>
+              </li>
             </ul>
+          </div>
+
+          <!-- Logo and Description -->
+          <div class="footer-card fade-up delay-1">
+            <img
+              src="{{ url_for('static', filename=path.transparent_logos['transparent_white']) }}"
+              alt="لوگو آیروکاپ"
+              class="footer-logo"
+            />
+            <p>
+              آیروکاپ، پیشگام در آینده هوشمند ایران — نخستین رویداد ملی هوش
+              مصنوعی و رباتیک کشور.
+            </p>
+          </div>
+
+          <!-- Contact Info -->
+          <div class="footer-card fade-up delay-2">
+            <h3 style="color: var(--color-header);">اطلاعات تماس</h3>
+            <p>
+              <i class="fas fa-map-marker-alt"></i> تهران، دانشگاه علم و صنعت
+              ایران
+            </p>
+            <p><i class="fas fa-phone"></i> {{ contact.phone }}</p>
+            <div class="social-icons">
+              <a
+                href="https://instagram.com/{{ contact.instagram|replace('@','') }}"
+                ><i class="fab fa-instagram"></i
+              ></a>
+              <a href="{{ contact.bale }}"
+                ><i class="fas fa-comment-dots"></i
+              ></a>
+              <a href="{{ contact.aparat_playlist }}"
+                ><i class="fas fa-play-circle"></i
+              ></a>
+            </div>
           </div>
         </div>
 
-        <!-- existing footer text/links (keeps your older footer content) -->
+        <!-- Footer Bottom -->
         <div class="footer-bottom">
-          <p class="footer-copy">
-            &copy; {{ jdatetime.datetime.now().year }} تمامی حقوق برای آیروکاپ
-            محفوظ است.
+          <p>
+            &copy; {{ jdatetime.datetime.now().year }} تمامی حقوق برای
+            <strong>آیروکاپ</strong> محفوظ است.
           </p>
-          <p class="site-version">نسخه: {{ app_version }}</p>
+          <p class="site-version"> نسخه: {{ app_version }}</p>
         </div>
       </div>
     </footer>
+
     {% endif %}
 
     <script
