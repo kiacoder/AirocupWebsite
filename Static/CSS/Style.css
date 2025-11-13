@@ -116,38 +116,38 @@
   --mobile-breakpoint: 768px;
   --tablet-breakpoint: 992px;
   --admin-mobile-breakpoint: 1024px;
-  --FontPersian: "IRANYekanX", "Tahoma", sans-serif;
-  --FontEnglish: "TwCenMT", sans-serif;
-  --FontPersianNum: "IRANYekanX-FaNum", sans-serif;
-  --FontPersianNoEnglish: "IRANYekanX-NoEn", sans-serif;
-  --ColorPrimary: #005a9c;
-  --ColorPrimaryDark: #004a80;
-  --ColorSecondary: #f7a600;
-  --ColorSecondaryDark: #d68f00;
-  --ColorDanger: #b00000;
-  --ColorDangerDark: #900000;
-  --ColorSuccess: #28a745;
-  --ColorWarning: #ffc107;
-  --ColorText: #212529;
-  --ColorTextMuted: #6c757d;
-  --ColorBackground: #f8f9fa;
-  --ColorBackgroundMuted: #e9ecef;
-  --ColorSurface: #ffffff;
-  --ColorBorder: #dee2e6;
-  --ColorDarkGrey: #2c3e50;
-  --ColorLightGrey: #f8f9fa;
-  --ColorHeader: #7b4baa;
-  --ColorFooter: #222;
-  --ColorTextGray: #4a5568;
-  --ColorText-light: #a0aec0;
-  --ColorCoolBlue: #3182ce;
-  --ShadowSM: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --ShadowMD: 0 4px 6px rgba(0, 0, 0, 0.1);
-  --ShadowLG: 0 10px 15px rgba(0, 0, 0, 0.1);
-  --GradientAngle: 0deg;
-  --SiteHeaderHeight: 100px;
-  --BorderRadius: 30px;
-  --BorderRadiusSmall: 10px;
+  --font-persian: "IRANYekanX", "Tahoma", sans-serif;
+  --font-english: "TwCenMT", sans-serif;
+  --font-persian-num: "IRANYekanX-FaNum", sans-serif;
+  --font-persian-no-english: "IRANYekanX-NoEn", sans-serif;
+  --color-primary: #005a9c;
+  --color-primary-dark: #004a80;
+  --color-secondary: #f7a600;
+  --color-secondary-dark: #d68f00;
+  --color-danger: #b00000;
+  --color-danger-dark: #900000;
+  --color-success: #28a745;
+  --color-warning: #ffc107;
+  --color-text: #212529;
+  --color-text-muted: #6c757d;
+  --color-background: #f8f9fa;
+  --color-background-muted: #e9ecef;
+  --color-surface: #ffffff;
+  --color-border: #dee2e6;
+  --color-dark-grey: #2c3e50;
+  --color-light-grey: #f8f9fa;
+  --color-header: #7b4baa;
+  --color-footer: #222;
+  --color-text-gray: #4a5568;
+  --color-text-light: #a0aec0;
+  --color-cool-blue: #3182ce;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --gradient-angle: 0deg;
+  --site-header-height: 110px;
+  --border-radius: 30px;
+  --border-radius-small: 10px;
 }
 
 *,
@@ -167,11 +167,11 @@ html {
 
 body {
   margin: 0;
-  font-family: var(--FontPersian), var(--FontEnglish);
+  font-family: var(--font-persian), var(--font-english);
   font-weight: 400;
   line-height: 1.7;
-  background-color: var(--ColorBackground);
-  color: var(--ColorText);
+  background-color: var(--color-background);
+  color: var(--color-text);
   direction: rtl;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -188,12 +188,12 @@ main.MainContent {
 
 a {
   text-decoration: none;
-  color: var(--ColorPrimary);
+  color: var(--color-primary);
   transition: color 0.2s ease;
 }
 
 a:hover {
-  color: var(--ColorPrimaryDark);
+  color: var(--color-primary-dark);
 }
 
 ul {
@@ -214,20 +214,306 @@ h5,
 h6 {
   font-weight: 800;
   line-height: 1.3;
-  color: var(--ColorDarkGrey);
+  color: var(--color-dark-grey);
 }
 
 address {
   font-style: normal;
 }
 
-.Container {
+.site-header {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  z-index: 1000;
+  background-color: var(--color-header);
+  box-shadow: var(--shadow-md);
+  height: var(--site-header-height);
+  padding: 0.5rem 0;
+  font-family: var(--font-persian);
+  color: #fff;
+}
+
+/* =========================
+   Header (client + admin)
+   ========================= */
+
+.site-header {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  z-index: 1000;
+  background-color: var(--color-header);
+  box-shadow: var(--shadow-md);
+  height: var(--site-header-height);
+  padding: 0.5rem 0;
+  font-family: var(--font-persian);
+  color: #fff;
+}
+
+/* inner container layout */
+.header-inner,
+.admin-header-container,
+.header-inner .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+/* container utility */
+.container {
   width: 90%;
   max-width: 1200px;
-  margin-left: auto;
-  margin-right: auto;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+/* logo */
+.logo img,
+.footer-logo img {
+  height: 60px;
+  max-height: 100px;
+  display: block;
+}
+
+/* navigation (desktop) */
+.main-nav,
+.admin-header-nav {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.main-nav ul,
+.admin-header-nav {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 1rem;
+}
+
+/* nav links */
+.main-nav a,
+.admin-header-nav a {
+  color: #fff;
+  text-decoration: none;
+  padding: 0.5rem 0.75rem;
+  transition: color 0.2s ease, background-color 0.2s ease;
+  border-radius: 6px;
+}
+
+.main-nav a:hover,
+.admin-header-nav a:hover,
+.main-nav .active,
+.admin-header-nav a.active {
+  color: var(--color-secondary);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* header actions (login/signup/buttons) */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.header-actions .btn {
+  margin-left: 0.5rem;
+  font-family: var(--font-persian);
+}
+
+/* admin header specifics */
+.admin-header-logo {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: white;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.admin-header-mobile-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+/* small-screen responsive header */
+@media (max-width: 992px) {
+  .main-nav ul {
+    display: none;
+  }
+
+  .mobile-menu-btn,
+  .admin-header-mobile-toggle {
+    display: inline-block;
+  }
+
+  .site-header {
+    padding: 0.4rem 0;
+  }
+
+  .logo img {
+    height: 48px;
+  }
+}
+
+/* admin mobile nav open state */
+.admin-body .admin-header-nav.is-open {
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  top: var(--admin-header-height);
+  left: 0;
+  right: 0;
+  background-color: var(--color-surface);
+  padding: 1rem 0;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
+}
+
+.admin-body .admin-header-nav.is-open a {
+  color: var(--admin-text-gray);
+  padding: 1rem;
+  text-align: center;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+/* ensure main content leaves space for header */
+main,
+.main-content {
+  padding-top: var(--site-header-height);
+}
+
+/* =========================
+   Footer
+   ========================= */
+
+.site-footer {
+  background-color: var(--color-footer);
+  color: #ccc;
+  padding: 40px 0 20px 0;
+  border-top: 5px solid var(--color-primary);
+  direction: rtl;
+  text-align: right;
+  flex-shrink: 0;
+  font-family: var(--font-persian);
+}
+
+.footer-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 40px;
+  align-items: start;
+  width: 90%;
+  max-width: 1200px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.footer-about,
+.footer-links,
+.footer-contact {
+  text-align: center;
+}
+
+/* about */
+.footer-about p {
+  color: #ccc;
+  line-height: 1.8;
+}
+
+/* headings */
+.footer-links h3,
+.footer-contact h3 {
+  color: var(--color-surface);
+  margin-bottom: 15px;
+  font-size: 1.2rem;
+}
+
+/* lists */
+.footer-links ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-links ul li a {
+  color: #ccc;
+  padding: 5px 0;
+  display: block;
+  text-decoration: none;
+}
+
+.footer-links ul li a:hover {
+  color: var(--color-secondary);
+}
+
+/* contact/address */
+.footer-contact address p {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 0.5rem;
+  color: #ddd;
+}
+
+/* logos */
+.footer-logo {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.footer-logo img {
+  max-height: 100px;
+  display: inline-block;
+  margin: 0 auto 1rem auto;
+}
+
+/* article/footer separators */
+.article-footer {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--color-border);
+}
+
+/* card/team/form footer styles (kept for structure consistency) */
+.team-card-footer,
+.card-footer,
+.form-footer {
+  text-align: center;
+  margin-top: 20px;
+  padding: 20px;
+  border-top: 1px solid var(--color-border);
+  background-color: var(--color-background);
+}
+
+/* smaller screens: footer stacks vertically */
+@media (max-width: 768px) {
+  .footer-content {
+    grid-template-columns: 1fr;
+    gap: 30px;
+    text-align: center;
+  }
+
+  .footer-contact address p {
+    justify-content: center;
+  }
+}
+
+.container {
+  width: 90%;
+  max-width: 1200px;
   padding-left: 15px;
   padding-right: 15px;
+  margin: auto;
 }
 
 .TextCenter {
@@ -256,10 +542,10 @@ address {
   font-weight: bold;
   text-align: center;
   border: 2px solid transparent;
-  border-radius: var(--BorderRadius);
+  border-radius: var(--border-radius);
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  font-family: var(--FontPersian);
+  font-family: var(--font-persian);
 }
 
 .Btn:hover {
@@ -273,35 +559,35 @@ address {
 }
 
 .BtnPrimary {
-  color: var(--ColorSurface);
-  background-color: var(--ColorPrimary);
+  color: var(--color-surface);
+  background-color: var(--color-primary);
 }
 
 .BtnPrimary:hover {
-  background-color: var(--ColorPrimaryDark);
-  color: var(--ColorSurface);
+  background-color: var(--color-primary-dark);
+  color: var(--color-surface);
 }
 
 .BtnSecondary {
-  color: var(--ColorText);
-  background-color: var(--ColorSurface);
-  border-color: var(--ColorBorder);
+  color: var(--color-text);
+  background-color: var(--color-surface);
+  border-color: var(--color-border);
   margin-top: 10px;
 }
 
 .BtnSecondary:hover {
-  background-color: var(--ColorBackgroundMuted);
+  background-color: var(--color-background-muted);
 }
 
 .BtnDanger {
-  color: var(--ColorSurface);
-  background-color: var(--ColorDanger);
-  border-color: var(--ColorDanger);
+  color: var(--color-surface);
+  background-color: var(--color-danger);
+  border-color: var(--color-danger);
 }
 
 .BtnDanger:hover {
-  background-color: var(--ColorDangerDark);
-  border-color: var(--ColorDangerDark);
+  background-color: var(--color-danger-dark);
+  border-color: var(--color-danger-dark);
 }
 
 .Btn:disabled,
@@ -313,10 +599,10 @@ address {
 }
 
 .Card {
-  background: var(--ColorSurface);
-  border-radius: var(--BorderRadius);
-  border: 1px solid var(--ColorBorder);
-  box-shadow: var(--ShadowSM);
+  background: var(--color-surface);
+  border-radius: var(--border-radius);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   padding: 25px;
   transform: translateY(0);
@@ -324,13 +610,13 @@ address {
 
 .Card:hover {
   transform: translateY(-5px);
-  box-shadow: var(--ShadowMD);
+  box-shadow: var(--shadow-md);
 }
 
 .EmptyStateCard {
   text-align: center;
   padding: 40px;
-  color: var(--ColorTextMuted);
+  color: var(--color-text-muted);
   grid-column: 1 / -1;
 }
 
@@ -344,10 +630,10 @@ address {
   max-width: 800px;
   margin: 2rem auto;
   padding: 2rem;
-  background: var(--ColorSurface);
-  border-radius: var(--BorderRadius);
-  box-shadow: var(--ShadowMD);
-  border: 1px solid var(--ColorBorder);
+  background: var(--color-surface);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-border);
 }
 
 .FormContainer--small {
@@ -367,7 +653,7 @@ address {
   text-align: center;
   margin-top: 0;
   margin-bottom: 2rem;
-  color: var(--ColorTextMuted);
+  color: var(--color-text-muted);
 }
 
 .FormGroup {
@@ -378,7 +664,7 @@ address {
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 700;
-  color: var(--ColorDarkGrey);
+  color: var(--color-dark-grey);
 }
 
 .FormControl,
@@ -387,8 +673,8 @@ address {
 .FormGroup textarea {
   width: 100%;
   padding: 12px 15px;
-  border: 1px solid var(--ColorBorder);
-  border-radius: var(--BorderRadiusSmall);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-small);
   font-size: 1rem;
   font-family: inherit;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
@@ -399,12 +685,12 @@ address {
 .FormGroup select:focus,
 .FormGroup textarea:focus {
   outline: none;
-  border-color: var(--ColorPrimary);
+  border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(123, 75, 170, 0.2);
 }
 
 .FormGroup .RequiredStar {
-  color: var(--ColorDanger);
+  color: var(--color-danger);
   margin-right: 4px;
 }
 
@@ -460,11 +746,11 @@ address {
 }
 
 .ModalContent {
-  background-color: var(--ColorSurface);
+  background-color: var(--color-surface);
   padding: 30px;
-  border-radius: var(--BorderRadius);
+  border-radius: var(--border-radius);
   position: relative;
-  box-shadow: var(--ShadowLG);
+  box-shadow: var(--shadow-lg);
   transform: translateY(-20px);
   transition: transform 0.3s ease;
 }
@@ -491,13 +777,62 @@ address {
 }
 
 .CloseBtn:hover {
-  color: var(--ColorText);
+  color: var(--color-text);
 }
 
-.PageHeader {
-  text-align: center;
-  margin-bottom: 50px;
-  padding-top: 20px;
+.nav-list {
+  list-style: none;
+  display: flex;
+  gap: 1.5rem;
+}
+.nav-list a {
+  color: #fff;
+  text-decoration: none;
+  transition: color 0.3s;
+}
+.nav-list a:hover,
+.nav-list .active {
+  color: #ffd166;
+}
+.social-icons a {
+  color: #fff;
+  margin: 0 0.5rem;
+  font-size: 1.3rem;
+}
+.social-icons a:hover {
+  color: #ffd166;
+}
+.Aboutlogo {
+  margin: 0 auto 50px auto;
+  max-width: 250px;
+}
+.Aboutlogo img {
+  opacity: 0.8;
+}
+.Sponsorlogo {
+  height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.Sponsorlogo img {
+  max-height: 100%;
+  width: auto;
+  filter: grayscale(100%);
+  opacity: 0.7;
+  transition: all 0.3s ease;
+}
+.SponsorBox:hover .Sponsorlogo img {
+  filter: grayscale(0%);
+  opacity: 1;
+}
+
+.logo img {
+  max-height: 60px;
+  transition: transform 0.3s ease;
+}
+.logo img:hover {
+  transform: scale(1.05);
 }
 
 .PageTitle {
@@ -509,7 +844,7 @@ address {
   max-width: 800px;
   margin: 1rem auto 0 auto;
   font-size: 1.1rem;
-  color: var(--ColorTextMuted);
+  color: var(--color-text-muted);
   line-height: 1.8;
 }
 
@@ -527,7 +862,7 @@ address {
   display: block;
   width: 60px;
   height: 4px;
-  background: var(--ColorPrimary);
+  background: var(--color-primary);
   border-radius: 2px;
   bottom: 0;
   left: 50%;
@@ -538,19 +873,19 @@ address {
   max-width: 800px;
   margin: -30px auto 40px auto;
   font-size: 1.1rem;
-  color: var(--ColorTextMuted);
+  color: var(--color-text-muted);
   line-height: 1.8;
   text-align: center;
 }
 
 .CtaSection {
   padding: 60px 0;
-  border-top: 1px solid var(--ColorBorder);
+  border-top: 1px solid var(--color-border);
 }
 
 .FinalCta,
 .FinalCtaContact {
-  background-color: var(--ColorDarkGrey);
+  background-color: var(--color-dark-grey);
   color: #fff;
   padding: 60px 0;
   text-align: center;
@@ -571,37 +906,11 @@ address {
   font-size: 1.1rem;
 }
 
-.SiteHeader {
-  position: sticky;
-  top: 0;
-  width: 100%;
-  z-index: 1010;
-  background-color: var(--ColorPrimary);
-  box-shadow: var(--ShadowMD);
-  height: var(--SiteHeaderHeight);
-}
-
-.TopHeader {
-  height: var(--SiteHeaderHeight);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.Logo img {
-  max-height: 60px;
-  transition: transform 0.3s ease;
-}
-
-.Logo img:hover {
-  transform: scale(1.05);
-}
-
 .MobileMenuBtn {
   display: block;
   background: none;
   border: none;
-  color: var(--ColorSurface);
+  color: var(--color-surface);
   font-size: 1.5rem;
   cursor: pointer;
   z-index: 1002;
@@ -618,7 +927,7 @@ address {
   right: -100%;
   width: 100%;
   height: 100vh;
-  background-color: var(--ColorPrimary);
+  background-color: var(--color-primary);
   z-index: 1001;
   transition: right 0.4s ease-in-out;
 }
@@ -634,73 +943,17 @@ address {
   font-weight: 500;
   font-size: 1.5rem;
   transition: background-color 0.2s ease, color 0.2s ease;
-  border-radius: var(--BorderRadius);
+  border-radius: var(--border-radius);
 }
 
 .NavItems li a:hover,
 .NavItems li a.Active {
   background-color: rgba(255, 255, 255, 0.1);
-  color: var(--ColorSurface);
+  color: var(--color-surface);
 }
 
 .UserActions {
   display: none;
-}
-
-.HeaderRight {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.SiteFooter {
-  background-color: var(--ColorFooter);
-  color: #ccc;
-  padding: 40px 0 20px 0;
-  border-top: 5px solid var(--ColorPrimary);
-  flex-shrink: 0;
-}
-
-.FooterContent {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 40px;
-  text-align: center;
-}
-
-.FooterAbout p {
-  color: #ccc;
-  line-height: 1.8;
-}
-
-.FooterLogo img {
-  max-height: 80px;
-  margin: 0 auto 20px auto;
-}
-
-.FooterLinks h3,
-.FooterContact h3 {
-  color: var(--ColorSurface);
-  margin-bottom: 15px;
-  font-size: 1.3rem;
-}
-
-.FooterLinks ul li a {
-  color: #ccc;
-  padding: 5px 0;
-  display: block;
-}
-
-.FooterLinks ul li a:hover {
-  color: var(--ColorSecondary);
-}
-
-.FooterContact address p {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  margin-bottom: 0.5rem;
 }
 
 .SocialMedia {
@@ -724,8 +977,8 @@ address {
 }
 
 .SocialMedia a:hover {
-  background-color: var(--ColorSecondary);
-  color: var(--ColorSurface);
+  background-color: var(--color-secondary);
+  color: var(--color-surface);
   transform: translateY(-3px);
 }
 
@@ -760,7 +1013,7 @@ address {
 .HeroText .Subtitle {
   font-size: 1.2rem;
   font-weight: 600;
-  color: var(--ColorPrimaryDark);
+  color: var(--color-primary-dark);
 }
 
 .HeroTitle,
@@ -779,8 +1032,8 @@ address {
 }
 
 .HeroImage img {
-  border-radius: var(--BorderRadius);
-  box-shadow: var(--ShadowLG);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-lg);
   max-width: 750px;
 }
 
@@ -794,18 +1047,18 @@ address {
 }
 
 .EventDetails p {
-  background: var(--ColorBackgroundMuted);
+  background: var(--color-background-muted);
   padding: 10px 20px;
-  border-radius: var(--BorderRadiusSmall);
-  border-right: 4px solid var(--ColorSecondary);
+  border-radius: var(--border-radius-small);
+  border-right: 4px solid var(--color-secondary);
   font-weight: 500;
   margin: 0;
 }
 
 .OlympiadHighlight {
   background-color: rgba(247, 166, 0, 0.1);
-  border: 1px solid var(--ColorSecondary);
-  border-radius: var(--BorderRadius);
+  border: 1px solid var(--color-secondary);
+  border-radius: var(--border-radius);
   padding: 15px 25px;
   margin: 0 auto 30px auto;
   max-width: 90%;
@@ -817,7 +1070,7 @@ address {
 }
 
 .OlympiadHighlight i {
-  color: var(--ColorSecondaryDark);
+  color: var(--color-secondary-dark);
   font-size: 1.5rem;
 }
 
@@ -846,8 +1099,8 @@ address {
 
 .VideoWrapper {
   position: relative;
-  border-radius: var(--BorderRadius);
-  box-shadow: var(--ShadowMD);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-md);
   overflow: hidden;
   cursor: pointer;
   padding-bottom: 56.25%;
@@ -880,7 +1133,7 @@ address {
 
 .LeaguesSection {
   padding: 80px 0;
-  background-color: var(--ColorSurface);
+  background-color: var(--color-surface);
 }
 
 .LeaguesGrid {
@@ -895,13 +1148,13 @@ address {
 
 .CardLeague {
   text-align: center;
-  border-bottom: 4px solid var(--ColorPrimary);
+  border-bottom: 4px solid var(--color-primary);
   height: 100%;
 }
 
 .LeagueIcon {
   font-size: 2.5rem;
-  color: var(--ColorPrimary);
+  color: var(--color-primary);
   margin-bottom: 15px;
 }
 
@@ -917,21 +1170,21 @@ address {
 }
 
 .SponsorBox {
-  background-color: var(--ColorSurface);
-  border: 1px solid var(--ColorBorder);
-  border-radius: var(--BorderRadius);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
   padding: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--ShadowSM);
+  box-shadow: var(--shadow-sm);
   transition: all 0.3s ease;
   height: 150px;
   text-decoration: none;
 }
 
 .SponsorBox:hover {
-  box-shadow: var(--ShadowMD);
+  box-shadow: var(--shadow-md);
   transform: translateY(-5px);
 }
 
@@ -952,13 +1205,13 @@ address {
 .BecomeSponsorBox {
   flex-direction: column;
   border-style: dashed;
-  color: var(--ColorTextMuted);
+  color: var(--color-text-muted);
 }
 
 .BecomeSponsorBox:hover {
   border-style: solid;
-  border-color: var(--ColorPrimary);
-  color: var(--ColorPrimary);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 .SponsorPlusIcon {
@@ -982,7 +1235,7 @@ address {
   gap: 30px;
 }
 
-.AboutStory__Content {
+.AboutStory--Content {
   text-align: center;
 }
 
@@ -994,13 +1247,8 @@ address {
   text-align: justify;
 }
 
-.AboutStory__Logo {
-  max-width: 200px;
-  opacity: 0.8;
-}
-
 .ValuesSection {
-  background-color: var(--ColorSurface);
+  background-color: var(--color-surface);
   padding: 80px 0;
 }
 
@@ -1013,12 +1261,12 @@ address {
 .ValueCard {
   text-align: center;
   padding: 40px 25px;
-  border-top: 4px solid var(--ColorPrimary);
+  border-top: 4px solid var(--color-primary);
 }
 
 .ValueIcon {
   font-size: 3rem;
-  color: var(--ColorPrimary);
+  color: var(--color-primary);
   margin-bottom: 20px;
 }
 
@@ -1028,13 +1276,13 @@ address {
 }
 
 .ValueCard p {
-  color: var(--ColorTextMuted);
+  color: var(--color-text-muted);
 }
 
 .CommitteeCta {
   padding: 60px 0;
   text-align: center;
-  border-top: 1px solid var(--ColorBorder);
+  border-top: 1px solid var(--color-border);
 }
 
 .CommitteeGrid {
@@ -1044,7 +1292,7 @@ address {
 }
 
 .CommitteeMember {
-  border-top: 4px solid var(--ColorPrimary);
+  border-top: 4px solid var(--color-primary);
   overflow: hidden;
   padding: 0;
 }
@@ -1072,13 +1320,13 @@ address {
 }
 
 .CommitteeRole {
-  color: var(--ColorPrimaryDark);
+  color: var(--color-primary-dark);
   font-weight: 600;
   margin-bottom: 15px;
 }
 
 .CommitteeDescription {
-  color: var(--ColorTextMuted);
+  color: var(--color-text-muted);
 }
 
 .CooperateGrid {
@@ -1091,12 +1339,12 @@ address {
 .CooperateCard {
   text-align: center;
   padding: 40px 25px;
-  border-bottom: 4px solid var(--ColorPrimary);
+  border-bottom: 4px solid var(--color-primary);
 }
 
 .CooperateIcon {
   font-size: 3rem;
-  color: var(--ColorPrimary);
+  color: var(--color-primary);
   margin-bottom: 25px;
 }
 
@@ -1110,25 +1358,25 @@ address {
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 }
 
-.GalleryItem__Button {
+.GalleryItem--Button {
   background: none;
   border: none;
   padding: 0;
   cursor: pointer;
-  border-radius: var(--BorderRadius);
+  border-radius: var(--border-radius);
   overflow: hidden;
   display: block;
   width: 100%;
-  box-shadow: var(--ShadowMD);
+  box-shadow: var(--shadow-md);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.GalleryItem__Button:hover {
+.GalleryItem--Button:hover {
   transform: scale(1.03);
-  box-shadow: var(--ShadowLG);
+  box-shadow: var(--shadow-lg);
 }
 
-.GalleryItem__Button img {
+.GalleryItem--Button img {
   width: 100%;
   height: 250px;
   object-fit: cover;
@@ -1148,7 +1396,7 @@ address {
 #ImageModal .ModalImage {
   max-height: 85vh;
   max-width: 90vw;
-  border-radius: var(--BorderRadiusSmall);
+  border-radius: var(--border-radius-small);
 }
 
 .NewsGrid {
@@ -1162,7 +1410,7 @@ address {
   overflow: hidden;
 }
 
-.CardNews__Link {
+.CardNews--Link {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -1170,38 +1418,38 @@ address {
   color: inherit;
 }
 
-.CardNews__ImageWrapper img {
+.CardNews--ImageWrapper img {
   width: 100%;
   height: 225px;
   object-fit: cover;
 }
 
-.CardNews__ContentWrapper {
+.CardNews--ContentWrapper {
   padding: 25px;
   display: flex;
   flex-direction: column;
   flex-grow: 1;
 }
 
-.CardNews__Title {
+.CardNews--Title {
   font-size: 1.4rem;
   margin-bottom: 15px;
-  color: var(--ColorPrimaryDark);
+  color: var(--color-primary-dark);
 }
 
-.CardNews__Meta {
-  color: var(--ColorTextMuted);
+.CardNews--Meta {
+  color: var(--color-text-muted);
   font-size: 0.9rem;
   margin-bottom: 15px;
 }
 
-.CardNews__Meta i {
+.CardNews--Meta i {
   margin-left: 5px;
 }
 
-.CardNews__Excerpt {
+.CardNews--Excerpt {
   line-height: 1.8;
-  color: var(--ColorText);
+  color: var(--color-text);
   flex-grow: 1;
 }
 
@@ -1211,7 +1459,7 @@ address {
   gap: 8px;
   margin-top: 1.5rem;
   font-weight: bold;
-  color: var(--ColorPrimary);
+  color: var(--color-primary);
 }
 
 .CardNews:hover .ReadMoreLink {
@@ -1237,16 +1485,11 @@ address {
 .BreadcrumbNav li:not(:last-child)::after {
   content: "/";
   margin: 0 0.5rem;
-  color: var(--ColorTextMuted);
+  color: var(--color-text-muted);
 }
 
 .BreadcrumbNav a {
-  color: var(--ColorPrimary);
-}
-
-.ArticleHeader {
-  text-align: center;
-  margin-bottom: 2rem;
+  color: var(--color-primary);
 }
 
 .ArticleTitle {
@@ -1255,12 +1498,12 @@ address {
 }
 
 .ArticleMeta {
-  color: var(--ColorTextMuted);
+  color: var(--color-text-muted);
 }
 
 .ArticleImage {
   margin: 0 0 2rem 0;
-  border-radius: var(--BorderRadius);
+  border-radius: var(--border-radius);
   overflow: hidden;
 }
 
@@ -1281,12 +1524,6 @@ address {
   margin: 1.5rem 0 1rem 0;
 }
 
-.ArticleFooter {
-  margin-top: 3rem;
-  padding-top: 2rem;
-  border-top: 1px solid var(--ColorBorder);
-}
-
 .SocialShare {
   display: flex;
   align-items: center;
@@ -1303,10 +1540,10 @@ address {
 .SocialShare a,
 .SocialShare button {
   font-size: 1.2rem;
-  color: var(--ColorTextMuted);
+  color: var(--color-text-muted);
 }
 .SocialShare a:hover {
-  color: var(--ColorPrimary);
+  color: var(--color-primary);
 }
 .SocialShare button {
   background: none;
@@ -1325,34 +1562,6 @@ address {
   gap: 30px;
 }
 
-.CardTeam {
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  border-left: 5px solid var(--ColorPrimary);
-}
-
-.TeamCardHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid var(--ColorBorder);
-}
-
-.TeamCardHeader h3 {
-  margin: 0;
-  font-size: 1.6rem;
-}
-
-.TeamCardBody {
-  padding: 1.5rem;
-  flex-grow: 1;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
-}
-
 .TeamCardBody .DetailItem {
   display: flex;
   flex-direction: column;
@@ -1361,7 +1570,7 @@ address {
 
 .TeamCardBody .DetailItem span {
   font-size: 0.9rem;
-  color: var(--ColorTextMuted);
+  color: var(--color-text-muted);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1370,16 +1579,6 @@ address {
 .TeamCardBody .DetailItem strong {
   font-size: 1.1rem;
   font-weight: 600;
-}
-
-.TeamCardFooter {
-  margin-top: auto;
-  padding: 1rem 1.5rem;
-  border-top: 1px solid var(--ColorBorder);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  background-color: var(--ColorBackgroundMuted);
 }
 
 .PaymentGrid {
@@ -1395,13 +1594,13 @@ address {
   flex-wrap: wrap;
   gap: 0.5rem;
   padding: 12px 0;
-  border-bottom: 1px solid var(--ColorBorder);
+  border-bottom: 1px solid var(--color-border);
 }
 .DetailItem:last-child {
   border-bottom: none;
 }
 .DetailItem span {
-  color: var(--ColorTextMuted);
+  color: var(--color-text-muted);
 }
 .DetailItem strong {
   font-weight: 700;
@@ -1417,22 +1616,22 @@ address {
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--ColorTextMuted);
+  color: var(--color-text-muted);
   font-size: 1rem;
 }
 .CopyBtn:hover {
-  color: var(--ColorPrimary);
+  color: var(--color-primary);
 }
 
 .SummaryDivider {
   border: 0;
-  border-top: 1px dashed var(--ColorBorder);
+  border-top: 1px dashed var(--color-border);
   margin: 1rem 0;
 }
 
 .TotalAmount strong {
   font-size: 1.6rem;
-  color: var(--ColorPrimary);
+  color: var(--color-primary);
 }
 
 .FileUploadBtn {
@@ -1445,7 +1644,7 @@ address {
 .FileNameDisplay {
   margin-top: 0.5rem;
   font-size: 0.8rem;
-  color: var(--ColorTextMuted);
+  color: var(--color-text-muted);
 }
 
 .ContactGrid {
@@ -1458,7 +1657,7 @@ address {
 .LocationCard h3 {
   margin-bottom: 20px;
   font-size: 1.5rem;
-  border-bottom: 2px solid var(--ColorBackgroundMuted);
+  border-bottom: 2px solid var(--color-background-muted);
   padding-bottom: 15px;
 }
 
@@ -1475,26 +1674,26 @@ address {
   align-items: center;
   gap: 15px;
   padding: 12px;
-  border-radius: var(--BorderRadiusSmall);
+  border-radius: var(--border-radius-small);
   transition: background-color 0.2s ease, transform 0.2s ease;
-  color: var(--ColorText);
+  color: var(--color-text);
 }
 
 .ContactLink:hover {
-  background-color: var(--ColorBackgroundMuted);
+  background-color: var(--color-background-muted);
   transform: translateX(-5px);
 }
 
 .ContactLink i {
   font-size: 1.6rem;
-  color: var(--ColorPrimary);
+  color: var(--color-primary);
   width: 35px;
   text-align: center;
 }
 
 .ContactText span {
-  color: var(--ColorTextMuted);
-  font-family: var(--FontEnglish);
+  color: var(--color-text-muted);
+  font-family: var(--font-english);
   direction: ltr;
   display: block;
   text-align: left;
@@ -1502,9 +1701,9 @@ address {
 
 .MapContainer {
   flex-grow: 1;
-  border-radius: var(--BorderRadius);
+  border-radius: var(--border-radius);
   overflow: hidden;
-  border: 1px solid var(--ColorBorder);
+  border: 1px solid var(--color-border);
 }
 
 .MapContainer iframe {
@@ -1516,9 +1715,9 @@ address {
 
 .PasswordRequirements {
   font-size: 0.9em;
-  background-color: var(--ColorBackgroundMuted);
+  background-color: var(--color-background-muted);
   padding: 15px;
-  border-radius: var(--BorderRadiusSmall);
+  border-radius: var(--border-radius-small);
   margin-top: 1rem;
 }
 
@@ -1529,13 +1728,13 @@ address {
   margin-bottom: 8px;
 }
 .PasswordRequirements li.valid {
-  color: var(--ColorSuccess);
+  color: var(--color-success);
 }
 .PasswordRequirements li.valid::before {
   content: "✓ ";
 }
 .PasswordRequirements li.invalid {
-  color: var(--ColorDanger);
+  color: var(--color-danger);
 }
 .PasswordRequirements li.invalid::before {
   content: "✗ ";
@@ -1546,25 +1745,25 @@ address {
 }
 
 .Btn--signup {
-  background-color: var(--ColorSuccess);
-  border-color: var(--ColorSuccess);
+  background-color: var(--color-success);
+  border-color: var(--color-success);
   color: #fff;
 }
 
 .Btn--signup:hover {
-  background-color: var(--ColorSuccess);
+  background-color: var(--color-success);
   border-color: #1e7e34;
 }
 
 .Btn--login {
   background-color: transparent;
-  border-color: var(--ColorSurface);
-  color: var(--ColorSurface);
+  border-color: var(--color-surface);
+  color: var(--color-surface);
 }
 
 .Btn--login:hover {
-  background-color: var(--ColorSurface);
-  color: var(--ColorPrimary);
+  background-color: var(--color-surface);
+  color: var(--color-primary);
 }
 
 .LeaguesPage .PageSubtitle {
@@ -1592,7 +1791,7 @@ address {
   justify-content: space-between;
   align-items: center;
   padding: 1rem 1.5rem;
-  background-color: var(--ColorSurface);
+  background-color: var(--color-surface);
   border: none;
   cursor: pointer;
   text-align: right;
@@ -1600,61 +1799,61 @@ address {
 }
 
 .AccordionButton:hover {
-  background-color: var(--ColorBackgroundMuted);
+  background-color: var(--color-background-muted);
 }
 
 .AccordionTitle {
   display: flex;
   align-items: center;
   gap: 1rem;
-  font-family: var(--FontPersian);
+  font-family: var(--font-persian);
   font-size: 1.2rem;
   font-weight: 700;
-  color: var(--ColorDarkGrey);
+  color: var(--color-dark-grey);
   transition: color 0.3s ease;
 }
 
 .AccordionTitle i {
   font-size: 1.5rem;
-  color: var(--ColorPrimary);
+  color: var(--color-primary);
   transition: color 0.3s ease;
 }
 
 .AccordionIcon {
   font-size: 1rem;
-  color: var(--ColorTextMuted);
+  color: var(--color-text-muted);
   transition: transform 0.3s ease, color 0.3s ease;
 }
 
 .AccordionButton[aria-expanded="true"] {
-  background-color: var(--ColorPrimary);
+  background-color: var(--color-primary);
 }
 
 .AccordionButton[aria-expanded="true"] .AccordionTitle {
-  color: var(--ColorSurface);
+  color: var(--color-surface);
 }
 
 .AccordionButton[aria-expanded="true"] .AccordionTitle i {
-  color: var(--ColorSurface);
+  color: var(--color-surface);
 }
 
 .AccordionButton[aria-expanded="true"] .AccordionIcon {
   transform: rotate(180deg);
-  color: var(--ColorSurface);
+  color: var(--color-surface);
 }
 
 .AccordionContent {
   max-height: 0;
   overflow: hidden;
   transition: max-height 0.4s ease-out;
-  background-color: var(--ColorSurface);
+  background-color: var(--color-surface);
 }
 
 .LeagueDetailsBody {
   padding: 1.5rem 1.5rem 1.5rem 1.5rem;
   line-height: 1.8;
-  color: var(--ColorTextMuted);
-  border-top: 1px solid var(--ColorBorder);
+  color: var(--color-text-muted);
+  border-top: 1px solid var(--color-border);
 }
 
 .PasswordWrapper {
@@ -1678,7 +1877,7 @@ address {
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--ColorPrimary);
+  color: var(--color-primary);
   opacity: 0.6;
   transition: opacity 0.2s ease;
 }
@@ -1707,8 +1906,8 @@ address {
 }
 
 #timerDisplay {
-  color: var(--ColorTextMuted);
-  font-family: var(--FontEnglish);
+  color: var(--color-text-muted);
+  font-family: var(--font-english);
   font-weight: 600;
   min-width: 40px;
 }
@@ -1716,27 +1915,27 @@ address {
 .Btn--link {
   background: none;
   border: none;
-  color: var(--ColorPrimary);
+  color: var(--color-primary);
   text-decoration: underline;
   padding: 0.5rem;
   font-weight: 600;
 }
 
 .Btn--link:hover {
-  color: var(--ColorPrimaryDark);
+  color: var(--color-primary-dark);
   transform: none;
   box-shadow: none;
 }
 
 .Btn--link:disabled {
-  color: var(--ColorTextMuted);
+  color: var(--color-text-muted);
   text-decoration: none;
   opacity: 0.7;
 }
 
 .StatusBadge {
   padding: 5px 12px;
-  border-radius: var(--BorderRadiusSmall);
+  border-radius: var(--border-radius-small);
   font-weight: 600;
   font-size: 0.9rem;
   text-align: center;
@@ -1745,16 +1944,16 @@ address {
 }
 
 .StatusApproved {
-  background-color: var(--ColorSuccess);
+  background-color: var(--color-success);
 }
 
 .StatusPending {
-  background-color: var(--ColorWarning);
-  color: var(--ColorText);
+  background-color: var(--color-warning);
+  color: var(--color-text);
 }
 
 .StatusRejected {
-  background-color: var(--ColorDanger);
+  background-color: var(--color-danger);
 }
 
 .StatusNotStarted {
@@ -1773,34 +1972,18 @@ address {
   margin-bottom: 2.5rem;
 }
 
-.FormSection__Title {
+.FormSection--Title {
   font-size: 1.3rem;
   font-weight: 700;
-  color: var(--ColorPrimary);
+  color: var(--color-primary);
   padding-bottom: 0.75rem;
   margin-bottom: 1.5rem;
   width: 100%;
-  border-bottom: 2px solid var(--ColorBackgroundMuted);
+  border-bottom: 2px solid var(--color-background-muted);
 }
 
 .Btn--fullWidth {
   width: 100%;
-}
-
-.FormFooter {
-  text-align: center;
-  margin-top: 2rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--ColorBorder);
-}
-
-.FormFooter p {
-  color: var(--ColorTextMuted);
-  margin-bottom: 1rem;
-}
-
-.FormFooter .Btn {
-  margin-top: 0;
 }
 
 #FlashContainer {
@@ -1821,9 +2004,9 @@ address {
   position: relative;
   padding: 1rem 1.5rem;
   gap: 1rem;
-  border-radius: var(--BorderRadius);
+  border-radius: var(--border-radius);
   border: 1px solid transparent;
-  box-shadow: var(--ShadowLG);
+  box-shadow: var(--shadow-lg);
   animation: fadeInDown 0.5s ease-out forwards;
   will-change: transform, opacity;
 }
@@ -1880,26 +2063,6 @@ address {
   }
 }
 
-.MainContent {
-  padding-top: calc(var(--SiteHeaderHeight) + 20px);
-}
-
-main {
-  padding-top: var(--SiteHeaderHeight);
-}
-
-.AdminBody {
-  margin: var(--admin-header-height) 0 0 0;
-  padding: 0;
-  background-color: var(--ColorSurface);
-  color: var(--ColorTextGray);
-}
-
-.AdminMain {
-  padding: 2rem;
-  padding-top: 1rem;
-}
-
 h1,
 h2,
 h3,
@@ -1911,7 +2074,7 @@ textarea,
 select,
 button {
   font-family: inherit;
-  color: var(--ColorDarkGrey);
+  color: var(--color-dark-grey);
 }
 
 .AdminBody .Container {
@@ -1929,7 +2092,7 @@ button {
 
 @keyframes gradient-rotate {
   to {
-    --GradientAngle: 360deg;
+    --gradient-angle: 360deg;
   }
 }
 
@@ -1943,7 +2106,7 @@ button {
   box-shadow: var(--admin-shadow-sm);
 }
 .AdminBody .BtnPrimary {
-  background-color: var(--ColorCoolBlue);
+  background-color: var(--color-cool-blue);
   color: white;
   background-image: none;
 }
@@ -1952,7 +2115,7 @@ button {
 }
 .AdminBody .BtnSecondary {
   background-color: #e2e8f0;
-  color: var(--ColorTextGray);
+  color: var(--color-text-gray);
   border-color: #e2e8f0;
 }
 .AdminBody .BtnSecondary:hover {
@@ -1960,36 +2123,27 @@ button {
 }
 .CardLeague {
   text-align: center;
-  border-bottom: 4px solid var(--ColorPrimary);
+  border-bottom: 4px solid var(--color-primary);
 }
 .CardTeam {
   padding: 0;
   display: flex;
   flex-direction: column;
-  border-left: 5px solid var(--ColorPrimary);
+  border-left: 5px solid var(--color-primary);
 }
 .CardNews {
   padding: 0;
   display: flex;
   overflow: hidden;
-  border-left: 5px solid var(--ColorSecondary);
+  border-left: 5px solid var(--color-secondary);
 }
 .Card--table {
   padding: 0;
   margin-bottom: 30px;
 }
-.Card__header {
-  font-size: 1.5rem;
-  padding: 20px;
-  margin: 0;
-  border-bottom: 1px solid var(--ColorBorder);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
 .AdminBody .Card {
   border-radius: var(--admin-border-radius);
-  border: 1px solid var(--ColorBackground);
+  border: 1px solid var(--color-background);
   box-shadow: var(--admin-shadow-sm);
   padding: 1.5rem;
   transform: none;
@@ -2014,7 +2168,7 @@ button {
   display: block;
   width: 60px;
   height: 4px;
-  background: var(--ColorPrimary);
+  background: var(--color-primary);
   border-radius: 2px;
   bottom: 0;
   left: 50%;
@@ -2028,8 +2182,8 @@ button {
 .FormGroup textarea {
   width: 100%;
   padding: 12px 15px;
-  border: 1px solid var(--ColorBorder);
-  border-radius: var(--BorderRadius);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
   font-size: 1rem;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
@@ -2037,17 +2191,17 @@ button {
 .FormGroup select:focus,
 .FormGroup textarea:focus {
   outline: none;
-  border-color: var(--ColorPrimary);
+  border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(0, 90, 156, 0.2);
 }
 .FormGroup .RequiredStar {
-  color: var(--ColorDanger);
+  color: var(--color-danger);
   margin-right: 4px;
   font-weight: bold;
 }
 fieldset {
-  border: 1px solid var(--ColorBorder);
-  border-radius: var(--BorderRadius);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
   padding: 20px;
   margin-bottom: 25px;
 }
@@ -2055,7 +2209,7 @@ legend {
   font-weight: 700;
   font-size: 1.2rem;
   padding: 0 10px;
-  color: var(--ColorPrimary);
+  color: var(--color-primary);
 }
 .AdminBody .FormContainer {
   box-shadow: none;
@@ -2073,7 +2227,7 @@ legend {
 }
 .AdminBody .FormHelpText {
   font-size: 0.875rem;
-  color: var(--ColorText-light);
+  color: var(--color-text-light);
   margin-top: -0.5rem;
   margin-bottom: 0.5rem;
 }
@@ -2083,10 +2237,10 @@ legend {
 .AdminBody .FormGroup input,
 .AdminBody .FormGroup select,
 .AdminBody .FormGroup textarea {
-  border: 1px solid var(--ColorBackground);
+  border: 1px solid var(--color-background);
   border-radius: var(--admin-border-radius);
-  background-color: var(--ColorSurface);
-  color: var(--ColorTextGray);
+  background-color: var(--color-surface);
+  color: var(--color-text-gray);
 }
 .ModalContent--image {
   background: none;
@@ -2117,16 +2271,16 @@ legend {
 .UserTable td {
   padding: 12px 15px;
   text-align: right;
-  border-bottom: 1px solid var(--ColorBorder);
+  border-bottom: 1px solid var(--color-border);
   white-space: nowrap;
 }
 .UserTable th {
-  background-color: var(--ColorLightGrey);
+  background-color: var(--color-light-grey);
   font-weight: 600;
 }
 .AdminBody .UserTable th {
-  background-color: var(--ColorBackground);
-  color: var(--ColorTextGray);
+  background-color: var(--color-background);
+  color: var(--color-text-gray);
 }
 .UserTable .Actions {
   display: flex;
@@ -2140,57 +2294,10 @@ legend {
 .EmptyStateRow td {
   text-align: center;
   padding: 20px;
-  color: var(--ColorTextMuted);
+  color: var(--color-text-muted);
 }
 .AdminBody .EmptyStateRow td {
-  color: var(--ColorText-light);
-}
-.SiteFooter {
-  background-color: var(--ColorFooter);
-  color: #ccc;
-  padding: 40px 0;
-  border-top: 5px solid var(--ColorPrimary);
-  direction: rtl;
-  text-align: right;
-  flex-shrink: 0;
-}
-.FooterContent {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 40px;
-  text-align: center;
-}
-.FooterAbout p {
-  color: #ccc;
-  line-height: 1.8;
-}
-.FooterLogo {
-  margin-bottom: 20px;
-}
-.FooterLogo img {
-  max-height: 100px;
-  margin: 0 auto;
-}
-.FooterLinks h3,
-.FooterContact h3 {
-  color: var(--ColorSurface);
-  margin-bottom: 15px;
-  font-size: 1.3rem;
-}
-.FooterLinks ul li a {
-  color: #ccc;
-  padding: 5px 0;
-  display: block;
-}
-.FooterLinks ul li a:hover {
-  color: var(--ColorSecondary);
-}
-.FooterContact address p {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  margin-bottom: 0.5rem;
+  color: var(--color-text-light);
 }
 .SocialMedia {
   display: flex;
@@ -2211,8 +2318,8 @@ legend {
   transition: all 0.3s ease;
 }
 .SocialMedia a:hover {
-  background-color: var(--ColorSecondary);
-  color: var(--ColorSurface);
+  background-color: var(--color-secondary);
+  color: var(--color-surface);
   transform: translateY(-3px);
 }
 .Copyright {
@@ -2221,10 +2328,10 @@ legend {
   padding-top: 20px;
   border-top: 1px solid #444;
   font-size: 0.9rem;
-  color: var(--ColorTextMuted);
+  color: var(--color-text-muted);
 }
 .FinalCta {
-  background-color: var(--ColorDarkGrey);
+  background-color: var(--color-dark-grey);
   color: #fff;
   padding: 50px 0;
   text-align: center;
@@ -2255,7 +2362,7 @@ legend {
 .HeroText .Subtitle {
   font-size: 1.2rem;
   font-weight: 600;
-  color: var(--ColorSecondaryDark);
+  color: var(--color-secondary-dark);
 }
 .HeroText h1 {
   font-size: 3.2rem;
@@ -2265,7 +2372,7 @@ legend {
 }
 .HeroText .Tagline {
   font-size: 1.1rem;
-  color: var(--ColorText);
+  color: var(--color-text);
   font-weight: bold;
   max-width: 500px;
   line-height: 1.8;
@@ -2278,8 +2385,8 @@ legend {
   min-width: 320px;
 }
 .HeroImage img {
-  border-radius: var(--BorderRadius);
-  box-shadow: var(--ShadowLG);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-lg);
   max-width: 500px;
 }
 .EventDetails {
@@ -2290,17 +2397,17 @@ legend {
   flex-wrap: wrap;
 }
 .EventDetails p {
-  background: var(--ColorBackgroundMuted);
+  background: var(--color-background-muted);
   padding: 10px 20px;
-  border-radius: var(--BorderRadius);
-  border-right: 4px solid var(--ColorSecondary);
+  border-radius: var(--border-radius);
+  border-right: 4px solid var(--color-secondary);
   font-weight: 500;
   margin: 0;
 }
 .OlympiadHighlight {
   background-color: rgba(247, 166, 0, 0.1);
-  border: 1px solid var(--ColorSecondary);
-  border-radius: var(--BorderRadius);
+  border: 1px solid var(--color-secondary);
+  border-radius: var(--border-radius);
   padding: 15px 25px;
   margin: 0 auto 30px auto;
   max-width: 90%;
@@ -2312,7 +2419,7 @@ legend {
   font-size: 1.1rem;
 }
 .OlympiadHighlight i {
-  color: var(--ColorSecondaryDark);
+  color: var(--color-secondary-dark);
   font-size: 1.5rem;
 }
 .CtaButtons {
@@ -2329,23 +2436,7 @@ legend {
   max-width: 1000px;
   margin: 0 auto;
 }
-.SponsorLogo {
-  height: 150px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.SponsorLogo img {
-  max-height: 100%;
-  width: auto;
-  filter: grayscale(100%);
-  opacity: 0.7;
-  transition: all 0.3s ease;
-}
-.SponsorBox:hover .SponsorLogo img {
-  filter: grayscale(0%);
-  opacity: 1;
-}
+
 .SponsorPlusBtn {
   display: flex;
   flex-direction: column;
@@ -2353,17 +2444,17 @@ legend {
   justify-content: center;
   width: 100%;
   height: 100%;
-  border: 3px dashed var(--ColorBorder);
-  border-radius: var(--BorderRadius);
-  color: var(--ColorTextMuted);
+  border: 3px dashed var(--color-border);
+  border-radius: var(--border-radius);
+  color: var(--color-text-muted);
   font-size: 2rem;
   transition: all 0.3s ease;
 }
 .SponsorPlusBtn:hover {
-  background-color: var(--ColorBackgroundMuted);
+  background-color: var(--color-background-muted);
   border-style: solid;
-  border-color: var(--ColorPrimary);
-  color: var(--ColorPrimary);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 .SponsorPlusBtn span {
   font-size: 1rem;
@@ -2372,7 +2463,7 @@ legend {
 }
 .SponsorshipBenefits {
   padding: 80px 0;
-  background-color: var(--ColorSurface);
+  background-color: var(--color-surface);
 }
 .SponsorshipBenefitsGrid {
   display: grid;
@@ -2387,7 +2478,7 @@ legend {
 .BenefitsText p {
   line-height: 1.8;
   margin-bottom: 30px;
-  color: var(--ColorTextMuted);
+  color: var(--color-text-muted);
 }
 .BenefitsText ul {
   list-style: none;
@@ -2403,23 +2494,17 @@ legend {
   font-size: 1.1rem;
 }
 .BenefitsText ul i {
-  color: var(--ColorPrimary);
+  color: var(--color-primary);
   font-size: 1.2rem;
   margin-top: 5px;
 }
 .BenefitsImage img {
   width: 400px;
   height: auto;
-  border-radius: var(--BorderRadius);
-  box-shadow: var(--ShadowLG);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-lg);
 }
-.AboutLogo {
-  margin: 0 auto 50px auto;
-  max-width: 250px;
-}
-.AboutLogo img {
-  opacity: 0.8;
-}
+
 .AboutStory p {
   text-align: justify;
   text-justify: inter-word;
@@ -2428,37 +2513,37 @@ legend {
   margin: 0px auto 50px auto;
 }
 .ValueCard:hover {
-  border-top-color: var(--ColorSecondary);
+  border-top-color: var(--color-secondary);
 }
 .ValueIcon {
   font-size: 3rem;
-  color: var(--ColorPrimary);
+  color: var(--color-primary);
   margin-bottom: 20px;
   transition: color 0.3s ease;
 }
 .ValueCard:hover .ValueIcon {
-  color: var(--ColorSecondary);
+  color: var(--color-secondary);
 }
 .ValueCard p {
-  color: var(--ColorTextMuted);
+  color: var(--color-text-muted);
   line-height: 1.8;
 }
 .CommitteeCta h2 {
   font-size: 2.2rem;
   margin-bottom: 15px;
-  color: var(--ColorDarkGrey);
+  color: var(--color-dark-grey);
 }
 .CommitteeCta p {
   max-width: 600px;
   margin: 0 auto 30px auto;
   font-size: 1.1rem;
-  color: var(--ColorTextMuted);
+  color: var(--color-text-muted);
 }
 .CommitteeInfo p {
-  color: var(--ColorTextMuted);
+  color: var(--color-text-muted);
 }
 .CommitteeInfo p:first-of-type {
-  color: var(--ColorPrimary);
+  color: var(--color-primary);
   font-weight: 600;
   margin-bottom: 15px;
 }
@@ -2484,15 +2569,15 @@ legend {
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
 }
 .GalleryItem {
-  border-radius: var(--BorderRadius);
+  border-radius: var(--border-radius);
   overflow: hidden;
-  box-shadow: var(--ShadowMD);
+  box-shadow: var(--shadow-md);
   cursor: pointer;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 .GalleryItem:hover {
   transform: scale(1.03);
-  box-shadow: var(--ShadowLG);
+  box-shadow: var(--shadow-lg);
 }
 .GalleryItem img {
   width: 100%;
@@ -2510,12 +2595,12 @@ legend {
 .NewsTitle {
   font-size: 1.6rem;
   margin-bottom: 15px;
-  color: var(--ColorPrimaryDark);
+  color: var(--color-primary-dark);
 }
 .NewsMeta {
   display: flex;
   gap: 20px;
-  color: var(--ColorTextMuted);
+  color: var(--color-text-muted);
   font-size: 0.9rem;
   margin-bottom: 20px;
 }
@@ -2533,7 +2618,7 @@ legend {
 .NoTeamsCard {
   text-align: center;
   padding: 40px;
-  color: var(--ColorTextMuted);
+  color: var(--color-text-muted);
 }
 .NoTeamsCard i {
   font-size: 3rem;
@@ -2555,20 +2640,13 @@ legend {
 }
 .DiscountAmount {
   font-size: 0.9em;
-  color: var(--ColorTextMuted);
+  color: var(--color-text-muted);
   border: none;
 }
 .TotalAmount {
   padding-top: 15px;
   font-size: 1.2rem;
   border: none;
-}
-.CardFooter {
-  text-align: center;
-  margin-top: 20px;
-  padding: 20px;
-  border-top: 1px solid var(--ColorBorder);
-  background-color: var(--ColorBackground);
 }
 .UploadInstruction {
   margin-bottom: 1rem;
@@ -2581,13 +2659,13 @@ legend {
 }
 .Card.ContactDetailsCard,
 .Card.LocationCard {
-  border-right: 4px solid var(--ColorPrimary);
+  border-right: 4px solid var(--color-primary);
   display: flex;
   flex-direction: column;
   height: 100%;
 }
 .Card.LocationCard {
-  border-right-color: var(--ColorSecondary);
+  border-right-color: var(--color-secondary);
 }
 .LocationCard p {
   display: flex;
@@ -2597,7 +2675,7 @@ legend {
   margin-bottom: 20px;
 }
 .LocationCard p i {
-  color: var(--ColorSecondaryDark);
+  color: var(--color-secondary-dark);
 }
 .ContactDetailsCard address {
   display: flex;
@@ -2606,15 +2684,15 @@ legend {
   flex-grow: 1;
 }
 .ContactText strong {
-  color: var(--ColorDarkGrey);
+  color: var(--color-dark-grey);
   font-weight: 600;
 }
 .MapContainer {
   flex-grow: 1;
-  border-radius: var(--BorderRadius);
+  border-radius: var(--border-radius);
   overflow: hidden;
-  border: 1px solid var(--ColorBorder);
-  box-shadow: var(--ShadowSM);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
   min-height: 400px;
 }
 .PasswordWrapper {
@@ -2635,18 +2713,18 @@ legend {
   cursor: pointer;
   height: 100%;
   width: 2.5rem;
-  color: var(--ColorTextMuted);
+  color: var(--color-text-muted);
 }
 .PasswordToggle:hover {
-  color: var(--ColorPrimary);
+  color: var(--color-primary);
 }
 .PasswordRequirements {
   font-size: 0.9em;
-  background-color: var(--ColorBackgroundMuted);
+  background-color: var(--color-background-muted);
   padding: 15px;
-  border-radius: var(--BorderRadius);
+  border-radius: var(--border-radius);
   margin: 1.5rem 0;
-  border-right: 4px solid var(--ColorPrimary);
+  border-right: 4px solid var(--color-primary);
 }
 .PasswordRequirements p {
   font-weight: 700;
@@ -2661,10 +2739,10 @@ legend {
   transition: color 0.3s ease;
 }
 .PasswordRequirements li.invalid {
-  color: var(--ColorDanger);
+  color: var(--color-danger);
 }
 .PasswordRequirements li.valid {
-  color: var(--ColorSuccess);
+  color: var(--color-success);
 }
 .PageGrid {
   display: grid;
@@ -2680,7 +2758,7 @@ legend {
 }
 .InfoList dt {
   font-weight: bold;
-  color: var(--ColorText-light);
+  color: var(--color-text-light);
 }
 .InfoList dd {
   margin: 0;
@@ -2689,10 +2767,10 @@ legend {
 }
 .ClientActions {
   padding: 1.5rem;
-  border-top: 1px solid var(--ColorBackground);
+  border-top: 1px solid var(--color-background);
   display: flex;
   gap: 1rem;
-  background-color: var(--ColorSurface);
+  background-color: var(--color-surface);
 }
 .Toolbar {
   display: flex;
@@ -2710,7 +2788,7 @@ legend {
 .SearchInputGroup i {
   position: absolute;
   right: 15px;
-  color: var(--ColorText-light);
+  color: var(--color-text-light);
 }
 .SearchInputGroup input {
   padding-right: 40px;
@@ -2724,12 +2802,12 @@ legend {
   align-items: center;
   gap: 1rem;
 }
-.Pagination__info {
+.Pagination--info {
   font-weight: bold;
 }
 .TeamId {
   font-size: 0.8rem;
-  color: var(--ColorText-light);
+  color: var(--color-text-light);
 }
 .StatusForm {
   display: flex;
@@ -2739,15 +2817,15 @@ legend {
 .ClientListItem {
   display: block;
   padding: 15px;
-  border-bottom: 1px solid var(--ColorBackground);
+  border-bottom: 1px solid var(--color-background);
   text-decoration: none;
-  color: var(--ColorTextGray);
+  color: var(--color-text-gray);
   cursor: pointer;
   transition: background-color 0.2s ease;
 }
 .ClientListItem:hover,
 .ClientListItem.Active {
-  background-color: var(--ColorBackground);
+  background-color: var(--color-background);
 }
 .ClientListItem strong {
   display: block;
@@ -2756,13 +2834,13 @@ legend {
 .ClientListItem span {
   display: block;
   font-size: 0.8rem;
-  color: var(--ColorText-light);
+  color: var(--color-text-light);
 }
 .ChatWrapper {
   flex-grow: 1;
   display: flex;
   flex-direction: column;
-  background-color: var(--ColorSurface);
+  background-color: var(--color-surface);
 }
 .ChatBox {
   flex-grow: 1;
@@ -2772,12 +2850,12 @@ legend {
 .ChatInput {
   display: flex;
   padding: 15px;
-  border-top: 1px solid var(--ColorBackground);
+  border-top: 1px solid var(--color-background);
   gap: 10px;
 }
 .ChatInput input {
   flex-grow: 1;
-  border: 1px solid var(--ColorBackground);
+  border: 1px solid var(--color-background);
   padding: 10px;
   border-radius: 20px;
 }
@@ -2812,7 +2890,7 @@ legend {
 }
 .StatContent p {
   margin: 0;
-  color: var(--ColorText-light);
+  color: var(--color-text-light);
 }
 .ChartGrid {
   display: grid;
@@ -2935,7 +3013,7 @@ legend {
   .ClientList {
     width: 100%;
     border-right: none;
-    border-bottom: 1px solid var(--ColorBackground);
+    border-bottom: 1px solid var(--color-background);
     max-height: 40vh;
   }
   .ChatWrapper {
@@ -2951,10 +3029,6 @@ legend {
   color: #e8e8e8;
   padding: 2rem;
   margin-top: 0;
-}
-.ErrorDebug .SiteHeader,
-.ErrorDebug .SiteFooter {
-  display: none;
 }
 .ErrorDebug .Container {
   max-width: 1200px;
@@ -2995,7 +3069,7 @@ legend {
   transform: none;
 }
 .AccordionItem:hover {
-  box-shadow: var(--ShadowMD);
+  box-shadow: var(--shadow-md);
 }
 .AccordionContent.active {
   max-height: 2000px;
@@ -3005,14 +3079,14 @@ legend {
 .LeagueDescription {
   margin-bottom: 20px;
   font-size: 1.1rem;
-  color: var(--ColorDarkGrey);
+  color: var(--color-dark-grey);
 }
 .LeagueDetailsBody h4 {
   font-size: 1.25rem;
   margin-top: 30px;
   margin-bottom: 15px;
-  color: var(--ColorPrimaryDark);
-  border-bottom: 2px solid var(--ColorBackgroundMuted);
+  color: var(--color-primary-dark);
+  border-bottom: 2px solid var(--color-background-muted);
   padding-bottom: 5px;
 }
 .LeagueGoalsList {
@@ -3024,31 +3098,31 @@ legend {
   align-items: flex-start;
   gap: 10px;
   margin-bottom: 10px;
-  color: var(--ColorText);
+  color: var(--color-text);
   font-weight: 500;
 }
 .LeagueGoalsList li i {
-  color: var(--ColorSuccess);
+  color: var(--color-success);
   font-size: 1.1rem;
   margin-top: 3px;
   flex-shrink: 0;
 }
 .LeagueSectionContent {
   padding: 15px;
-  background-color: var(--ColorLightGrey);
-  border-right: 4px solid var(--ColorSecondary);
-  border-radius: var(--BorderRadius);
+  background-color: var(--color-light-grey);
+  border-right: 4px solid var(--color-secondary);
+  border-radius: var(--border-radius);
   font-size: 1rem;
 }
 .CommitteeCta {
-  background-color: var(--ColorBackground);
+  background-color: var(--color-background);
   padding: 80px 0;
   text-align: center;
-  border-top: 1px solid var(--ColorBorder);
-  border-bottom: 1px solid var(--ColorBorder);
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
 }
 .FinalCtaContact {
-  background-color: var(--ColorDarkGrey);
+  background-color: var(--color-dark-grey);
   color: #fff;
   padding: 80px 0;
   text-align: center;
@@ -3074,7 +3148,7 @@ legend {
   max-width: 800px;
   margin: 0 auto 30px auto;
   font-size: 1.1rem;
-  color: var(--ColorTextMuted);
+  color: var(--color-text-muted);
   line-height: 1.8;
 }
 @media (min-width: 992px) {
@@ -3091,7 +3165,7 @@ legend {
   line-height: 1.8;
 }
 .LocationCard .LocationAddress i {
-  color: var(--ColorSecondaryDark);
+  color: var(--color-secondary-dark);
   font-size: 1.1rem;
 }
 .ContactLink {
@@ -3099,25 +3173,25 @@ legend {
   align-items: center;
   gap: 15px;
   padding: 12px;
-  border-radius: var(--BorderRadius);
+  border-radius: var(--border-radius);
   transition: background-color 0.2s ease, transform 0.2s ease;
-  color: var(--ColorText);
+  color: var(--color-text);
   text-decoration: none;
 }
 .ContactLink:hover {
-  background-color: var(--ColorBackgroundMuted);
+  background-color: var(--color-background-muted);
   transform: translateX(-5px);
 }
 .ContactLink i {
   font-size: 1.6rem;
-  color: var(--ColorPrimary);
+  color: var(--color-primary);
   width: 35px;
   text-align: center;
   flex-shrink: 0;
 }
 .ContactText span {
-  color: var(--ColorTextMuted);
-  font-family: var(--FontEnglish);
+  color: var(--color-text-muted);
+  font-family: var(--font-english);
   direction: ltr;
   display: block;
   text-align: left;
@@ -3149,7 +3223,7 @@ select {
 select:focus {
   outline: 2px solid transparent;
   outline-offset: 2px;
-  border-color: var(--ColorHeader);
+  border-color: var(--color-header);
   box-shadow: 0 0 0 2px #c4b5fd;
 }
 select option {
@@ -3270,7 +3344,7 @@ select option {
 .DetailItem .FinalAmount {
   font-size: 1.75rem;
   font-weight: 700;
-  color: var(--ColorHeader);
+  color: var(--color-header);
 }
 .CopyBtn {
   background: none;
@@ -3445,178 +3519,30 @@ select option {
   background-color: #4f46e5;
   color: white;
 }
-.ChatMessage__sender {
+.ChatMessage--sender {
   font-size: 0.75rem;
   font-weight: 600;
   margin-bottom: 0.2rem;
   opacity: 0.8;
 }
-.ChatMessage__text {
+.ChatMessage--text {
   margin: 0;
   font-size: 0.95rem;
 }
-.ChatMessage__meta {
+.ChatMessage--meta {
   font-size: 0.65rem;
   margin-top: 0.25rem;
   opacity: 0.7;
   text-align: right;
 }
-.AccordionHeader {
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 25px;
-  background-color: var(--ColorBackgroundMuted);
-  border: none;
-  border-radius: var(--BorderRadius);
-  cursor: pointer;
-  text-align: right;
-  transition: all 0.3s ease;
-  border-bottom: 2px solid transparent;
-}
-.WelcomeHeader {
-  text-align: center;
-  margin-bottom: 30px;
-  border-bottom: 1px solid var(--ColorBorder);
-  padding-bottom: 1rem;
-}
-.AdminBody .AdminHeader {
-  background-color: var(--ColorFooter);
-  color: white;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: var(--admin-header-height);
-  z-index: 1000;
-  box-shadow: var(--admin-shadow-sm);
-}
-.AdminHeader__container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  height: 100%;
-  padding: 0 1.5rem;
-}
-.AdminHeader__logo {
-  font-weight: bold;
-  font-size: 1.2rem;
-  color: white;
-  text-decoration: none;
-}
-.AdminHeader__nav {
-  display: flex;
-  gap: 1rem;
-}
-.AdminHeader__nav a {
-  color: #e2e8f0;
-  text-decoration: none;
-  padding: 0.5rem 1rem;
-  border-radius: var(--admin-border-radius);
-  transition: background-color 0.2s ease, color 0.2s ease;
-}
-.AdminHeader__nav a:hover,
-.AdminHeader__nav a.active {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: white;
-}
-.AdminHeader__mobile-toggle {
-  display: none;
-  background: none;
-  border: none;
-  color: white;
-  font-size: 1.5rem;
-  cursor: pointer;
-}
-.WelcomeHeader h2 {
-  font-size: 2.2rem;
-}
-.TeamCardHeader h3 {
-  margin: 0;
-  font-size: 1.6rem;
-  color: var(--ColorPrimaryDark);
-}
-.AdminBody .AdminHeader__nav {
-  display: none;
-  position: absolute;
-  top: var(--admin-header-height);
-  left: 0;
-  right: 0;
-  background-color: var(--ColorTextGray);
-  flex-direction: column;
-  padding: 1rem 0;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-.AdminBody .AdminHeader__nav.is-open {
-  display: flex;
-}
-.AdminBody .AdminHeader__nav a {
-  padding: 1rem;
-  text-align: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-.AdminBody .AdminHeader__nav a:last-child {
-  border-bottom: none;
-}
-.AdminBody .AdminHeader__mobile-toggle {
-  display: block;
-}
-.AdminBody .AdminHeader__nav {
-  display: flex !important;
-  position: static;
-  flex-direction: row;
-  width: auto;
-  height: auto;
-padding: 0;
-  box-shadow: none;
-  background: transparent;
-}
-.AccordionHeader h3 {
-  margin: 0;
-  font-size: 1.3rem;
-  color: var(--ColorDarkGrey);
-  font-weight: 700;
-  transition: color 0.3s ease;
-}
-.AccordionHeader:hover {
-  background-color: var(--ColorBorder);
-}
-.AccordionHeader.active {
-  background-color: var(--ColorPrimary);
-  border-radius: var(--BorderRadius) var(--BorderRadius) 0 0;
-  border-bottom-color: var(--ColorPrimary);
-}
-.AccordionHeader.active h3 {
-  color: var(--ColorSurface);
-}
-.AccordionHeader.active .AccordionIcon {
-  transform: rotate(180deg);
-  color: var(--ColorSurface);
-}
 .ErrorPageContainer {
   box-sizing: border-box;
-  font-family: var(--FontPersian);
+  font-family: var(--font-persian);
   text-align: center;
   margin: 100px 0;
 }
 .MainContent {
   flex: 1 0 auto;
-}
-#FlashContainer {
-  position: fixed;
-  top: calc(var(--SiteHeaderHeight) + 1rem);
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 2100;
-  width: 90%;
-  max-width: 500px;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-.AdminBody #FlashContainer {
-  top: calc(var(--admin-header-height, 60px) + 1rem);
 }
 .FlashMessage {
   display: flex;
@@ -3624,9 +3550,9 @@ padding: 0;
   gap: 0.75rem;
   padding: 1rem 1.5rem;
   margin-bottom: 1rem;
-  border-radius: var(--BorderRadius);
+  border-radius: var(--border-radius);
   font-weight: 600;
-  box-shadow: var(--ShadowMD);
+  box-shadow: var(--shadow-md);
   border-right: 5px solid;
   text-align: right;
   opacity: 0;
@@ -3656,24 +3582,24 @@ padding: 0;
   opacity: 1;
 }
 .FlashSuccess {
-  color: var(--ColorSurface);
-  border-color: var(--ColorSuccess);
-  background-color: var(--ColorSuccess);
+  color: var(--color-surface);
+  border-color: var(--color-success);
+  background-color: var(--color-success);
 }
 .FlashError {
-  color: var(--ColorSurface);
-  border-color: var(--ColorDanger);
-  background-color: var(--ColorDanger);
+  color: var(--color-surface);
+  border-color: var(--color-danger);
+  background-color: var(--color-danger);
 }
 .FlashInfo {
   background-color: #e8f4f8;
   color: #0c546b;
-  border-color: var(--ColorPrimary);
+  border-color: var(--color-primary);
 }
 .FlashWarning {
-  color: var(--ColorSurface);
-  border-color: var(--ColorWarning);
-  background-color: var(--ColorSecondary);
+  color: var(--color-surface);
+  border-color: var(--color-warning);
+  background-color: var(--color-secondary);
 }
 @keyframes SlideIn {
   from {
@@ -3766,21 +3692,6 @@ padding: 0;
     border-top: 1px solid #ffffff33;
   }
 }
-.ClientChatContainer .PageHeader {
-  text-align: center;
-  margin-bottom: 2rem;
-}
-.ChatMessage .Meta {
-  font-size: 0.75rem;
-  color: #888;
-  margin-bottom: 4px;
-}
-.Message--sent {
-  background-color: var(--ColorHeader);
-  color: white;
-  align-self: flex-start;
-  border-bottom-left-radius: 4px;
-}
 .Message--sent .Meta {
   color: #e0cff0;
 }
@@ -3852,65 +3763,52 @@ padding: 0;
 }
 .ClientList {
   width: 300px;
-  border-left: 1px solid var(--ColorBackground);
+  border-left: 1px solid var(--color-background);
   overflow-y: auto;
-  background-color: var(--ColorSurface);
+  background-color: var(--color-surface);
   flex-shrink: 0;
 }
 .PaymentInfoBox {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  border-left: 5px solid var(--ColorPrimary);
-  background-color: var(--ColorBackgroundMuted) !important;
+  border-left: 5px solid var(--color-primary);
+  background-color: var(--color-background-muted) !important;
   padding: 1.5rem;
-}
-.PaymentInfoHeader {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 1.2rem;
-  color: var(--ColorPrimaryDark);
-  border-bottom: 1px solid var(--ColorBorder);
-  padding-bottom: 0.75rem;
-  margin-bottom: 0.5rem;
-}
-.PaymentInfoHeader i {
-  font-size: 1.5rem;
 }
 .FeeItem {
   display: flex;
   align-items: center;
   gap: 15px;
-  background-color: var(--ColorSurface);
+  background-color: var(--color-surface);
   padding: 15px;
-  border-radius: var(--BorderRadiusSmall);
-  border: 1px solid var(--ColorBorder);
-  box-shadow: var(--ShadowSM);
+  border-radius: var(--border-radius-small);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
 }
 .FeeItem i {
   font-size: 1.8rem;
-  color: var(--ColorPrimary);
+  color: var(--color-primary);
   width: 40px;
   text-align: center;
 }
 .FeeItem strong {
   display: block;
   font-weight: 700;
-  color: var(--ColorText);
+  color: var(--color-text);
   font-size: 1rem;
 }
 .FeeItem span {
   font-size: 1.2rem;
   font-weight: bold;
-  color: var(--ColorPrimaryDark);
-  font-family: var(--FontEnglish);
+  color: var(--color-primary-dark);
+  font-family: var(--font-english);
 }
 .DiscountExplanation {
   background-color: rgba(247, 166, 0, 0.1);
-  border: 1px solid var(--ColorSecondary);
+  border: 1px solid var(--color-secondary);
   padding: 15px;
-  border-radius: var(--BorderRadiusSmall);
+  border-radius: var(--border-radius-small);
   text-align: center;
   font-size: 0.95rem;
   line-height: 1.8;
@@ -3921,65 +3819,52 @@ padding: 0;
   margin-top: 0.5rem;
 }
 .FeeNote {
-  background-color: var(--ColorSurface);
-  border: 1px solid var(--ColorBorder);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
   padding: 15px;
-  border-radius: var(--BorderRadiusSmall);
+  border-radius: var(--border-radius-small);
   font-size: 0.9rem;
   line-height: 1.7;
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  color: var(--ColorTextMuted);
+  color: var(--color-text-muted);
 }
 .FeeNote i {
-  color: var(--ColorPrimary);
+  color: var(--color-primary);
   margin-top: 3px;
 }
 .SubtotalItem {
   font-weight: bold;
-  color: var(--ColorDarkGrey);
-  border-top: 1px dashed var(--ColorBorder);
+  color: var(--color-dark-grey);
+  border-top: 1px dashed var(--color-border);
   padding-top: 1rem;
 }
 .DetailItem.DiscountAmount span {
-  color: var(--ColorSuccess);
+  color: var(--color-success);
   font-weight: 600;
 }
 .DetailItem.DiscountAmount strong {
-  color: var(--ColorSuccess);
+  color: var(--color-success);
 }
 .PasswordRequirements ul .valid::before {
   content: "✓ ";
   font-weight: bold;
 }
 .PasswordRequirements ul .invalid {
-  color: var(--ColorDanger);
+  color: var(--color-danger);
 }
 .PasswordRequirements ul .invalid::before {
   content: "✗ ";
   font-weight: bold;
 }
 .Modal--Admin .ModalContent {
-  border-top: 5px solid var(--ColorPrimary);
-}
-.Modal--Admin .ModalHeader {
-  font-size: 1.5rem;
-  font-weight: 700;
-  text-align: center;
-  margin-bottom: 1rem;
-  color: var(--ColorDarkGrey);
+  border-top: 5px solid var(--color-primary);
 }
 .Modal--Admin .ModalBody {
   text-align: center;
   margin: 20px 0;
   line-height: 1.7;
-}
-.Modal--Admin .ModalFooter {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-  margin-top: 1.5rem;
 }
 .BtnSm {
   padding: 5px 10px;
@@ -3989,4 +3874,100 @@ padding: 0;
   display: flex;
   height: 80vh;
   padding: 0;
+}
+
+/* ===== Footer layout & duplicate-line fix ===== */
+
+/* Remove any previous thick border on the footer so we only have the single nice blue line */
+.site-footer {
+  /* if another rule added border-top, remove it here */
+  border-top: none !important;
+}
+
+/* Keep a single thin blue line — full width of footer */
+.footer-top-line {
+  height: 4px;
+  background: linear-gradient(90deg, #2f7bff 0%, #1e90ff 50%, #2f7bff 100%);
+  width: 100%;
+  margin: 0 0 28px 0;          /* space between line and cards */
+  box-shadow: 0 1px 0 rgba(30,144,255,0.12);
+}
+
+/* Ensure the footer content area doesn't add another top border */
+.footer-content {
+  padding-bottom: 1rem;
+  border-top: none !important;
+}
+
+/* Cards row stays as before */
+.footer-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+/* Footer cards visual + animation (unchanged) */
+.footer-card {
+  background: rgba(255,255,255,0.03);
+  border-radius: 18px;
+  padding: 1.75rem;
+  text-align: center;
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+  border: 1px solid rgba(255,255,255,0.04);
+  transform: translateY(20px);
+  opacity: 0;
+  transition: transform 600ms cubic-bezier(.2,.9,.2,1), opacity 600ms ease;
+}
+.footer-card.is-visible { transform: translateY(0); opacity:1; }
+.footer-card--logo .footer-card-logo { max-height:84px; margin-bottom:12px; filter:brightness(1.1) invert(1); }
+
+/* ===== Footer bottom: stack and center COPYRIGHT + VERSION under the cards ===== */
+.footer-bottom {
+  display: flex;
+  flex-direction: column;      /* stack vertically */
+  align-items: center;         /* center horizontally */
+  justify-content: center;
+  gap: .25rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: none !important; /* ensure no dividing line appears below cards */
+  width: 100%;
+}
+
+/* typography of the copyright & version */
+.footer-copy {
+  color: #cfcfcf;
+  margin: 0;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.site-version {
+  color: #9fb6ff;
+  font-weight: 600;
+  margin: 0;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+/* responsive stacks for small screens */
+@media (max-width: 880px) {
+  .footer-cards { grid-template-columns: 1fr; }
+  .footer-bottom { gap: .5rem; padding-top: 0.8rem; margin-top: 1rem; }
+}
+
+/* accessibility: respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .footer-card,
+  .footer-card.is-visible {
+    transform: none !important;
+    opacity: 1 !important;
+    transition: none !important;
+  }
 }

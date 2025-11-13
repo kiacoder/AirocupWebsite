@@ -115,6 +115,7 @@ def inject_global_variables():
         "committee_members": constants.committee_members_data,
         "technical_committee_members": constants.technical_committee_members,
         "homepage_sponsors": constants.homepage_sponsors_data,
+        "app_version": config.app_version,
     }
 
 

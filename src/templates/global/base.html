@@ -99,60 +99,9 @@
       referrerpolicy="no-referrer"
     />
 
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "WebSite",
-        "name": "آیروکاپ",
-        "url": "{{ url_for('global.index', _external=True) }}",
-        "potentialAction": {
-          "@type": "SearchAction",
-          "target": {
-            "@type": "EntryPoint",
-            "urlTemplate": "{{ url_for('global.index', _external=True) }}search?q={search_term_string}"
-          },
-          "query-input": "required name=search_term_string"
-        },
-        "mainEntity": {
-          "@type": "SiteNavigationElement",
-          "name": "Main Navigation",
-          "potentialAction": [
-            {
-              "@type": "Action",
-              "name": "لیگ‌ها",
-              "url": "{{ url_for('global.leagues', _external=True) }}"
-            },
-            {
-              "@type": "Action",
-              "name": "کمیته",
-              "url": "{{ url_for('global.committee', _external=True) }}"
-            },
-            {
-              "@type": "Action",
-              "name": "حامیان",
-              "url": "{{ url_for('global.sponsors', _external=True) }}"
-            },
-            {
-              "@type": "Action",
-              "name": "اخبار",
-              "url": "{{ url_for('global.news', _external=True) }}"
-            },
-            {
-              "@type": "Action",
-              "name": "درباره ما",
-              "url": "{{ url_for('global.about', _external=True) }}"
-            },
-            {
-              "@type": "Action",
-              "name": "تماس با ما",
-              "url": "{{ url_for('global.contact', _external=True) }}"
-            }
-          ]
-        }
-      }
-    </script>
     {% block head %}{% endblock %}
   </head>
+
   <body
     class="{{ 'admin-body' if _is_admin else 'client-page' }}"
     {%
@@ -167,13 +116,19 @@
   >
     {% if _is_admin %}
     <header class="admin-header">
-      <div class="admin-header__container">
+      <div class="admin-header-container container">
         <a
           href="{{ url_for('admin.admin_dashboard') }}"
-          class="admin-header__logo"
-          >پنل مدیریت آیروکاپ</a
+          class="admin-header-logo"
         >
-        <nav class="admin-header__nav" id="admin-nav">
+          <img
+            src="{{ url_for('static', filename=path.transparent_logos['transparent_white']) }}"
+            alt="پنل مدیریت آیروکاپ"
+          />
+          <span>پنل مدیریت آیروکاپ</span>
+        </a>
+
+        <nav class="admin-header-nav" id="admin-nav">
           <a href="{{ url_for('admin.admin_dashboard') }}">داشبورد</a>
           <a href="{{ url_for('admin.admin_clients_list') }}">کاربران</a>
           <a href="{{ url_for('admin.admin_manage_teams') }}">تیم‌ها</a>
@@ -182,8 +137,9 @@
             >خروج</a
           >
         </nav>
+
         <button
-          class="admin-header__mobile-toggle"
+          class="admin-header-mobile-toggle"
           aria-controls="admin-nav"
           aria-expanded="false"
         >
@@ -191,20 +147,21 @@
         </button>
       </div>
     </header>
+
     {% else %}
-    <header class="site-header" role="banner">
-      <div class="top-header container">
-        <div class="logo" itemscope itemtype="https://schema.org/Organization">
-          <a href="{{ url_for('global.index') }}" itemprop="url">
+    <header class="site-header">
+      <div class="container header-inner">
+        <div class="logo">
+          <a href="{{ url_for('global.index') }}">
             <img
               src="{{ url_for('static', filename=path.transparent_logos['transparent_white']) }}"
-              alt="لوگو آیروکاپ - مسابقات ملی هوش مصنوعی و رباتیک"
-              itemprop="logo"
+              alt="لوگو آیروکاپ"
             />
           </a>
         </div>
-        <nav class="main-nav" aria-label="منوی اصلی سایت" role="navigation">
-          <ul id="main-nav-list" class="nav-items">
+
+        <nav class="main-nav" id="main-nav" role="navigation">
+          <ul class="nav-list">
             <li>
               <a
                 href="{{ url_for('global.index') }}"
@@ -261,68 +218,37 @@
                 >تماس با ما</a
               >
             </li>
-            <div class="nav-action-items">
-              {% if 'client_id' in session %}
-              <a
-                href="{{ url_for('client.dashboard') }}"
-                class="btn btn-secondary"
-                >داشبورد</a
-              >
-              <a
-                href="{{ url_for('client.support_chat') }}"
-                class="btn btn-primary"
-                >پشتیبانی</a
-              >
-              {% else %}
-              <a
-                href="{{ url_for('client.login_client') }}"
-                class="btn btn-secondary"
-                >ورود</a
-              >
-              <a href="{{ url_for('client.signup') }}" class="btn btn-primary"
-                >ثبت نام</a
-              >
-              {% endif %}
-            </div>
           </ul>
         </nav>
-        <div class="header-right">
-          <div class="user-actions">
-            {% if 'client_id' in session %}
-            <a
-              href="{{ url_for('client.dashboard') }}"
-              class="btn btn-secondary"
-              >داشبورد</a
-            >
-            <a
-              href="{{ url_for('client.support_chat') }}"
-              class="btn btn-primary"
-              >پشتیبانی</a
-            >
-            {% else %}
-            <a
-              href="{{ url_for('client.login_client') }}"
-              class="btn btn-secondary"
-              >ورود</a
-            >
-            <a href="{{ url_for('client.signup') }}" class="btn btn-primary"
-              >ثبت نام</a
-            >
-            {% endif %}
-          </div>
-          <button
-            class="mobile-menu-btn"
-            aria-label="منوی موبایل"
-            aria-expanded="false"
-            aria-controls="main-nav-list"
+
+        <div class="header-actions">
+          {% if 'client_id' in session %}
+          <a href="{{ url_for('client.dashboard') }}" class="btn btn-secondary"
+            >داشبورد</a
           >
-            <i
-              class="fas fa-bars"
-              aria-hidden="true"
-              style="font-size: 1.5rem"
-            ></i>
-          </button>
+          <a href="{{ url_for('client.support_chat') }}" class="btn btn-primary"
+            >پشتیبانی</a
+          >
+          {% else %}
+          <a
+            href="{{ url_for('client.login_client') }}"
+            class="btn btn-secondary"
+            >ورود</a
+          >
+          <a href="{{ url_for('client.signup') }}" class="btn btn-primary"
+            >ثبت‌نام</a
+          >
+          {% endif %}
         </div>
+
+        <button
+          class="mobile-menu-btn"
+          aria-label="منوی موبایل"
+          aria-expanded="false"
+          aria-controls="main-nav"
+        >
+          <i class="fas fa-bars"></i>
+        </button>
       </div>
     </header>
     {% endif %} {% with messages = get_flashed_messages(with_categories=true) %}
@@ -354,94 +280,51 @@
     </main>
 
     {% if not _is_admin %}
-    <footer class="site-footer" role="contentinfo">
-      <div class="container">
-        <div class="footer-content">
-          <div
-            class="footer-about"
-            itemscope
-            itemtype="https://schema.org/Organization"
-          >
-            <a
-              href="{{ url_for('global.index') }}"
-              class="footer-logo"
-              itemprop="url"
-            >
-              <img
-                src="{{ url_for('static', filename=path.transparent_logos['transparent_white']) }}"
-                alt="لوگو آیروکاپ در فوتر - مسابقات ملی هوش مصنوعی"
-                itemprop="logo"
-              />
-            </a>
-            <p itemprop="description">
-              آیروکاپ، پیشگام در آینده هوشمند ایران. نخستین رویداد ملی با محوریت
-              کامل هوش مصنوعی و رباتیک.
+    <footer class="site-footer">
+      <!-- thin blue line above footer -->
+      <div class="footer-top-line" aria-hidden="true"></div>
+
+      <div class="container footer-content">
+        <!-- animated cards row (logo / quick-links / contact) -->
+        <div class="footer-cards">
+          <div class="footer-card" aria-label="اطلاعات تماس">
+            <h4>اطلاعات تماس</h4>
+            <p>
+              <i class="fas fa-map-marker-alt"></i> تهران، دانشگاه علم و صنعت
+              ایران
+            </p>
+            <p><i class="fas fa-phone"></i> {{ contact.phone }}</p>
+          </div>
+
+          <div class="footer-card footer-card--logo" aria-label="لوگو آیروکاپ">
+            <img
+              src="{{ url_for('static', filename=path.transparent_logos['transparent_white']) }}"
+              alt="Airocup logo"
+              class="footer-card-logo"
+            />
+            <p class="footer-card-caption">
+              آیروکاپ — پیشگام در آینده هوشمند ایران
             </p>
           </div>
-          <div class="footer-links">
-            <h3>دسترسی سریع</h3>
+
+          <div class="footer-card" aria-label="دسترسی سریع">
+            <h4>دسترسی سریع</h4>
             <ul>
               <li><a href="{{ url_for('global.index') }}">صفحه اصلی</a></li>
               <li><a href="{{ url_for('global.leagues') }}">لیگ‌ها</a></li>
-              <li><a href="{{ url_for('client.signup') }}">ثبت نام</a></li>
+              <li><a href="{{ url_for('client.signup') }}">ثبت‌نام</a></li>
               <li><a href="{{ url_for('client.login_client') }}">ورود</a></li>
-              <li>
-                <a href="{{ url_for('global.cooperate') }}">همکاری با ما</a>
-              </li>
             </ul>
           </div>
-          <div
-            class="footer-contact"
-            itemscope
-            itemtype="https://schema.org/ContactPoint"
-          >
-            <h3>اطلاعات تماس</h3>
-            <address
-              itemprop="address"
-              itemscope
-              itemtype="https://schema.org/PostalAddress"
-            >
-              <p itemprop="streetAddress">
-                <i class="fas fa-map-marker-alt"></i> تهران، دانشگاه علم و صنعت
-                ایران
-              </p>
-              <p itemprop="telephone">
-                <i class="fas fa-phone"></i> {{ contact.phone }}
-              </p>
-            </address>
-            <div class="social-media">
-              <a
-                href="https://instagram.com/{{ contact.instagram|replace('@','') }}"
-                title="صفحه اینستاگرام آیروکاپ"
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-                itemprop="sameAs"
-                ><i class="fab fa-instagram"></i
-              ></a>
-              <a
-                href="{{ contact.bale }}"
-                title="کانال بله آیروکاپ"
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-                itemprop="sameAs"
-                ><i class="fas fa-comment-dots"></i
-              ></a>
-              <a
-                href="{{ contact.aparat_playlist }}"
-                title="کانال آپارات آیروکاپ"
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-                itemprop="sameAs"
-                ><i class="fas fa-play-circle"></i
-              ></a>
-            </div>
-          </div>
         </div>
-        <div class="copyright">
-          <p>
+
+        <!-- existing footer text/links (keeps your older footer content) -->
+        <div class="footer-bottom">
+          <p class="footer-copy">
             &copy; {{ jdatetime.datetime.now().year }} تمامی حقوق برای آیروکاپ
             محفوظ است.
           </p>
+          <p class="site-version">نسخه: {{ app_version }}</p>
         </div>
       </div>
     </footer>
@@ -451,7 +334,6 @@
       src="{{ url_for('static', filename='js/socket.io.min.js') }}"
       defer
     ></script>
-
     <script
       src="{{ url_for('static', filename='js/chart.umd.min.js') }}"
       defer
@@ -463,7 +345,34 @@
     </script>
     {% endif %}
     <script src="{{ url_for('static', filename=path.js_main) }}" defer></script>
+    {% block scripts %}
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        if (!("IntersectionObserver" in window)) {
+          // If observer isn't available, reveal everything
+          document
+            .querySelectorAll(".footer-card")
+            .forEach((el) => el.classList.add("is-visible"));
+          return;
+        }
 
-    {% block scripts %}{% endblock %}
+        const observer = new IntersectionObserver(
+          (entries, obs) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                entry.target.classList.add("is-visible");
+                obs.unobserve(entry.target); // animate once
+              }
+            });
+          },
+          { threshold: 0.12 }
+        ); // adjust threshold if you want earlier/late trigger
+
+        document
+          .querySelectorAll(".footer-card")
+          .forEach((el) => observer.observe(el));
+      });
+    </script>
+    {% endblock %}
   </body>
 </html>
