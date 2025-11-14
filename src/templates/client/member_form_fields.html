@@ -106,7 +106,7 @@
           </option>
         {% endfor %}
       {% else %}
-        {% for province_name, cities in Provinces.items() | dictsort %}
+        {% for province_name, cities in Provinces | dictsort %}
           <optgroup label="{{ province_name }}">
             {% for city_name in cities | sort %}
               <option value="{{ city_name }}">{{ city_name }}</option>
