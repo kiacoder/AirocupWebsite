@@ -70,10 +70,15 @@ for path in [
 
 @flask_app.template_filter("formatdate")
 def format_date_filter(date_object):
-    """Formats a datetime object to a Persian date string (YYYY-MM-DD)."""
-    if not isinstance(date_object, datetime.datetime):
+    """Formats a datetime/date object to a Jalali date string (YYYY-MM-DD)."""
+    if isinstance(date_object, datetime.datetime):
+        jalali_value = jdatetime.datetime.fromgregorian(datetime=date_object)
+    elif isinstance(date_object, datetime.date):
+        jalali_value = jdatetime.date.fromgregorian(date=date_object)
+    else:
         return ""
-    return jdatetime.datetime.fromgregorian(datetime=date_object).strftime("%Y-%m-%d")
+
+    return jalali_value.strftime("%Y-%m-%d")
 
 
 @flask_app.template_filter("humanize_number")

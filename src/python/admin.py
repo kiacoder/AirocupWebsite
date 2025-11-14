@@ -205,7 +205,19 @@ def admin_update_payment_status(team_id):
             return redirect(url_for("admin.admin_manage_teams"))
 
         try:
+            team = latest_payment.team
+            previous_status = latest_payment.status
             latest_payment.status = new_status
+
+            if (
+                team
+                and new_status == models.PaymentStatus.APPROVED
+                and previous_status != models.PaymentStatus.APPROVED
+            ):
+                paid_members = latest_payment.members_paid_for or 0
+                current_unpaid = team.unpaid_members_count or 0
+                team.unpaid_members_count = max(0, current_unpaid - paid_members)
+
             db.commit()
             flash(
                 f"وضعیت آخرین پرداخت تیم به '{new_status.value}' تغییر یافت.", "success"
