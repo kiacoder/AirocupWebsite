@@ -1191,11 +1191,13 @@ class Date:
 
     @staticmethod
     def get_allowed_years():
-        "Returns a list of allowed Gregorian birth years for participants based on age limits (5-80)."
-        current_year = datetime.datetime.now(datetime.timezone.utc).year
+        "Returns a list of allowed Jalali birth years for participants based on age limits (5-80)."
+        today_jalali = jdatetime.date.today()
         min_age = 5
         max_age = 80
-        return list(range(current_year - max_age, current_year - min_age + 1))
+        start_year = today_jalali.year - max_age
+        end_year = today_jalali.year - min_age
+        return list(range(start_year, end_year + 1))
 
 
 class AppConfig:
