@@ -1,134 +1,323 @@
-{% extends "Global/Base.html" %}
-{% block Title %}تکمیل اطلاعات حساب کاربری | آیروکاپ{% endblock %}
+{% extends "global/base.html" %}
+{% block title %}تکمیل اطلاعات حساب کاربری{% endblock %}
 
-{% block Head %}
+{% block head %}
 <style>
-    /* These styles highlight the fields that have errors */
-    .FormGroup.has-error .FormControl,
-    .FormGroup.has-error .DatepickerGroup {
-        border-color: var(--ColorDanger);
-        box-shadow: 0 0 0 2px var(--ColorDanger) !important;
-    }
-    .ErrorMsg {
-        color: var(--ColorDanger);
-        font-size: 0.875rem;
-        margin-top: 0.25rem;
-        display: block;
-        font-weight: 600;
-    }
+  .form-group.has-error .form-control,
+  .form-group.has-error .datepicker-group {
+    border-color: var(--color-danger);
+    box-shadow: 0 0 0 2px var(--color-danger) !important;
+  }
+
+  .error-msg {
+    color: var(--color-danger);
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+    display: block;
+    font-weight: 600;
+  }
 </style>
 {% endblock %}
 
-{% block Body %}
-<div class="AppContainer">
-    <div class="FormContainer FormContainer--large">
-        <form method="POST" action="{{ url_for('client.submit_data_resolution') }}" novalidate>
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+{% block body %}
+<div class="container" style="margin: 2rem auto">
+  <div class="form-container form-container--large">
+    <form method="POST" action="{{ url_for('client.submit_data_resolution') }}" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
-            <div style="text-align: center; margin-bottom: 2rem;">
-                <h1 class="FormTitle">تکمیل و اصلاح اطلاعات</h1>
-                <p class="FormSubtitle">
-                    حساب کاربری شما به دلیل وجود اطلاعات ناقص یا نامعتبر به طور موقت غیرفعال شده است.
-                    <br>
-                    لطفاً موارد مشخص شده با رنگ قرمز را اصلاح کرده و فرم را ارسال کنید تا حساب شما مجدداً فعال شود.
-                </p>
-            </div>
+      <div style="text-align: center; margin-bottom: 2rem">
+        <h1 class="form-title">تکمیل و اصلاح اطلاعات</h1>
+        <p class="form-subtitle">
+          حساب کاربری شما به دلیل وجود اطلاعات ناقص یا نامعتبر به طور موقت غیرفعال شده است.<br />
+          لطفاً موارد مشخص شده با رنگ قرمز را اصلاح کرده و فرم را ارسال کنید تا حساب شما مجدداً فعال شود.
+        </p>
+      </div>
 
-            {% for Team in Client.Teams %}
-                {% for Member in Team.Members %}
-                    {% set member_problems = Problems.get(Member.MemberID|string, {}) %}
-                    {% set missing_fields = member_problems.get('Missing', []) %}
-                    {% set invalid_fields = member_problems.get('Invalid', []) %}
+      {% for Team in Client.Teams %}
+        {% for Member in Team.Members %}
+          {% set member_problems = Problems.get(Member.MemberID|string, {}) %}
+          {% set missing_fields = member_problems.get('Missing', []) %}
+          {% set invalid_fields = member_problems.get('Invalid', []) %}
 
-                    <fieldset class="FormSection">
-                        <legend class="FormSection__Title">عضو: {{ Member.Name or '[بدون نام]' }} | تیم: {{ Team.TeamName }}</legend>
+          <fieldset class="form-section" data-member-fieldset>
+            <legend class="form-section--title">
+              عضو: {{ Member.Name or '[بدون نام]' }} | تیم: {{ Team.TeamName }}
+            </legend>
 
-                        <div class="FormGrid">
-                            {% set field_name = 'Name' %}
-                            <div class="FormGroup Grid-col-span-2 {% if field_name in missing_fields %}has-error{% endif %}">
-                                <label for="member_name_{{ Member.MemberID }}">نام و نام خانوادگی<span class="RequiredStar">*</span></label>
-                                <input type="text" id="member_name_{{ Member.MemberID }}" name="member_name_{{ Member.MemberID }}" value="{{ Member.Name or '' }}" class="FormControl" required>
-                                {% if field_name in missing_fields %}<span class="ErrorMsg">نام و نام خانوادگی الزامی است.</span>{% endif %}
-                            </div>
+            <div class="form-grid">
+              {% set field_name = 'Name' %}
+              <div class="form-group grid-col-span-2 {% if field_name in missing_fields %}has-error{% endif %}">
+                <label for="member_name_{{ Member.MemberID }}">نام و نام خانوادگی<span class="required-star">*</span></label>
+                <input
+                  type="text"
+                  id="member_name_{{ Member.MemberID }}"
+                  name="member_name_{{ Member.MemberID }}"
+                  value="{{ Member.Name or '' }}"
+                  class="form-control"
+                  required
+                />
+                {% if field_name in missing_fields %}
+                  <span class="error-msg">نام و نام خانوادگی الزامی است.</span>
+                {% endif %}
+              </div>
 
-                            {% set field_name = 'NationalID' %}
-                            <div class="FormGroup {% if field_name in missing_fields %}has-error{% endif %}">
-                                <label for="member_nationalid_{{ Member.MemberID }}">کد ملی<span class="RequiredStar">*</span></label>
-                                <input type="text" id="member_nationalid_{{ Member.MemberID }}" name="member_nationalid_{{ Member.MemberID }}" value="{{ Member.NationalID or '' }}" class="FormControl" required dir="ltr">
-                                {% if field_name in missing_fields %}<span class="ErrorMsg">کد ملی الزامی است.</span>{% endif %}
-                            </div>
+              {% set field_name = 'NationalID' %}
+              <div class="form-group {% if field_name in missing_fields %}has-error{% endif %}">
+                <label for="member_nationalid_{{ Member.MemberID }}">کد ملی<span class="required-star">*</span></label>
+                <input
+                  type="text"
+                  id="member_nationalid_{{ Member.MemberID }}"
+                  name="member_nationalid_{{ Member.MemberID }}"
+                  value="{{ Member.NationalID or '' }}"
+                  class="form-control"
+                  required
+                  dir="ltr"
+                />
+                {% if field_name in missing_fields %}
+                  <span class="error-msg">کد ملی الزامی است.</span>
+                {% endif %}
+              </div>
 
-                            {% set field_name = 'Role' %}
-                            <div class="FormGroup {% if field_name in missing_fields %}has-error{% endif %}">
-                                <label for="member_role_{{ Member.MemberID }}">نقش در تیم<span class="RequiredStar">*</span></label>
-                                <select id="member_role_{{ Member.MemberID }}" name="member_role_{{ Member.MemberID }}" class="FormControl" required>
-                                    {% for role in MemberRole %}
-                                        <option value="{{ role.label }}" {% if Member.Role == role %}selected{% endif %}>{{ role.label }}</option>
-                                    {% endfor %}
-                                </select>
-                                {% if field_name in missing_fields %}<span class="ErrorMsg">انتخاب نقش الزامی است.</span>{% endif %}
-                            </div>
-                            
-                            {% set field_name = 'BirthDate' %}
-                            <div class="FormGroup Grid-col-span-2 {% if field_name in missing_fields or invalid_fields %}has-error{% endif %}">
-                                <label>تاریخ تولد<span class="RequiredStar">*</span></label>
-                                {% set birth_parts = Member.BirthDate.split('-') if Member.BirthDate else ['','',''] %}
-                                <div class="DatepickerGroup" data-birth-year="{{ birth_parts[0] }}" data-birth-month="{{ birth_parts[1] }}" data-birth-day="{{ birth_parts[2] }}">
-                                    <select name="member_birthday_{{ Member.MemberID }}" class="FormControl" required><option value="">روز</option></select>
-                                    <select name="member_birthmonth_{{ Member.MemberID }}" class="FormControl" required><option value="">ماه</option></select>
-                                    <select name="member_birthyear_{{ Member.MemberID }}" class="FormControl" required><option value="">سال</option></select>
-                                </div>
-                                {% if field_name in missing_fields %}<span class="ErrorMsg">تاریخ تولد الزامی است.</span>{% endif %}
-                                {% for error in invalid_fields %}
-                                    {% if 'سن' in error or 'تاریخ' in error %}<span class="ErrorMsg">{{ error }}</span>{% endif %}
-                                {% endfor %}
-                            </div>
+              {% set field_name = 'Role' %}
+              <div class="form-group {% if field_name in missing_fields %}has-error{% endif %}">
+                <label for="member_role_{{ Member.MemberID }}">نقش در تیم<span class="required-star">*</span></label>
+                <select
+                  id="member_role_{{ Member.MemberID }}"
+                  name="member_role_{{ Member.MemberID }}"
+                  class="form-control"
+                  required
+                >
+                  {% for role in MemberRole %}
+                    <option value="{{ role.label }}" {% if Member.Role == role %}selected{% endif %}>{{ role.label }}</option>
+                  {% endfor %}
+                </select>
+                {% if field_name in missing_fields %}
+                  <span class="error-msg">انتخاب نقش الزامی است.</span>
+                {% endif %}
+              </div>
 
-                            {% set field_name = 'Province' %}
-                            <div class="FormGroup {% if field_name in missing_fields %}has-error{% endif %}">
-                                <label for="member_province_{{ Member.MemberID }}">استان<span class="RequiredStar">*</span></label>
-                                <select id="member_province_{{ Member.MemberID }}" name="member_province_{{ Member.MemberID }}" class="FormControl" required>
-                                    <option value="">انتخاب کنید...</option>
-                                    {% for province_name in Provinces.keys() %}
-                                        <option value="{{ province_name }}" {% if Member.Province == province_name %}selected{% endif %}>{{ province_name }}</option>
-                                    {% endfor %}
-                                </select>
-                                {% if field_name in missing_fields %}<span class="ErrorMsg">انتخاب استان الزامی است.</span>{% endif %}
-                            </div>
-
-                            {% set field_name = 'City' %}
-                            <div class="FormGroup {% if field_name in missing_fields %}has-error{% endif %}">
-                                <label for="member_city_{{ Member.MemberID }}">شهر<span class="RequiredStar">*</span></label>
-                                <select id="member_city_{{ Member.MemberID }}" name="member_city_{{ Member.MemberID }}" class="FormControl" required data-initial-city="{{ Member.City or '' }}">
-                                    <option value="">ابتدا استان را انتخاب کنید</option>
-                                </select>
-                                {% if field_name in missing_fields %}<span class="ErrorMsg">انتخاب شهر الزامی است.</span>{% endif %}
-                            </div>
-                        </div>
-                    </fieldset>
+              {% set field_name = 'BirthDate' %}
+              <div class="form-group grid-col-span-2 {% if field_name in missing_fields or invalid_fields %}has-error{% endif %}">
+                <label>تاریخ تولد<span class="required-star">*</span></label>
+                {% set birth_parts = Member.BirthDate.split('-') if Member.BirthDate else ['','',''] %}
+                <div
+                  class="datepicker-group"
+                  data-birth-year="{{ birth_parts[0] }}"
+                  data-birth-month="{{ birth_parts[1] }}"
+                  data-birth-day="{{ birth_parts[2] }}"
+                >
+                  <select
+                    name="member_birthday_{{ Member.MemberID }}"
+                    class="form-control"
+                    data-role="birth-day"
+                    required
+                  >
+                    <option value="">روز</option>
+                  </select>
+                  <select
+                    name="member_birthmonth_{{ Member.MemberID }}"
+                    class="form-control"
+                    data-role="birth-month"
+                    required
+                  >
+                    <option value="">ماه</option>
+                  </select>
+                  <select
+                    name="member_birthyear_{{ Member.MemberID }}"
+                    class="form-control"
+                    data-role="birth-year"
+                    required
+                  >
+                    <option value="">سال</option>
+                  </select>
+                </div>
+                {% if field_name in missing_fields %}
+                  <span class="error-msg">تاریخ تولد الزامی است.</span>
+                {% endif %}
+                {% for error in invalid_fields %}
+                  {% if 'سن' in error or 'تاریخ' in error %}
+                    <span class="error-msg">{{ error }}</span>
+                  {% endif %}
                 {% endfor %}
-            {% endfor %}
+              </div>
 
-            <div class="FormGroup" style="margin-top: 2rem;">
-                <button type="submit" class="Btn BtnPrimary Btn--fullWidth">ذخیره و فعال‌سازی حساب</button>
+              {% set field_name = 'Province' %}
+              <div class="form-group {% if field_name in missing_fields %}has-error{% endif %}">
+                <label for="member_province_{{ Member.MemberID }}">استان<span class="required-star">*</span></label>
+                <select
+                  id="member_province_{{ Member.MemberID }}"
+                  name="member_province_{{ Member.MemberID }}"
+                  class="form-control"
+                  required
+                  data-role="province"
+                  data-initial-value="{{ Member.Province or '' }}"
+                >
+                  <option value="">انتخاب کنید...</option>
+                  {% for province_name in Provinces.keys() %}
+                    <option value="{{ province_name }}" {% if Member.Province == province_name %}selected{% endif %}>
+                      {{ province_name }}
+                    </option>
+                  {% endfor %}
+                </select>
+                {% if field_name in missing_fields %}
+                  <span class="error-msg">انتخاب استان الزامی است.</span>
+                {% endif %}
+              </div>
+
+              {% set field_name = 'City' %}
+              <div class="form-group {% if field_name in missing_fields %}has-error{% endif %}">
+                <label for="member_city_{{ Member.MemberID }}">شهر<span class="required-star">*</span></label>
+                <select
+                  id="member_city_{{ Member.MemberID }}"
+                  name="member_city_{{ Member.MemberID }}"
+                  class="form-control"
+                  required
+                  data-role="city"
+                  data-initial-value="{{ Member.City or '' }}"
+                >
+                  <option value="">ابتدا استان را انتخاب کنید</option>
+                </select>
+                {% if field_name in missing_fields %}
+                  <span class="error-msg">انتخاب شهر الزامی است.</span>
+                {% endif %}
+              </div>
             </div>
-        </form>
-    </div>
+          </fieldset>
+        {% endfor %}
+      {% endfor %}
+
+      <div class="form-group" style="margin-top: 2rem">
+        <button type="submit" class="btn btn-primary btn--full-width">ذخیره و فعال‌سازی حساب</button>
+      </div>
+    </form>
+  </div>
 </div>
 {% endblock %}
 
-{% block Scripts %}
-<!-- FIX: This new script correctly initializes all forms on the page using your Main.js functions -->
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-    // AirocupData is loaded globally from Base.html now, so FormHelpers can initialize
-    FormHelpers.initialize(); 
+{% block scripts %}
+  {{ super() }}
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const appData = window.AirocupData || {};
+      const provincesData = appData.provinces_data || {};
+      const months = appData.persian_months || {};
+      const years = appData.allowed_years || [];
 
-    document.querySelectorAll('form fieldset').forEach(fieldset => {
-        // Initialize date picker and province/city listeners for each member's fieldset
-        FormHelpers.setupDatePicker(fieldset);
-        FormHelpers.setupProvinceCityListener(fieldset);
+      const isLeapYear = (year) => {
+        const remainder = (parseInt(year, 10) + 12) % 33;
+        return [1, 5, 9, 13, 17, 22, 26, 30].includes(remainder);
+      };
+
+      const populateMonths = (select) => {
+        if (!select || select.options.length > 1) return;
+        Object.entries(months).forEach(([value, label]) => {
+          select.add(new Option(label, value));
+        });
+      };
+
+      const populateYears = (select) => {
+        if (!select || select.options.length > 1) return;
+        years.forEach((year) => select.add(new Option(year, year)));
+      };
+
+      const populateDays = (select, month, year) => {
+        if (!select) return;
+        const previousValue = select.value;
+        select.innerHTML = "";
+        select.add(new Option("روز", ""));
+
+        let maxDays = 31;
+        const monthNum = parseInt(month, 10);
+        const yearNum = parseInt(year, 10);
+        if (monthNum >= 7 && monthNum <= 11) {
+          maxDays = 30;
+        } else if (monthNum === 12) {
+          maxDays = isLeapYear(yearNum) ? 30 : 29;
+        }
+
+        for (let day = 1; day <= maxDays; day += 1) {
+          select.add(new Option(day, day));
+        }
+
+        if (previousValue && parseInt(previousValue, 10) <= maxDays) {
+          select.value = previousValue;
+        }
+      };
+
+      const populateProvinces = (select) => {
+        if (!select) return;
+        const fragment = document.createDocumentFragment();
+        fragment.appendChild(new Option("انتخاب کنید...", ""));
+        Object.keys(provincesData)
+          .sort((a, b) => a.localeCompare(b, "fa"))
+          .forEach((name) => fragment.appendChild(new Option(name, name)));
+        select.innerHTML = "";
+        select.appendChild(fragment);
+      };
+
+      const updateCities = (provinceName, select) => {
+        if (!select) return;
+        const cities = provincesData[provinceName] || [];
+        select.innerHTML = "";
+        select.add(new Option("شهر را انتخاب کنید", ""));
+        cities.forEach((name) => select.add(new Option(name, name)));
+        select.disabled = !cities.length;
+      };
+
+      document.querySelectorAll('[data-member-fieldset]').forEach((fieldset) => {
+        const dateGroup = fieldset.querySelector('.datepicker-group');
+        if (dateGroup) {
+          const daySelect = dateGroup.querySelector('[data-role="birth-day"]');
+          const monthSelect = dateGroup.querySelector('[data-role="birth-month"]');
+          const yearSelect = dateGroup.querySelector('[data-role="birth-year"]');
+
+          populateMonths(monthSelect);
+          populateYears(yearSelect);
+          populateDays(daySelect, monthSelect.value, yearSelect.value);
+
+          const initialYear = dateGroup.dataset.birthYear;
+          const initialMonth = dateGroup.dataset.birthMonth;
+          const initialDay = dateGroup.dataset.birthDay;
+
+          if (initialYear) {
+            yearSelect.value = initialYear;
+          }
+          if (initialMonth) {
+            monthSelect.value = initialMonth;
+          }
+          populateDays(daySelect, monthSelect.value, yearSelect.value);
+          if (initialDay) {
+            daySelect.value = initialDay;
+          }
+
+          monthSelect.addEventListener('change', () => {
+            populateDays(daySelect, monthSelect.value, yearSelect.value);
+          });
+          yearSelect.addEventListener('change', () => {
+            populateDays(daySelect, monthSelect.value, yearSelect.value);
+          });
+        }
+
+        const provinceSelect = fieldset.querySelector('[data-role="province"]');
+        const citySelect = fieldset.querySelector('[data-role="city"]');
+        if (provinceSelect && citySelect) {
+          const initialProvince = provinceSelect.dataset.initialValue;
+          const initialCity = citySelect.dataset.initialValue;
+
+          populateProvinces(provinceSelect);
+          if (initialProvince) {
+            provinceSelect.value = initialProvince;
+            updateCities(initialProvince, citySelect);
+            if (initialCity) {
+              citySelect.value = initialCity;
+            }
+          }
+
+          provinceSelect.addEventListener('change', () => {
+            updateCities(provinceSelect.value, citySelect);
+          });
+        }
+      });
     });
-});
-</script>
+  </script>
 {% endblock %}

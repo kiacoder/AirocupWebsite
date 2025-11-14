@@ -94,6 +94,22 @@ const airocupApp = {
       );
     },
 
+    toPersianDigits(value) {
+      const digitsMap = {
+        0: "۰",
+        1: "۱",
+        2: "۲",
+        3: "۳",
+        4: "۴",
+        5: "۵",
+        6: "۶",
+        7: "۷",
+        8: "۸",
+        9: "۹",
+      };
+      return String(value).replace(/[0-9]/g, (digit) => digitsMap[digit] || digit);
+    },
+
     safeSocket() {
       try {
         return typeof io !== "undefined" ? io() : null;
@@ -488,7 +504,10 @@ const airocupApp = {
       }
       if (yearSelect.options.length <= 1) {
         const years = window.AirocupData?.allowed_years || [];
-        years.forEach((year) => yearSelect.add(new Option(year, year)));
+        years.forEach((year) => {
+          const label = airocupApp.helpers.toPersianDigits(year);
+          yearSelect.add(new Option(label, year));
+        });
       }
 
       const isLeapYear = (year) => {
@@ -511,7 +530,8 @@ const airocupApp = {
         daySelect.innerHTML = "";
         daySelect.add(new Option("روز", ""));
         for (let day = 1; day <= maxDays; day++) {
-          daySelect.add(new Option(day, day));
+          const label = airocupApp.helpers.toPersianDigits(day);
+          daySelect.add(new Option(label, day));
         }
 
         if (currentDay && parseInt(currentDay, 10) <= maxDays) {
@@ -555,18 +575,24 @@ const airocupApp = {
       const modal = document.querySelector(
         airocupApp.constants.SELECTORS.CONFIRMATION_MODAL
       );
-      if (!modal) return;
-
-      const confirmBtn = modal.querySelector(
+      const confirmBtn = modal?.querySelector(
         airocupApp.constants.SELECTORS.CONFIRM_MODAL_BTN
       );
-      const titleEl = modal.querySelector(
+      const titleEl = modal?.querySelector(
         airocupApp.constants.SELECTORS.MODAL_TITLE
       );
-      const bodyEl = modal.querySelector(
+      const bodyEl = modal?.querySelector(
         airocupApp.constants.SELECTORS.MODAL_BODY
       );
       let formToSubmit = null;
+
+      const getFallbackMessage = (deleteBtn) => {
+        const rawMessage =
+          deleteBtn.dataset.modalBody || "آیا از انجام این عملیات اطمینان دارید؟";
+        const temp = document.createElement("div");
+        temp.innerHTML = rawMessage;
+        return temp.textContent?.trim() || temp.innerText?.trim() || rawMessage;
+      };
 
       document.body.addEventListener("click", (event) => {
         const deleteBtn = event.target.closest(
@@ -574,10 +600,20 @@ const airocupApp = {
         );
         if (!deleteBtn) return;
 
-        event.preventDefault();
-        formToSubmit = deleteBtn.closest("form");
-        if (!formToSubmit) return;
+        const form = deleteBtn.closest("form");
+        if (!form) return;
 
+        event.preventDefault();
+
+        if (!modal || !confirmBtn || !titleEl || !bodyEl) {
+          const confirmationMessage = getFallbackMessage(deleteBtn);
+          if (window.confirm(confirmationMessage)) {
+            form.submit();
+          }
+          return;
+        }
+
+        formToSubmit = form;
         titleEl.textContent = deleteBtn.dataset.modalTitle || "تایید عملیات";
         bodyEl.innerHTML =
           deleteBtn.dataset.modalBody ||
@@ -590,13 +626,15 @@ const airocupApp = {
         airocupApp.ui.openModal(modal, deleteBtn);
       });
 
-      confirmBtn.addEventListener("click", () => {
-        if (formToSubmit) {
-          formToSubmit.submit();
-          formToSubmit = null;
-          airocupApp.ui.closeModal(modal);
-        }
-      });
+      if (confirmBtn) {
+        confirmBtn.addEventListener("click", () => {
+          if (formToSubmit) {
+            formToSubmit.submit();
+            formToSubmit = null;
+            airocupApp.ui.closeModal(modal);
+          }
+        });
+      }
     },
     initializePasswordConfirmation(form, passwordInput, confirmInput) {
       if (!form || !passwordInput || !confirmInput) return;
@@ -1651,6 +1689,9 @@ const airocupApp = {
     }
   },
 };
+
+// Expose the main application object for inline scripts that rely on it.
+window.airocupApp = airocupApp;
 
 document.addEventListener("DOMContentLoaded", () => {
   try {
