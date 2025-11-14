@@ -1,8 +1,8 @@
-{% extends "Global/Base.html" %}
+{% extends "global/base.html" %}
 
-{% block Title %}مدیریت تیم: {{ Team.TeamName }} | پنل آیروکاپ{% endblock %}
+{% block title %}مدیریت تیم: {{ Team.TeamName }} | پنل آیروکاپ{% endblock %}
 
-{% block Body %}
+{% block body %}
 <div class="Container AdminMembersPage" data-team-id="{{ Team.TeamID }}">
   <div class="PageHeader">
     <h1 class="SectionTitle">مدیریت تیم: {{ Team.TeamName }}</h1>
@@ -127,7 +127,7 @@
 </div>
 {% endblock %}
 
-{% block Scripts %}
+{% block scripts %}
 <script>
   document.addEventListener("DOMContentLoaded", function () {
       const teamId = document.querySelector('.AdminMembersPage').dataset.teamId;
