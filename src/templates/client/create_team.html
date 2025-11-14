@@ -117,16 +117,4 @@
 
 {% block scripts %}
   {{ super() }}
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const form = document.getElementById("create-team-form");
-      if (!form || !window.airocupApp) return;
-      try {
-        window.airocupApp.formHelpers.initializeDynamicSelects(form);
-        window.airocupApp.formHelpers.setupDatePicker(form);
-      } catch (error) {
-        console.error("Failed to initialize create team form:", error);
-      }
-    });
-  </script>
 {% endblock %}
