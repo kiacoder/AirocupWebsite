@@ -1652,6 +1652,9 @@ const airocupApp = {
   },
 };
 
+// Expose the main application object for inline scripts that rely on it.
+window.airocupApp = airocupApp;
+
 document.addEventListener("DOMContentLoaded", () => {
   try {
     airocupApp.init();
