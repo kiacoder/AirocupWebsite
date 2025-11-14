@@ -14,10 +14,16 @@
   {% set birth_month_value = form_data.get('birth_month') %}
   {% set birth_day_value = form_data.get('birth_day') %}
 {% elif member_birth_date %}
-  {% set birth_parts = member_birth_date | formatdate | split('-') %}
-  {% set birth_year_value = birth_parts[0] %}
-  {% set birth_month_value = birth_parts[1] %}
-  {% set birth_day_value = birth_parts[2] %}
+  {% set formatted_birth = member_birth_date | formatdate %}
+  {% if formatted_birth %}
+    {% set birth_year_value = formatted_birth[0:4] %}
+    {% set birth_month_value = formatted_birth[5:7] %}
+    {% set birth_day_value = formatted_birth[8:10] %}
+  {% else %}
+    {% set birth_year_value = '' %}
+    {% set birth_month_value = '' %}
+    {% set birth_day_value = '' %}
+  {% endif %}
 {% else %}
   {% set birth_year_value = '' %}
   {% set birth_month_value = '' %}
