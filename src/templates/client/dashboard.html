@@ -3,135 +3,168 @@
 {% block title %}داشبورد | آیروکاپ{% endblock %}
 
 {% block body %}
-<div class="Container" style="margin-top: 2rem; margin-bottom: 2rem">
-  <div class="WelcomeHeader">
-    <h2>به داشبورد خود خوش آمدید</h2>
-    <p class="FormSubtitle">
+<div class="dashboard-container container" style="margin: 2rem auto">
+  <div class="section-header" style="margin-bottom: 2rem">
+    <h1 class="section-title">به داشبورد خود خوش آمدید</h1>
+    <p class="form-subtitle" style="margin-bottom: 0">
       این پنل شخصی شما برای مدیریت تمام تیم‌هایتان است.
     </p>
   </div>
 
-  <div class="FormGrid" style="gap: 1.5rem; margin-bottom: 2rem">
+  <div class="form-grid" style="gap: 1.5rem; margin-bottom: 2rem">
     <div
-      class="DetailItem"
+      class="card"
       style="
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
         border: none;
-        padding: 1rem;
-        background: var(--ColorBackgroundMuted);
-        border-radius: var(--BorderRadiusSmall);
+        background: var(--color-background-muted);
       "
     >
-      <span>
-        <i class="fas fa-layer-group" style="color: var(--ColorPrimary)"></i>
+      <span
+        class="form-subtitle"
+        style="
+          margin-bottom: 0;
+          color: var(--color-text);
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        "
+      >
+        <i class="fas fa-layer-group" style="color: var(--color-primary)"></i>
         تعداد تیم‌های من
       </span>
-      <strong>{{ teams|length | persian_digits }} تیم</strong>
+      <strong style="font-size: 1.4rem">
+        {{ teams|length | persian_digits }} تیم
+      </strong>
     </div>
     <div
-      class="DetailItem"
+      class="card"
       style="
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
         border: none;
-        padding: 1rem;
-        background: var(--ColorBackgroundMuted);
-        border-radius: var(--BorderRadiusSmall);
+        background: var(--color-background-muted);
       "
     >
-      <span>
-        <i class="fas fa-users-cog" style="color: var(--ColorSecondary)"></i>
+      <span
+        class="form-subtitle"
+        style="
+          margin-bottom: 0;
+          color: var(--color-text);
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        "
+      >
+        <i class="fas fa-users-cog" style="color: var(--color-secondary)"></i>
         سقف مجاز تیم‌ها
       </span>
-      <strong>{{ app_config.max_team_per_client | persian_digits }} تیم</strong>
+      <strong style="font-size: 1.4rem">
+        {{ app_config.max_team_per_client | persian_digits }} تیم
+      </strong>
     </div>
   </div>
 
   <div
-    class="Card"
-    style="margin-bottom: 2rem; border-left: 5px solid var(--ColorPrimary)"
+    class="card"
+    style="margin-bottom: 2rem; border-left: 5px solid var(--color-primary)"
   >
     <h3
-      class="Card__header"
       style="
-        padding: 0 0 1rem 0;
+        padding-bottom: 1rem;
         margin-bottom: 1.5rem;
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 0.75rem;
+        font-size: 1.3rem;
       "
     >
-      <i
-        class="fas fa-file-invoice-dollar"
-        style="color: var(--ColorPrimary)"
-      ></i>
+      <i class="fas fa-file-invoice-dollar" style="color: var(--color-primary)"></i>
       اطلاعات و هزینه‌های ثبت‌نام
     </h3>
-    <div class="FormGrid" style="gap: 1.5rem">
+    <div class="form-grid" style="gap: 1.5rem">
       <div
-        class="DetailItem"
+        class="detail-item"
         style="
           border: none;
           padding: 1rem;
-          background: var(--ColorBackgroundMuted);
-          border-radius: var(--BorderRadiusSmall);
+          background: var(--color-background-muted);
+          border-radius: var(--border-radius-small);
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
         "
       >
-        <span
-          ><i class="fas fa-users" style="color: var(--ColorPrimaryDark)"></i
-          >هزینه ورودی تیم</span
-        >
+        <span style="display: flex; align-items: center; gap: 0.5rem">
+          <i class="fas fa-users" style="color: var(--color-primary-dark)"></i>
+          هزینه ورودی تیم
+        </span>
         <strong>
           {{ (payment.fee_team or 0) | humanize_number | persian_digits }} ریال
         </strong>
       </div>
       <div
-        class="DetailItem"
+        class="detail-item"
         style="
           border: none;
           padding: 1rem;
-          background: var(--ColorBackgroundMuted);
-          border-radius: var(--BorderRadiusSmall);
+          background: var(--color-background-muted);
+          border-radius: var(--border-radius-small);
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
         "
       >
-        <span
-          ><i
-            class="fas fa-user-plus"
-            style="color: var(--ColorPrimaryDark)"
-          ></i
-          >هزینه هر عضو</span
-        >
+        <span style="display: flex; align-items: center; gap: 0.5rem">
+          <i class="fas fa-user-plus" style="color: var(--color-primary-dark)"></i>
+          هزینه هر عضو
+        </span>
         <strong>
           {{ (payment.fee_per_person or 0) | humanize_number | persian_digits }}
           ریال
         </strong>
       </div>
       <div
-        class="DetailItem Grid-col-span-2"
+        class="detail-item grid-col-span-2"
         style="
           border: none;
           padding: 1rem;
-          background: var(--ColorBackgroundMuted);
-          border-radius: var(--BorderRadiusSmall);
+          background: var(--color-background-muted);
+          border-radius: var(--border-radius-small);
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
         "
       >
-        <span
-          ><i
-            class="fas fa-percent"
-            style="color: var(--ColorSecondaryDark)"
-          ></i
-          >تخفیف ثبت‌نام در لیگ دوم</span
-        >
+        <span style="display: flex; align-items: center; gap: 0.5rem">
+          <i class="fas fa-percent" style="color: var(--color-secondary-dark)"></i>
+          تخفیف ثبت‌نام در لیگ دوم
+        </span>
         <strong>
           {{ (payment.league_two_discount or 0) | persian_digits }} درصد
         </strong>
       </div>
     </div>
-    <div class="FormFooter" style="padding-top: 1.5rem; margin-top: 1.5rem">
-      <p>
+    <div
+      style="
+        padding-top: 1.5rem;
+        margin-top: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+      "
+    >
+      <p style="margin-bottom: 0">
         <strong>نکته:</strong> هزینه ورودی تیم، یک هزینه ثابت برای هر تیم است و
         به هزینه اعضا اضافه می‌گردد.
       </p>
       <a
         href="{{ url_for('client.my_history') }}"
-        class="Btn BtnSecondary BtnSm"
+        class="btn btn-secondary btn-sm"
       >
         <i class="fas fa-history"></i> مشاهده سوابق پرداخت
       </a>
@@ -139,21 +172,22 @@
   </div>
 
   {% if teams|length < app_config.max_team_per_client %}
-  <div class="DashboardActions">
+  <div class="dashboard-actions">
     <a
       href="{{ url_for('client.create_team') }}"
-      class="Btn BtnPrimary BtnLarge"
+      class="btn btn-primary btn--full-width"
+      style="max-width: 280px"
     >
       <i class="fas fa-plus"></i> ایجاد تیم جدید
     </a>
   </div>
   {% endif %}
 
-  <div class="TeamCardGrid">
+  <div class="team-card-grid">
     {% set status_class_map = {
-      'approved': 'StatusApproved',
-      'pending': 'StatusPending',
-      'rejected': 'StatusRejected'
+      'approved': 'status-approved',
+      'pending': 'status-pending',
+      'rejected': 'status-rejected'
     } %}
     {% set status_label_map = {
       'approved': 'تایید شده',
@@ -161,9 +195,18 @@
       'rejected': 'رد شده'
     } %}
     {% for team in teams %}
-    <div class="Card CardTeam">
-      <div class="TeamCardHeader">
-        <h3>{{ team.team_name }}</h3>
+    <div class="card card-team">
+      <div
+        class="team-card-header"
+        style="
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 1rem;
+          margin-bottom: 1.5rem;
+        "
+      >
+        <h3 style="margin: 0">{{ team.team_name }}</h3>
         {% set status_enum = team.last_payment_status %}
         {% set status_value =
           status_enum.value if status_enum and status_enum is not string else status_enum
@@ -173,85 +216,87 @@
           if status_enum and status_enum is not string
           else status_label_map.get(status_value, 'شروع نشده')
         %}
-        {% set status_class = status_class_map.get(status_value, 'StatusNotStarted') %}
-        <span
-          class="StatusBadge {{ status_class }}"
-        >
-          {{ status_label }}
-        </span>
+        {% set status_class = status_class_map.get(status_value, 'status-not-started') %}
+        <span class="status-badge {{ status_class }}">{{ status_label }}</span>
       </div>
 
-      <div class="TeamCardBody">
-        <div class="DetailItem">
-          <span><i class="fas fa-users"></i> تعداد اعضا</span>
+      <div class="team-card-body" style="display: flex; flex-direction: column; gap: 1rem">
+        <div class="detail-item" style="border: none; padding: 0">
+          <span style="display: flex; align-items: center; gap: 0.5rem"
+            ><i class="fas fa-users"></i> تعداد اعضا</span
+          >
           <strong>{{ team.members|length | persian_digits }} نفر</strong>
         </div>
-        <div class="DetailItem">
-          <span><i class="fas fa-trophy"></i> لیگ‌ها</span>
-          <strong
-            >{{ team.league_one.name if team.league_one else 'انتخاب نشده' }}{%
-            if team.league_two %}<br />و {{ team.league_two.name }}{% endif
-            %}</strong
+        <div class="detail-item" style="border: none; padding: 0">
+          <span style="display: flex; align-items: center; gap: 0.5rem"
+            ><i class="fas fa-trophy"></i> لیگ‌ها</span
           >
+          <strong>
+            {{ team.league_one.name if team.league_one else 'انتخاب نشده' }}{% if
+            team.league_two %}<br />و {{ team.league_two.name }}{% endif %}
+          </strong>
         </div>
         {% if team.average_age and team.average_age > 0 %}
-        <div class="DetailItem">
-          <span><i class="fas fa-birthday-cake"></i> میانگین سنی</span>
+        <div class="detail-item" style="border: none; padding: 0">
+          <span style="display: flex; align-items: center; gap: 0.5rem"
+            ><i class="fas fa-birthday-cake"></i> میانگین سنی</span
+          >
           <strong>~{{ team.average_age | persian_digits }} سال</strong>
         </div>
-        {% endif %} {% if team.average_provinces %}
-        <div class="DetailItem">
-          <span><i class="fas fa-map-marker-alt"></i> استان‌ها</span>
-          <strong style="font-size: 0.9rem"
-            >{{ team.average_provinces }}</strong
+        {% endif %}
+        {% if team.average_provinces %}
+        <div class="detail-item" style="border: none; padding: 0">
+          <span style="display: flex; align-items: center; gap: 0.5rem"
+            ><i class="fas fa-map-marker-alt"></i> استان‌ها</span
           >
+          <strong style="font-size: 0.9rem">{{ team.average_provinces }}</strong>
         </div>
         {% endif %}
       </div>
 
-      <div class="TeamCardFooter">
+      <div
+        class="team-card-footer"
+        style="
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.75rem;
+          margin-top: 1.5rem;
+        "
+      >
         <a
           href="{{ url_for('client.manage_members', team_id=team.team_id) }}"
-          class="Btn BtnPrimary"
-          ><i class="fas fa-users"></i> مدیریت اعضا</a
+          class="btn btn-primary"
         >
+          <i class="fas fa-users"></i> مدیریت اعضا
+        </a>
         <a
           href="{{ url_for('client.update_team', team_id=team.team_id) }}"
-          class="Btn BtnSecondary"
-          ><i class="fas fa-edit"></i> ویرایش تیم</a
+          class="btn btn-secondary"
         >
+          <i class="fas fa-edit"></i> ویرایش تیم
+        </a>
 
         {% set is_league_selection_disabled = team.last_payment_status and
         team.last_payment_status.value == 'approved' %}
         <a
           href="{{ url_for('client.select_league', team_id=team.team_id) if not is_league_selection_disabled else '#' }}"
-          class="Btn BtnSecondary {% if is_league_selection_disabled %}BtnDisabled{% endif %}"
-          {%
-          if
-          is_league_selection_disabled
-          %}aria-disabled="true"
-          title="امکان تغییر لیگ پس از تایید پرداخت وجود ندارد."
-          {%
-          endif
-          %}
+          class="btn btn-secondary {% if is_league_selection_disabled %}btn-disabled{% endif %}"
+          {% if is_league_selection_disabled %}
+            aria-disabled="true"
+            title="امکان تغییر لیگ پس از تایید پرداخت وجود ندارد."
+          {% endif %}
         >
           <i class="fas fa-trophy"></i> انتخاب لیگ
         </a>
 
-        {% set is_ready_for_payment = team.members|length > 0 and
-        team.league_one_id %}
+        {% set is_ready_for_payment = team.members|length > 0 and team.league_one_id %}
         <a
           href="{{ url_for('client.payment', team_id=team.team_id) if is_ready_for_payment else '#' }}"
-          class="Btn BtnSuccess {% if not is_ready_for_payment %}BtnDisabled{% endif %}"
-          {%
-          if
-          not
-          is_ready_for_payment
-          %}aria-disabled="true"
-          title="برای پرداخت، تیم باید حداقل یک عضو و یک لیگ انتخاب شده داشته باشد."
-          {%
-          endif
-          %}
+          class="btn btn-success {% if not is_ready_for_payment %}btn-disabled{% endif %}"
+          {% if not is_ready_for_payment %}
+            aria-disabled="true"
+            title="برای پرداخت، تیم باید حداقل یک عضو و یک لیگ انتخاب شده داشته باشد."
+          {% endif %}
         >
           <i class="fas fa-credit-card"></i> پرداخت
         </a>
@@ -266,18 +311,14 @@
           team.last_payment_status.value in ['approved', 'pending'] %}
           <button
             type="button"
-            class="Btn BtnDanger DeleteBtn"
+            class="btn btn-danger delete-btn"
             data-modal-title="تایید آرشیو تیم"
             data-modal-body="آیا از آرشیو کردن تیم «{{ team.team_name }}» اطمینان دارید؟"
             data-modal-confirm-text="بله، آرشیو کن"
-            {%
-            if
-            is_archive_disabled
-            %}disabled
-            title="پس از تایید یا در زمان بررسی پرداخت، امکان آرشیو تیم وجود ندارد."
-            {%
-            endif
-            %}
+            {% if is_archive_disabled %}
+              disabled
+              title="پس از تایید یا در زمان بررسی پرداخت، امکان آرشیو تیم وجود ندارد."
+            {% endif %}
           >
             <i class="fas fa-archive"></i> آرشیو
           </button>
@@ -285,8 +326,8 @@
       </div>
     </div>
     {% else %}
-    <div class="Card EmptyStateCard">
-      <i class="fas fa-users-slash EmptyStateIcon"></i>
+    <div class="card empty-state-card">
+      <i class="fas fa-users-slash empty-state-icon"></i>
       <h3>هنوز هیچ تیمی نساخته‌اید</h3>
       <p>
         برای شروع ماجراجویی خود، روی دکمه "ایجاد تیم جدید" در بالا کلیک کنید!
@@ -295,8 +336,8 @@
     {% endfor %}
   </div>
 
-  <div class="FormFooter">
-    <a href="{{ url_for('global.logout') }}" class="Btn BtnSecondary">
+  <div style="margin-top: 2rem">
+    <a href="{{ url_for('global.logout') }}" class="btn btn-secondary">
       <i class="fas fa-sign-out-alt"></i> خروج از حساب کاربری
     </a>
   </div>
@@ -304,28 +345,24 @@
 
 {# This is the global confirmation modal that main.js will use #}
 <div
-  class="Modal"
+  class="modal"
   id="confirmationModal"
   role="alertdialog"
   aria-modal="true"
   aria-labelledby="modalTitle"
 >
-  <div class="ModalDialog">
-    <div class="ModalContent">
-      <button class="CloseBtn" data-dismiss="modal" aria-label="بستن">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <button class="close-btn" data-dismiss="modal" aria-label="بستن">
         &times;
       </button>
       <h3 id="modalTitle" class="modal-title"></h3>
       <p class="modal-body"></p>
-      <div class="ModalFooter">
-        <button type="button" class="Btn BtnSecondary" data-dismiss="modal">
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">
           انصراف
         </button>
-        <button
-          type="button"
-          id="confirmModalBtn"
-          class="Btn BtnDanger"
-        ></button>
+        <button type="button" id="confirmModalBtn" class="btn btn-danger"></button>
       </div>
     </div>
   </div>
@@ -334,5 +371,4 @@
 
 {% block scripts %}
   {{ super() }}
-  {# All JavaScript has been removed because it is now handled globally by main.js #}
 {% endblock %}
