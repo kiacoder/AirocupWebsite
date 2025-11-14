@@ -74,7 +74,15 @@
       required
       data-initial-value="{{ province_value }}"
     >
-      {# Options are populated by main.js #}
+      <option value="">استان را انتخاب کنید</option>
+      {% for province_name in Provinces.keys() | list | sort %}
+        <option
+          value="{{ province_name }}"
+          {% if province_name == province_value %}selected{% endif %}
+        >
+          {{ province_name }}
+        </option>
+      {% endfor %}
     </select>
   </div>
   <div class="form-group">
@@ -86,7 +94,16 @@
       required
       data-initial-value="{{ city_value }}"
     >
-      <option value="">ابتدا استان را انتخاب کنید</option>
+      {% set city_options = Provinces.get(province_value, []) if province_value else [] %}
+      <option value="">{{ 'ابتدا استان را انتخاب کنید' if not city_options else 'شهر را انتخاب کنید' }}</option>
+      {% for city_name in city_options | sort %}
+        <option
+          value="{{ city_name }}"
+          {% if city_name == city_value %}selected{% endif %}
+        >
+          {{ city_name }}
+        </option>
+      {% endfor %}
     </select>
   </div>
 </div>
@@ -94,6 +111,9 @@
 <div class="form-group">
   <label>تاریخ تولد<span class="required-star">*</span></label>
   <div class="datepicker-group">
+    {% set birth_day_int = birth_day_value | int if birth_day_value else None %}
+    {% set birth_month_int = birth_month_value | int if birth_month_value else None %}
+    {% set birth_year_int = birth_year_value | int if birth_year_value else None %}
     <select
       id="{{ id_prefix }}birth_day"
       name="birth_day"
@@ -102,6 +122,11 @@
       data-initial-value="{{ birth_day_value }}"
     >
       <option value="">روز</option>
+      {% for day in range(1, 32) %}
+        <option value="{{ day }}" {% if birth_day_int and birth_day_int == day %}selected{% endif %}>
+          {{ day }}
+        </option>
+      {% endfor %}
     </select>
     <select
       id="{{ id_prefix }}birth_month"
@@ -111,6 +136,14 @@
       data-initial-value="{{ birth_month_value }}"
     >
       <option value="">ماه</option>
+      {% for month_number, month_name in PersianMonths | dictsort %}
+        <option
+          value="{{ month_number }}"
+          {% if birth_month_int and birth_month_int == month_number %}selected{% endif %}
+        >
+          {{ month_name }}
+        </option>
+      {% endfor %}
     </select>
     <select
       id="{{ id_prefix }}birth_year"
@@ -120,6 +153,11 @@
       data-initial-value="{{ birth_year_value }}"
     >
       <option value="">سال</option>
+      {% for year in AllowedYears | sort(reverse=True) %}
+        <option value="{{ year }}" {% if birth_year_int and birth_year_int == year %}selected{% endif %}>
+          {{ year }}
+        </option>
+      {% endfor %}
     </select>
   </div>
 </div>
