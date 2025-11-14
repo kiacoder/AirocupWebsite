@@ -766,116 +766,215 @@ const airocupApp = {
   },
 
   initializeChat(container) {
+    const app = this;
+    const { SELECTORS } = app.constants;
+
     const elements = {
-      chatBox: container.querySelector(this.constants.SELECTORS.CHAT_BOX),
-      messageInput: container.querySelector(
-        this.constants.SELECTORS.MESSAGE_INPUT
-      ),
-      sendButton: container.querySelector(this.constants.SELECTORS.SEND_BUTTON),
+      chatBox: container.querySelector(SELECTORS.CHAT_BOX),
+      messageInput: container.querySelector(SELECTORS.MESSAGE_INPUT),
+      sendButton: container.querySelector(SELECTORS.SEND_BUTTON),
     };
-    if (!elements.chatBox || !elements.messageInput || !elements.sendButton)
+
+    if (!elements.chatBox || !elements.messageInput || !elements.sendButton) {
+      console.error("Chat UI elements not found for", container);
       return;
+    }
+
+    const defaultPlaceholder =
+      elements.messageInput.getAttribute("placeholder") || "";
+    const offlinePlaceholder = "اتصال به سرور پشتیبانی برقرار نشد.";
 
     const state = {
-      roomId: container.dataset.clientId,
-      historyUrl: container.dataset.historyUrl,
-      isClient: container.matches(
-        this.constants.SELECTORS.CLIENT_CHAT_CONTAINER
-      ),
-      socket: this.helpers.safeSocket(),
+      roomId: (container.dataset.clientId || "").trim(),
+      historyUrl: (container.dataset.historyUrl || "").trim(),
+      isClientView: container.matches(SELECTORS.CLIENT_CHAT_CONTAINER),
+      socket: app.helpers.safeSocket(),
     };
-    if (!state.roomId || !state.historyUrl) return;
 
-    const scrollToBottom = () =>
-      (elements.chatBox.scrollTop = elements.chatBox.scrollHeight);
+    if (!state.roomId) {
+      console.error("Chat Error: Missing client identifier");
+      return;
+    }
 
-    const addMessage = (msg, isLocal = false) => {
-      const isSentByCurrentUser =
-        isLocal ||
-        (state.isClient ? msg.sender === "client" : msg.sender !== "client");
-      const messageEl = document.createElement("div");
-      messageEl.className = `chat-message ${
-        isSentByCurrentUser ? "message-sent" : "message-received"
-      }`;
+    if (!state.historyUrl) {
+      state.historyUrl = state.isClientView
+        ? "/get_my_chat_history"
+        : `/Admin/GetChatHistory/${state.roomId}`;
+    }
 
-      const senderName = isLocal
-        ? "شما"
-        : state.isClient
-        ? isSentByCurrentUser
+    const setComposerEnabled = (isEnabled) => {
+      elements.messageInput.disabled = !isEnabled;
+      elements.sendButton.disabled = !isEnabled;
+      if (isEnabled) {
+        elements.sendButton.removeAttribute("aria-disabled");
+        elements.sendButton.removeAttribute("title");
+        elements.messageInput.setAttribute("placeholder", defaultPlaceholder);
+      } else {
+        elements.sendButton.setAttribute("aria-disabled", "true");
+        elements.sendButton.setAttribute("title", offlinePlaceholder);
+        elements.messageInput.setAttribute("placeholder", offlinePlaceholder);
+      }
+      container.classList.toggle("chat-offline", !isEnabled);
+    };
+
+    setComposerEnabled(Boolean(state.socket));
+
+    const renderStateMessage = (className, message) => {
+      elements.chatBox.innerHTML = "";
+      const messageElement = document.createElement("div");
+      messageElement.className = className;
+      messageElement.textContent = message;
+      elements.chatBox.appendChild(messageElement);
+    };
+
+    const scrollToBottom = () => {
+      elements.chatBox.scrollTop = elements.chatBox.scrollHeight;
+    };
+
+    const resolveTimestamp = (value) => {
+      const parsedDate = app.helpers.parseTimestamp(value) || new Date();
+      return {
+        iso: parsedDate.toISOString(),
+        display: app.helpers.toPersianDigits(
+          parsedDate.toLocaleTimeString("fa-IR", {
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+        ),
+      };
+    };
+
+    const appendMessage = (message, { isLocal = false } = {}) => {
+      const rawText = (message?.message_text ?? message?.message ?? "").trim();
+      if (!rawText) return;
+
+      const bubble = document.createElement("div");
+      bubble.classList.add("chat-message");
+
+      const isClientMessage = isLocal
+        ? state.isClientView
+        : (message?.sender || "").toLowerCase() === "client";
+
+      bubble.classList.add(isClientMessage ? "is-client" : "is-admin");
+
+      const senderLabel = isLocal
+        ? state.isClientView
+          ? "شما"
+          : (message?.sender || "ادمین")
+        : state.isClientView
+        ? isClientMessage
           ? "شما"
           : "پشتیبانی"
-        : isSentByCurrentUser
-        ? msg.sender
-        : "کاربر";
+        : isClientMessage
+        ? "کاربر"
+        : (message?.sender && message.sender.toLowerCase() !== "admin"
+            ? message.sender
+            : "ادمین");
 
-      messageEl.innerHTML = `
-            <div class="message-meta">
-                <strong>${senderName}</strong>
-                <time>${new Date(msg.timestamp).toLocaleTimeString(
-                  "fa-IR"
-                )}</time>
-            </div>
-            <p class="message-text">${msg.message_text}</p>
-        `;
-      elements.chatBox.appendChild(messageEl);
+      const senderElement = document.createElement("span");
+      senderElement.className = "chat-message--sender";
+      senderElement.textContent = senderLabel;
+
+      const textElement = document.createElement("p");
+      textElement.className = "chat-message--text";
+      textElement.textContent = rawText;
+      textElement.dir = "auto";
+
+      const metaElement = document.createElement("span");
+      metaElement.className = "chat-message--meta";
+      const { iso, display } = resolveTimestamp(message?.timestamp);
+      metaElement.dataset.timestamp = iso;
+      metaElement.textContent = display;
+
+      bubble.append(senderElement, textElement, metaElement);
+      elements.chatBox.appendChild(bubble);
     };
 
     const sendMessage = () => {
-      const messageText = elements.messageInput.value.trim();
-      if (!messageText || !state.socket) return;
+      if (elements.sendButton.disabled) return;
 
-      const sender = state.isClient
+      const messageText = elements.messageInput.value.trim();
+      if (!messageText) return;
+
+      if (!state.socket) {
+        setComposerEnabled(false);
+        return;
+      }
+
+      const sender = state.isClientView
         ? "client"
         : container.querySelector("#personaSelect")?.value || "Admin";
 
       state.socket.emit("send_message", {
         room: state.roomId,
         message: messageText,
-        sender: sender,
+        sender,
       });
-      addMessage(
-        { message_text: messageText, timestamp: new Date().toISOString() },
-        true
+
+      appendMessage(
+        {
+          message_text: messageText,
+          timestamp: new Date().toISOString(),
+          sender,
+        },
+        { isLocal: true }
       );
 
       elements.messageInput.value = "";
       elements.messageInput.focus();
       scrollToBottom();
+      app.ui.initializeRelativeTime();
     };
 
     elements.sendButton.addEventListener("click", sendMessage);
-    elements.messageInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
+    elements.messageInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
         sendMessage();
       }
     });
 
     if (state.socket) {
-      state.socket.on("connect", () =>
-        state.socket.emit("join", { room: state.roomId })
-      );
-      state.socket.on("new_message", (data) => {
-        addMessage(data);
+      state.socket.on("connect", () => {
+        setComposerEnabled(true);
+        state.socket.emit("join", { room: state.roomId });
+      });
+
+      state.socket.on("disconnect", () => {
+        setComposerEnabled(false);
+      });
+
+      state.socket.on("new_message", (payload) => {
+        appendMessage(payload);
         scrollToBottom();
+        app.ui.initializeRelativeTime();
       });
     }
 
-    this.helpers
+    app.helpers
       .fetchJSON(state.historyUrl)
       .then((data) => {
         elements.chatBox.innerHTML = "";
-        data.messages?.forEach((msg) => addMessage(msg));
-        if (!data.messages || data.messages.length === 0) {
-          elements.chatBox.innerHTML =
-            '<div class="chat-empty-state">هنوز پیامی وجود ندارد.</div>';
+        const messages = Array.isArray(data?.messages) ? data.messages : [];
+
+        if (!messages.length) {
+          renderStateMessage(
+            "chat-empty-state",
+            "هنوز پیامی وجود ندارد."
+          );
+          return;
         }
+
+        messages.forEach((message) => appendMessage(message));
         scrollToBottom();
+        app.ui.initializeRelativeTime();
       })
-      .catch((err) => {
-        console.error("Failed to load chat history:", err);
-        elements.chatBox.innerHTML =
-          '<div class="chat-error-state">خطا در بارگذاری تاریخچه گفتگو.</div>';
+      .catch((error) => {
+        console.error("Failed to load chat history:", error);
+        renderStateMessage(
+          "chat-error-state",
+          "خطا در بارگذاری تاریخچه گفتگو."
+        );
       });
   },
 
@@ -1278,121 +1377,7 @@ const airocupApp = {
         });
       }
     },
-    initializeChat(container) {
-      const elements = {
-        chatBox: container.querySelector(
-          airocupApp.constants.SELECTORS.CHAT_BOX
-        ),
-        messageInput: container.querySelector(
-          airocupApp.constants.SELECTORS.MESSAGE_INPUT
-        ),
-        sendButton: container.querySelector(
-          airocupApp.constants.SELECTORS.SEND_BUTTON
-        ),
-      };
-      if (!elements.chatBox || !elements.messageInput || !elements.sendButton)
-        return;
 
-      const state = {
-        roomId: container.dataset.clientId,
-        historyUrl: container.dataset.historyUrl,
-        isClient: container.matches(
-          airocupApp.constants.SELECTORS.CLIENT_CHAT_CONTAINER
-        ),
-        socket: airocupApp.helpers.safeSocket(),
-      };
-      if (!state.roomId || !state.historyUrl) return;
-
-      const scrollToBottom = () => {
-        elements.chatBox.scrollTop = elements.chatBox.scrollHeight;
-      };
-
-      const addMessage = (msg) => {
-        const isSentByUser = state.isClient
-          ? msg.sender === "client"
-          : msg.sender !== "client";
-        const messageEl = document.createElement("div");
-        messageEl.className = `chat-message ${
-          isSentByUser ? "message-sent" : "message-received"
-        }`;
-
-        const senderName = state.isClient
-          ? isSentByUser
-            ? "شما"
-            : "پشتیبانی"
-          : isSentByUser
-          ? msg.sender
-          : "کاربر";
-
-        messageEl.innerHTML = `
-            <div class="message-meta">
-                <strong>${senderName}</strong>
-                <time>${new Date(msg.timestamp).toLocaleTimeString()}</time>
-            </div>
-            <p class="message-text">${msg.message_text}</p>
-        `;
-        elements.chatBox.appendChild(messageEl);
-      };
-
-      const sendMessage = () => {
-        const messageText = elements.messageInput.value.trim();
-        if (!messageText || !state.socket) return;
-
-        const sender = state.isClient
-          ? "client"
-          : container.querySelector("#personaSelect")?.value || "Admin";
-
-        state.socket.emit("send_message", {
-          room: state.roomId,
-          message: messageText,
-          sender: sender,
-        });
-        addMessage({
-          sender: sender,
-          message_text: messageText,
-          timestamp: new Date().toISOString(),
-        });
-        elements.messageInput.value = "";
-        elements.messageInput.focus();
-        scrollToBottom();
-      };
-
-      elements.sendButton.addEventListener("click", sendMessage);
-      elements.messageInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" && !e.shiftKey) {
-          e.preventDefault();
-          sendMessage();
-        }
-      });
-
-      if (state.socket) {
-        state.socket.on("connect", () =>
-          state.socket.emit("join", { room: state.roomId })
-        );
-        state.socket.on("new_message", (data) => {
-          addMessage(data);
-          scrollToBottom();
-        });
-      }
-
-      airocupApp.helpers
-        .fetchJSON(state.historyUrl)
-        .then((data) => {
-          elements.chatBox.innerHTML = "";
-          if (data.messages && data.messages.length > 0) {
-            data.messages.forEach(addMessage);
-          } else {
-            elements.chatBox.innerHTML =
-              '<div class="chat-empty-state">هنوز پیامی وجود ندارد.</div>';
-          }
-          scrollToBottom();
-        })
-        .catch((err) => {
-          console.error("Failed to load chat history:", err);
-          elements.chatBox.innerHTML =
-            '<div class="chat-error-state">خطا در بارگذاری تاریخچه گفتگو.</div>';
-        });
-    },
   },
 
   admin: {
@@ -1577,135 +1562,7 @@ const airocupApp = {
 
     // This function should be placed inside the main airocupApp object,
     // alongside helpers, ui, and forms.
-    initializeChat(container) {
-      const elements = {
-        chatBox: container.querySelector(this.constants.SELECTORS.CHAT_BOX),
-        messageInput: container.querySelector(
-          this.constants.SELECTORS.MESSAGE_INPUT
-        ),
-        sendButton: container.querySelector(
-          this.constants.SELECTORS.SEND_BUTTON
-        ),
-      };
-      if (!elements.chatBox || !elements.messageInput || !elements.sendButton) {
-        console.error("Chat UI elements not found.");
-        return;
-      }
 
-      const state = {
-        roomId: container.dataset.clientId,
-        isClient: container.matches(
-          this.constants.SELECTORS.CLIENT_CHAT_CONTAINER
-        ),
-        socket: this.helpers.safeSocket(),
-      };
-
-      if (!state.roomId) {
-        console.error("Chat Error: Missing client ID.");
-        return;
-      }
-
-      state.historyUrl = state.isClient
-        ? "/get_my_chat_history"
-        : `/Admin/GetChatHistory/${state.roomId}`;
-
-      const scrollToBottom = () => {
-        elements.chatBox.scrollTop = elements.chatBox.scrollHeight;
-      };
-
-      const addMessage = (msg, isLocalSend = false) => {
-        const isSentByThisUser =
-          isLocalSend ||
-          (state.isClient ? msg.sender === "client" : msg.sender !== "client");
-        const senderName = isLocalSend
-          ? "شما"
-          : isSentByThisUser
-          ? state.isClient
-            ? "شما"
-            : msg.sender
-          : state.isClient
-          ? "پشتیبانی"
-          : "کاربر";
-
-        const messageEl = document.createElement("div");
-        messageEl.className = `chat-message ${
-          isSentByThisUser ? "message-sent" : "message-received"
-        }`;
-
-        messageEl.innerHTML = `
-        <div class="message-meta">
-            <strong>${senderName}</strong>
-            <time data-timestamp="${msg.timestamp}">${new Date(
-          msg.timestamp
-        ).toLocaleTimeString("fa-IR")}</time>
-        </div>
-        <p class="message-text">${msg.message_text || msg.message}</p> 
-      `;
-        elements.chatBox.appendChild(messageEl);
-      };
-
-      const sendMessage = () => {
-        const messageText = elements.messageInput.value.trim();
-        if (!messageText || !state.socket) return;
-
-        const sender = state.isClient
-          ? "client"
-          : container.querySelector("#personaSelect")?.value || "Admin";
-
-        state.socket.emit("send_message", {
-          room: state.roomId,
-          message: messageText,
-        });
-
-        addMessage(
-          {
-            message_text: messageText,
-            timestamp: new Date().toISOString(),
-          },
-          true
-        );
-
-        elements.messageInput.value = "";
-        elements.messageInput.focus();
-        scrollToBottom();
-      };
-
-      elements.sendButton.addEventListener("click", sendMessage);
-      elements.messageInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" && !e.shiftKey) {
-          e.preventDefault();
-          sendMessage();
-        }
-      });
-
-      if (state.socket) {
-        state.socket.on("connect", () =>
-          state.socket.emit("join", { room: state.roomId })
-        );
-        state.socket.on("new_message", (data) => {
-          addMessage(data);
-          scrollToBottom();
-        });
-      }
-
-      this.helpers
-        .fetchJSON(state.historyUrl)
-        .then((data) => {
-          elements.chatBox.innerHTML = "";
-          if (data.messages?.length) {
-            data.messages.forEach((msg) => addMessage(msg));
-          } else {
-            elements.chatBox.innerHTML =
-              '<div class="chat-empty-state">هنوز پیامی وجود ندارد.</div>';
-          }
-          scrollToBottom();
-        })
-        .catch((err) => {
-          console.error("Failed to load chat history:", err);
-          elements.chatBox.innerHTML =
-            '<div class="chat-error-state">خطا در بارگذاری تاریخچه گفتگو.</div>';
-        });
-    },
   },
 
   init() {
