@@ -1,79 +1,78 @@
-{% extends "Global/Base.html" %} {% block Title %}تاریخچه پرداخت‌ها | آیروکاپ{%
-endblock %} {% block Body %}
-<div class="AppContainer">
-  <div class="Container">
-    <div class="PageHeader">
-      <h1 class="SectionTitle">تاریخچه پرداخت‌ها</h1>
-      <p class="SectionSubtitle">
-        در این بخش می‌توانید تمام پرداخت‌های انجام شده و وضعیت آن‌ها را مشاهده
-        کنید.
-      </p>
-    </div>
+{% extends "global/base.html" %}
 
-    <div class="Card Card--table">
-      <h2 class="Card__header">لیست تراکنش‌ها</h2>
-      <div class="UserTableWrapper">
-        {% if payments %}
-        <table class="UserTable">
-          <thead>
-            <tr>
-              <th>نام تیم</th>
-              <th>مبلغ (ریال)</th>
-              <th>تاریخ</th>
-              <th>وضعیت</th>
-              <th>رسید</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for p in payments %}
-            <tr>
-              <td data-label="نام تیم">{{ p.team_name }}</td>
-              <td data-label="مبلغ">
-                {{ p.amount | humanize_number | persian_digits }}
-              </td>
-              <td data-label="تاریخ">
-                {{ p.upload_date | formatdate | persian_digits }}
-              </td>
-              <td data-label="وضعیت">
-                <span
-                  class="StatusBadge {% if p.status.value == 'approved' %}StatusApproved{% elif p.status.value == 'pending' %}StatusPending{% elif p.status.value == 'rejected' %}StatusRejected{% else %}StatusNotStarted{% endif %}"
-                >
-                  {{ p.status.label }}
-                </span>
-              </td>
-              <td data-label="رسید">
-                {% if p.receipt_filename %}
-                <a
-                  href="{{ url_for('client.get_receipt', client_id=p.client_id, filename=p.receipt_filename) }}"
-                  class="Btn BtnSecondary BtnSm"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <i class="fas fa-receipt"></i> مشاهده
-                </a>
-                {% else %}
-                <span>-</span>
-                {% endif %}
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-        {% else %}
-        <div class="Card EmptyStateCard">
-          <i class="fas fa-history EmptyStateIcon"></i>
-          <h3>سابقه پرداخت خالی است</h3>
-          <p>شما هنوز هیچ پرداختی انجام نداده‌اید.</p>
-        </div>
-        {% endif %}
+{% block title %}تاریخچه پرداخت‌ها{% endblock %}
+
+{% block body %}
+<div class="container" style="margin: 2rem auto">
+  <div class="section-header" style="margin-bottom: 2rem">
+    <h1 class="section-title">تاریخچه پرداخت‌ها</h1>
+    <p class="form-subtitle" style="margin-bottom: 0">
+      در این بخش می‌توانید تمام پرداخت‌های انجام شده و وضعیت آن‌ها را مشاهده کنید.
+    </p>
+  </div>
+
+  <div class="card card--table">
+    <h2 style="padding: 1.5rem 1.5rem 0; font-size: 1.4rem; font-weight: 700">لیست تراکنش‌ها</h2>
+    <div class="user-table-wrapper">
+      {% if payments %}
+      <table class="user-table">
+        <thead>
+          <tr>
+            <th>نام تیم</th>
+            <th>مبلغ (ریال)</th>
+            <th>تاریخ</th>
+            <th>وضعیت</th>
+            <th>رسید</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in payments %}
+          <tr>
+            <td data-label="نام تیم">{{ p.team_name }}</td>
+            <td data-label="مبلغ">{{ p.amount | humanize_number | persian_digits }}</td>
+            <td data-label="تاریخ">{{ p.upload_date | formatdate | persian_digits }}</td>
+            <td data-label="وضعیت">
+              {% set status_classes = {
+                'approved': 'status-approved',
+                'pending': 'status-pending',
+                'rejected': 'status-rejected'
+              } %}
+              <span class="status-badge {{ status_classes.get(p.status.value, 'status-not-started') }}">
+                {{ p.status.label }}
+              </span>
+            </td>
+            <td data-label="رسید">
+              {% if p.receipt_filename %}
+              <a
+                href="{{ url_for('client.get_receipt', client_id=p.client_id, filename=p.receipt_filename) }}"
+                class="btn btn-secondary btn-sm"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <i class="fas fa-receipt"></i> مشاهده
+              </a>
+              {% else %}
+              <span>-</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="card empty-state-card">
+        <i class="fas fa-history empty-state-icon" aria-hidden="true"></i>
+        <h3>سابقه پرداخت خالی است</h3>
+        <p>شما هنوز هیچ پرداختی انجام نداده‌اید.</p>
       </div>
+      {% endif %}
     </div>
+  </div>
 
-    <div class="SectionCta" style="text-align: center; margin-top: 2rem">
-      <a href="{{ url_for('client.dashboard') }}" class="Btn BtnSecondary">
-        <i class="fas fa-arrow-left"></i> بازگشت به داشبورد
-      </a>
-    </div>
+  <div style="text-align: center; margin-top: 2rem">
+    <a href="{{ url_for('client.dashboard') }}" class="btn btn-secondary">
+      <i class="fas fa-arrow-left"></i> بازگشت به داشبورد
+    </a>
   </div>
 </div>
 {% endblock %}
