@@ -1,47 +1,53 @@
-{% extends "Global/Base.html" %} {% block Title %}ویرایش عضو: {{ member.name or
-'عضو' }}{% endblock %} {% block Body %}
-<div class="AppContainer">
-  <div class="FormContainer">
-    <form
-      method="POST"
-      action="{{ url_for('client.edit_member', team_id=team.team_id, member_id=member.member_id) }}"
-      id="EditForm"
-      novalidate
-    >
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+{% extends "global/base.html" %}
 
-      <h1 class="FormTitle">ویرایش عضو: {{ member.name or 'عضو' }}</h1>
-      <p class="FormSubtitle">
+{% block title %}ویرایش عضو: {{ member.name or 'عضو' }}{% endblock %}
+
+{% block body %}
+<main class="app-container">
+  <div class="container">
+    <header class="page-header">
+      <h1 class="page-title">ویرایش عضو: {{ member.name or 'عضو' }}</h1>
+      <p class="page-subtitle">
         اطلاعات عضو تیم {{ team.team_name }} را ویرایش کنید.
       </p>
+    </header>
 
-      <fieldset>
-        <legend>اطلاعات عضو</legend>
-        {# Pass variables with snake_case. Pass the member object as member_data
-        #} {% with id_prefix='Edit-', member_data=member, form_data=request.form
-        %} {% include 'client/member_form_fields.html' %} {% endwith %}
-      </fieldset>
+    <div class="form-container form-container--medium">
+      <form
+        method="POST"
+        action="{{ url_for('client.edit_member', team_id=team.team_id, member_id=member.member_id) }}"
+        id="editMemberForm"
+        novalidate
+      >
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
-      <div class="FormGroup">
-        <button
-          type="submit"
-          id="submitBtn"
-          class="Btn BtnPrimary Btn--fullWidth"
-        >
-          ذخیره تغییرات
-        </button>
-      </div>
-    </form>
+        <section class="card" aria-labelledby="member-info-heading">
+          <h2 id="member-info-heading" class="section-title">اطلاعات عضو</h2>
+          {% with id_prefix='edit-', member_data=member, form_data=request.form %}
+            {% include 'client/member_form_fields.html' %}
+          {% endwith %}
+        </section>
 
-    <div class="SectionCta" style="text-align: center; margin-top: 1.5rem">
+        <div class="form-group">
+          <button type="submit" class="btn btn-primary btn--full-width">
+            ذخیره تغییرات
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div class="section-cta">
       <a
         href="{{ url_for('client.manage_members', team_id=team.team_id) }}"
-        class="Btn BtnSecondary"
+        class="btn btn-secondary"
       >
         انصراف و بازگشت به لیست اعضا
       </a>
     </div>
   </div>
-</div>
-{% endblock %} {% block Scripts %} {{ super() }} {# All JavaScript has been
-removed. main.js will initialize the form helpers globally. #} {% endblock %}
+</main>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+{% endblock %}
