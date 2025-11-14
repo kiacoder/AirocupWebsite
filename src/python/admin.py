@@ -894,6 +894,17 @@ def admin_dashboard():
             .count()
         )
 
+        new_clients_this_week = (
+            db.query(models.Client)
+            .filter(
+                models.Client.status == models.EntityStatus.ACTIVE,
+                models.Client.registration_date
+                >= datetime.datetime.now(datetime.timezone.utc)
+                - datetime.timedelta(days=7),
+            )
+            .count()
+        )
+
         stats = {
             "total_clients": total_clients,
             "total_teams": total_teams,
@@ -901,6 +912,7 @@ def admin_dashboard():
             "total_members": total_members,
             "total_leaders": total_leaders,
             "total_coaches": total_coaches,
+            "new_clients_this_week": new_clients_this_week,
         }
 
         pending_payments = (
@@ -916,6 +928,8 @@ def admin_dashboard():
         constants.admin_html_names_data["admin_dashboard"],
         stats=stats,
         pending_payments=pending_payments,
+        pending_payments_count=len(pending_payments),
+        admin_greeting_name=session.get("admin_display_name", "مدیر محترم"),
     )
 
 

@@ -5,7 +5,10 @@
 <div class="admin-dashboard">
   <section class="admin-dashboard__hero">
     <div class="admin-dashboard__welcome">
-      <h1>سلام {{ Client.FirstName | default('مدیر محترم', true) | persian_digits }}!</h1>
+      <h1>
+        سلام
+        {{ admin_greeting_name | default('مدیر محترم', true) | persian_digits }}!
+      </h1>
       <p>
         آخرین وضعیت سامانه در یک نگاه؛ پیگیری تیم‌ها، پرداخت‌ها و پیام‌های کاربران را از همین‌جا انجام دهید.
       </p>
@@ -14,12 +17,12 @@
     <div class="admin-dashboard__highlights">
       <div class="admin-dashboard__highlight">
         <span class="admin-dashboard__highlight-label">در انتظار بررسی</span>
-        <strong>{{ PendingPayments|length | persian_digits }}</strong>
+        <strong>{{ pending_payments_count | persian_digits }}</strong>
         <small>رسید پرداخت</small>
       </div>
       <div class="admin-dashboard__highlight">
         <span class="admin-dashboard__highlight-label">عضویت‌های جدید</span>
-        <strong>{{ Stats.NewClientsThisWeek | default(0, true) | persian_digits }}</strong>
+        <strong>{{ stats.new_clients_this_week | default(0, true) | persian_digits }}</strong>
         <small>در هفته جاری</small>
       </div>
     </div>
@@ -28,7 +31,7 @@
   <section class="admin-dashboard__actions">
     <h2>میانبرهای مدیریتی</h2>
     <div class="admin-dashboard__actions-grid">
-      <a href="{{ url_for('admin.admin_manage_client', client_id=Client.ClientID) }}" class="admin-action-card">
+      <a href="{{ url_for('admin.admin_clients_list') }}" class="admin-action-card">
         <i class="fas fa-users"></i>
         <span>مدیریت کاربران</span>
         <small>ویرایش اطلاعات و دسترسی‌ها</small>
@@ -55,42 +58,42 @@
     <div class="admin-metric-card">
       <div class="admin-metric-card__icon"><i class="fas fa-users"></i></div>
       <div>
-        <h3>{{ Stats.TotalMembers | persian_digits or '۰' }}</h3>
+        <h3>{{ stats.total_members | default(0) | persian_digits }}</h3>
         <p>کل شرکت کنندگان</p>
       </div>
     </div>
     <div class="admin-metric-card">
       <div class="admin-metric-card__icon"><i class="fas fa-layer-group"></i></div>
       <div>
-        <h3>{{ Stats.TotalTeams | persian_digits or '۰' }}</h3>
+        <h3>{{ stats.total_teams | default(0) | persian_digits }}</h3>
         <p>تعداد کل تیم‌ها</p>
       </div>
     </div>
     <div class="admin-metric-card">
       <div class="admin-metric-card__icon"><i class="fas fa-check-circle"></i></div>
       <div>
-        <h3>{{ Stats.ApprovedTeams | persian_digits or '۰' }}</h3>
+        <h3>{{ stats.approved_teams | default(0) | persian_digits }}</h3>
         <p>تیم‌های تایید شده</p>
       </div>
     </div>
     <div class="admin-metric-card">
       <div class="admin-metric-card__icon"><i class="fas fa-user-friends"></i></div>
       <div>
-        <h3>{{ Stats.TotalClients | persian_digits or '۰' }}</h3>
+        <h3>{{ stats.total_clients | default(0) | persian_digits }}</h3>
         <p>کاربران ثبت شده</p>
       </div>
     </div>
     <div class="admin-metric-card">
       <div class="admin-metric-card__icon"><i class="fas fa-user-tie"></i></div>
       <div>
-        <h3>{{ Stats.TotalLeaders | persian_digits or '۰' }}</h3>
+        <h3>{{ stats.total_leaders | default(0) | persian_digits }}</h3>
         <p>تعداد سرپرست‌ها</p>
       </div>
     </div>
     <div class="admin-metric-card">
       <div class="admin-metric-card__icon"><i class="fas fa-chalkboard-teacher"></i></div>
       <div>
-        <h3>{{ Stats.TotalCoaches | persian_digits or '۰' }}</h3>
+        <h3>{{ stats.total_coaches | default(0) | persian_digits }}</h3>
         <p>تعداد مربی‌ها</p>
       </div>
     </div>
@@ -123,7 +126,7 @@
         <h2><i class="fas fa-credit-card"></i> رسیدهای پرداخت در انتظار تایید</h2>
         <p>در صورت تایید، وضعیت تیم‌ها به‌روزرسانی خواهد شد.</p>
       </div>
-      <span class="admin-dashboard__badge">{{ PendingPayments|length | persian_digits }} مورد</span>
+      <span class="admin-dashboard__badge">{{ pending_payments_count | persian_digits }} مورد</span>
     </header>
 
     <div class="admin-table-wrapper">
@@ -140,16 +143,16 @@
           </tr>
         </thead>
         <tbody>
-          {% for payment, team_name, client_email in PendingPayments %}
+          {% for payment, team_name, client_email in pending_payments %}
           <tr>
             <td data-label="تیم">{{ team_name }}</td>
             <td data-label="کاربر">{{ client_email }}</td>
-            <td data-label="مبلغ">{{ payment.Amount | humanize_number | persian_digits }}</td>
-            <td data-label="برای">{{ payment.MembersPaidFor | persian_digits }} نفر</td>
-            <td data-label="تاریخ">{{ payment.UploadDate | formatdate | persian_digits }}</td>
+            <td data-label="مبلغ">{{ payment.amount | humanize_number | persian_digits }}</td>
+            <td data-label="برای">{{ payment.members_paid_for | persian_digits }} نفر</td>
+            <td data-label="تاریخ">{{ payment.upload_date | formatdate | persian_digits }}</td>
             <td data-label="رسید">
               <a
-                href="{{ url_for('client.get_receipt', client_id=payment.ClientID, filename=payment.ReceiptFilename) }}"
+                href="{{ url_for('client.get_receipt', client_id=payment.client_id, filename=payment.receipt_filename) }}"
                 target="_blank"
                 class="admin-table__link"
               >
@@ -159,7 +162,7 @@
             </td>
             <td class="admin-table__actions">
               <form
-                action="{{ url_for('admin.admin_manage_payment', payment_id=payment.PaymentID, action='approve') }}"
+                action="{{ url_for('admin.admin_manage_payment', payment_id=payment.payment_id, action='approve') }}"
                 method="POST"
                 class="ConfirmAction"
                 data-confirm="آیا از تایید این پرداخت اطمینان دارید؟"
@@ -171,7 +174,7 @@
                 </button>
               </form>
               <form
-                action="{{ url_for('admin.admin_manage_payment', payment_id=payment.PaymentID, action='reject') }}"
+                action="{{ url_for('admin.admin_manage_payment', payment_id=payment.payment_id, action='reject') }}"
                 method="POST"
                 class="ConfirmAction"
                 data-confirm="آیا از رد کردن این پرداخت اطمینان دارید؟"
