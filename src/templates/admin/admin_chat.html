@@ -1,14 +1,14 @@
-{% extends "global/base.html" %} {% block title %}چت با {{ Client.Email }} | پنل
+{% extends "global/base.html" %} {% block title %}چت با {{ client.email }} | پنل
 آیروکاپ{% endblock %} {% block body %}
 <div
   class="AdminChatContainer"
-  data-client-id="{{ Client.ClientID }}"
-  data-history-url="{{ url_for('admin.get_chat_history', client_id=Client.ClientID) }}"
+  data-client-id="{{ client.client_id }}"
+  data-history-url="{{ url_for('admin.get_chat_history', client_id=client.client_id) }}"
 >
   <div class="PageHeader">
     <h1 class="SectionTitle">چت با کاربر</h1>
     <p class="FormSubtitle">
-      شما در حال گفتگو با <strong>{{ Client.Email }}</strong> هستید.
+      شما در حال گفتگو با <strong>{{ client.email }}</strong> هستید.
     </p>
   </div>
 
@@ -24,8 +24,8 @@
         <label for="PersonaSelect">ارسال با نام:</label>
         <select id="PersonaSelect" class="FormControl">
           <option value="Admin">ادمین</option>
-          {% for Persona in Personas %} {% if Persona != 'Admin' %}
-          <option value="{{ Persona|e }}">{{ Persona|e }}</option>
+          {% for persona in personas %} {% if persona != 'Admin' %}
+          <option value="{{ persona|e }}">{{ persona|e }}</option>
           {% endif %} {% endfor %}
         </select>
       </div>
@@ -47,7 +47,7 @@
 
   <div class="SectionCta">
     <a
-      href="{{ url_for('admin.admin_manage_client', client_id=Client.ClientID) }}"
+      href="{{ url_for('admin.admin_manage_client', client_id=client.client_id) }}"
       class="Btn BtnSecondary"
     >
       <i class="fas fa-arrow-left"></i> بازگشت به مدیریت کاربر

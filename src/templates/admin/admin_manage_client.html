@@ -1,8 +1,11 @@
-{% extends "global/base.html" %} {% block title %}مدیریت کاربر: {{ Client.Email
-}} | پنل آیروکاپ{% endblock %} {% block body %}
+{% extends "global/base.html" %}
+
+{% block title %}مدیریت کاربر: {{ client.email }} | پنل آیروکاپ{% endblock %}
+
+{% block body %}
 <div class="Container">
   <div class="PageHeader">
-    <h1 class="SectionTitle">مدیریت کاربر: {{ Client.Email }}</h1>
+    <h1 class="SectionTitle">مدیریت کاربر: {{ client.email }}</h1>
     <p class="FormSubtitle">
       اطلاعات کاربر و تیم‌های ثبت شده توسط او را مدیریت کنید.
     </p>
@@ -15,13 +18,13 @@
     <div class="Card__body" style="padding: 1.5rem">
       <dl class="InfoList">
         <dt>ایمیل:</dt>
-        <dd>{{ Client.Email }}</dd>
+        <dd>{{ client.email }}</dd>
         <dt>شماره تماس:</dt>
-        <dd>{{ Client.PhoneNumber | persian_digits }}</dd>
+        <dd>{{ client.phone_number | persian_digits }}</dd>
         <dt>تاریخ ثبت نام:</dt>
-        <dd>{{ Client.RegistrationDate | formatdate | persian_digits }}</dd>
+        <dd>{{ client.registration_date | formatdate | persian_digits }}</dd>
         <dt>سطح تحصیلات:</dt>
-        <dd>{{ Client.EducationLevel or 'ثبت نشده' }}</dd>
+        <dd>{{ client.education_level or 'ثبت نشده' }}</dd>
       </dl>
     </div>
     <div class="ClientActions">
@@ -29,7 +32,7 @@
         <i class="fas fa-edit"></i> ویرایش حساب
       </button>
       <a
-        href="{{ url_for('admin.admin_chat', client_id=Client.ClientID) }}"
+        href="{{ url_for('admin.admin_chat', client_id=client.client_id) }}"
         class="Btn BtnSecondary"
         ><i class="fas fa-comments"></i> چت با کاربر</a
       >
@@ -55,30 +58,31 @@
           </tr>
         </thead>
         <tbody>
-          {% for TeamData in Teams %}
+          {% for team in teams %}
           <tr>
-            <td data-label="ID">#{{ TeamData.TeamID | persian_digits }}</td>
-            <td data-label="نام تیم">{{ TeamData.TeamName }}</td>
+            <td data-label="ID">#{{ team.team_id | persian_digits }}</td>
+            <td data-label="نام تیم">{{ team.team_name }}</td>
             <td data-label="اعضا">
-              {{ TeamData.TotalMembers | persian_digits }} نفر
+              {{ team.total_members | persian_digits }} نفر
             </td>
             <td data-label="وضعیت پرداخت">
-              {% set status_enum = TeamData.LastPaymentStatus %}
+              {% set status_enum = team.last_payment_status %}
+              {% set status_value = status_enum.value if status_enum else None %}
               <span
-                class="StatusBadge {% if status_enum == 'Approved' %}StatusApproved{% elif status_enum == 'Pending' %}StatusPending{% elif status_enum == 'Rejected' %}StatusRejected{% else %}StatusNotStarted{% endif %}"
+                class="StatusBadge {% if status_value == 'approved' %}StatusApproved{% elif status_value == 'pending' %}StatusPending{% elif status_value == 'rejected' %}StatusRejected{% else %}StatusNotStarted{% endif %}"
               >
                 {{ status_enum.label if status_enum else 'شروع نشده' }}
               </span>
             </td>
             <td class="Actions">
               <a
-                href="{{ url_for('admin.admin_edit_team', team_id=TeamData.TeamID) }}"
+                href="{{ url_for('admin.admin_edit_team', team_id=team.team_id) }}"
                 class="Btn BtnPrimary"
                 ><i class="fas fa-edit"></i> مدیریت</a
               >
               <form
                 method="POST"
-                action="{{ url_for('admin.admin_delete_team', team_id=TeamData.TeamID) }}"
+                action="{{ url_for('admin.admin_delete_team', team_id=team.team_id) }}"
               >
                 <input
                   type="hidden"
@@ -89,7 +93,7 @@
                   type="button"
                   class="Btn BtnDanger DeleteBtn"
                   data-modal-title="تایید آرشیو تیم"
-                  data-modal-text="آیا از آرشیو کردن تیم «{{ TeamData.TeamName }}» و تمام اعضای آن اطمینان دارید؟"
+                  data-modal-text="آیا از آرشیو کردن تیم «{{ team.team_name }}» و تمام اعضای آن اطمینان دارید؟"
                   data-modal-confirm="بله، آرشیو کن"
                 >
                   <i class="fas fa-archive"></i> آرشیو
@@ -123,7 +127,7 @@
     <form
       id="editClientForm"
       method="POST"
-      action="{{ url_for('admin.admin_edit_client', client_id=Client.ClientID) }}"
+      action="{{ url_for('admin.admin_edit_client', client_id=client.client_id) }}"
     >
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
       <div class="FormGroup">
@@ -131,8 +135,8 @@
         <input
           type="email"
           id="EditEmail"
-          name="Email"
-          value="{{ Client.Email }}"
+          name="email"
+          value="{{ client.email }}"
           required
           dir="ltr"
           class="FormControl"
@@ -143,8 +147,8 @@
         <input
           type="tel"
           id="EditPhone"
-          name="PhoneNumber"
-          value="{{ Client.PhoneNumber }}"
+          name="phone_number"
+          value="{{ client.phone_number }}"
           required
           dir="ltr"
           class="FormControl"
@@ -156,7 +160,7 @@
           <input
             type="password"
             id="EditPassword"
-            name="Password"
+            name="password"
             placeholder="برای تغییر، رمز جدید را وارد کنید"
             dir="ltr"
             class="FormControl"
@@ -185,11 +189,11 @@
     <button class="CloseBtn" data-dismiss="modal" aria-label="بستن">
       &times;
     </button>
-    <h2 class="FormTitle">افزودن تیم جدید برای {{ Client.Email }}</h2>
+    <h2 class="FormTitle">افزودن تیم جدید برای {{ client.email }}</h2>
     <form
       id="addTeamForm"
       method="POST"
-      action="{{ url_for('admin.admin_add_team', client_id=Client.ClientID) }}"
+      action="{{ url_for('admin.admin_add_team', client_id=client.client_id) }}"
     >
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
       <div class="FormGroup">
@@ -197,7 +201,7 @@
         <input
           type="text"
           id="AddTeamName"
-          name="TeamName"
+          name="team_name"
           required
           class="FormControl"
         />

@@ -503,7 +503,7 @@ def admin_manage_client(client_id):
                 models.Team.client_id == client_id,
                 models.Team.status == models.EntityStatus.ACTIVE,
             )
-            .group_by(models.Team.team_id)
+            .group_by(models.Team.team_id, models.Client.email)
             .order_by(models.Team.team_registration_date.desc())
             .all()
         )
@@ -538,6 +538,7 @@ def admin_manage_teams():
             db.query(
                 models.Team.team_id,
                 models.Team.team_name,
+                models.Client.email.label("client_email"),
                 count(models.Member.member_id).label("member_count"),
                 subquery.label("last_payment_status"),
             )
@@ -548,7 +549,7 @@ def admin_manage_teams():
                 & (models.Member.status == models.EntityStatus.ACTIVE),
             )
             .filter(models.Team.status == models.EntityStatus.ACTIVE)
-            .group_by(models.Team.team_id)
+            .group_by(models.Team.team_id, models.Client.email)
             .order_by(models.Team.team_registration_date.desc())
             .all()
         )
