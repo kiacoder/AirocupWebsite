@@ -10,7 +10,7 @@
   </div>
 
   <div class="FormContainer FormContainer--large">
-    <form method="POST" action="{{ url_for('Admin.AdminEditNews', ArticleID=Article.NewsID) }}" enctype="multipart/form-data" id="editNewsForm">
+    <form method="POST" action="{{ url_for('admin.admin_edit_news', article_id=Article.NewsID) }}" enctype="multipart/form-data" id="editNewsForm">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
       <div class="FormGroup">
@@ -43,7 +43,7 @@
       <div class="FormGroup">
         <label class="FormLabel">تصویر فعلی</label>
         <div class="ImagePreviewContainer">
-          <img class="ImagePreview" src="{{ url_for('Admin.UploadedNewsImage', filename=Article.ImagePath) }}" alt="{{ Article.Title }}" onerror="this.style.display='none'" />
+          <img class="ImagePreview" src="{{ url_for('admin.uploaded_news_image', filename=Article.ImagePath) }}" alt="{{ Article.Title }}" onerror="this.style.display='none'" />
           <p class="FormHelpText">مسیر فایل: {{ Article.ImagePath }}</p>
         </div>
       </div>
@@ -53,7 +53,7 @@
         <button type="submit" class="Btn BtnPrimary Btn--fullWidth">
           <i class="fas fa-save"></i> ذخیره تغییرات
         </button>
-        <a href="{{ url_for('Admin.AdminManageNews') }}" class="Btn BtnSecondary Btn--fullWidth">
+        <a href="{{ url_for('admin.admin_manage_news') }}" class="Btn BtnSecondary Btn--fullWidth">
           <i class="fas fa-times"></i> انصراف
         </a>
       </div>
