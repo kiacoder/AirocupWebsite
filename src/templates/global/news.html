@@ -1,28 +1,38 @@
 {% extends "global/base.html" %}
 
-{% block Title %}اخبار و اطلاعیه‌ها | آیروکاپ{% endblock %}
+{% block title %}اخبار و اطلاعیه‌ها | آیروکاپ{% endblock %}
 
-{% block SEO_Description %}
-<meta name="description" content="آخرین اخبار، اطلاعیه‌ها و رویدادهای مربوط به مسابقات ملی هوش مصنوعی و رباتیک آیروکاپ. از آخرین تحولات مطلع شوید." />
+{% block seo_description %}
+<meta
+  name="description"
+  content="آخرین اخبار، اطلاعیه‌ها و رویدادهای مربوط به مسابقات ملی هوش مصنوعی و رباتیک آیروکاپ. از آخرین تحولات مطلع شوید."
+/>
 {% endblock %}
 
-{% block Body %}
-<main class="AppContainer NewsPage">
-  <div class="Container">
-    <header class="PageHeader TextCenter">
-      <h1 class="PageTitle">اخبار و اطلاعیه‌ها</h1>
-      <p class="PageSubtitle">
+{% block body %}
+<main class="app-container news-page">
+  <div class="container">
+
+    <header class="page-header text-center">
+      <h1 class="page-title">اخبار و اطلاعیه‌ها</h1>
+      <p class="page-subtitle">
         در این بخش آخرین اخبار، اطلاعیه‌ها و رویدادهای مربوط به مسابقات آیروکاپ را دنبال کنید.
       </p>
     </header>
 
     {% if articles %}
-    <div class="NewsGrid">
+    <div class="news-grid">
       {% for article in articles %}
-      <div class="Card CardNews {% if loop.first %}CardNews--Featured{% endif %}">
-        <a href="{{ url_for('global.view_article', article_id=article.news_id) }}" class="CardNews__Link" aria-label="ادامه مطلب درباره {{ article.title }}">
+
+      <div class="card card-news {% if loop.first %}card-news--featured{% endif %}">
+        <a
+          href="{{ url_for('global.view_article', article_id=article.news_id) }}"
+          class="card-news-link"
+          aria-label="ادامه مطلب درباره {{ article.title }}"
+        >
+
           {% if article.image_path %}
-          <div class="CardNews__ImageWrapper">
+          <div class="card-news-image-wrapper">
             <img
               src="{{ url_for('global.uploaded_news_image', filename=article.image_path) }}"
               alt="تصویر خبر: {{ article.title }}"
@@ -32,33 +42,41 @@
             />
           </div>
           {% endif %}
-          <div class="CardNews__ContentWrapper">
-            <h2 class="CardNews__Title">{{ article.title }}</h2>
-            <div class="CardNews__Meta">
+
+          <div class="card-news-content-wrapper">
+            <h2 class="card-news-title">{{ article.title }}</h2>
+
+            <div class="card-news-meta">
               <span>
                 <i class="fas fa-calendar-alt" aria-hidden="true"></i>
                 {{ article.publish_date | formatdate }}
               </span>
             </div>
-            <p class="CardNews__Excerpt">
+
+            <p class="card-news-excerpt">
               {{ article.content | striptags | truncate(150) }}
             </p>
-            <span class="ReadMoreLink">
+
+            <span class="read-more-link">
               ادامه مطلب
               <i class="fas fa-arrow-left" aria-hidden="true"></i>
             </span>
           </div>
+
         </a>
       </div>
+
       {% endfor %}
     </div>
+
     {% else %}
-    <div class="Card EmptyStateCard">
-      <i class="fas fa-newspaper EmptyStateIcon"></i>
+    <div class="card empty-state-card">
+      <i class="fas fa-newspaper empty-state-icon"></i>
       <h3>در حال حاضر هیچ خبری برای نمایش وجود ندارد.</h3>
       <p>لطفاً بعداً دوباره به این صفحه سر بزنید.</p>
     </div>
     {% endif %}
+
   </div>
 </main>
 {% endblock %}

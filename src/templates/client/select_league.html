@@ -6,7 +6,7 @@
 <div class="AppContainer">
   <div class="Container">
     <div class="PageHeader">
-      <h1 class="SectionTitle">انتخاب لیگ برای تیم: {{ Team.TeamName }}</h1>
+      <h1 class="SectionTitle">انتخاب لیگ برای تیم: {{ team.team_name }}</h1>
       <p class="SectionSubtitle">
         تیم شما می‌تواند در یک لیگ (اجباری) یا دو لیگ (یک لیگ اجباری و یک لیگ اختیاری با تخفیف) شرکت کند.
       </p>
@@ -20,36 +20,34 @@
         </p>
       </div>
 
-      <form method="POST" id="SelectLeagueForm" action="{{ url_for('Client.SelectLeague', TeamID=Team.TeamID) }}" novalidate>
+      <form method="POST" id="selectLeagueForm" action="{{ url_for('client.select_league', team_id=team.team_id) }}" novalidate>
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
         <h2 class="FormTitle" style="font-size: 1.5rem">لیگ‌های موجود</h2>
 
         <div class="FormGroup">
-          <label for="leagueOne">لیگ اول (اجباری):<span class="RequiredStar">*</span></label>
-          <select id="leagueOne" name="LeagueOne" class="FormControl" required>
+          <label for="league_one">لیگ اول (اجباری):<span class="RequiredStar">*</span></label>
+          <select id="league_one" name="league_one" class="FormControl" required>
             <option value="">انتخاب کنید</option>
-            {% for league in Leagues %}
-            <option value="{{ league.ID }}" {% if Team.LeagueOneID == league.ID %}selected{% endif %}>
-              {{ league.Name }}
+            {% for league in leagues_list %}
+            <option value="{{ league.id }}" {% if team.league_one_id == league.id %}selected{% endif %}>
+              {{ league.name }}
             </option>
             {% endfor %}
           </select>
         </div>
 
         <div class="FormGroup">
-          <label for="leagueTwo">لیگ دوم (اختیاری):</label>
-          <select id="leagueTwo" name="LeagueTwo" class="FormControl">
+          <label for="league_two">لیگ دوم (اختیاری):</label>
+          <select id="league_two" name="league_two" class="FormControl">
             <option value="">انتخاب نمی‌کنم</option>
-            {% for league in Leagues %}
-            <option value="{{ league.ID }}" {% if Team.LeagueTwoID == league.ID %}selected{% endif %}>
-              {{ league.Name }}
+            {% for league in leagues_list %}
+            <option value="{{ league.id }}" {% if team.league_two_id == league.id %}selected{% endif %}>
+              {{ league.name }}
             </option>
             {% endfor %}
           </select>
         </div>
-
-        <div id="formError" class="ErrorMsg" style="text-align: center; margin-bottom: 1rem;"></div>
 
         <div class="FormGroup">
           <button type="submit" class="Btn BtnPrimary Btn--fullWidth">تایید و ذخیره لیگ‌ها</button>
@@ -58,7 +56,7 @@
     </div>
 
     <div class="SectionCta" style="text-align: center; margin-bottom: 30px;">
-      <a href="{{ url_for('Client.Dashboard') }}" class="Btn BtnSecondary">بازگشت به داشبورد</a>
+      <a href="{{ url_for('client.dashboard') }}" class="Btn BtnSecondary">بازگشت به داشبورد</a>
     </div>
   </div>
 </div>
@@ -66,45 +64,5 @@
 
 {% block Scripts %}
 {{ super() }}
-<script>
-  document.addEventListener("DOMContentLoaded", function() {
-    const leagueOne = document.getElementById('leagueOne');
-    const leagueTwo = document.getElementById('leagueTwo');
-    const form = document.getElementById('SelectLeagueForm');
-    const errorDisplay = document.getElementById('formError');
-
-    function validateLeagues() {
-      const selectedOne = leagueOne.value;
-      
-      Array.from(leagueTwo.options).forEach(opt => {
-          opt.disabled = opt.value === selectedOne && selectedOne !== '';
-      });
-
-      if (leagueTwo.value === selectedOne && selectedOne !== '') {
-          leagueTwo.value = '';
-      }
-    }
-
-    leagueOne.addEventListener('change', validateLeagues);
-    
-    form.addEventListener('submit', function(event) {
-      errorDisplay.textContent = '';
-      const leagueOneValue = leagueOne.value;
-      const leagueTwoValue = leagueTwo.value;
-
-      if (!leagueOneValue) {
-        event.preventDefault();
-        errorDisplay.textContent = 'لطفاً لیگ اول (اجباری) را انتخاب کنید.';
-        return;
-      }
-      if (leagueOneValue && leagueTwoValue && leagueOneValue === leagueTwoValue) {
-        event.preventDefault();
-        errorDisplay.textContent = 'شما نمی‌توانید یک لیگ را دو بار انتخاب کنید.';
-        return;
-      }
-    });
-
-    validateLeagues();
-  });
-</script>
+{# Script removed, this logic should be handled by main.js if needed, but simple dropdown disabling is fine. #}
 {% endblock %}

@@ -1,15 +1,16 @@
-{% extends "global/Base.html" %}
+{% extends "global/base.html" %}
 
-{% block Title %}{{ article.Title }} | اخبار آیروکاپ{% endblock %}
+{% block title %}{{ article.Title }} | اخبار آیروکاپ{% endblock %}
 
-{% block SEO_Description %}
+{% block seo_description %}
 <meta name="description" content="{{ article.Content|striptags|truncate(155) }}" />
 {% endblock %}
 
-{% block Body %}
-<main class="AppContainer ArticlePage">
-  <div class="Container">
-    <nav aria-label="breadcrumb" class="BreadcrumbNav">
+{% block body %}
+<main class="app-container article-page">
+  <div class="container">
+
+    <nav aria-label="breadcrumb" class="breadcrumb-nav">
       <ol>
         <li><a href="{{ url_for('global.index') }}">خانه</a></li>
         <li><a href="{{ url_for('Global.News') }}">اخبار</a></li>
@@ -17,11 +18,14 @@
       </ol>
     </nav>
 
-    <div class="ArticleGrid">
-      <article class="NewsArticle">
-        <header class="ArticleHeader">
-          <h1 class="ArticleTitle">{{ article.Title }}</h1>
-          <div class="ArticleMeta">
+    <div class="article-grid">
+
+      <article class="news-article">
+
+        <header class="article-header">
+          <h1 class="article-title">{{ article.Title }}</h1>
+
+          <div class="article-meta">
             {% if article.PublishDate %}
             <time datetime="{{ article.PublishDate|to_iso_format }}">
               <i class="fas fa-calendar-alt" aria-hidden="true"></i>
@@ -32,7 +36,7 @@
         </header>
 
         {% if article.ImagePath %}
-        <figure class="ArticleImage">
+        <figure class="article-image">
           <img
             src="{{ url_for('Global.UploadedNewsImage', filename=article.ImagePath) }}"
             alt="تصویر اصلی مقاله: {{ article.Title }}"
@@ -41,10 +45,13 @@
         </figure>
         {% endif %}
 
-        <div class="ArticleContent">{{ article.Content | safe }}</div>
+        <div class="article-content">
+          {{ article.Content | safe }}
+        </div>
 
-        <footer class="ArticleFooter">
-          <div class="SocialShare">
+        <footer class="article-footer">
+
+          <div class="social-share">
             <strong>اشتراک‌گذاری این خبر:</strong>
             <ul>
               <li>
@@ -57,6 +64,7 @@
                   <i class="fab fa-twitter"></i>
                 </a>
               </li>
+
               <li>
                 <a
                   href="https://www.linkedin.com/shareArticle?mini=true&url={{ request.url }}&title={{ article.Title }}"
@@ -67,9 +75,10 @@
                   <i class="fab fa-linkedin"></i>
                 </a>
               </li>
+
               <li>
                 <button
-                  class="CopyBtn"
+                  class="copy-btn"
                   data-copy="{{ request.url }}"
                   aria-label="کپی کردن لینک"
                 >
@@ -78,17 +87,22 @@
               </li>
             </ul>
           </div>
+
           <hr />
-          <div class="ArticleNav">
-            <a href="{{ url_for('Global.News') }}" class="Btn BtnSecondary">
+
+          <div class="article-nav">
+            <a href="{{ url_for('Global.News') }}" class="btn btn-secondary">
               <i class="fas fa-arrow-right" aria-hidden="true"></i>
               بازگشت به همه اخبار
             </a>
           </div>
+
         </footer>
+
       </article>
 
-      <aside class="ArticleSidebar"></aside>
+      <aside class="article-sidebar"></aside>
+
     </div>
   </div>
 </main>

@@ -1,84 +1,102 @@
-{% extends "global/Base.html" %} {% block Title %}گالری | آیروکاپ{% endblock %}
-{% block SEO_Description %}
+{% extends "global/base.html" %}
+
+{% block title %}گالری | آیروکاپ{% endblock %}
+
+{% block seo_description %}
 <meta
   name="description"
   content="گالری تصاویر و ویدیوهای آیروکاپ. تیزرهای رسمی, ویدیوهای معرفی لیگ‌ها و تصاویری از رویدادها و جلسات مسابقات ملی هوش مصنوعی و رباتیک."
 />
-{% endblock %} {% block Body %}
-<main class="AppContainer GalleryPage">
-  <div class="Container">
-    <header class="PageHeader TextCenter">
-      <h1 class="PageTitle">گالری آیروکاپ</h1>
-      <p class="PageSubtitle">
+{% endblock %}
+
+{% block body %}
+<main class="app-container gallery-page">
+  <div class="container">
+
+    <header class="page-header text-center">
+      <h1 class="page-title">گالری آیروکاپ</h1>
+      <p class="page-subtitle">
         تیزرهای رسمی، ویدیوهای معرفی و تصاویری از رویدادها و جلسات آیروکاپ.
       </p>
     </header>
 
-    <section class="GallerySection Videos" aria-labelledby="videos-title">
-      <h2 id="videos-title" class="SectionTitle">ویدیوها</h2>
-      <div class="VideoGrid">
-        {% if gallery_videos %} {% for video in gallery_videos %}
-        <div class="VideoWrapper FadeInElement">
-          <iframe
-            class="lazy-video"
-            title="{{ video.title }}"
-            data-src="{{ video.src }}"
-            src="about:blank"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowfullscreen
-            loading="lazy"
-          ></iframe>
-        </div>
-        {% endfor %} {% else %}
-        <p class="EmptyStateMessage">
+    <!-- Videos Section -->
+    <section class="gallery-section videos" aria-labelledby="videos-title">
+      <h2 id="videos-title" class="section-title">ویدیوها</h2>
+
+      <div class="video-grid">
+        {% if gallery_videos %}
+          {% for video in gallery_videos %}
+          <div class="video-wrapper fade-in-element">
+            <iframe
+              class="lazy-video"
+              title="{{ video.title }}"
+              data-src="{{ video.src }}"
+              src="about:blank"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen
+              loading="lazy"
+            ></iframe>
+          </div>
+          {% endfor %}
+        {% else %}
+        <p class="empty-state-message">
           در حال حاضر ویدیویی برای نمایش وجود ندارد.
         </p>
         {% endif %}
       </div>
     </section>
 
-    <section class="GallerySection Images" aria-labelledby="images-title">
-      <h2 id="images-title" class="SectionTitle">گالری تصاویر</h2>
-      <div class="GalleryGrid">
-        {% if gallery_images %} {% for image_file in gallery_images %}
-        <div class="GalleryItem FadeInElement">
-          <button
-            class="GalleryItem__Button"
-            aria-label="بزرگنمایی تصویر {{ loop.index }}"
-          >
-            <img
-              src="{{ url_for('admin.uploaded_gallery_image', filename=image_file) }}"
-              alt="تصویر گالری آیروکاپ شماره {{ loop.index }}"
-              loading="lazy"
-              onerror="this.onerror=null; this.src='{{ url_for('static', filename='images/placeholder-image.png') }}';"
-            />
-          </button>
-        </div>
-        {% endfor %} {% else %}
-        <div class="Card EmptyStateCard">
-          <i class="fas fa-images EmptyStateIcon"></i>
+    <!-- Images Section -->
+    <section class="gallery-section images" aria-labelledby="images-title">
+      <h2 id="images-title" class="section-title">گالری تصاویر</h2>
+
+      <div class="gallery-grid">
+        {% if gallery_images %}
+          {% for image_file in gallery_images %}
+          <div class="gallery-item fade-in-element">
+            <button
+              class="gallery-item-button"
+              aria-label="بزرگنمایی تصویر {{ loop.index }}"
+            >
+              <img
+                src="{{ url_for('admin.uploaded_gallery_image', filename=image_file) }}"
+                alt="تصویر گالری آیروکاپ شماره {{ loop.index }}"
+                loading="lazy"
+                onerror="this.onerror=null; this.src='{{ url_for('static', filename='images/placeholder-image.png') }}';"
+              />
+            </button>
+          </div>
+          {% endfor %}
+        {% else %}
+        <div class="card empty-state-card">
+          <i class="fas fa-images empty-state-icon"></i>
           <h3>در حال حاضر تصویری در گالری وجود ندارد.</h3>
           <p>به زودی تصاویر جدیدی از رویدادها اضافه خواهد شد.</p>
         </div>
         {% endif %}
       </div>
     </section>
+
   </div>
 </main>
 
+<!-- Image Modal (JS classes preserved) -->
 <div
-  id="ImageModal"
-  class="Modal"
+  id="image-modal"
+  class="modal"
   role="dialog"
   aria-modal="true"
   aria-hidden="true"
   aria-labelledby="modal-title"
 >
-  <div class="ModalDialog">
-    <div class="ModalContent">
-      <h3 id="modal-title" class="VisuallyHidden">نمایش تصویر</h3>
-      <button class="CloseBtn" aria-label="بستن پنجره">&times;</button>
-      <img src="" alt="تصویر بزرگنمایی شده گالری" class="ModalImage" />
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <h3 id="modal-title" class="visually-hidden">نمایش تصویر</h3>
+
+      <button class="close-btn" aria-label="بستن پنجره">&times;</button>
+
+      <img src="" alt="تصویر بزرگنمایی شده گالری" class="modal-image" />
     </div>
   </div>
 </div>

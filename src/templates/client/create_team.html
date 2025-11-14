@@ -1,11 +1,16 @@
-{% extends "Global/Base.html" %}
-
-{% block Title %}ایجاد تیم جدید | آیروکاپ{% endblock %}
-
-{% block Body %}
+{% extends "Global/Base.html" %} {% block Title %}ایجاد تیم جدید | آیروکاپ{%
+endblock %} {% block Body %}
 <div class="AppContainer">
-  <div class="FormContainer FormContainer--medium" style="margin-top: 2rem; margin-bottom: 2rem;">
-    <form method="POST" id="CreateTeamForm" action="{{ url_for('client.create_team') }}" novalidate>
+  <div
+    class="FormContainer FormContainer--medium"
+    style="margin-top: 2rem; margin-bottom: 2rem"
+  >
+    <form
+      method="POST"
+      id="CreateTeamForm"
+      action="{{ url_for('client.create_team') }}"
+      novalidate
+    >
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
       <h1 class="FormTitle">ایجاد تیم جدید</h1>
@@ -13,57 +18,100 @@
         برای شروع، اطلاعات تیم و مشخصات سرپرست (اولین عضو) را وارد کنید.
       </p>
 
-      <fieldset style="border: 1px solid var(--ColorBorder); padding: 1.5rem; border-radius: var(--BorderRadiusSmall); margin-bottom: 2rem;">
-        <legend style="font-size: 1.2rem; font-weight: 700; color: var(--ColorPrimary); padding: 0 10px;">
+      <fieldset
+        style="
+          border: 1px solid var(--ColorBorder);
+          padding: 1.5rem;
+          border-radius: var(--BorderRadiusSmall);
+          margin-bottom: 2rem;
+        "
+      >
+        <legend
+          style="
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--ColorPrimary);
+            padding: 0 10px;
+          "
+        >
           ۱. اطلاعات تیم
         </legend>
         <div class="FormGroup">
-          <label for="TeamName">نام تیم<span class="RequiredStar">*</span></label>
-          <input type="text" id="TeamName" name="TeamName" class="FormControl" required autofocus maxlength="30" placeholder="مثال: قهرمانان آینده" />
+          <label for="team_name"
+            >نام تیم<span class="RequiredStar">*</span></label
+          >
+          <input
+            type="text"
+            id="team_name"
+            name="team_name"
+            class="FormControl"
+            required
+            autofocus
+            maxlength="30"
+            placeholder="مثال: قهرمانان آینده"
+          />
         </div>
       </fieldset>
 
-      <fieldset style="border: 1px solid var(--ColorBorder); padding: 1.5rem; border-radius: var(--BorderRadiusSmall); margin-bottom: 2rem;">
-        <legend style="font-size: 1.2rem; font-weight: 700; color: var(--ColorPrimary); padding: 0 10px;">
+      <fieldset
+        style="
+          border: 1px solid var(--ColorBorder);
+          padding: 1.5rem;
+          border-radius: var(--BorderRadiusSmall);
+          margin-bottom: 2rem;
+        "
+      >
+        <legend
+          style="
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--ColorPrimary);
+            padding: 0 10px;
+          "
+        >
           ۲. اطلاعات سرپرست تیم
         </legend>
-        <p class="FormSubtitle" style="font-size: 0.9rem; margin-bottom: 1.5rem">
+        <p
+          class="FormSubtitle"
+          style="font-size: 0.9rem; margin-bottom: 1.5rem"
+        >
           اولین عضوی که ثبت می‌کنید به عنوان سرپرست تیم شناخته می‌شود.
         </p>
-        {% with IdPrefix='Add-', MemberData={} %}
-          {% include 'Client/MemberFormFields.html' %}
-        {% endwith %}
+        {# Pass variables with snake_case to the partial template #} {% with
+        id_prefix='Add-', member_data=None, form_data=request.form %} {% include
+        'client/member_form_fields.html' %} {% endwith %}
       </fieldset>
 
       <div class="FormGroup" style="margin-top: 2rem">
         <button type="submit" class="Btn BtnPrimary" style="width: 100%">
-          <i class="fas fa-check" style="margin-left: 8px"></i> ایجاد تیم و ادامه
+          <i class="fas fa-check" style="margin-left: 8px"></i> ایجاد تیم و
+          ادامه
         </button>
       </div>
     </form>
 
-    <div style="text-align: center; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--ColorBorder);">
+    <div
+      style="
+        text-align: center;
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--ColorBorder);
+      "
+    >
       <p style="margin-bottom: 1rem; color: var(--ColorTextMuted)">
-        پس از ایجاد تیم، به داشبورد خود منتقل می‌شوید تا سایر اعضا را اضافه کنید.
+        پس از ایجاد تیم، به داشبورد خود منتقل می‌شوید تا سایر اعضا را اضافه
+        کنید.
       </p>
-      <a href="{{ url_for('client.dashboard') }}" class="Btn BtnSecondary" style="margin-top: 0;">
-        <i class="fas fa-arrow-right" style="margin-left: 8px"></i> انصراف و بازگشت به داشبورد
+      <a
+        href="{{ url_for('client.dashboard') }}"
+        class="Btn BtnSecondary"
+        style="margin-top: 0"
+      >
+        <i class="fas fa-arrow-right" style="margin-left: 8px"></i> انصراف و
+        بازگشت به داشبورد
       </a>
     </div>
   </div>
 </div>
-{% endblock %}
-
-{% block Scripts %}
-<script>
-  window.AirocupData = {{ AirocupData | tojson | safe }};
-  document.addEventListener("DOMContentLoaded", function () {
-    const createTeamForm = document.getElementById("CreateTeamForm");
-    if (createTeamForm) {
-      FormHelpers.PopulateProvinces(createTeamForm.querySelector('[name="Province"]'));
-      FormHelpers.SetupDatePicker(createTeamForm);
-      FormHelpers.SetupProvinceCityListener(createTeamForm);
-    }
-  });
-</script>
-{% endblock %}
+{% endblock %} {% block Scripts %} {{ super() }} {# All JavaScript has been
+removed. main.js will initialize the form helpers globally. #} {% endblock %}

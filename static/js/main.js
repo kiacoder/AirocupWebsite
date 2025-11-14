@@ -1,5 +1,15 @@
 "use strict";
 
+const Validators = {
+    IsValidEmail(email) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    },
+
+    IsValidIranianPhone(phone) {
+        return /^09\d{9}$/.test(phone);
+    }
+};
+
 const airocupApp = {
   constants: {
     SELECTORS: {
@@ -28,6 +38,8 @@ const airocupApp = {
       IMAGE_MODAL: "#imageModal",
       MODAL_IMAGE: ".modal-image",
       GALLERY_ITEM_IMG: ".gallery-item img",
+      LOGIN_FORM: "#login-form",
+      FORGOT_PASSWORD_FORM: "#forgot-password-form",
       SIGN_UP_FORM: "#signUpForm",
       PASSWORD_INPUT: "#password",
       CONFIRM_PASSWORD_INPUT: "#confirm_password",
@@ -635,6 +647,84 @@ const airocupApp = {
       }
       return allValid;
     },
+
+    validateIdentifierField(inputElement, errorElement) {
+      if (!inputElement) return true;
+
+      const rawValue = inputElement.value || "";
+      const value = rawValue.trim();
+      inputElement.value = value;
+
+      let errorMessage = "";
+      const isEmail = Validators.IsValidEmail(value);
+      const isPhone = Validators.IsValidIranianPhone(value);
+
+      if (!value) {
+        errorMessage = "لطفا ایمیل یا شماره موبایل خود را وارد کنید.";
+      } else if (!isEmail && !isPhone) {
+        errorMessage = "لطفا یک ایمیل یا شماره موبایل معتبر وارد کنید.";
+      }
+
+      if (errorElement) errorElement.textContent = errorMessage;
+      inputElement.classList.toggle(
+        airocupApp.constants.CLASSES.INVALID,
+        Boolean(errorMessage)
+      );
+
+      return !errorMessage;
+    },
+
+    initializeLoginForm(form) {
+      if (!form) return;
+
+      const identifierInput = form.querySelector('[name="identifier"]');
+      const errorElement = form.querySelector("#identifier-error");
+
+      if (!identifierInput) return;
+
+      const validate = () =>
+        this.validateIdentifierField(identifierInput, errorElement);
+
+      identifierInput.addEventListener("input", () => {
+        if (errorElement && errorElement.textContent) {
+          validate();
+        }
+      });
+
+      form.addEventListener("submit", (event) => {
+        const isValid = validate();
+        if (!isValid) {
+          event.preventDefault();
+          identifierInput.focus();
+        }
+      });
+    },
+
+    initializeForgotPasswordForm(form) {
+      if (!form) return;
+
+      const identifierInput = form.querySelector('[name="identifier"]');
+      const errorElement = form.querySelector("#identifier-error");
+
+      if (!identifierInput) return;
+
+      const validate = () =>
+        this.validateIdentifierField(identifierInput, errorElement);
+
+      identifierInput.addEventListener("input", () => {
+        if (errorElement && errorElement.textContent) {
+          validate();
+        }
+      });
+
+      form.addEventListener("submit", (event) => {
+        const isValid = validate();
+        if (!isValid) {
+          event.preventDefault();
+          identifierInput.focus();
+        }
+      });
+    },
   },
 
   initializeChat(container) {
@@ -763,41 +853,91 @@ const airocupApp = {
       );
       if (signUpForm) this.initializeSignUpForm(signUpForm);
 
+      const loginForm = document.querySelector(
+        airocupApp.constants.SELECTORS.LOGIN_FORM
+      );
+      if (loginForm) airocupApp.forms.initializeLoginForm(loginForm);
+
+      const forgotPasswordForm = document.querySelector(
+        airocupApp.constants.SELECTORS.FORGOT_PASSWORD_FORM
+      );
+      if (forgotPasswordForm)
+        airocupApp.forms.initializeForgotPasswordForm(forgotPasswordForm);
+
       const chatContainer = document.querySelector(
         airocupApp.constants.SELECTORS.CLIENT_CHAT_CONTAINER
       );
       if (chatContainer) airocupApp.initializeChat(chatContainer);
+      this.initializeResetForm();
       this.initializeMembersPage();
       this.initializeLeagueSelector();
       this.initializeFileUploadValidation();
     },
 
     initializeMobileMenu() {
-      const menuButton = document.querySelector(
-        airocupApp.constants.SELECTORS.MOBILE_MENU_BTN
-      );
-      const navigation = document.querySelector(
-        airocupApp.constants.SELECTORS.NAV_ITEMS
-      );
-      if (!menuButton || !navigation) return;
+      const menuBtn = document.getElementById("mobile-menu-btn");
+      const mobileMenu = document.getElementById("mobile-menu");
+      const mobileNavList = document.getElementById("mobile-nav-list");
+      const backdrop = document.getElementById("mobile-menu-backdrop");
+      const navList = document.getElementById("nav-list");
+      const footer = document.querySelector(".site-footer");
 
-      menuButton.addEventListener("click", () => {
-        const shouldShow = !navigation.classList.contains(
-          airocupApp.constants.CLASSES.SHOW
+      if (!menuBtn || !mobileMenu || !navList) return;
+
+      function toggleMenu(forceOpen = null) {
+        const isOpen =
+          forceOpen !== null
+            ? forceOpen
+            : !mobileMenu.classList.contains("is-open");
+
+        mobileMenu.classList.toggle("is-open", isOpen);
+        backdrop.classList.toggle("is-visible", isOpen);
+        document.body.classList.toggle("body-no-scroll", isOpen);
+        menuBtn.classList.toggle("is-active", isOpen);
+
+        // Animate hamburger → X
+        const spans = menuBtn.querySelectorAll(".hamburger span");
+        spans.forEach(
+          (s, i) =>
+            (s.style.transform = isOpen
+              ? i === 0
+                ? "rotate(45deg) translateY(8px)"
+                : i === 1
+                ? "scale(0)"
+                : "rotate(-45deg) translateY(-8px)"
+              : "")
         );
-        navigation.classList.toggle(
-          airocupApp.constants.CLASSES.SHOW,
-          shouldShow
-        );
-        const icon = menuButton.querySelector("i");
-        if (icon) {
-          icon.className = shouldShow ? "fas fa-times" : "fas fa-bars";
+
+        // Footer moves up when menu opens
+        if (footer)
+          footer.style.marginBottom = isOpen
+            ? `${mobileMenu.scrollHeight}px`
+            : "";
+
+        mobileMenu.setAttribute("aria-hidden", !isOpen);
+        menuBtn.setAttribute("aria-expanded", isOpen);
+      }
+
+      menuBtn.addEventListener("click", () => toggleMenu());
+      backdrop?.addEventListener("click", () => toggleMenu(false));
+
+      // Move overflow items to mobile menu
+      function updateMenuOverflow() {
+        if (window.innerWidth < 992) {
+          mobileNavList.innerHTML = "";
+          navList.querySelectorAll("li").forEach((li) => {
+            mobileNavList.appendChild(li.cloneNode(true));
+          });
+        } else {
+          mobileNavList.innerHTML = "";
         }
-        document.body.classList.toggle(
-          airocupApp.constants.CLASSES.BODY_NO_SCROLL,
-          shouldShow
-        );
-      });
+      }
+
+      window.addEventListener(
+        "resize",
+        airocupApp.helpers.debounce(updateMenuOverflow, 300)
+      );
+      updateMenuOverflow();
     },
 
     initializeAccordion() {
@@ -1032,12 +1172,39 @@ const airocupApp = {
 
       const passwordInput = form.querySelector('input[name="new_password"]');
       const confirmInput = form.querySelector('input[name="confirm_password"]');
+      const validatorElement = form.querySelector(
+        airocupApp.constants.SELECTORS.PASSWORD_STRENGTH_VALIDATOR
+      );
 
       airocupApp.forms.initializePasswordConfirmation(
         form,
         passwordInput,
         confirmInput
       );
+
+      if (passwordInput && validatorElement) {
+        passwordInput.addEventListener("input", () =>
+          airocupApp.forms.validatePasswordStrength(
+            passwordInput,
+            validatorElement
+          )
+        );
+
+        form.addEventListener("submit", (event) => {
+          const isStrong = airocupApp.forms.validatePasswordStrength(
+            passwordInput,
+            validatorElement
+          );
+          if (!isStrong) {
+            event.preventDefault();
+            airocupApp.ui.createFlash(
+              "error",
+              "لطفا الزامات رمز عبور را رعایت کنید."
+            );
+            passwordInput.focus();
+          }
+        });
+      }
     },
     initializeChat(container) {
       const elements = {
@@ -1485,4 +1652,10 @@ const airocupApp = {
   },
 };
 
-document.addEventListener("DOMContentLoaded", () => airocupApp.init());
+document.addEventListener("DOMContentLoaded", () => {
+  try {
+    airocupApp.init();
+  } catch (error) {
+    console.error("Failed to initialize Airocup app:", error);
+  }
+});

@@ -149,9 +149,11 @@
     </header>
 
     {% else %}
+    <!-- HEADER (replace existing non-admin header) -->
     <header class="site-header">
       <div class="container header-inner">
-        <div class="logo">
+        <!-- Logo (left) -->
+        <div class="logo" aria-hidden="false">
           <a href="{{ url_for('global.index') }}">
             <img
               src="{{ url_for('static', filename=path.transparent_logos['transparent_white']) }}"
@@ -160,59 +162,73 @@
           </a>
         </div>
 
-        <nav class="main-nav" id="main-nav" role="navigation">
-          <ul class="nav-list">
-            <li>
+        <!-- Main navigation (visible items) -->
+        <nav
+          class="main-nav"
+          id="main-nav"
+          role="navigation"
+          aria-label="منوی اصلی"
+        >
+          <ul class="nav-list" id="nav-list" role="menubar">
+            <li role="none">
               <a
+                role="menuitem"
                 href="{{ url_for('global.index') }}"
                 class="{{ 'active' if request.endpoint == 'global.index' }}"
                 >صفحه اصلی</a
               >
             </li>
-            <li>
+            <li role="none">
               <a
+                role="menuitem"
                 href="{{ url_for('global.leagues') }}"
                 class="{{ 'active' if request.endpoint == 'global.leagues' }}"
                 >لیگ‌ها</a
               >
             </li>
-            <li>
+            <li role="none">
               <a
+                role="menuitem"
                 href="{{ url_for('global.committee') }}"
                 class="{{ 'active' if request.endpoint == 'global.committee' }}"
                 >کمیته</a
               >
             </li>
-            <li>
+            <li role="none">
               <a
+                role="menuitem"
                 href="{{ url_for('global.sponsors') }}"
                 class="{{ 'active' if request.endpoint == 'global.sponsors' }}"
                 >حامیان</a
               >
             </li>
-            <li>
+            <li role="none">
               <a
+                role="menuitem"
                 href="{{ url_for('global.gallery') }}"
                 class="{{ 'active' if request.endpoint == 'global.gallery' }}"
                 >گالری</a
               >
             </li>
-            <li>
+            <li role="none">
               <a
+                role="menuitem"
                 href="{{ url_for('global.news') }}"
                 class="{{ 'active' if request.endpoint == 'global.news' }}"
                 >اخبار</a
               >
             </li>
-            <li>
+            <li role="none">
               <a
+                role="menuitem"
                 href="{{ url_for('global.about') }}"
                 class="{{ 'active' if request.endpoint == 'global.about' }}"
                 >درباره ما</a
               >
             </li>
-            <li>
+            <li role="none">
               <a
+                role="menuitem"
                 href="{{ url_for('global.contact') }}"
                 class="{{ 'active' if request.endpoint == 'global.contact' }}"
                 >تماس با ما</a
@@ -221,7 +237,8 @@
           </ul>
         </nav>
 
-        <div class="header-actions">
+        <!-- Primary actions (always visible) -->
+        <div class="header-actions" id="header-actions">
           {% if 'client_id' in session %}
           <a href="{{ url_for('client.dashboard') }}" class="btn btn-secondary"
             >داشبورد</a
@@ -241,16 +258,67 @@
           {% endif %}
         </div>
 
+        <!-- Hamburger (always visible) -->
         <button
           class="mobile-menu-btn"
+          id="mobile-menu-btn"
           aria-label="منوی موبایل"
           aria-expanded="false"
-          aria-controls="main-nav"
+          aria-controls="mobile-menu"
         >
-          <i class="fas fa-bars"></i>
+          <span class="hamburger">
+            <span></span><span></span><span></span>
+          </span>
         </button>
       </div>
+
+      <!-- Mobile Menu (hidden by default). It sits directly under the header (not overlaying it). -->
+      <div
+        id="mobile-menu"
+        class="mobile-menu"
+        aria-hidden="true"
+        role="dialog"
+        aria-modal="true"
+      >
+        <div class="mobile-menu-inner">
+          <!-- visible nav items get moved here when overflowed -->
+          <ul class="mobile-nav-list" id="mobile-nav-list" role="menu"></ul>
+
+          <!-- secondary area for other links (optional) -->
+          <div class="mobile-cta">
+            {% if 'client_id' in session %}
+            <a
+              href="{{ url_for('client.dashboard') }}"
+              class="btn btn-secondary"
+              >داشبورد</a
+            >
+            <a
+              href="{{ url_for('client.support_chat') }}"
+              class="btn btn-primary"
+              >پشتیبانی</a
+            >
+            {% else %}
+            <a
+              href="{{ url_for('client.login_client') }}"
+              class="btn btn-secondary"
+              >ورود</a
+            >
+            <a href="{{ url_for('client.signup') }}" class="btn btn-primary"
+              >ثبت‌نام</a
+            >
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- invisible backdrop used to block page interaction (but menu itself scrolls) -->
+      <div
+        id="mobile-menu-backdrop"
+        class="mobile-menu-backdrop"
+        aria-hidden="true"
+      ></div>
     </header>
+
     {% endif %} {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
     <div id="flash-container" aria-live="polite" aria-atomic="true">
@@ -289,7 +357,7 @@
         <div class="footer-cards">
           <!-- Quick Access -->
           <div class="footer-card fade-up">
-            <h3 style="color: var(--color-header);">دسترسی سریع</h3>
+            <h3 style="color: var(--color-header)">دسترسی سریع</h3>
             <ul>
               <li><a href="{{ url_for('global.index') }}">صفحه اصلی</a></li>
               <li><a href="{{ url_for('global.leagues') }}">لیگ‌ها</a></li>
@@ -319,7 +387,7 @@
 
           <!-- Contact Info -->
           <div class="footer-card fade-up delay-2">
-            <h3 style="color: var(--color-header);">اطلاعات تماس</h3>
+            <h3 style="color: var(--color-header)">اطلاعات تماس</h3>
             <p>
               <i class="fas fa-map-marker-alt"></i> تهران، دانشگاه علم و صنعت
               ایران
@@ -346,7 +414,7 @@
             &copy; {{ jdatetime.datetime.now().year }} تمامی حقوق برای
             <strong>آیروکاپ</strong> محفوظ است.
           </p>
-          <p class="site-version"> نسخه: {{ app_version }}</p>
+          <p class="site-version">نسخه: {{ app_version }}</p>
         </div>
       </div>
     </footer>

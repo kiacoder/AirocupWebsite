@@ -1,22 +1,28 @@
-{% extends "global/Base.html" %} {% block Title %}درباره ما | آیروکاپ{% endblock
-%} {% block SEO_Description %}
+{% extends "global/base.html" %}
+
+{% block title %}درباره ما | آیروکاپ{% endblock %}
+
+{% block seo_description %}
 <meta
   name="description"
   content="درباره آیروکاپ - نخستین رویداد ملی هوش مصنوعی و رباتیک ایران. آشنایی با داستان، ارزش‌ها و اهداف ما."
 />
-{% endblock %} {% block Body %}
-<main class="AppContainer AboutPage">
-  <header class="PageHeader">
-    <div class="Container">
-      <h1 class="PageTitle">درباره آیروکاپ</h1>
-      <p class="PageSubtitle">نخستین رویداد ملی هوش مصنوعی و رباتیک ایران</p>
+{% endblock %}
+
+{% block body %}
+<main class="app-container about-page">
+
+  <header class="page-header">
+    <div class="container">
+      <h1 class="page-title">درباره آیروکاپ</h1>
+      <p class="page-subtitle">نخستین رویداد ملی هوش مصنوعی و رباتیک ایران</p>
     </div>
   </header>
 
-  <section class="AboutStory" aria-labelledby="story-title">
-    <div class="Container">
-      <div class="AboutStory__Content">
-        <h2 id="story-title" class="SectionTitle">داستان ما</h2>
+  <section class="about-story" aria-labelledby="story-title">
+    <div class="container">
+      <div class="about-story__content">
+        <h2 id="story-title" class="section-title">داستان ما</h2>
         <p>
           ما جمعی از متخصصان، اساتید دانشگاه علم و صنعت و نخبگان صنعت هستیم که
           با یک رویای مشترک گرد هم آمدیم: ایجاد بستری که در آن، خلاقیت و دانش
@@ -25,9 +31,9 @@
           وظیفه ما، آماده‌سازی بهترین‌ها برای ساختن آن آینده است.
         </p>
       </div>
-      <div class="AboutStory__Logo">
-        {% if Path and Path.TransparentLogos and
-        Path.TransparentLogos.TransparentBlack %}
+
+      <div class="about-story__logo">
+        {% if Path and Path.TransparentLogos and Path.TransparentLogos.TransparentBlack %}
         <img
           src="{{ url_for('static', filename=Path.TransparentLogos.TransparentBlack) }}"
           alt="لوگوی آیروکاپ"
@@ -38,12 +44,14 @@
     </div>
   </section>
 
-  <section class="ValuesSection" aria-labelledby="values-title">
-    <div class="Container">
-      <h2 id="values-title" class="SectionTitle">ارزش‌های بنیادین ما</h2>
-      <div class="ValuesGrid">
-        <div class="Card ValueCard">
-          <div class="ValueIcon">
+  <section class="values-section" aria-labelledby="values-title">
+    <div class="container">
+      <h2 id="values-title" class="section-title">ارزش‌های بنیادین ما</h2>
+
+      <div class="values-grid">
+
+        <div class="card value-card">
+          <div class="value-icon">
             <i class="fas fa-lightbulb" aria-hidden="true"></i>
           </div>
           <h3>نوآوری و خلاقیت</h3>
@@ -52,8 +60,9 @@
             راه‌حل‌هایی منحصربه‌فرد برای مسائل پیچیده ارائه دهند.
           </p>
         </div>
-        <div class="Card ValueCard">
-          <div class="ValueIcon">
+
+        <div class="card value-card">
+          <div class="value-icon">
             <i class="fas fa-graduation-cap" aria-hidden="true"></i>
           </div>
           <h3>آموزش و رشد</h3>
@@ -62,8 +71,9 @@
             مهارت‌های عملی و دانش روز دنیاست.
           </p>
         </div>
-        <div class="Card ValueCard">
-          <div class="ValueIcon">
+
+        <div class="card value-card">
+          <div class="value-icon">
             <i class="fas fa-users" aria-hidden="true"></i>
           </div>
           <h3>جامعه و همکاری</h3>
@@ -72,36 +82,38 @@
             صنعت و جامعه علمی کشور فراهم می‌کنیم.
           </p>
         </div>
+
       </div>
     </div>
   </section>
 
-  <section class="CommitteeCta Section--Light">
-    <div class="Container">
+  <section class="committee-cta section--light">
+    <div class="container">
       <h2>با برگزارکنندگان آشنا شوید</h2>
       <p>
         تیم آیروکاپ متشکل از اساتید برجسته دانشگاه و متخصصان صنعت است که با
         اشتیاق برای پیشرفت فناوری در ایران تلاش می‌کنند.
       </p>
-      <a href="{{ url_for('global.committee') }}" class="Btn BtnSecondary">
+      <a href="{{ url_for('global.committee') }}" class="btn btn-secondary">
         <i class="fas fa-users-cog" aria-hidden="true"></i>
         مشاهده کمیته برگزاری
       </a>
     </div>
   </section>
 
-  <section class="FinalCtaContact">
-    <div class="Container">
+  <section class="final-cta-contact">
+    <div class="container">
       <h2>به جامعه نوآوران آیروکاپ بپیوندید</h2>
       <p>
         فرصتی برای یادگیری، رقابت و ساختن آینده. همین امروز در لیگ مورد علاقه
         خود ثبت‌نام کنید!
       </p>
-      <a href="{{ url_for('client.signup') }}" class="Btn BtnPrimary BtnLarge">
+      <a href="{{ url_for('client.signup') }}" class="btn btn-primary btn-large">
         <i class="fas fa-rocket" aria-hidden="true"></i>
         شروع ماجراجویی و ثبت نام
       </a>
     </div>
   </section>
+
 </main>
 {% endblock %}

@@ -1,10 +1,21 @@
-{% extends "global/base.html" %} {% block title %}آیروکاپ - مسابقات ملی هوش
-مصنوعی و رباتیک{% endblock %} {% block page_title %}آیروکاپ - مسابقات ملی هوش
-مصنوعی و رباتیک{% endblock %} {% block body %}
+{% extends "global/base.html" %}
+
+{% block title %}آیروکاپ - مسابقات ملی هوش مصنوعی و رباتیک{% endblock %}
+{% block page_title %}آیروکاپ - مسابقات ملی هوش مصنوعی و رباتیک{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+{% endblock %}
+
+{% block body %}
+
+<!-- HERO SECTION -->
 <header class="hero-section">
   <div class="container">
     <div class="hero-content">
+
       <div class="hero-text">
+
         <div class="university-logo">
           <img
             src="{{ url_for('static', filename=path.sponsors_logos.university) }}"
@@ -14,8 +25,11 @@
             style="border-radius: 20px"
           />
         </div>
+
         <p class="subtitle">دانشگاه علم و صنعت ایران برگزار می‌کند:</p>
+
         <h1 class="hero-title">مسابقات ملی هوش مصنوعی و رباتیک آیروکاپ</h1>
+
         <p class="tagline">
           نخستین رویداد ملی با محوریت کامل هوش مصنوعی و رباتیک در ایران
         </p>
@@ -42,145 +56,78 @@
               points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
             ></polygon>
           </svg>
-          <span
-            ><strong
-              >این مرحله، انتخابی المپیاد بین‌المللی هوش مصنوعی COMSTECH
-              است</strong
-            ></span
-          >
+
+          <span>
+            <strong>این مرحله، انتخابی المپیاد بین‌المللی هوش مصنوعی COMSTECH است</strong>
+          </span>
         </div>
 
         <div class="cta-buttons">
           {% if 'client_id' in session %}
-          <a
-            href="{{ url_for('client.dashboard') }}"
-            class="btn btn-primary btn-large"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              class="icon"
-            >
-              <path d="M12 12v-4"></path>
-              <path d="M12 12l4 4"></path>
-              <path d="M12 2a10 10 0 0 0-9.38 6.66"></path>
-              <path d="M12 22a10 10 0 0 0 9.38-6.66"></path>
-              <path d="M21.38 8.66A10 10 0 0 1 12 12"></path>
-              <path d="M2.62 15.34A10 10 0 0 1 12 12"></path>
-            </svg>
+          <a href="{{ url_for('client.dashboard') }}" class="btn btn-primary btn-large">
+            <svg ... class="icon"> ... </svg>
             مشاهده داشبورد
           </a>
           {% else %}
-          <a
-            href="{{ url_for('client.signup') }}"
-            class="btn btn-primary btn-large"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              class="icon"
-            >
-              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-              <circle cx="8.5" cy="7" r="4"></circle>
-              <line x1="20" y1="8" x2="20" y2="14"></line>
-              <line x1="17" y1="11" x2="23" y2="11"></line>
-            </svg>
+          <a href="{{ url_for('client.signup') }}" class="btn btn-primary btn-large">
+            <svg ... class="icon"> ... </svg>
             ثبت‌نام در مسابقات ({{ event_details.registration_deadline }})
           </a>
+
           <a href="#leagues-section" class="btn btn-secondary">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              class="icon"
-            >
-              <line x1="8" y1="6" x2="21" y2="6"></line>
-              <line x1="8" y1="12" x2="21" y2="12"></line>
-              <line x1="8" y1="18" x2="21" y2="18"></line>
-              <line x1="3" y1="6" x2="3.01" y2="6"></line>
-              <line x1="3" y1="12" x2="3.01" y2="12"></line>
-              <line x1="3" y1="18" x2="3.01" y2="18"></line>
-            </svg>
+            <svg ... class="icon"> ... </svg>
             مشاهده لیگ‌ها
           </a>
           {% endif %}
         </div>
+
       </div>
+
       <div class="hero-image">
         <img
           src="{{ url_for('static', filename=path.poster) }}"
-          alt="پوستر رسمی رویداد آیروکاپ با جزئیات لیگ‌ها و تاریخ برگزاری"
+          alt="پوستر رسمی رویداد آیروکاپ"
           loading="eager"
           fetchpriority="high"
           width="500"
           height="707"
         />
       </div>
+
     </div>
   </div>
 </header>
 
+<!-- ABOUT SECTION -->
 <section id="about-section" class="video-section fade-in-element">
   <div class="container">
+
     <h2 class="section-title">درباره آیروکاپ</h2>
+
     <p class="section-subtitle">
-      مسابقات ملی هوش مصنوعی و رباتیک آیروکاپ (AIROCUP)، رویدادی پیشرو در عرصه
-      فناوری ایران است که با هدف کشف و پرورش استعدادهای نسل جوان در زمینه‌های
-      هوش مصنوعی و رباتیک برگزار می‌شود. این رویداد با ارائه ۱۴ لیگ متنوع و
-      نوآورانه، بستری آموزشی و رقابتی برای دانش‌آموزان و دانشجویان فراهم می‌کند.
+      مسابقات ملی هوش مصنوعی و رباتیک آیروکاپ (AIROCUP)، رویدادی پیشرو در ایران...
     </p>
-    <div
-      class="video-wrapper lazy-video"
-      data-src="{{ contact.aparat_embed_url }}?recom=self"
-    >
+
+    <div class="video-wrapper lazy-video" data-src="{{ contact.aparat_embed_url }}?recom=self">
       <div class="video-play-button" aria-label="پخش تیزر رسمی مسابقات">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          class="icon"
-        >
-          <polygon points="5 3 19 12 5 21 5 3"></polygon>
-        </svg>
+        <svg ... class="icon"> ... </svg>
       </div>
     </div>
+
   </div>
 </section>
 
+<!-- LEAGUES SECTION -->
 <section id="leagues-section" class="leagues-section fade-in-element">
   <div class="container">
+
     <h2 class="section-title">لیگ‌های جذاب و نوآورانه</h2>
+
     <a href="{{ url_for('global.leagues') }}" class="leagues-grid-link-wrapper">
       <div class="leagues-grid">
         {% for item in leagues_list[:9] %}
         <div class="card card-league">
-          <div class="league-icon" aria-hidden="true">
+          <div class="league-icon">
             <i class="fas {{ item.icon }}"></i>
           </div>
           <h3>{{ item.name }}</h3>
@@ -188,103 +135,59 @@
         {% endfor %}
       </div>
     </a>
-    <div class="section-cta text-center">
+
+    <div class="cta-section text-center">
       <a href="{{ url_for('global.leagues') }}" class="btn btn-secondary">
         مشاهده تمام {{ leagues_list|length }} لیگ
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          class="icon"
-        >
-          <line x1="19" y1="12" x2="5" y2="12"></line>
-          <polyline points="12 19 5 12 12 5"></polyline>
-        </svg>
+        <svg ... class="icon"> ... </svg>
       </a>
     </div>
+
   </div>
 </section>
 
+<!-- SPONSORS -->
 <section id="sponsors-section" class="sponsors-section fade-in-element">
   <div class="container">
+
     <h2 class="section-title">حامیان رسمی</h2>
+
     <div class="sponsors-grid">
       {% for sponsor in homepage_sponsors %}
       <div class="sponsor-box" title="{{ sponsor.alt_text }}">
-        <img
-          src="{{ url_for('static', filename=path.sponsors_logos[sponsor.logo_key]) }}"
-          alt="{{ sponsor.alt_text }}"
-          loading="lazy"
-          width="150"
-          height="150"
-        />
+        <img src="{{ url_for('static', filename=path.sponsors_logos[sponsor.logo_key]) }}"
+             alt="{{ sponsor.alt_text }}" loading="lazy" width="150" height="150" />
       </div>
       {% endfor %}
-      <a
-        href="{{ url_for('global.cooperate') }}"
-        class="sponsor-box become-sponsor-box"
-        title="حامی ما شوید"
-        aria-label="Become a sponsor"
-      >
+
+      <a href="{{ url_for('global.cooperate') }}"
+         class="sponsor-box become-sponsor-box"
+         aria-label="Become a sponsor">
+
         <div class="sponsor-plus-icon">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="icon"
-          >
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-          </svg>
+          <svg ... class="icon"> ... </svg>
         </div>
+
         <span>حامی ما شوید</span>
       </a>
+
     </div>
   </div>
 </section>
 
+<!-- FINAL CTA -->
 <section class="final-cta">
   <div class="container">
     <h2>با آیروکاپ، آینده را با هوش مصنوعی کد بزنید</h2>
-    <p>
-      به بزرگترین رویداد هوش مصنوعی و رباتیک ایران بپیوندید و مهارت‌های خود را
-      به نمایش بگذارید!
-    </p>
+    <p>به بزرگترین رویداد هوش مصنوعی و رباتیک ایران بپیوندید...</p>
+
     {% if not 'client_id' in session %}
     <a href="{{ url_for('client.signup') }}" class="btn btn-primary btn-large">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        class="icon"
-      >
-        <path
-          d="M22 12.47a2.2 2.2 0 0 0-1.12-1.93l-6.52-3.58a2.2 2.2 0 0 0-2.74 1.12l-3.58 6.52a2.2 2.2 0 0 0 1.12 2.74l6.52 3.58a2.2 2.2 0 0 0 2.74-1.12l3.58-6.52A2.2 2.2 0 0 0 22 12.47z"
-        ></path>
-        <path d="M12 12l-7-7"></path>
-        <path d="M12 12l7 7"></path>
-      </svg>
+      <svg ... class="icon"> ... </svg>
       همین حالا ثبت‌نام کنید!
     </a>
     {% endif %}
   </div>
 </section>
+
 {% endblock %}
