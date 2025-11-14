@@ -1,5 +1,8 @@
-{% extends "global/base.html" %} {% block title %}ورود به حساب کاربری |
-آیروکاپ{% endblock %} {% block body %}
+{% extends "global/base.html" %}
+
+{% block title %}ورود به حساب کاربری{% endblock %}
+
+{% block body %}
 <div class="app-container">
   <div class="form-container form-container--large">
     <form
@@ -42,7 +45,7 @@
             class="password-toggle"
             data-action="toggle-password"
             data-target="#password"
-            aria-label="Show password"
+            aria-label="نمایش یا مخفی کردن رمز عبور"
           >
             <i class="fas fa-eye-slash"></i>
           </button>
@@ -69,56 +72,8 @@
     </form>
   </div>
 </div>
-{% endblock %} {% block scripts %} {{ super() }} {# All JS removed. Password
-toggle is handled by the global main.js. Simple validation can be left to the
-browser/server. #} {% endblock %} ```**Changes Made (`login.html`):** * **Added
-`data-action`:** Added `data-action="toggle-password"` to the password toggle
-button so the global script can find it. * **Removed Script:** The entire inline
-script for validation and password toggling is now handled by `main.js`. --- ###
-9. Corrected `forgot_password.html` ```html {% extends "Global/Base.html" %} {%
-block Title %}بازیابی رمز عبور | آیروکاپ{% endblock %} {% block Body %}
-<div class="AppContainer">
-  <div class="FormContainer FormContainer--small">
-    <form
-      method="POST"
-      action="{{ url_for('client.forgot_password') }}"
-      id="ForgotPasswordForm"
-      novalidate
-    >
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+{% endblock %}
 
-      <h1 class="FormTitle">بازیابی رمز عبور</h1>
-      <p class="FormSubtitle">
-        لطفا ایمیل یا شماره موبایل حساب کاربری خود را وارد کنید.
-      </p>
-
-      <div class="FormGroup">
-        <label for="identifier">ایمیل یا شماره موبایل:</label>
-        <input
-          type="text"
-          id="identifier"
-          name="identifier"
-          placeholder="ایمیل یا شماره موبایل"
-          required
-          autofocus
-          dir="ltr"
-        />
-      </div>
-
-      <div class="FormGroup">
-        <button type="submit" class="Btn BtnPrimary Btn--fullWidth">
-          ارسال کد بازیابی
-        </button>
-      </div>
-
-      <div class="FormLinks" style="text-align: center">
-        <p>
-          <a href="{{ url_for('client.login_client') }}">بازگشت به صفحه ورود</a>
-        </p>
-      </div>
-    </form>
-  </div>
-</div>
-{% endblock %} {% block Scripts %} {{ super() }} {# Script removed. Simple
-client-side validation is not critical here as the server will handle it. #} {%
-endblock %}
+{% block scripts %}
+  {{ super() }}
+{% endblock %}
