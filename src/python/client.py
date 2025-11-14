@@ -1614,7 +1614,17 @@ def upload_document(team_id):
         if not file or not file.filename:
             flash("نام فایل نامعتبر است.", "error")
             return redirect(url_for("client.update_team", team_id=team_id))
-        if request.content_length is None or request.content_length > max_size:
+        if request.content_length is not None and request.content_length > max_size:
+            flash(
+                f"حجم فایل سند نباید بیشتر از {max_size / 1024 / 1024:.1f} مگابایت باشد.",
+                "error",
+            )
+            return redirect(url_for("client.update_team", team_id=team_id))
+
+        file.stream.seek(0, os.SEEK_END)
+        file_size = file.stream.tell()
+        file.stream.seek(0)
+        if file_size > max_size:
             flash(
                 f"حجم فایل سند نباید بیشتر از {max_size / 1024 / 1024:.1f} مگابایت باشد.",
                 "error",
