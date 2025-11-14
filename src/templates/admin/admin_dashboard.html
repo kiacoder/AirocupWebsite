@@ -1,107 +1,133 @@
-{% extends "Global/Base.html" %} {% block Title %}داشبورد مدیریت | پنل آیروکاپ{%
-endblock %} {% block Body %}
-<div class="Container">
-  <div class="PageHeader" style="margin-top: 5rem">
-    <h1 class="SectionTitle">داشبورد مدیریت آیروکاپ</h1>
-  </div>
+{% extends "global/base.html" %}
+{% block title %}داشبورد مدیریت | پنل آیروکاپ{% endblock %}
 
-  <div class="QuickLinks">
-    <a
-      href="{{ url_for('admin.admin_manage_client', client_id=Client.ClientID) }}"
-      class="Btn BtnSecondary"
-    >
-      <i class="fas fa-users"></i> مدیریت کاربران
-    </a>
-    <a href="{{ url_for('admin.admin_manage_news') }}" class="Btn BtnSecondary">
-      <i class="fas fa-newspaper"></i> مدیریت اخبار
-    </a>
-    <a href="{{ url_for('admin.admin_select_chat') }}" class="Btn BtnSecondary">
-      <i class="fas fa-envelope"></i> پیام‌ها
-    </a>
-    <a
-      href="{{ url_for('admin.admin_manage_teams') }}"
-      class="Btn BtnSecondary"
-    >
-      <i class="fas fa-layer-group"></i> مدیریت تیم‌ها
-    </a>
-  </div>
+{% block body %}
+<div class="admin-dashboard">
+  <section class="admin-dashboard__hero">
+    <div class="admin-dashboard__welcome">
+      <h1>سلام {{ Client.FirstName | default('مدیر محترم', true) | persian_digits }}!</h1>
+      <p>
+        آخرین وضعیت سامانه در یک نگاه؛ پیگیری تیم‌ها، پرداخت‌ها و پیام‌های کاربران را از همین‌جا انجام دهید.
+      </p>
+    </div>
 
-  <div class="StatsGrid">
-    <div class="Card StatCard">
-      <div class="StatIcon StatIcon--members"><i class="fas fa-users"></i></div>
-      <div class="StatContent">
+    <div class="admin-dashboard__highlights">
+      <div class="admin-dashboard__highlight">
+        <span class="admin-dashboard__highlight-label">در انتظار بررسی</span>
+        <strong>{{ PendingPayments|length | persian_digits }}</strong>
+        <small>رسید پرداخت</small>
+      </div>
+      <div class="admin-dashboard__highlight">
+        <span class="admin-dashboard__highlight-label">عضویت‌های جدید</span>
+        <strong>{{ Stats.NewClientsThisWeek | default(0, true) | persian_digits }}</strong>
+        <small>در هفته جاری</small>
+      </div>
+    </div>
+  </section>
+
+  <section class="admin-dashboard__actions">
+    <h2>میانبرهای مدیریتی</h2>
+    <div class="admin-dashboard__actions-grid">
+      <a href="{{ url_for('admin.admin_manage_client', client_id=Client.ClientID) }}" class="admin-action-card">
+        <i class="fas fa-users"></i>
+        <span>مدیریت کاربران</span>
+        <small>ویرایش اطلاعات و دسترسی‌ها</small>
+      </a>
+      <a href="{{ url_for('admin.admin_manage_teams') }}" class="admin-action-card">
+        <i class="fas fa-layer-group"></i>
+        <span>مدیریت تیم‌ها</span>
+        <small>بررسی مدارک و وضعیت تیم‌ها</small>
+      </a>
+      <a href="{{ url_for('admin.admin_manage_news') }}" class="admin-action-card">
+        <i class="fas fa-newspaper"></i>
+        <span>مدیریت اخبار</span>
+        <small>انتشار اطلاعیه‌های جدید</small>
+      </a>
+      <a href="{{ url_for('admin.admin_select_chat') }}" class="admin-action-card">
+        <i class="fas fa-envelope"></i>
+        <span>پیام‌ها</span>
+        <small>پاسخ به سوالات شرکت‌کنندگان</small>
+      </a>
+    </div>
+  </section>
+
+  <section class="admin-dashboard__stats">
+    <div class="admin-metric-card">
+      <div class="admin-metric-card__icon"><i class="fas fa-users"></i></div>
+      <div>
         <h3>{{ Stats.TotalMembers | persian_digits or '۰' }}</h3>
         <p>کل شرکت کنندگان</p>
       </div>
     </div>
-    <div class="Card StatCard">
-      <div class="StatIcon StatIcon--teams">
-        <i class="fas fa-layer-group"></i>
-      </div>
-      <div class="StatContent">
+    <div class="admin-metric-card">
+      <div class="admin-metric-card__icon"><i class="fas fa-layer-group"></i></div>
+      <div>
         <h3>{{ Stats.TotalTeams | persian_digits or '۰' }}</h3>
         <p>تعداد کل تیم‌ها</p>
       </div>
     </div>
-    <div class="Card StatCard">
-      <div class="StatIcon StatIcon--approved">
-        <i class="fas fa-check-circle"></i>
-      </div>
-      <div class="StatContent">
+    <div class="admin-metric-card">
+      <div class="admin-metric-card__icon"><i class="fas fa-check-circle"></i></div>
+      <div>
         <h3>{{ Stats.ApprovedTeams | persian_digits or '۰' }}</h3>
         <p>تیم‌های تایید شده</p>
       </div>
     </div>
-    <div class="Card StatCard">
-      <div class="StatIcon StatIcon--clients">
-        <i class="fas fa-user-friends"></i>
-      </div>
-      <div class="StatContent">
+    <div class="admin-metric-card">
+      <div class="admin-metric-card__icon"><i class="fas fa-user-friends"></i></div>
+      <div>
         <h3>{{ Stats.TotalClients | persian_digits or '۰' }}</h3>
         <p>کاربران ثبت شده</p>
       </div>
     </div>
-    <div class="Card StatCard">
-      <div class="StatIcon StatIcon--leaders">
-        <i class="fas fa-user-tie"></i>
-      </div>
-      <div class="StatContent">
+    <div class="admin-metric-card">
+      <div class="admin-metric-card__icon"><i class="fas fa-user-tie"></i></div>
+      <div>
         <h3>{{ Stats.TotalLeaders | persian_digits or '۰' }}</h3>
         <p>تعداد سرپرست‌ها</p>
       </div>
     </div>
-    <div class="Card StatCard">
-      <div class="StatIcon StatIcon--coaches">
-        <i class="fas fa-chalkboard-teacher"></i>
-      </div>
-      <div class="StatContent">
+    <div class="admin-metric-card">
+      <div class="admin-metric-card__icon"><i class="fas fa-chalkboard-teacher"></i></div>
+      <div>
         <h3>{{ Stats.TotalCoaches | persian_digits or '۰' }}</h3>
         <p>تعداد مربی‌ها</p>
       </div>
     </div>
-  </div>
+  </section>
 
-  <div class="ChartGrid">
-    <div class="Card Card--chart">
-      <h2 class="Card__header">
-        <i class="fas fa-chart-pie"></i> پراکندگی استانی شرکت کنندگان
-      </h2>
-      <div class="ChartContainer"><canvas id="ProvinceChart"></canvas></div>
-    </div>
-    <div class="Card Card--chart">
-      <h2 class="Card__header">
-        <i class="fas fa-chart-bar"></i> ۱۰ شهر برتر شرکت کننده
-      </h2>
-      <div class="ChartContainer"><canvas id="CityChart"></canvas></div>
-    </div>
-  </div>
+  <section class="admin-dashboard__charts">
+    <article class="admin-chart-card">
+      <header>
+        <i class="fas fa-chart-pie"></i>
+        <h3>پراکندگی استانی شرکت کنندگان</h3>
+      </header>
+      <div class="admin-chart-card__body">
+        <canvas id="ProvinceChart"></canvas>
+      </div>
+    </article>
+    <article class="admin-chart-card">
+      <header>
+        <i class="fas fa-chart-bar"></i>
+        <h3>۱۰ شهر برتر شرکت کننده</h3>
+      </header>
+      <div class="admin-chart-card__body">
+        <canvas id="CityChart"></canvas>
+      </div>
+    </article>
+  </section>
 
-  <div class="Card Card--table">
-    <h2 class="Card__header">
-      <i class="fas fa-credit-card"></i> رسیدهای پرداخت در انتظار تایید
-    </h2>
-    <div class="UserTableWrapper">
-      <table class="UserTable">
+  <section class="admin-dashboard__table">
+    <header class="admin-dashboard__table-header">
+      <div>
+        <h2><i class="fas fa-credit-card"></i> رسیدهای پرداخت در انتظار تایید</h2>
+        <p>در صورت تایید، وضعیت تیم‌ها به‌روزرسانی خواهد شد.</p>
+      </div>
+      <span class="admin-dashboard__badge">{{ PendingPayments|length | persian_digits }} مورد</span>
+    </header>
+
+    <div class="admin-table-wrapper">
+      <table class="admin-table">
         <thead>
           <tr>
             <th>تیم</th>
@@ -110,7 +136,7 @@ endblock %} {% block Body %}
             <th>برای</th>
             <th>تاریخ</th>
             <th>رسید</th>
-            <th class="ActionsHeader">عملیات</th>
+            <th>عملیات</th>
           </tr>
         </thead>
         <tbody>
@@ -118,63 +144,50 @@ endblock %} {% block Body %}
           <tr>
             <td data-label="تیم">{{ team_name }}</td>
             <td data-label="کاربر">{{ client_email }}</td>
-            <td data-label="مبلغ">
-              {{ payment.Amount | humanize_number | persian_digits }}
-            </td>
-            <td data-label="برای">
-              {{ payment.MembersPaidFor | persian_digits }} نفر
-            </td>
-            <td data-label="تاریخ">
-              {{ payment.UploadDate | formatdate | persian_digits }}
-            </td>
+            <td data-label="مبلغ">{{ payment.Amount | humanize_number | persian_digits }}</td>
+            <td data-label="برای">{{ payment.MembersPaidFor | persian_digits }} نفر</td>
+            <td data-label="تاریخ">{{ payment.UploadDate | formatdate | persian_digits }}</td>
             <td data-label="رسید">
               <a
                 href="{{ url_for('client.get_receipt', client_id=payment.ClientID, filename=payment.ReceiptFilename) }}"
                 target="_blank"
-                class="Btn BtnSmall BtnSecondary"
+                class="admin-table__link"
               >
-                <i class="fas fa-receipt"></i> مشاهده
+                <i class="fas fa-receipt"></i>
+                مشاهده
               </a>
             </td>
-            <td class="Actions">
+            <td class="admin-table__actions">
               <form
                 action="{{ url_for('admin.admin_manage_payment', payment_id=payment.PaymentID, action='approve') }}"
                 method="POST"
-                style="display: inline"
                 class="ConfirmAction"
                 data-confirm="آیا از تایید این پرداخت اطمینان دارید؟"
               >
-                <input
-                  type="hidden"
-                  name="csrf_token"
-                  value="{{ csrf_token() }}"
-                />
-                <button type="submit" class="Btn BtnSuccess BtnSmall">
-                  <i class="fas fa-check"></i> تایید
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <button type="submit" class="btn btn-success btn-small">
+                  <i class="fas fa-check"></i>
+                  تایید
                 </button>
               </form>
               <form
                 action="{{ url_for('admin.admin_manage_payment', payment_id=payment.PaymentID, action='reject') }}"
                 method="POST"
-                style="display: inline"
                 class="ConfirmAction"
                 data-confirm="آیا از رد کردن این پرداخت اطمینان دارید؟"
               >
-                <input
-                  type="hidden"
-                  name="csrf_token"
-                  value="{{ csrf_token() }}"
-                />
-                <button type="submit" class="Btn BtnDanger BtnSmall">
-                  <i class="fas fa-times"></i> رد
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <button type="submit" class="btn btn-danger btn-small">
+                  <i class="fas fa-times"></i>
+                  رد
                 </button>
               </form>
             </td>
           </tr>
           {% else %}
-          <tr class="EmptyStateRow">
-            <td colspan="7" class="EmptyState">
-              <i class="fas fa-check-circle EmptyState__icon"></i>
+          <tr class="admin-table__empty">
+            <td colspan="7">
+              <i class="fas fa-check-circle"></i>
               در حال حاضر هیچ پرداخت در انتظاری برای بررسی وجود ندارد.
             </td>
           </tr>
@@ -182,9 +195,11 @@ endblock %} {% block Body %}
         </tbody>
       </table>
     </div>
-  </div>
+  </section>
 </div>
-{% endblock %} {% block Scripts %}
+{% endblock %}
+
+{% block scripts %}
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     if (typeof AdminCharts !== "undefined") {

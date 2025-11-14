@@ -123,10 +123,24 @@ def uploaded_news_image(filename):
 @global_blueprint.route("/Download/Rules")
 def download_pdf():
     "Download the guideline PDF file"
+    guideline_file = constants.Path.guideline_file
+
+    if not os.path.exists(guideline_file):
+        current_app.logger.warning(
+            "Requested guideline PDF is missing at %s", guideline_file
+        )
+        flash(
+            "فایل راهنمای لیگ‌ها در حال حاضر در دسترس نیست. لطفاً بعداً دوباره تلاش کنید.",
+            "warning",
+        )
+        return redirect(url_for("global.leagues"))
+
     return send_from_directory(
         constants.Path.guideline_dir,
-        os.path.basename(constants.Path.guideline_file),
+        os.path.basename(guideline_file),
         as_attachment=True,
+        download_name="Airocup-Leagues-Guideline.pdf",
+        mimetype="application/pdf",
     )
 
 
