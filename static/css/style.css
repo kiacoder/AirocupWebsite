@@ -4352,7 +4352,253 @@ FOOTER
   to {
     transform: rotate(360deg);
   }
+.app-container {
+  padding: 80px 0;
 }
+
+.page-header {
+  margin-bottom: 3rem;
+  text-align: center;
+}
+
+.page-title {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  color: var(--color-primary);
+}
+
+.page-subtitle {
+  max-width: 720px;
+  margin: 0 auto;
+  color: var(--color-text-muted);
+  line-height: 2;
+}
+
+.league-filter-container {
+  max-width: 480px;
+  margin: 0 auto 40px;
+}
+
+.league-filter-container .input-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-small);
+  padding: 0.75rem 1rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.league-filter-container .input-icon {
+  color: var(--color-text-muted);
+  font-size: 1rem;
+}
+
+.league-filter-container .form-control {
+  border: none;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.league-filter-container .form-control:focus {
+  border: none;
+  box-shadow: none;
+  outline: none;
+}
+
+.leagues-page .accordion-item {
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-small);
+  margin-bottom: 1.25rem;
+  box-shadow: var(--shadow-sm);
+  background: var(--color-surface);
+  overflow: hidden;
+}
+
+.leagues-page .accordion-button {
+  font-weight: 700;
+}
+
+.leagues-page .accordion-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1.1rem;
+}
+
+.leagues-page .accordion-content {
+  border-top: 1px solid var(--color-border);
+  background: var(--color-background);
+  padding: 0 1.75rem 1.5rem;
+}
+
+.leagues-page .accordion-content p {
+  margin: 0;
+  line-height: 1.9;
+  color: var(--color-text);
+}
+
+.gallery-page .gallery-grid {
+  margin-top: 2rem;
+}
+
+.gallery-page .gallery-item-button {
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+.gallery-page .gallery-item-button:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 4px;
+}
+
+.gallery-page .gallery-item img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  min-height: 220px;
+}
+
+#image-modal .modal-content {
+  max-width: 720px;
+}
+
+#image-modal .modal-image {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.committee-member {
+  border-radius: var(--border-radius);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  background: var(--color-surface);
+}
+
+.committee-member:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-lg);
+}
+
+.committee-photo {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: linear-gradient(
+    135deg,
+    rgba(123, 75, 170, 0.18),
+    rgba(0, 90, 156, 0.18)
+  );
+  border-bottom: 4px solid var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-surface);
+}
+
+.committee-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
+.committee-photo.photo-fallback {
+  background: linear-gradient(
+    135deg,
+    rgba(123, 75, 170, 0.35),
+    rgba(247, 166, 0, 0.35)
+  );
+  font-size: 3rem;
+  font-weight: 900;
+}
+
+.committee-photo.photo-fallback::after {
+  content: attr(data-initial);
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-surface);
+}
+
+.committee-info {
+  padding: 24px 20px 32px;
+}
+
+.committee-info p {
+  color: var(--color-text-muted);
+  line-height: 1.8;
+}
+
+.committee-role {
+  margin-bottom: 12px;
+}
+
+.sponsor-highlights {
+  padding: 70px 0;
+  background: linear-gradient(
+    180deg,
+    rgba(123, 75, 170, 0.08),
+    rgba(0, 90, 156, 0.05)
+  );
+}
+
+.highlights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 25px;
+}
+
+.highlight-card {
+  background: var(--color-surface);
+  border-radius: var(--border-radius);
+  padding: 30px 24px;
+  box-shadow: var(--shadow-sm);
+  text-align: center;
+  border-top: 4px solid var(--color-primary);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.highlight-card i {
+  color: var(--color-secondary);
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.highlight-card:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--shadow-lg);
+}
+
+@media (min-width: 992px) {
+  .page-header {
+    text-align: right;
+  }
+
+  .leagues-page .accordion-content {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-title {
+    font-size: 2rem;
+  }
+
+  .committee-photo.photo-fallback {
+    font-size: 2.5rem;
+  }
+}
+
 @keyframes slide-in {
   from {
     opacity: 0;
