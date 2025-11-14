@@ -11,6 +11,39 @@
     </p>
   </div>
 
+  <div class="FormGrid" style="gap: 1.5rem; margin-bottom: 2rem">
+    <div
+      class="DetailItem"
+      style="
+        border: none;
+        padding: 1rem;
+        background: var(--ColorBackgroundMuted);
+        border-radius: var(--BorderRadiusSmall);
+      "
+    >
+      <span>
+        <i class="fas fa-layer-group" style="color: var(--ColorPrimary)"></i>
+        تعداد تیم‌های من
+      </span>
+      <strong>{{ teams|length | persian_digits }} تیم</strong>
+    </div>
+    <div
+      class="DetailItem"
+      style="
+        border: none;
+        padding: 1rem;
+        background: var(--ColorBackgroundMuted);
+        border-radius: var(--BorderRadiusSmall);
+      "
+    >
+      <span>
+        <i class="fas fa-users-cog" style="color: var(--ColorSecondary)"></i>
+        سقف مجاز تیم‌ها
+      </span>
+      <strong>{{ app_config.max_team_per_client | persian_digits }} تیم</strong>
+    </div>
+  </div>
+
   <div
     class="Card"
     style="margin-bottom: 2rem; border-left: 5px solid var(--ColorPrimary)"
@@ -45,10 +78,9 @@
           ><i class="fas fa-users" style="color: var(--ColorPrimaryDark)"></i
           >هزینه ورودی تیم</span
         >
-        <strong
-          >{{ payment.fee_team | humanize_number | persian_digits }}
-          ریال</strong
-        >
+        <strong>
+          {{ (payment.fee_team or 0) | humanize_number | persian_digits }} ریال
+        </strong>
       </div>
       <div
         class="DetailItem"
@@ -66,10 +98,10 @@
           ></i
           >هزینه هر عضو</span
         >
-        <strong
-          >{{ payment.fee_per_person | humanize_number | persian_digits }}
-          ریال</strong
-        >
+        <strong>
+          {{ (payment.fee_per_person or 0) | humanize_number | persian_digits }}
+          ریال
+        </strong>
       </div>
       <div
         class="DetailItem Grid-col-span-2"
@@ -87,7 +119,9 @@
           ></i
           >تخفیف ثبت‌نام در لیگ دوم</span
         >
-        <strong>{{ payment.league_two_discount | persian_digits }} درصد</strong>
+        <strong>
+          {{ (payment.league_two_discount or 0) | persian_digits }} درصد
+        </strong>
       </div>
     </div>
     <div class="FormFooter" style="padding-top: 1.5rem; margin-top: 1.5rem">
@@ -116,15 +150,34 @@
   {% endif %}
 
   <div class="TeamCardGrid">
+    {% set status_class_map = {
+      'approved': 'StatusApproved',
+      'pending': 'StatusPending',
+      'rejected': 'StatusRejected'
+    } %}
+    {% set status_label_map = {
+      'approved': 'تایید شده',
+      'pending': 'در حال بررسی',
+      'rejected': 'رد شده'
+    } %}
     {% for team in teams %}
     <div class="Card CardTeam">
       <div class="TeamCardHeader">
         <h3>{{ team.team_name }}</h3>
         {% set status_enum = team.last_payment_status %}
+        {% set status_value =
+          status_enum.value if status_enum and status_enum is not string else status_enum
+        %}
+        {% set status_label =
+          status_enum.label
+          if status_enum and status_enum is not string
+          else status_label_map.get(status_value, 'شروع نشده')
+        %}
+        {% set status_class = status_class_map.get(status_value, 'StatusNotStarted') %}
         <span
-          class="StatusBadge {% if status_enum and status_enum.value == 'approved' %}StatusApproved{% elif status_enum and status_enum.value == 'pending' %}StatusPending{% elif status_enum and status_enum.value == 'rejected' %}StatusRejected{% else %}StatusNotStarted{% endif %}"
+          class="StatusBadge {{ status_class }}"
         >
-          {{ status_enum.label if status_enum else 'شروع نشده' }}
+          {{ status_label }}
         </span>
       </div>
 
@@ -243,7 +296,7 @@
   </div>
 
   <div class="FormFooter">
-    <a href="{{ url_for('Global.logout') }}" class="Btn BtnSecondary">
+    <a href="{{ url_for('global.logout') }}" class="Btn BtnSecondary">
       <i class="fas fa-sign-out-alt"></i> خروج از حساب کاربری
     </a>
   </div>
