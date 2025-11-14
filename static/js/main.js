@@ -569,6 +569,7 @@ const airocupApp = {
   forms: {
     init() {
       this.initializeDeleteConfirmation();
+      this.initializeLegacyConfirmActions();
     },
 
     initializeDeleteConfirmation() {
@@ -635,6 +636,20 @@ const airocupApp = {
           }
         });
       }
+    },
+    initializeLegacyConfirmActions() {
+      const forms = document.querySelectorAll("form.ConfirmAction");
+      forms.forEach((form) => {
+        if (form.dataset.confirmBound === "true") return;
+        form.dataset.confirmBound = "true";
+        form.addEventListener("submit", (event) => {
+          const message =
+            form.dataset.confirm || "آیا از انجام این عملیات اطمینان دارید؟";
+          if (!window.confirm(message)) {
+            event.preventDefault();
+          }
+        });
+      });
     },
     initializePasswordConfirmation(form, passwordInput, confirmInput) {
       if (!form || !passwordInput || !confirmInput) return;
@@ -1529,15 +1544,16 @@ const airocupApp = {
 
       try {
         if (provinceCanvas) {
-          const data = await airocupApp.helpers.fetchJSON(
-            "/API/admin/ProvinceDistribution"
-          );
+          const endpoint =
+            provinceCanvas.dataset.endpoint ||
+            "/API/admin/ProvinceDistribution";
+          const data = await airocupApp.helpers.fetchJSON(endpoint);
           createChart(provinceCanvas, data, "doughnut", "توزیع استانی");
         }
         if (cityCanvas) {
-          const data = await airocupApp.helpers.fetchJSON(
-            "/API/AdminCityDistribution"
-          );
+          const endpoint =
+            cityCanvas.dataset.endpoint || "/API/AdminCityDistribution";
+          const data = await airocupApp.helpers.fetchJSON(endpoint);
           createChart(cityCanvas, data, "bar", "تعداد شرکت‌کنندگان", "y");
         }
       } catch (error) {

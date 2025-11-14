@@ -106,7 +106,10 @@
         <h3>پراکندگی استانی شرکت کنندگان</h3>
       </header>
       <div class="admin-chart-card__body">
-        <canvas id="ProvinceChart"></canvas>
+        <canvas
+          id="provinceChart"
+          data-endpoint="{{ url_for('api_province_distribution') }}"
+        ></canvas>
       </div>
     </article>
     <article class="admin-chart-card">
@@ -115,7 +118,10 @@
         <h3>۱۰ شهر برتر شرکت کننده</h3>
       </header>
       <div class="admin-chart-card__body">
-        <canvas id="CityChart"></canvas>
+        <canvas
+          id="cityChart"
+          data-endpoint="{{ url_for('api_city_distribution') }}"
+        ></canvas>
       </div>
     </article>
   </section>
@@ -203,17 +209,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    if (typeof AdminCharts !== "undefined") {
-      AdminCharts.initProvinceChart(
-        "{{ url_for('api.province_distribution') }}"
-      );
-      AdminCharts.initCityChart("{{ url_for('api.city_distribution') }}");
-    }
-    if (typeof FormHelpers !== "undefined") {
-      FormHelpers.setupConfirmDialogs();
-    }
-  });
-</script>
+  {{ super() }}
 {% endblock %}
