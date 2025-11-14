@@ -196,17 +196,13 @@
     } %}
     {% for team in teams %}
     <div class="card card-team">
-      <div
-        class="team-card-header"
-        style="
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 1rem;
-          margin-bottom: 1.5rem;
-        "
-      >
-        <h3 style="margin: 0">{{ team.team_name }}</h3>
+      <div class="team-card-header">
+        <div class="team-card-title">
+          <span class="team-card-icon" aria-hidden="true">
+            <i class="fas fa-users"></i>
+          </span>
+          <h3 class="team-card-name">{{ team.team_name }}</h3>
+        </div>
         {% set status_enum = team.last_payment_status %}
         {% set status_value =
           status_enum.value if status_enum and status_enum is not string else status_enum
@@ -220,49 +216,48 @@
         <span class="status-badge {{ status_class }}">{{ status_label }}</span>
       </div>
 
-      <div class="team-card-body" style="display: flex; flex-direction: column; gap: 1rem">
-        <div class="detail-item" style="border: none; padding: 0">
-          <span style="display: flex; align-items: center; gap: 0.5rem"
-            ><i class="fas fa-users"></i> تعداد اعضا</span
+      <div class="team-card-body">
+        <div class="team-card-meta-item">
+          <span class="team-card-meta-label"
+            ><i class="fas fa-user-friends"></i> تعداد اعضا</span
           >
-          <strong>{{ team.members|length | persian_digits }} نفر</strong>
+          <strong class="team-card-meta-value"
+            >{{ team.members|length | persian_digits }} نفر</strong
+          >
         </div>
-        <div class="detail-item" style="border: none; padding: 0">
-          <span style="display: flex; align-items: center; gap: 0.5rem"
+        <div class="team-card-meta-item">
+          <span class="team-card-meta-label"
             ><i class="fas fa-trophy"></i> لیگ‌ها</span
           >
-          <strong>
+          <strong class="team-card-meta-value">
             {{ team.league_one.name if team.league_one else 'انتخاب نشده' }}{% if
             team.league_two %}<br />و {{ team.league_two.name }}{% endif %}
           </strong>
         </div>
         {% if team.average_age and team.average_age > 0 %}
-        <div class="detail-item" style="border: none; padding: 0">
-          <span style="display: flex; align-items: center; gap: 0.5rem"
+        <div class="team-card-meta-item">
+          <span class="team-card-meta-label"
             ><i class="fas fa-birthday-cake"></i> میانگین سنی</span
           >
-          <strong>~{{ team.average_age | persian_digits }} سال</strong>
+          <strong class="team-card-meta-value"
+            >~{{ team.average_age | persian_digits }} سال</strong
+          >
         </div>
         {% endif %}
         {% if team.average_provinces %}
-        <div class="detail-item" style="border: none; padding: 0">
-          <span style="display: flex; align-items: center; gap: 0.5rem"
+        <div class="team-card-meta-item">
+          <span class="team-card-meta-label"
             ><i class="fas fa-map-marker-alt"></i> استان‌ها</span
+          >
+          <strong class="team-card-meta-value team-card-meta-value--muted"
+            >{{ team.average_provinces }}</strong
           >
           <strong style="font-size: 0.9rem">{{ team.average_provinces }}</strong>
         </div>
         {% endif %}
       </div>
 
-      <div
-        class="team-card-footer"
-        style="
-          display: flex;
-          flex-wrap: wrap;
-          gap: 0.75rem;
-          margin-top: 1.5rem;
-        "
-      >
+      <div class="team-card-footer">
         <a
           href="{{ url_for('client.manage_members', team_id=team.team_id) }}"
           class="btn btn-primary"
@@ -304,7 +299,7 @@
         <form
           action="{{ url_for('client.delete_team', team_id=team.team_id) }}"
           method="POST"
-          style="margin-right: auto"
+          class="team-card-archive-form"
         >
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
           {% set is_archive_disabled = team.last_payment_status and
