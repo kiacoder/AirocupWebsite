@@ -1,8 +1,8 @@
-{% extends "Global/Base.html" %}
+{% extends "global/base.html" %}
 
-{% block Title %}مدیریت کاربران | پنل آیروکاپ{% endblock %}
+{% block title %}مدیریت کاربران | پنل آیروکاپ{% endblock %}
 
-{% block Body %}
+{% block body %}
 <div class="Container">
   <div class="PageHeader">
     <h1 class="SectionTitle">مدیریت کاربران</h1>
@@ -42,10 +42,10 @@
               {{ ClientData.RegistrationDate | formatdate | persian_digits }}
             </td>
             <td class="Actions">
-              <a href="{{ url_for('Admin.AdminManageClient', ClientID=ClientData.ClientID) }}" class="Btn BtnPrimary">
+              <a href="{{ url_for('admin.admin_manage_client', client_id=ClientData.ClientID) }}" class="Btn BtnPrimary">
                 <i class="fas fa-tasks"></i> مدیریت
               </a>
-              <form method="POST" action="{{ url_for('Admin.AdminDeleteClient', ClientID=ClientData.ClientID) }}">
+              <form method="POST" action="{{ url_for('admin.admin_delete_client', client_id=ClientData.ClientID) }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                 <button type="button" class="Btn BtnDanger DeleteBtn" data-modal-title="تایید آرشیو کاربر" data-modal-text="آیا از آرشیو کردن کاربر {{ ClientData.Email }} اطمینان دارید؟" data-modal-confirm="بله، آرشیو کن">
                   <i class="fas fa-archive"></i> آرشیو
@@ -90,7 +90,7 @@
   <div class="ModalContent">
     <button class="CloseBtn" data-dismiss="modal" aria-label="بستن">&times;</button>
     <h2 class="FormTitle">افزودن کاربر جدید</h2>
-    <form action="{{ url_for('Admin.AdminAddClient') }}" method="POST" id="addClientForm">
+    <form action="{{ url_for('admin.admin_add_client') }}" method="POST" id="addClientForm">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
       <div class="FormGroup">
         <label for="addEmail">ایمیل</label>
@@ -114,7 +114,7 @@
 </div>
 {% endblock %}
 
-{% block Scripts %}
+{% block scripts %}
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     const searchInput = document.getElementById("ClientSearchInput");

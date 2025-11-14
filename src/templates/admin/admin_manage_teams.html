@@ -1,8 +1,8 @@
-{% extends "Global/Base.html" %}
+{% extends "global/base.html" %}
 
-{% block Title %}مدیریت جامع تیم‌ها | پنل آیروکاپ{% endblock %}
+{% block title %}مدیریت جامع تیم‌ها | پنل آیروکاپ{% endblock %}
 
-{% block Body %}
+{% block body %}
 <div class="Container">
   <div class="PageHeader">
     <h1 class="SectionTitle">مدیریت جامع تیم‌ها</h1>
@@ -43,7 +43,7 @@
               </span>
             </td>
             <td class="Actions">
-              <a href="{{ url_for('Admin.AdminEditTeam', TeamID=TeamData.TeamID) }}" class="Btn BtnPrimary" title="مدیریت کامل تیم و اعضا">
+              <a href="{{ url_for('admin.admin_edit_team', team_id=TeamData.TeamID) }}" class="Btn BtnPrimary" title="مدیریت کامل تیم و اعضا">
                 <i class="fas fa-edit"></i> مدیریت تیم
               </a>
             </td>

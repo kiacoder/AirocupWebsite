@@ -1,5 +1,5 @@
-{% extends "Global/Base.html" %} {% block Title %}چت با {{ Client.Email }} | پنل
-آیروکاپ{% endblock %} {% block Body %}
+{% extends "global/base.html" %} {% block title %}چت با {{ Client.Email }} | پنل
+آیروکاپ{% endblock %} {% block body %}
 <div
   class="AdminChatContainer"
   data-client-id="{{ Client.ClientID }}"
@@ -54,7 +54,7 @@
     </a>
   </div>
 </div>
-{% endblock %} {% block Scripts %}
+{% endblock %} {% block scripts %}
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     if (typeof AdminChat !== "undefined") {

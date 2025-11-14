@@ -1,8 +1,8 @@
-{% extends "Global/Base.html" %}
+{% extends "global/base.html" %}
 
-{% block Title %}مدیریت تیم: {{ Team.TeamName }} | پنل آیروکاپ{% endblock %}
+{% block title %}مدیریت تیم: {{ Team.TeamName }} | پنل آیروکاپ{% endblock %}
 
-{% block Body %}
+{% block body %}
 <div class="Container AdminMembersPage" data-team-id="{{ Team.TeamID }}">
   <div class="PageHeader">
     <h1 class="SectionTitle">مدیریت تیم: {{ Team.TeamName }}</h1>
@@ -16,7 +16,7 @@
       <div class="Card">
         <h2 class="Card__header"><i class="fas fa-edit"></i> اطلاعات و لیگ‌ها</h2>
         <div class="Card__body" style="padding: 1.5rem;">
-          <form method="POST" action="{{ url_for('Admin.AdminEditTeam', TeamID=Team.TeamID) }}" id="teamForm">
+          <form method="POST" action="{{ url_for('admin.admin_edit_team', team_id=Team.TeamID) }}" id="teamForm">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
             <div class="FormGroup">
               <label for="TeamName" class="FormLabel">نام تیم *</label>
@@ -50,7 +50,7 @@
       <div class="Card Card--table">
         <h2 class="Card__header">
           <i class="fas fa-users"></i> مدیریت اعضا
-          <a href="{{ url_for('Admin.AdminAddMember', TeamID=Team.TeamID) }}" class="Btn BtnPrimary"><i class="fas fa-plus"></i> افزودن عضو</a>
+          <a href="{{ url_for('admin.admin_add_member', team_id=Team.TeamID) }}" class="Btn BtnPrimary"><i class="fas fa-plus"></i> افزودن عضو</a>
         </h2>
         <div class="UserTableWrapper">
           <table class="UserTable">
@@ -79,7 +79,7 @@
                           data-birth-date="{{ member.BirthDate | formatdate }}">
                     <i class="fas fa-edit"></i> ویرایش
                   </button>
-                  <form method="POST" action="{{ url_for('Admin.AdminDeleteMember', TeamID=Team.TeamID, MemberID=member.MemberID) }}">
+                  <form method="POST" action="{{ url_for('admin.admin_delete_member', team_id=Team.TeamID, member_id=member.MemberID) }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                     <button type="button" class="Btn BtnDanger BtnSmall DeleteBtn" data-modal-title="تایید حذف عضو" data-modal-text="آیا از حذف عضو «{{ member.Name }}» اطمینان دارید؟" data-modal-confirm="بله، حذف کن">
                       <i class="fas fa-trash"></i> حذف
@@ -100,7 +100,7 @@
   </div>
 
   <div class="SectionCta">
-    <a href="{{ url_for('Admin.AdminManageClient', ClientID=Team.ClientID) }}" class="Btn BtnSecondary"><i class="fas fa-arrow-left"></i> بازگشت به صفحه کاربر</a>
+    <a href="{{ url_for('admin.admin_manage_client', client_id=Team.ClientID) }}" class="Btn BtnSecondary"><i class="fas fa-arrow-left"></i> بازگشت به صفحه کاربر</a>
   </div>
 </div>
 
@@ -127,7 +127,7 @@
 </div>
 {% endblock %}
 
-{% block Scripts %}
+{% block scripts %}
 <script>
   document.addEventListener("DOMContentLoaded", function () {
       const teamId = document.querySelector('.AdminMembersPage').dataset.teamId;
