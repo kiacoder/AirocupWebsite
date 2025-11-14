@@ -1,30 +1,29 @@
-{% extends "Global/Base.html" %}
+{% extends "global/base.html" %}
 
-{% block Title %}افزودن عضو جدید به تیم {{ Team.TeamName }} | پنل آیروکاپ{% endblock %}
+{% block title %}افزودن عضو جدید به تیم {{ team.team_name }} | پنل آیروکاپ{% endblock %}
 
-{% block Body %}
-<div class="Container AdminMembersPage" data-team-id="{{ Team.TeamID }}">
+{% block body %}
+<div class="Container AdminMembersPage" data-team-id="{{ team.team_id }}">
   <div class="PageHeader">
     <h1 class="SectionTitle">افزودن عضو جدید</h1>
     <p class="FormSubtitle">
-      شما در حال افزودن یک عضو جدید به تیم <strong>{{ Team.TeamName }}</strong> هستید.
+      شما در حال افزودن یک عضو جدید به تیم <strong>{{ team.team_name }}</strong> هستید.
     </p>
   </div>
 
   <div class="FormContainer FormContainer--large">
-    <form id="AddMemberForm" method="POST" action="{{ url_for('admin.admin_add_member', team_id=Team.TeamID) }}">
+    <form id="AddMemberForm" method="POST" action="{{ url_for('admin.admin_add_member', team_id=team.team_id) }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
-      {% with 
-        IdPrefix='AdminAdd-', 
-        MemberData={}, 
-        Provinces=Provinces, 
-        PersianMonths=PersianMonths, 
-        AllowedYears=AllowedYears, 
-        DaysInMonth=DaysInMonth,
-        MemberRole=MemberRole 
+      {% with
+        id_prefix='AdminAdd-',
+        member_data={},
+        form_data={},
+        provinces=Provinces,
+        persian_months=PersianMonths,
+        allowed_years=AllowedYears
       %}
-        {% include 'Client/MemberFormFields.html' %}
+        {% include 'client/member_form_fields.html' %}
       {% endwith %}
 
       <div class="FormGrid" style="margin-top: 2rem">
@@ -34,7 +33,7 @@
           </button>
         </div>
         <div class="FormGroup Grid-col-span-2">
-          <a href="{{ url_for('admin.admin_edit_team', team_id=Team.TeamID) }}" class="Btn BtnSecondary Btn--fullWidth">
+          <a href="{{ url_for('admin.admin_edit_team', team_id=team.team_id) }}" class="Btn BtnSecondary Btn--fullWidth">
             <i class="fas fa-times"></i> انصراف
           </a>
         </div>
@@ -44,15 +43,21 @@
 </div>
 {% endblock %}
 
-{% block Scripts %}
+{% block scripts %}
 <script>
   document.addEventListener("DOMContentLoaded", function () {
-    const addMemberForm = document.getElementById("AddMemberForm");
-    if (addMemberForm) {
-      FormHelpers.PopulateProvinces(addMemberForm.querySelector('[name="Province"]'));
-      FormHelpers.SetupDatePicker(addMemberForm);
-      FormHelpers.SetupProvinceCityListener(addMemberForm);
+    const addMemberForm = document.getElementById('AddMemberForm');
+    if (!addMemberForm || typeof FormHelpers === 'undefined') {
+      return;
     }
+
+    const provinceSelect = addMemberForm.querySelector('[name="province"]');
+    if (provinceSelect) {
+      FormHelpers.PopulateProvinces(provinceSelect);
+      provinceSelect.dispatchEvent(new Event('change'));
+    }
+    FormHelpers.SetupDatePicker(addMemberForm);
+    FormHelpers.SetupProvinceCityListener(addMemberForm);
   });
 </script>
 {% endblock %}

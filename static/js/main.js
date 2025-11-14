@@ -35,7 +35,7 @@ const airocupApp = {
       ACCORDION_BUTTON: ".accordion-button",
       ACCORDION_ITEM: ".accordion-item",
       GALLERY_GRID: ".gallery-grid",
-      IMAGE_MODAL: "#imageModal",
+      IMAGE_MODAL: "#image-modal",
       MODAL_IMAGE: ".modal-image",
       GALLERY_ITEM_IMG: ".gallery-item img",
       LOGIN_FORM: "#login-form",
@@ -51,8 +51,8 @@ const airocupApp = {
       LEAGUE_FILTER_INPUT: "#leagueFilter",
       NO_RESULTS_MESSAGE: "#noResultsMessage",
       ADMIN_BODY: ".admin-body",
-      ADMIN_HEADER_MOBILE_TOGGLE: ".admin-header__mobile-toggle",
-      ADMIN_HEADER_NAV: ".admin-header__nav",
+      ADMIN_HEADER_MOBILE_TOGGLE: ".admin-header-mobile-toggle",
+      ADMIN_HEADER_NAV: ".admin-header-nav",
       PROVINCE_CHART: "#provinceChart",
       CITY_CHART: "#cityChart",
       CLIENT_SEARCH_INPUT: "#clientSearchInput",
@@ -569,6 +569,7 @@ const airocupApp = {
   forms: {
     init() {
       this.initializeDeleteConfirmation();
+      this.initializeLegacyConfirmActions();
     },
 
     initializeDeleteConfirmation() {
@@ -635,6 +636,20 @@ const airocupApp = {
           }
         });
       }
+    },
+    initializeLegacyConfirmActions() {
+      const forms = document.querySelectorAll("form.ConfirmAction");
+      forms.forEach((form) => {
+        if (form.dataset.confirmBound === "true") return;
+        form.dataset.confirmBound = "true";
+        form.addEventListener("submit", (event) => {
+          const message =
+            form.dataset.confirm || "آیا از انجام این عملیات اطمینان دارید؟";
+          if (!window.confirm(message)) {
+            event.preventDefault();
+          }
+        });
+      });
     },
     initializePasswordConfirmation(form, passwordInput, confirmInput) {
       if (!form || !passwordInput || !confirmInput) return;
@@ -1417,14 +1432,32 @@ const airocupApp = {
       );
       if (!toggleButton || !navigation) return;
 
-      toggleButton.addEventListener("click", () => {
-        const isOpen = navigation.classList.toggle(
-          airocupApp.constants.CLASSES.IS_OPEN
+      const updateState = (isOpen) => {
+        navigation.classList.toggle(
+          airocupApp.constants.CLASSES.IS_OPEN,
+          isOpen
         );
         toggleButton.setAttribute("aria-expanded", String(isOpen));
         const icon = toggleButton.querySelector("i");
         if (icon) {
           icon.className = isOpen ? "fas fa-times" : "fas fa-bars";
+        }
+      };
+
+      toggleButton.addEventListener("click", () => {
+        const shouldOpen = !navigation.classList.contains(
+          airocupApp.constants.CLASSES.IS_OPEN
+        );
+        updateState(shouldOpen);
+      });
+
+      navigation.querySelectorAll("a").forEach((link) => {
+        link.addEventListener("click", () => updateState(false));
+      });
+
+      window.addEventListener("resize", () => {
+        if (window.innerWidth > 1100) {
+          updateState(false);
         }
       });
     },
@@ -1511,15 +1544,16 @@ const airocupApp = {
 
       try {
         if (provinceCanvas) {
-          const data = await airocupApp.helpers.fetchJSON(
-            "/API/admin/ProvinceDistribution"
-          );
+          const endpoint =
+            provinceCanvas.dataset.endpoint ||
+            "/API/admin/ProvinceDistribution";
+          const data = await airocupApp.helpers.fetchJSON(endpoint);
           createChart(provinceCanvas, data, "doughnut", "توزیع استانی");
         }
         if (cityCanvas) {
-          const data = await airocupApp.helpers.fetchJSON(
-            "/API/AdminCityDistribution"
-          );
+          const endpoint =
+            cityCanvas.dataset.endpoint || "/API/AdminCityDistribution";
+          const data = await airocupApp.helpers.fetchJSON(endpoint);
           createChart(cityCanvas, data, "bar", "تعداد شرکت‌کنندگان", "y");
         }
       } catch (error) {

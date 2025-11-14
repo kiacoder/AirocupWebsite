@@ -1,8 +1,8 @@
-{% extends "Global/Base.html" %}
+{% extends "global/base.html" %}
 
-{% block Title %}صندوق ورودی پیام‌ها | پنل آیروکاپ{% endblock %}
+{% block title %}صندوق ورودی پیام‌ها | پنل آیروکاپ{% endblock %}
 
-{% block Body %}
+{% block body %}
 <div class="Container">
   <div class="PageHeader">
     <h1 class="SectionTitle">صندوق ورودی پیام‌ها</h1>
@@ -26,19 +26,19 @@
           </tr>
         </thead>
         <tbody>
-          {% for ClientData in Clients %}
+          {% for client in clients %}
           <tr>
-            <td>{{ ClientData.Email }}</td>
-            <td class="RelativeTime" data-timestamp="{{ ClientData.LastMessageTimestamp.isoformat() }}">
-              {{ ClientData.LastMessageTimestamp | formatdate | persian_digits }}
+            <td>{{ client.email }}</td>
+            <td class="RelativeTime" data-timestamp="{{ client.last_message_timestamp.isoformat() if client.last_message_timestamp else '' }}">
+              {{ client.last_message_timestamp | formatdate | persian_digits }}
             </td>
             <td>
               <span class="Badge Badge--primary">
-                {{ ClientData.UnreadCount | persian_digits }}
+                {{ client.unread_count | persian_digits }}
               </span>
             </td>
             <td class="Actions">
-              <a href="{{ url_for('Admin.AdminChat', ClientID=ClientData.ClientID) }}" class="Btn BtnPrimary">
+              <a href="{{ url_for('admin.admin_chat', client_id=client.client_id) }}" class="Btn BtnPrimary">
                 <i class="fas fa-eye"></i> مشاهده و پاسخ
               </a>
             </td>
