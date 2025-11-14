@@ -472,6 +472,9 @@ def edit_member(team_id, member_id):
 
         member = (
             db.query(models.Member)
+            .options(
+                joinedload(models.Member.city).joinedload(models.City.province)
+            )
             .filter(
                 models.Member.member_id == member_id,
                 models.Member.team_id == team_id,
