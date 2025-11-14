@@ -1,34 +1,40 @@
-{% extends "global/base.html" %} {% block title %}ورود به حساب کاربری |
-آیروکاپ{% endblock %} {% block body %}
-<div class="app-container">
-  <div class="form-container form-container--large">
+{% extends "global/base.html" %}
+
+{% block title %}ورود به حساب کاربری | آیروکاپ{% endblock %}
+
+{% block body %}
+<main class="app-container">
+  <div class="form-container form-container--small">
     <form
+      id="login-form"
       method="POST"
       action="{{ url_for('client.login_client') }}"
-      id="login-form"
       novalidate
     >
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
       <input type="hidden" name="next" value="{{ next_url or '' }}" />
 
       <h1 class="form-title">ورود به حساب کاربری</h1>
+      <p class="form-subtitle">
+        برای ورود، ایمیل یا شماره موبایل خود را به همراه رمز عبور وارد کنید.
+      </p>
 
       <div class="form-group">
-        <label for="identifier">ایمیل یا شماره موبایل:</label>
+        <label for="identifier">ایمیل یا شماره موبایل <span class="required-star">*</span></label>
         <input
           type="text"
           id="identifier"
           name="identifier"
           placeholder="ایمیل یا شماره موبایل خود را وارد کنید"
           required
-          autofocus
           dir="ltr"
+          autocomplete="username"
         />
         <span class="error-msg" id="identifier-error"></span>
       </div>
 
       <div class="form-group">
-        <label for="password">رمز عبور:</label>
+        <label for="password">رمز عبور <span class="required-star">*</span></label>
         <div class="password-wrapper">
           <input
             type="password"
@@ -36,13 +42,14 @@
             name="password"
             required
             dir="ltr"
+            autocomplete="current-password"
           />
           <button
             type="button"
             class="password-toggle"
             data-action="toggle-password"
             data-target="#password"
-            aria-label="Show password"
+            aria-label="نمایش یا مخفی کردن رمز عبور"
           >
             <i class="fas fa-eye-slash"></i>
           </button>
@@ -55,70 +62,22 @@
         </button>
       </div>
 
-      <div class="form-links text-center">
+      <div class="form-links">
         <p>
-          <a href="{{ url_for('client.forgot_password') }}"
-            >رمز عبور خود را فراموش کرده‌اید؟</a
-          >
+          <a href="{{ url_for('client.forgot_password') }}">
+            رمز عبور خود را فراموش کرده‌اید؟
+          </a>
         </p>
         <p>
-          هنوز حساب کاربری ندارید؟
-          <a href="{{ url_for('client.signup') }}">اینجا ثبت‌نام کنید.</a>
-        </p>
-      </div>
-    </form>
-  </div>
-</div>
-{% endblock %} {% block scripts %} {{ super() }} {# All JS removed. Password
-toggle is handled by the global main.js. Simple validation can be left to the
-browser/server. #} {% endblock %} ```**Changes Made (`login.html`):** * **Added
-`data-action`:** Added `data-action="toggle-password"` to the password toggle
-button so the global script can find it. * **Removed Script:** The entire inline
-script for validation and password toggling is now handled by `main.js`. --- ###
-9. Corrected `forgot_password.html` ```html {% extends "Global/Base.html" %} {%
-block Title %}بازیابی رمز عبور | آیروکاپ{% endblock %} {% block Body %}
-<div class="AppContainer">
-  <div class="FormContainer FormContainer--small">
-    <form
-      method="POST"
-      action="{{ url_for('client.forgot_password') }}"
-      id="ForgotPasswordForm"
-      novalidate
-    >
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-
-      <h1 class="FormTitle">بازیابی رمز عبور</h1>
-      <p class="FormSubtitle">
-        لطفا ایمیل یا شماره موبایل حساب کاربری خود را وارد کنید.
-      </p>
-
-      <div class="FormGroup">
-        <label for="identifier">ایمیل یا شماره موبایل:</label>
-        <input
-          type="text"
-          id="identifier"
-          name="identifier"
-          placeholder="ایمیل یا شماره موبایل"
-          required
-          autofocus
-          dir="ltr"
-        />
-      </div>
-
-      <div class="FormGroup">
-        <button type="submit" class="Btn BtnPrimary Btn--fullWidth">
-          ارسال کد بازیابی
-        </button>
-      </div>
-
-      <div class="FormLinks" style="text-align: center">
-        <p>
-          <a href="{{ url_for('client.login_client') }}">بازگشت به صفحه ورود</a>
+          حساب کاربری ندارید؟
+          <a href="{{ url_for('client.signup') }}">همین حالا ثبت‌نام کنید.</a>
         </p>
       </div>
     </form>
   </div>
-</div>
-{% endblock %} {% block Scripts %} {{ super() }} {# Script removed. Simple
-client-side validation is not critical here as the server will handle it. #} {%
-endblock %}
+</main>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+{% endblock %}
