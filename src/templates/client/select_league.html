@@ -1,33 +1,41 @@
-{% extends "Global/Base.html" %}
+{% extends "global/base.html" %}
 
-{% block Title %}انتخاب لیگ | آیروکاپ{% endblock %}
+{% block title %}انتخاب لیگ{% endblock %}
 
-{% block Body %}
-<div class="AppContainer">
-  <div class="Container">
-    <div class="PageHeader">
-      <h1 class="SectionTitle">انتخاب لیگ برای تیم: {{ team.team_name }}</h1>
-      <p class="SectionSubtitle">
+{% block body %}
+<main class="app-container">
+  <div class="container">
+    <header class="page-header">
+      <h1 class="page-title">انتخاب لیگ برای تیم: {{ team.team_name }}</h1>
+      <p class="page-subtitle">
         تیم شما می‌تواند در یک لیگ (اجباری) یا دو لیگ (یک لیگ اجباری و یک لیگ اختیاری با تخفیف) شرکت کند.
       </p>
-    </div>
+    </header>
 
-    <div class="FormContainer FormContainer--large">
-      <div class="Alert Alert--Warning" style="margin-bottom: 1.5rem;">
-        <i class="fas fa-exclamation-triangle"></i>
+    <div class="form-container form-container--large">
+      <div class="alert alert--warning" role="alert">
+        <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
         <p>
-          <strong>توجه:</strong> پس از انتخاب لیگ‌ها و رفتن به مرحله پرداخت، امکان تغییر آن‌ها دیگر وجود نخواهد داشت. لطفاً در انتخاب خود دقت کنید.
+          <strong>توجه:</strong>
+          پس از انتخاب لیگ‌ها و رفتن به مرحله پرداخت، امکان تغییر آن‌ها وجود نخواهد داشت. لطفاً در انتخاب خود دقت کنید.
         </p>
       </div>
 
-      <form method="POST" id="selectLeagueForm" action="{{ url_for('client.select_league', team_id=team.team_id) }}" novalidate>
+      <form
+        method="POST"
+        id="selectLeagueForm"
+        action="{{ url_for('client.select_league', team_id=team.team_id) }}"
+        novalidate
+      >
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
-        <h2 class="FormTitle" style="font-size: 1.5rem">لیگ‌های موجود</h2>
+        <h2 class="form-title">لیگ‌های موجود</h2>
 
-        <div class="FormGroup">
-          <label for="league_one">لیگ اول (اجباری):<span class="RequiredStar">*</span></label>
-          <select id="league_one" name="league_one" class="FormControl" required>
+        <div class="form-group">
+          <label for="league_one"
+            >لیگ اول (اجباری) <span class="required-star">*</span></label
+          >
+          <select id="league_one" name="league_one" class="form-control" required>
             <option value="">انتخاب کنید</option>
             {% for league in leagues_list %}
             <option value="{{ league.id }}" {% if team.league_one_id == league.id %}selected{% endif %}>
@@ -37,9 +45,9 @@
           </select>
         </div>
 
-        <div class="FormGroup">
+        <div class="form-group">
           <label for="league_two">لیگ دوم (اختیاری):</label>
-          <select id="league_two" name="league_two" class="FormControl">
+          <select id="league_two" name="league_two" class="form-control">
             <option value="">انتخاب نمی‌کنم</option>
             {% for league in leagues_list %}
             <option value="{{ league.id }}" {% if team.league_two_id == league.id %}selected{% endif %}>
@@ -49,20 +57,24 @@
           </select>
         </div>
 
-        <div class="FormGroup">
-          <button type="submit" class="Btn BtnPrimary Btn--fullWidth">تایید و ذخیره لیگ‌ها</button>
+        <div class="form-group">
+          <button type="submit" class="btn btn-primary btn--full-width">
+            تایید و ذخیره لیگ‌ها
+          </button>
         </div>
       </form>
     </div>
 
-    <div class="SectionCta" style="text-align: center; margin-bottom: 30px;">
-      <a href="{{ url_for('client.dashboard') }}" class="Btn BtnSecondary">بازگشت به داشبورد</a>
+    <div class="section-cta">
+      <a href="{{ url_for('client.dashboard') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left" aria-hidden="true"></i>
+        بازگشت به داشبورد
+      </a>
     </div>
   </div>
-</div>
+</main>
 {% endblock %}
 
-{% block Scripts %}
-{{ super() }}
-{# Script removed, this logic should be handled by main.js if needed, but simple dropdown disabling is fine. #}
+{% block scripts %}
+  {{ super() }}
 {% endblock %}

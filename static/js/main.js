@@ -38,6 +38,8 @@ const airocupApp = {
       IMAGE_MODAL: "#imageModal",
       MODAL_IMAGE: ".modal-image",
       GALLERY_ITEM_IMG: ".gallery-item img",
+      LOGIN_FORM: "#login-form",
+      FORGOT_PASSWORD_FORM: "#forgot-password-form",
       SIGN_UP_FORM: "#signUpForm",
       PASSWORD_INPUT: "#password",
       CONFIRM_PASSWORD_INPUT: "#confirm_password",
@@ -645,6 +647,84 @@ const airocupApp = {
       }
       return allValid;
     },
+
+    validateIdentifierField(inputElement, errorElement) {
+      if (!inputElement) return true;
+
+      const rawValue = inputElement.value || "";
+      const value = rawValue.trim();
+      inputElement.value = value;
+
+      let errorMessage = "";
+      const isEmail = Validators.IsValidEmail(value);
+      const isPhone = Validators.IsValidIranianPhone(value);
+
+      if (!value) {
+        errorMessage = "لطفا ایمیل یا شماره موبایل خود را وارد کنید.";
+      } else if (!isEmail && !isPhone) {
+        errorMessage = "لطفا یک ایمیل یا شماره موبایل معتبر وارد کنید.";
+      }
+
+      if (errorElement) errorElement.textContent = errorMessage;
+      inputElement.classList.toggle(
+        airocupApp.constants.CLASSES.INVALID,
+        Boolean(errorMessage)
+      );
+
+      return !errorMessage;
+    },
+
+    initializeLoginForm(form) {
+      if (!form) return;
+
+      const identifierInput = form.querySelector('[name="identifier"]');
+      const errorElement = form.querySelector("#identifier-error");
+
+      if (!identifierInput) return;
+
+      const validate = () =>
+        this.validateIdentifierField(identifierInput, errorElement);
+
+      identifierInput.addEventListener("input", () => {
+        if (errorElement && errorElement.textContent) {
+          validate();
+        }
+      });
+
+      form.addEventListener("submit", (event) => {
+        const isValid = validate();
+        if (!isValid) {
+          event.preventDefault();
+          identifierInput.focus();
+        }
+      });
+    },
+
+    initializeForgotPasswordForm(form) {
+      if (!form) return;
+
+      const identifierInput = form.querySelector('[name="identifier"]');
+      const errorElement = form.querySelector("#identifier-error");
+
+      if (!identifierInput) return;
+
+      const validate = () =>
+        this.validateIdentifierField(identifierInput, errorElement);
+
+      identifierInput.addEventListener("input", () => {
+        if (errorElement && errorElement.textContent) {
+          validate();
+        }
+      });
+
+      form.addEventListener("submit", (event) => {
+        const isValid = validate();
+        if (!isValid) {
+          event.preventDefault();
+          identifierInput.focus();
+        }
+      });
+    },
   },
 
   initializeChat(container) {
@@ -773,10 +853,22 @@ const airocupApp = {
       );
       if (signUpForm) this.initializeSignUpForm(signUpForm);
 
+      const loginForm = document.querySelector(
+        airocupApp.constants.SELECTORS.LOGIN_FORM
+      );
+      if (loginForm) airocupApp.forms.initializeLoginForm(loginForm);
+
+      const forgotPasswordForm = document.querySelector(
+        airocupApp.constants.SELECTORS.FORGOT_PASSWORD_FORM
+      );
+      if (forgotPasswordForm)
+        airocupApp.forms.initializeForgotPasswordForm(forgotPasswordForm);
+
       const chatContainer = document.querySelector(
         airocupApp.constants.SELECTORS.CLIENT_CHAT_CONTAINER
       );
       if (chatContainer) airocupApp.initializeChat(chatContainer);
+      this.initializeResetForm();
       this.initializeMembersPage();
       this.initializeLeagueSelector();
       this.initializeFileUploadValidation();
@@ -1080,12 +1172,39 @@ const airocupApp = {
 
       const passwordInput = form.querySelector('input[name="new_password"]');
       const confirmInput = form.querySelector('input[name="confirm_password"]');
+      const validatorElement = form.querySelector(
+        airocupApp.constants.SELECTORS.PASSWORD_STRENGTH_VALIDATOR
+      );
 
       airocupApp.forms.initializePasswordConfirmation(
         form,
         passwordInput,
         confirmInput
       );
+
+      if (passwordInput && validatorElement) {
+        passwordInput.addEventListener("input", () =>
+          airocupApp.forms.validatePasswordStrength(
+            passwordInput,
+            validatorElement
+          )
+        );
+
+        form.addEventListener("submit", (event) => {
+          const isStrong = airocupApp.forms.validatePasswordStrength(
+            passwordInput,
+            validatorElement
+          );
+          if (!isStrong) {
+            event.preventDefault();
+            airocupApp.ui.createFlash(
+              "error",
+              "لطفا الزامات رمز عبور را رعایت کنید."
+            );
+            passwordInput.focus();
+          }
+        });
+      }
     },
     initializeChat(container) {
       const elements = {
@@ -1533,37 +1652,10 @@ const airocupApp = {
   },
 };
 
-document.addEventListener("DOMContentLoaded", function () {
-  const mobileBtn = document.getElementById("mobile-menu-btn");
-  const mobileMenu = document.getElementById("mobile-menu");
-  const backdrop = document.getElementById("mobile-menu-backdrop");
-
-  if (!mobileBtn || !mobileMenu) return;
-
-  function openMenu() {
-    mobileBtn.classList.add("open");
-    mobileMenu.classList.add("open");
-    backdrop && backdrop.classList.add("open");
-    document.body.classList.add("mobile-menu-open");
+document.addEventListener("DOMContentLoaded", () => {
+  try {
+    airocupApp.init();
+  } catch (error) {
+    console.error("Failed to initialize Airocup app:", error);
   }
-
-  function closeMenu() {
-    mobileBtn.classList.remove("open");
-    mobileMenu.classList.remove("open");
-    backdrop && backdrop.classList.remove("open");
-    document.body.classList.remove("mobile-menu-open");
-  }
-
-  mobileBtn.addEventListener("click", function (e) {
-    e.preventDefault();
-    const isOpen = mobileMenu.classList.contains("open");
-    if (isOpen) closeMenu();
-    else openMenu();
-  });
-
-  backdrop && backdrop.addEventListener("click", closeMenu);
-
-  document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape") closeMenu();
-  });
 });

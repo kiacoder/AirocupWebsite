@@ -1,42 +1,47 @@
-{% extends "Global/Base.html" %} {% block Title %}مدیریت اعضای تیم: {{
-team.team_name }} | آیروکاپ{% endblock %} {% block Body %}
-<div class="AppContainer MembersPage" data-team-id="{{ team.team_id }}">
-  <div class="Container">
-    <div class="PageHeader">
-      <h1 class="SectionTitle">تیم شما: {{ team.team_name }}</h1>
-      <p class="SectionSubtitle">
+{% extends "global/base.html" %}
+
+{% block title %}مدیریت اعضای تیم: {{ team.team_name }}{% endblock %}
+
+{% block body %}
+<main
+  class="app-container members-page"
+  data-team-id="{{ team.team_id }}"
+>
+  <div class="container">
+    <header class="page-header">
+      <h1 class="page-title">تیم شما: {{ team.team_name }}</h1>
+      <p class="page-subtitle">
         در این بخش اعضای تیم خود را اضافه، ویرایش یا حذف کنید.
       </p>
-    </div>
+    </header>
 
     {% if is_paid and team.unpaid_members_count > 0 %}
-    <div class="Alert Alert--Warning" role="alert">
-      <i class="fas fa-exclamation-triangle"></i>
+    <div class="alert alert--warning" role="alert">
+      <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
       <p>
-        <strong>توجه:</strong> شما {{ team.unpaid_members_count | persian_digits
-        }} عضو جدید اضافه کرده‌اید که هزینه آن‌ها پرداخت نشده است. لطفاً برای
-        نهایی کردن ثبت‌نام آن‌ها به
-        <a href="{{ url_for('client.payment', team_id=team.team_id) }}"
-          >صفحه پرداخت</a
-        >
+        <strong>توجه:</strong>
+        شما {{ team.unpaid_members_count | persian_digits }} عضو جدید اضافه کرده‌اید که هزینه آن‌ها پرداخت نشده است.
+        لطفاً برای نهایی کردن ثبت‌نام آن‌ها به
+        <a href="{{ url_for('client.payment', team_id=team.team_id) }}">صفحه پرداخت</a>
         مراجعه کنید.
       </p>
     </div>
     {% endif %}
 
-    <div class="Card Card--table">
-      <h2 class="Card__header">
-        اعضای فعلی ({{ members|length | persian_digits }} از {{
-        app_config.max_members_per_team | persian_digits }})
-      </h2>
-      <div class="UserTableWrapper">
-        <table class="UserTable">
+    <section class="card card--table">
+      <header class="card-header">
+        <h2>
+          اعضای فعلی ({{ members|length | persian_digits }} از {{ app_config.max_members_per_team | persian_digits }})
+        </h2>
+      </header>
+      <div class="user-table-wrapper">
+        <table class="user-table">
           <thead>
             <tr>
               <th>نام و نام خانوادگی</th>
               <th>نقش</th>
               <th>کد ملی</th>
-              <th class="ActionsHeader">عملیات</th>
+              <th class="actions">عملیات</th>
             </tr>
           </thead>
           <tbody>
@@ -47,47 +52,41 @@ team.team_name }} | آیروکاپ{% endblock %} {% block Body %}
               <td data-label="کد ملی" dir="ltr">
                 {{ member.national_id | persian_digits or '-' }}
               </td>
-              <td class="Actions">
+              <td class="actions">
                 <a
                   href="{{ url_for('client.edit_member', team_id=team.team_id, member_id=member.member_id) }}"
-                  class="Btn BtnSecondary"
+                  class="btn btn-secondary btn-sm"
                 >
-                  <i class="fas fa-edit"></i> ویرایش
+                  <i class="fas fa-edit" aria-hidden="true"></i>
+                  ویرایش
                 </a>
                 <form
                   action="{{ url_for('client.delete_member', team_id=team.team_id, member_id=member.member_id) }}"
                   method="POST"
-                  style="display: inline"
                 >
-                  <input
-                    type="hidden"
-                    name="csrf_token"
-                    value="{{ csrf_token() }}"
-                  />
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                  {% set is_archive_locked = is_paid %}
                   <button
                     type="button"
-                    class="Btn BtnDanger DeleteBtn"
+                    class="btn btn-danger btn-sm delete-btn"
                     data-modal-title="تایید حذف عضو"
                     data-modal-body="آیا از حذف «{{ member.name }}» اطمینان دارید؟"
                     data-modal-confirm-text="بله، حذف کن"
-                    {%
-                    if
-                    is_paid
-                    %}disabled
+                    {% if is_archive_locked %}
+                    disabled
                     title="پس از تایید پرداخت، امکان حذف عضو وجود ندارد."
-                    {%
-                    endif
-                    %}
+                    {% endif %}
                   >
-                    <i class="fas fa-trash"></i> حذف
+                    <i class="fas fa-trash" aria-hidden="true"></i>
+                    حذف
                   </button>
                 </form>
               </td>
             </tr>
             {% else %}
-            <tr class="EmptyStateRow">
-              <td colspan="4" class="EmptyState">
-                <i class="fas fa-users-slash EmptyState__icon"></i>
+            <tr class="empty-state-row">
+              <td colspan="4" class="empty-state">
+                <i class="fas fa-users-slash empty-state-icon" aria-hidden="true"></i>
                 این تیم هنوز عضوی ندارد.
               </td>
             </tr>
@@ -95,36 +94,40 @@ team.team_name }} | آیروکاپ{% endblock %} {% block Body %}
           </tbody>
         </table>
       </div>
-    </div>
+    </section>
 
     {% if members|length < app_config.max_members_per_team %}
-    <div class="FormContainer" id="AddMemberFormContainer">
-      <h2 class="FormTitle">افزودن عضو جدید</h2>
+    <section class="form-container form-container--medium" id="addMemberFormContainer">
+      <h2 class="form-title">افزودن عضو جدید</h2>
       <form
         method="POST"
         action="{{ url_for('client.add_member', team_id=team.team_id) }}"
-        id="AddMemberForm"
+        id="addMemberForm"
         novalidate
       >
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-        {% with id_prefix='Add-', member_data=None, form_data=None %} {% include
-        'Client/MemberFormFields.html' %} {% endwith %}
-        <div class="FormGroup">
-          <button type="submit" class="Btn BtnPrimary Btn--fullWidth">
+        {% with id_prefix='add-', member_data=None, form_data=None %}
+          {% include 'client/member_form_fields.html' %}
+        {% endwith %}
+        <div class="form-group">
+          <button type="submit" class="btn btn-primary btn--full-width">
             افزودن عضو
           </button>
         </div>
       </form>
-    </div>
+    </section>
     {% endif %}
 
-    <div class="SectionCta" style="text-align: center; margin-bottom: 30px">
-      <a href="{{ url_for('client.dashboard') }}" class="Btn BtnSecondary"
-        ><i class="fas fa-arrow-left"></i> بازگشت به داشبورد</a
-      >
+    <div class="section-cta">
+      <a href="{{ url_for('client.dashboard') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left" aria-hidden="true"></i>
+        بازگشت به داشبورد
+      </a>
     </div>
   </div>
-</div>
-{% endblock %} {% block Scripts %} {{ super() }} {# All JavaScript has been
-removed. main.js handles the delete confirmation modal and form setup. #} {%
-endblock %}
+</main>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+{% endblock %}

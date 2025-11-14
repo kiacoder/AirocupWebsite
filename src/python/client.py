@@ -11,7 +11,7 @@ import bcrypt
 import jdatetime
 from persiantools.digits import fa_to_en
 from sqlalchemy import exc, func, select
-from sqlalchemy.orm import subqueryload
+from sqlalchemy.orm import subqueryload, joinedload
 import bleach
 from werkzeug.utils import secure_filename
 from werkzeug.security import safe_join
@@ -1253,7 +1253,11 @@ def dashboard():
     with database.get_db_session() as db:
         teams = (
             db.query(models.Team)
-            .options(subqueryload(models.Team.members))
+            .options(
+                subqueryload(models.Team.members),
+                joinedload(models.Team.league_one),
+                joinedload(models.Team.league_two),
+            )
             .filter(
                 models.Team.client_id == session.get("client_id"),
                 models.Team.status == models.EntityStatus.ACTIVE,
@@ -1284,7 +1288,12 @@ def dashboard():
             latest_payments = (
                 db.query(subquery).filter(subquery.c.row_number == 1).all()
             )
-            payment_statuses = {row.team_id: row.status for row in latest_payments}
+            payment_statuses = {
+                row.team_id: models.PaymentStatus(row.status)
+                if row.status is not None
+                else None
+                for row in latest_payments
+            }
 
         for team in teams:
             setattr(team, "last_payment_status", payment_statuses.get(team.team_id))
@@ -1292,7 +1301,7 @@ def dashboard():
     return render_template(
         constants.client_html_names_data["dashboard"],
         teams=teams,
-        payment_info=config.payment_config["fee_per_person"],
+        payment=config.payment_config,
     )
 
 

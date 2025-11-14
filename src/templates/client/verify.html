@@ -1,31 +1,38 @@
 {% extends "global/base.html" %}
 
-{% block title %}تایید شماره موبایل{% endblock %}
+{% block title %}تایید کد{% endblock %}
 
 {% block body %}
 <main class="app-container">
   <div class="form-container form-container--small">
     <form
       method="POST"
+      id="verification-form"
       action="{{ url_for('client.verify_code') }}"
-      id="verificationForm"
-      data-cooldown="{{ Cooldown or 0 }}"
-      data-client-id="{{ ClientID or '' }}"
-      data-action="phone_signup"
-      data-resend-url="{{ url_for('client.resend_code') }}"
-      data-csrf-token="{{ csrf_token() }}"
     >
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-      <input type="hidden" name="action" value="phone_signup" />
-      <input type="hidden" name="client_id" value="{{ ClientID or '' }}" />
+      <input type="hidden" name="action" value="{{ action }}" />
+      <input type="hidden" name="client_id" value="{{ client_id or '' }}" />
+      <input type="hidden" name="identifier" value="{{ identifier or '' }}" />
+      <input
+        type="hidden"
+        name="identifier_type"
+        value="{{ identifier_type or '' }}"
+      />
 
-      <h1 class="form-title">تایید شماره موبایل</h1>
+      <h1 class="form-title">تایید کد</h1>
       <p class="form-subtitle">
-        یک کد ۶ رقمی به شماره موبایل شما ارسال شد. لطفاً آن را در کادر زیر وارد کنید.
+        {% if action == 'phone_signup' %}
+        یک کد ۶ رقمی به شماره موبایل شما ارسال شد. لطفاً آن را وارد کنید.
+        {% elif action == 'password_reset' %}
+        یک کد ۶ رقمی به {{ 'ایمیل' if identifier_type == 'email' else 'شماره موبایل' }} شما ارسال شد. لطفاً آن را وارد کنید.
+        {% else %}
+        لطفاً کد تاییدی که برایتان ارسال شده را وارد نمایید.
+        {% endif %}
       </p>
 
       <div class="form-group">
-        <label for="code">کد تایید <span class="required-star">*</span></label>
+        <label for="code">کد تایید:</label>
         <input
           type="text"
           id="code"
@@ -38,14 +45,13 @@
           maxlength="6"
           pattern="\d{6}"
           inputmode="numeric"
-          autocomplete="one-time-code"
           title="لطفا یک کد ۶ رقمی وارد کنید."
         />
       </div>
 
       <div class="form-group">
         <button type="submit" class="btn btn-primary btn--full-width">
-          تایید و فعال‌سازی حساب
+          تایید کد
         </button>
       </div>
 
@@ -53,7 +59,7 @@
         <button type="button" id="resendButton" class="link-button">
           ارسال مجدد کد
         </button>
-        <span id="timerDisplay"></span>
+        <span id="timerDisplay" style="margin-right: 10px"></span>
       </div>
     </form>
   </div>
@@ -64,29 +70,35 @@
   {{ super() }}
   <script>
     document.addEventListener("DOMContentLoaded", function () {
-      const form = document.getElementById("verificationForm");
+      const form = document.getElementById("verification-form");
       const resendButton = document.getElementById("resendButton");
       const timerDisplay = document.getElementById("timerDisplay");
 
       if (!form || !resendButton || !timerDisplay) return;
 
-      const clientId = form.dataset.clientId;
-      const resendUrl = form.dataset.resendUrl;
-      const csrfToken = form.dataset.csrfToken;
-      const action = form.dataset.action;
-      let countdown = parseInt(form.dataset.cooldown, 10) || 0;
+      const action = "{{ action }}";
+      const clientId = "{{ client_id or '' }}";
+      const identifier = "{{ identifier or '' }}";
+      const identifierType = "{{ identifier_type or '' }}";
+      const csrfToken = "{{ csrf_token() }}";
+      let countdown = {{ cooldown or 0 }};
 
       const resendCode = async () => {
         if (countdown > 0) return;
 
         try {
-          const response = await fetch(resendUrl, {
+          const response = await fetch("{{ url_for('client.resend_code') }}", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
               "X-CSRFToken": csrfToken,
             },
-            body: JSON.stringify({ client_id: clientId, action }),
+            body: JSON.stringify({
+              action,
+              client_id: clientId,
+              identifier,
+              identifier_type: identifierType,
+            }),
           });
           const data = await response.json();
 
@@ -104,33 +116,26 @@
           }
         } catch (error) {
           console.error("Resend error:", error);
-          airocupApp.ui.createFlash(
-            "error",
-            "خطا در ارتباط با سرور. لطفا اتصال اینترنت خود را بررسی کنید."
-          );
+          airocupApp.ui.createFlash("error", "خطا در ارتباط با سرور.");
         }
       };
 
       function startTimer(duration) {
         countdown = duration;
         resendButton.disabled = true;
-        resendButton.classList.add("btn-disabled");
+        timerDisplay.textContent = `(${Math.floor(countdown / 60)}:${(countdown % 60)
+          .toString()
+          .padStart(2, "0")})`;
 
-        const updateLabel = () => {
+        const interval = setInterval(() => {
+          countdown--;
           timerDisplay.textContent = `(${Math.floor(countdown / 60)}:${(countdown % 60)
             .toString()
             .padStart(2, "0")})`;
-        };
-
-        updateLabel();
-        const interval = setInterval(() => {
-          countdown--;
-          updateLabel();
           if (countdown <= 0) {
             clearInterval(interval);
             timerDisplay.textContent = "";
             resendButton.disabled = false;
-            resendButton.classList.remove("btn-disabled");
           }
         }, 1000);
       }

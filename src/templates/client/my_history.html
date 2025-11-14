@@ -1,20 +1,24 @@
-{% extends "Global/Base.html" %} {% block Title %}تاریخچه پرداخت‌ها | آیروکاپ{%
-endblock %} {% block Body %}
-<div class="AppContainer">
-  <div class="Container">
-    <div class="PageHeader">
-      <h1 class="SectionTitle">تاریخچه پرداخت‌ها</h1>
-      <p class="SectionSubtitle">
-        در این بخش می‌توانید تمام پرداخت‌های انجام شده و وضعیت آن‌ها را مشاهده
-        کنید.
-      </p>
-    </div>
+{% extends "global/base.html" %}
 
-    <div class="Card Card--table">
-      <h2 class="Card__header">لیست تراکنش‌ها</h2>
-      <div class="UserTableWrapper">
-        {% if payments %}
-        <table class="UserTable">
+{% block title %}تاریخچه پرداخت‌ها{% endblock %}
+
+{% block body %}
+<main class="app-container">
+  <div class="container">
+    <header class="page-header">
+      <h1 class="page-title">تاریخچه پرداخت‌ها</h1>
+      <p class="page-subtitle">
+        در این بخش می‌توانید تمام پرداخت‌های انجام شده و وضعیت آن‌ها را مشاهده کنید.
+      </p>
+    </header>
+
+    <section class="card card--table">
+      <header class="card-header">
+        <h2>لیست تراکنش‌ها</h2>
+      </header>
+      {% if payments %}
+      <div class="user-table-wrapper">
+        <table class="user-table">
           <thead>
             <tr>
               <th>نام تیم</th>
@@ -35,9 +39,12 @@ endblock %} {% block Body %}
                 {{ p.upload_date | formatdate | persian_digits }}
               </td>
               <td data-label="وضعیت">
-                <span
-                  class="StatusBadge {% if p.status.value == 'approved' %}StatusApproved{% elif p.status.value == 'pending' %}StatusPending{% elif p.status.value == 'rejected' %}StatusRejected{% else %}StatusNotStarted{% endif %}"
-                >
+                {% set status_class = {
+                  'approved': 'status-approved',
+                  'pending': 'status-pending',
+                  'rejected': 'status-rejected'
+                }.get(p.status.value, 'status-not-started') %}
+                <span class="status-badge {{ status_class }}">
                   {{ p.status.label }}
                 </span>
               </td>
@@ -45,11 +52,12 @@ endblock %} {% block Body %}
                 {% if p.receipt_filename %}
                 <a
                   href="{{ url_for('client.get_receipt', client_id=p.client_id, filename=p.receipt_filename) }}"
-                  class="Btn BtnSecondary BtnSm"
+                  class="btn btn-secondary btn-sm"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <i class="fas fa-receipt"></i> مشاهده
+                  <i class="fas fa-receipt" aria-hidden="true"></i>
+                  مشاهده
                 </a>
                 {% else %}
                 <span>-</span>
@@ -59,21 +67,22 @@ endblock %} {% block Body %}
             {% endfor %}
           </tbody>
         </table>
-        {% else %}
-        <div class="Card EmptyStateCard">
-          <i class="fas fa-history EmptyStateIcon"></i>
-          <h3>سابقه پرداخت خالی است</h3>
-          <p>شما هنوز هیچ پرداختی انجام نداده‌اید.</p>
-        </div>
-        {% endif %}
       </div>
-    </div>
+      {% else %}
+      <div class="card empty-state-card">
+        <i class="fas fa-history empty-state-icon" aria-hidden="true"></i>
+        <h3>سابقه پرداخت خالی است</h3>
+        <p>شما هنوز هیچ پرداختی انجام نداده‌اید.</p>
+      </div>
+      {% endif %}
+    </section>
 
-    <div class="SectionCta" style="text-align: center; margin-top: 2rem">
-      <a href="{{ url_for('client.dashboard') }}" class="Btn BtnSecondary">
-        <i class="fas fa-arrow-left"></i> بازگشت به داشبورد
+    <div class="section-cta">
+      <a href="{{ url_for('client.dashboard') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left" aria-hidden="true"></i>
+        بازگشت به داشبورد
       </a>
     </div>
   </div>
-</div>
+</main>
 {% endblock %}
