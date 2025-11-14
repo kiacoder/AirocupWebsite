@@ -119,7 +119,7 @@
             فایل‌های پروژه مانند ویدئو، پوستر، فایل‌های متنی و... را بارگذاری کنید.
           </p>
 
-          <form id="document-upload-form"
+          <form id="documentUploadForm"
                 method="POST"
                 action="{{ url_for('client.upload_document', team_id=team.team_id) }}"
                 enctype="multipart/form-data">
@@ -207,6 +207,7 @@
 {% endblock %}
 
 {% block scripts %}
+  {{ super() }}
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   const tabButtons = document.querySelectorAll(".tab-button");
