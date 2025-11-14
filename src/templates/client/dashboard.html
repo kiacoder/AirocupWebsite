@@ -1,6 +1,142 @@
 {% extends "global/base.html" %}
 
-{% block title %}داشبورد{% endblock %}
+{% block title %}داشبورد | آیروکاپ{% endblock %}
+
+{% block body %}
+<div class="Container" style="margin-top: 2rem; margin-bottom: 2rem">
+  <div class="WelcomeHeader">
+    <h2>به داشبورد خود خوش آمدید</h2>
+    <p class="FormSubtitle">
+      این پنل شخصی شما برای مدیریت تمام تیم‌هایتان است.
+    </p>
+  </div>
+
+  <div class="FormGrid" style="gap: 1.5rem; margin-bottom: 2rem">
+    <div
+      class="DetailItem"
+      style="
+        border: none;
+        padding: 1rem;
+        background: var(--ColorBackgroundMuted);
+        border-radius: var(--BorderRadiusSmall);
+      "
+    >
+      <span>
+        <i class="fas fa-layer-group" style="color: var(--ColorPrimary)"></i>
+        تعداد تیم‌های من
+      </span>
+      <strong>{{ teams|length | persian_digits }} تیم</strong>
+    </div>
+    <div
+      class="DetailItem"
+      style="
+        border: none;
+        padding: 1rem;
+        background: var(--ColorBackgroundMuted);
+        border-radius: var(--BorderRadiusSmall);
+      "
+    >
+      <span>
+        <i class="fas fa-users-cog" style="color: var(--ColorSecondary)"></i>
+        سقف مجاز تیم‌ها
+      </span>
+      <strong>{{ app_config.max_team_per_client | persian_digits }} تیم</strong>
+    </div>
+  </div>
+
+  <div
+    class="Card"
+    style="margin-bottom: 2rem; border-left: 5px solid var(--ColorPrimary)"
+  >
+    <h3
+      class="Card__header"
+      style="
+        padding: 0 0 1rem 0;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      "
+    >
+      <i
+        class="fas fa-file-invoice-dollar"
+        style="color: var(--ColorPrimary)"
+      ></i>
+      اطلاعات و هزینه‌های ثبت‌نام
+    </h3>
+    <div class="FormGrid" style="gap: 1.5rem">
+      <div
+        class="DetailItem"
+        style="
+          border: none;
+          padding: 1rem;
+          background: var(--ColorBackgroundMuted);
+          border-radius: var(--BorderRadiusSmall);
+        "
+      >
+        <span
+          ><i class="fas fa-users" style="color: var(--ColorPrimaryDark)"></i
+          >هزینه ورودی تیم</span
+        >
+        <strong>
+          {{ (payment.fee_team or 0) | humanize_number | persian_digits }} ریال
+        </strong>
+      </div>
+      <div
+        class="DetailItem"
+        style="
+          border: none;
+          padding: 1rem;
+          background: var(--ColorBackgroundMuted);
+          border-radius: var(--BorderRadiusSmall);
+        "
+      >
+        <span
+          ><i
+            class="fas fa-user-plus"
+            style="color: var(--ColorPrimaryDark)"
+          ></i
+          >هزینه هر عضو</span
+        >
+        <strong>
+          {{ (payment.fee_per_person or 0) | humanize_number | persian_digits }}
+          ریال
+        </strong>
+      </div>
+      <div
+        class="DetailItem Grid-col-span-2"
+        style="
+          border: none;
+          padding: 1rem;
+          background: var(--ColorBackgroundMuted);
+          border-radius: var(--BorderRadiusSmall);
+        "
+      >
+        <span
+          ><i
+            class="fas fa-percent"
+            style="color: var(--ColorSecondaryDark)"
+          ></i
+          >تخفیف ثبت‌نام در لیگ دوم</span
+        >
+        <strong>
+          {{ (payment.league_two_discount or 0) | persian_digits }} درصد
+        </strong>
+      </div>
+    </div>
+    <div class="FormFooter" style="padding-top: 1.5rem; margin-top: 1.5rem">
+      <p>
+        <strong>نکته:</strong> هزینه ورودی تیم، یک هزینه ثابت برای هر تیم است و
+        به هزینه اعضا اضافه می‌گردد.
+      </p>
+      <a
+        href="{{ url_for('client.my_history') }}"
+        class="Btn BtnSecondary BtnSm"
+      >
+        <i class="fas fa-history"></i> مشاهده سوابق پرداخت
+      </a>
+    </div>
+  </div>
 
 {% block body %}
 <main class="app-container dashboard-page">
@@ -12,15 +148,36 @@
       </p>
     </header>
 
-    <section class="stats-grid">
-      <div class="card stat-card">
-        <i class="fas fa-layer-group" aria-hidden="true"></i>
-        <div>
-          <span class="stat-card-label">تعداد تیم‌های من</span>
-          <strong class="stat-card-value"
-            >{{ teams|length | persian_digits }} تیم</strong
-          >
-        </div>
+  <div class="TeamCardGrid">
+    {% set status_class_map = {
+      'approved': 'StatusApproved',
+      'pending': 'StatusPending',
+      'rejected': 'StatusRejected'
+    } %}
+    {% set status_label_map = {
+      'approved': 'تایید شده',
+      'pending': 'در حال بررسی',
+      'rejected': 'رد شده'
+    } %}
+    {% for team in teams %}
+    <div class="Card CardTeam">
+      <div class="TeamCardHeader">
+        <h3>{{ team.team_name }}</h3>
+        {% set status_enum = team.last_payment_status %}
+        {% set status_value =
+          status_enum.value if status_enum and status_enum is not string else status_enum
+        %}
+        {% set status_label =
+          status_enum.label
+          if status_enum and status_enum is not string
+          else status_label_map.get(status_value, 'شروع نشده')
+        %}
+        {% set status_class = status_class_map.get(status_value, 'StatusNotStarted') %}
+        <span
+          class="StatusBadge {{ status_class }}"
+        >
+          {{ status_label }}
+        </span>
       </div>
 
       <div class="card stat-card">
@@ -226,12 +383,10 @@
       {% endfor %}
     </section>
 
-    <div class="section-cta">
-      <a href="{{ url_for('global.logout') }}" class="btn btn-secondary">
-        <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
-        خروج از حساب کاربری
-      </a>
-    </div>
+  <div class="FormFooter">
+    <a href="{{ url_for('global.logout') }}" class="Btn BtnSecondary">
+      <i class="fas fa-sign-out-alt"></i> خروج از حساب کاربری
+    </a>
   </div>
 </main>
 
@@ -262,4 +417,5 @@
 
 {% block scripts %}
   {{ super() }}
+  {# All JavaScript has been removed because it is now handled globally by main.js #}
 {% endblock %}
