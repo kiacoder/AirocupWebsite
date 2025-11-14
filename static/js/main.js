@@ -94,6 +94,22 @@ const airocupApp = {
       );
     },
 
+    toPersianDigits(value) {
+      const digitsMap = {
+        0: "۰",
+        1: "۱",
+        2: "۲",
+        3: "۳",
+        4: "۴",
+        5: "۵",
+        6: "۶",
+        7: "۷",
+        8: "۸",
+        9: "۹",
+      };
+      return String(value).replace(/[0-9]/g, (digit) => digitsMap[digit] || digit);
+    },
+
     safeSocket() {
       try {
         return typeof io !== "undefined" ? io() : null;
@@ -488,7 +504,10 @@ const airocupApp = {
       }
       if (yearSelect.options.length <= 1) {
         const years = window.AirocupData?.allowed_years || [];
-        years.forEach((year) => yearSelect.add(new Option(year, year)));
+        years.forEach((year) => {
+          const label = airocupApp.helpers.toPersianDigits(year);
+          yearSelect.add(new Option(label, year));
+        });
       }
 
       const isLeapYear = (year) => {
@@ -511,7 +530,8 @@ const airocupApp = {
         daySelect.innerHTML = "";
         daySelect.add(new Option("روز", ""));
         for (let day = 1; day <= maxDays; day++) {
-          daySelect.add(new Option(day, day));
+          const label = airocupApp.helpers.toPersianDigits(day);
+          daySelect.add(new Option(label, day));
         }
 
         if (currentDay && parseInt(currentDay, 10) <= maxDays) {
@@ -1651,6 +1671,9 @@ const airocupApp = {
     }
   },
 };
+
+// Expose the main application object for inline scripts that rely on it.
+window.airocupApp = airocupApp;
 
 document.addEventListener("DOMContentLoaded", () => {
   try {
