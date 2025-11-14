@@ -96,14 +96,24 @@
     >
       {% set city_options = Provinces.get(province_value, []) if province_value else [] %}
       <option value="">{{ 'ابتدا استان را انتخاب کنید' if not city_options else 'شهر را انتخاب کنید' }}</option>
-      {% for city_name in city_options | sort %}
-        <option
-          value="{{ city_name }}"
-          {% if city_name == city_value %}selected{% endif %}
-        >
-          {{ city_name }}
-        </option>
-      {% endfor %}
+      {% if city_options %}
+        {% for city_name in city_options | sort %}
+          <option
+            value="{{ city_name }}"
+            {% if city_name == city_value %}selected{% endif %}
+          >
+            {{ city_name }}
+          </option>
+        {% endfor %}
+      {% else %}
+        {% for province_name, cities in Provinces.items() | dictsort %}
+          <optgroup label="{{ province_name }}">
+            {% for city_name in cities | sort %}
+              <option value="{{ city_name }}">{{ city_name }}</option>
+            {% endfor %}
+          </optgroup>
+        {% endfor %}
+      {% endif %}
     </select>
   </div>
 </div>
@@ -124,7 +134,7 @@
       <option value="">روز</option>
       {% for day in range(1, 32) %}
         <option value="{{ day }}" {% if birth_day_int and birth_day_int == day %}selected{% endif %}>
-          {{ day }}
+          {{ day | persian_digits }}
         </option>
       {% endfor %}
     </select>
@@ -155,7 +165,7 @@
       <option value="">سال</option>
       {% for year in AllowedYears | sort(reverse=True) %}
         <option value="{{ year }}" {% if birth_year_int and birth_year_int == year %}selected{% endif %}>
-          {{ year }}
+          {{ year | persian_digits }}
         </option>
       {% endfor %}
     </select>
