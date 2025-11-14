@@ -1,21 +1,19 @@
-{% extends "Global/Base.html" %}
-
-{% block Title %}تاریخچه پرداخت‌ها | آیروکاپ{% endblock %}
-
-{% block Body %}
+{% extends "Global/Base.html" %} {% block Title %}تاریخچه پرداخت‌ها | آیروکاپ{%
+endblock %} {% block Body %}
 <div class="AppContainer">
   <div class="Container">
     <div class="PageHeader">
       <h1 class="SectionTitle">تاریخچه پرداخت‌ها</h1>
       <p class="SectionSubtitle">
-        در این بخش می‌توانید تمام پرداخت‌های انجام شده و وضعیت آن‌ها را مشاهده کنید.
+        در این بخش می‌توانید تمام پرداخت‌های انجام شده و وضعیت آن‌ها را مشاهده
+        کنید.
       </p>
     </div>
 
     <div class="Card Card--table">
       <h2 class="Card__header">لیست تراکنش‌ها</h2>
       <div class="UserTableWrapper">
-        {% if Payments %}
+        {% if payments %}
         <table class="UserTable">
           <thead>
             <tr>
@@ -27,19 +25,30 @@
             </tr>
           </thead>
           <tbody>
-            {% for payment in Payments %}
+            {% for p in payments %}
             <tr>
-              <td data-label="نام تیم">{{ payment.TeamName }}</td>
-              <td data-label="مبلغ">{{ payment.Amount | humanize_number | persian_digits }}</td>
-              <td data-label="تاریخ">{{ payment.UploadDate | formatdate | persian_digits }}</td>
+              <td data-label="نام تیم">{{ p.team_name }}</td>
+              <td data-label="مبلغ">
+                {{ p.amount | humanize_number | persian_digits }}
+              </td>
+              <td data-label="تاریخ">
+                {{ p.upload_date | formatdate | persian_digits }}
+              </td>
               <td data-label="وضعیت">
-                <span class="StatusBadge {% if payment.Status.value == 'Approved' %}StatusApproved{% elif payment.Status.value == 'Pending' %}StatusPending{% elif payment.Status.value == 'Rejected' %}StatusRejected{% else %}StatusNotStarted{% endif %}">
-                  {{ payment.Status.label }}
+                <span
+                  class="StatusBadge {% if p.status.value == 'approved' %}StatusApproved{% elif p.status.value == 'pending' %}StatusPending{% elif p.status.value == 'rejected' %}StatusRejected{% else %}StatusNotStarted{% endif %}"
+                >
+                  {{ p.status.label }}
                 </span>
               </td>
               <td data-label="رسید">
-                {% if payment.ReceiptFilename %}
-                <a href="{{ url_for('Client.GetReceipt', ClientID=payment.ClientID, filename=payment.ReceiptFilename) }}" class="Btn BtnSecondary BtnSm" target="_blank" rel="noopener noreferrer">
+                {% if p.receipt_filename %}
+                <a
+                  href="{{ url_for('client.get_receipt', client_id=p.client_id, filename=p.receipt_filename) }}"
+                  class="Btn BtnSecondary BtnSm"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <i class="fas fa-receipt"></i> مشاهده
                 </a>
                 {% else %}

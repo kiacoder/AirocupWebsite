@@ -1,41 +1,39 @@
+{# This is a partial template included in create_team.html, members.html, etc. #}
 <div class="FormGrid">
     <div class="FormGroup">
-        <label for="{{ IdPrefix }}Name">نام و نام خانوادگی:<span class="RequiredStar">*</span></label>
-        <input id="{{ IdPrefix }}Name" name="Name" type="text" class="FormControl" required value="{{ FormData.Name if FormData else (MemberData.Name if MemberData else '') }}" />
+        <label for="{{ id_prefix }}name">نام و نام خانوادگی:<span class="RequiredStar">*</span></label>
+        <input id="{{ id_prefix }}name" name="name" type="text" class="FormControl" required value="{{ form_data.name if form_data else (member_data.name if member_data else '') }}" />
     </div>
     <div class="FormGroup">
-        <label for="{{ IdPrefix }}NationalID">کد ملی:<span class="RequiredStar">*</span></label>
-        <input id="{{ IdPrefix }}NationalID" name="NationalID" type="text" class="FormControl" inputmode="numeric" maxlength="10" required value="{{ FormData.NationalID if FormData else (MemberData.NationalID if MemberData else '') }}" dir="ltr" />
+        <label for="{{ id_prefix }}national_id">کد ملی:<span class="RequiredStar">*</span></label>
+        <input id="{{ id_prefix }}national_id" name="national_id" type="text" class="FormControl" inputmode="numeric" maxlength="10" required value="{{ form_data.national_id if form_data else (member_data.national_id if member_data else '') }}" dir="ltr" />
     </div>
 </div>
 
 <div class="FormGrid">
     <div class="FormGroup">
-        <label for="{{ IdPrefix }}Role">نقش در تیم:<span class="RequiredStar">*</span></label>
-        <select id="{{ IdPrefix }}Role" name="Role" class="FormControl" required>
+        <label for="{{ id_prefix }}role">نقش در تیم:<span class="RequiredStar">*</span></label>
+        <select id="{{ id_prefix }}role" name="role" class="FormControl" required>
             <option value="">انتخاب کنید...</option>
-            {% set current_role = FormData.Role if FormData else (MemberData.Role.value if MemberData else '') %}
-            <option value="{{ Models.MemberRole.Member.value }}" {% if current_role == Models.MemberRole.Member.value %}selected{% endif %}>{{ Models.MemberRole.Member.label }}</option>
-            <option value="{{ Models.MemberRole.Coach.value }}" {% if current_role == Models.MemberRole.Coach.value %}selected{% endif %}>{{ Models.MemberRole.Coach.label }}</option>
-            <option value="{{ Models.MemberRole.Leader.value }}" {% if current_role == Models.MemberRole.Leader.value %}selected{% endif %}>{{ Models.MemberRole.Leader.label }}</option>
+            {% set current_role = form_data.role if form_data else (member_data.role.value if member_data and member_data.role else '') %}
+            {# Assuming 'member_role_enum' is passed to the context from Python #}
+            <option value="member" {% if current_role == 'member' %}selected{% endif %}>عضو</option>
+            <option value="coach" {% if current_role == 'coach' %}selected{% endif %}>مربی</option>
+            <option value="leader" {% if current_role == 'leader' %}selected{% endif %}>سرپرست</option>
         </select>
     </div>
 </div>
 
 <div class="FormGrid">
     <div class="FormGroup">
-        <label for="{{ IdPrefix }}Province">استان:<span class="RequiredStar">*</span></label>
-        <select id="{{ IdPrefix }}Province" name="Province" class="FormControl" required>
-            <option value="">انتخاب کنید...</option>
-            {% set current_province = FormData.Province if FormData else (MemberData.City.Province.Name if MemberData and MemberData.City else '') %}
-            {% for province_name in Provinces.keys() %}
-                <option value="{{ province_name }}" {% if current_province == province_name %}selected{% endif %}>{{ province_name }}</option>
-            {% endfor %}
+        <label for="{{ id_prefix }}province">استان:<span class="RequiredStar">*</span></label>
+        <select id="{{ id_prefix }}province" name="province" class="FormControl" required data-initial-value="{{ form_data.province if form_data else (member_data.city.province.name if member_data and member_data.city else '') }}">
+            {# Options are populated by main.js #}
         </select>
     </div>
     <div class="FormGroup">
-        <label for="{{ IdPrefix }}City">شهر:<span class="RequiredStar">*</span></label>
-        <select id="{{ IdPrefix }}City" name="City" class="FormControl" required data-initial-city="{{ FormData.City if FormData else (MemberData.City.Name if MemberData and MemberData.City else '') }}">
+        <label for="{{ id_prefix }}city">شهر:<span class="RequiredStar">*</span></label>
+        <select id="{{ id_prefix }}city" name="city" class="FormControl" required data-initial-value="{{ form_data.city if form_data else (member_data.city.name if member_data and member_data.city else '') }}">
             <option value="">ابتدا استان را انتخاب کنید</option>
         </select>
     </div>
@@ -44,27 +42,18 @@
 <div class="FormGroup">
     <label>تاریخ تولد<span class="RequiredStar">*</span></label>
     <div class="DatepickerGroup">
-        {% set b_year = FormData.BirthYear if FormData else (MemberData.BirthDate.year if MemberData else '') %}
-        {% set b_month = FormData.BirthMonth if FormData else (MemberData.BirthDate.month if MemberData else '') %}
-        {% set b_day = FormData.BirthDay if FormData else (MemberData.BirthDate.day if MemberData else '') %}
-        
-        <select id="{{ IdPrefix }}BirthDay" name="BirthDay" class="FormControl" required>
+        {% set b_year = form_data.birth_year if form_data else (member_data.birth_date|formatdate|split('-'))[0] if member_data and member_data.birth_date else '' %}
+        {% set b_month = form_data.birth_month if form_data else (member_data.birth_date|formatdate|split('-'))[1] if member_data and member_data.birth_date else '' %}
+        {% set b_day = form_data.birth_day if form_data else (member_data.birth_date|formatdate|split('-'))[2] if member_data and member_data.birth_date else '' %}
+
+        <select id="{{ id_prefix }}birth_day" name="birth_day" class="FormControl" required>
             <option value="">روز</option>
-            {% for day_num in range(1, 32) %}
-                <option value="{{ day_num }}" {% if b_day and b_day|int == day_num %}selected{% endif %}>{{ day_num | persian_digits }}</option>
-            {% endfor %}
         </select>
-        <select id="{{ IdPrefix }}BirthMonth" name="BirthMonth" class="FormControl" required>
+        <select id="{{ id_prefix }}birth_month" name="birth_month" class="FormControl" required>
             <option value="">ماه</option>
-            {% for month_num, month_name in PersianMonths.items() %}
-                <option value="{{ month_num }}" {% if b_month and b_month|int == month_num %}selected{% endif %}>{{ month_name }}</option>
-            {% endfor %}
         </select>
-        <select id="{{ IdPrefix }}BirthYear" name="BirthYear" class="FormControl" required>
+        <select id="{{ id_prefix }}birth_year" name="birth_year" class="FormControl" required>
             <option value="">سال</option>
-            {% for year_num in AllowedYears %}
-                <option value="{{ year_num }}" {% if b_year and b_year|int == year_num %}selected{% endif %}>{{ year_num | persian_digits }}</option>
-            {% endfor %}
         </select>
     </div>
 </div>

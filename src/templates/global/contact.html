@@ -1,22 +1,28 @@
-{% extends "global/Base.html" %} {% block Title %}تماس با ما | آیروکاپ{%
-endblock %} {% block SEO_Description %}
+{% extends "global/base.html" %}
+
+{% block title %}تماس با ما | آیروکاپ{% endblock %}
+
+{% block seo_description %}
 <meta
   name="description"
   content="راه های ارتباطی با تیم برگزاری آیروکاپ. آدرس، نقشه محل برگزاری و اطلاعات تماس برای پاسخگویی به سوالات و پیشنهادات شما."
 />
-{% endblock %} {% block Body %}
-<main class="AppContainer ContactPage">
-  <div class="Container">
-    <header class="PageHeader TextCenter">
-      <h1 class="PageTitle">با ما در ارتباط باشید</h1>
-      <p class="PageSubtitle">
+{% endblock %}
+
+{% block body %}
+<main class="app-container contact-page">
+  <div class="container">
+
+    <header class="page-header text-center">
+      <h1 class="page-title">با ما در ارتباط باشید</h1>
+      <p class="page-subtitle">
         تیم پشتیبانی آیروکاپ آماده پاسخگویی به سوالات، پیشنهادات و درخواست‌های
         همکاری شماست. لطفاً از طریق کانال‌های ارتباطی زیر با ما در تماس باشید.
       </p>
     </header>
 
     <section
-      class="ContactGrid"
+      class="contact-grid"
       itemscope
       itemtype="https://schema.org/Organization"
     >
@@ -26,75 +32,72 @@ endblock %} {% block SEO_Description %}
         content="{{ url_for('global.index', _external=True) }}"
       />
 
-      <div class="Card ContactDetailsCard">
+      <!-- Contact Details -->
+      <div class="card contact-details-card">
         <h3>راه‌های ارتباطی</h3>
         <address>
           {% for point in contact_points %}
           <a
             href="{{ point.href }}"
-            class="ContactLink"
-            {%
-            if
-            point.target
-            %}target="_blank"
-            rel="noopener noreferrer"
-            {%
-            endif
-            %}
+            class="contact-link"
+            {% if point.target %}target="_blank" rel="noopener noreferrer"{% endif %}
             itemprop="contactPoint"
             itemscope
             itemtype="https://schema.org/ContactPoint"
           >
             <i class="{{ point.icon }}" aria-hidden="true"></i>
-            <div class="ContactText">
+
+            <div class="contact-text">
               <strong itemprop="name">{{ point.label }}:</strong>
               <span itemprop="url">{{ point.display }}</span>
             </div>
+
           </a>
           {% endfor %}
         </address>
       </div>
 
+      <!-- Location Card -->
       <div
-        class="Card LocationCard"
+        class="card location-card"
         itemprop="address"
         itemscope
         itemtype="https://schema.org/PostalAddress"
       >
         <h3 itemprop="name">محل برگزاری رویداد</h3>
-        <p class="LocationAddress">
+
+        <p class="location-address">
           <i class="fas fa-map-marker-alt" aria-hidden="true"></i>
           <span itemprop="streetAddress">{{ event_details.address }}</span>
         </p>
-        <div class="MapContainer">
+
+        <div class="map-container">
           <iframe
             src="{{ event_details.google_map_url }}"
             height="450"
             allowfullscreen=""
             loading="lazy"
             referrerpolicy="no-referrer-when-downgrade"
-            title="نقشه گوگل نمایش‌دهنده محل برگزاری آیروکاپ در {{ event_details.address }}"
-          >
-          </iframe>
+            title="نقشه محل برگزاری آیروکاپ در {{ event_details.address }}"
+          ></iframe>
         </div>
       </div>
     </section>
 
     {% if session.get('client_id') %}
-    <section class="CtaSection TextCenter">
+    <section class="cta-section text-center">
       <h2>نیاز به پشتیبانی فوری دارید؟</h2>
       <p>
         برای سوالات مربوط به حساب کاربری یا تیم خود، مستقیماً با ما گفتگو کنید.
       </p>
-      <a
-        href="{{ url_for('client.support_chat') }}"
-        class="Btn BtnPrimary BtnLarge"
-      >
+
+      <a href="{{ url_for('client.support_chat') }}" class="btn btn-primary btn-large">
         <i class="fas fa-headset" aria-hidden="true"></i>
         مراجعه به چت پشتیبانی
       </a>
     </section>
     {% endif %}
+
   </div>
 </main>
 {% endblock %}

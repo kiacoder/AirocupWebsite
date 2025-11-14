@@ -41,6 +41,24 @@ from .auth import login_required
 client_blueprint = Blueprint("client", __name__)
 
 
+def _ensure_aware(dt):
+    """Return timezone-aware datetime (UTC). If dt is None return None.
+    If dt.tzinfo is None assume UTC (replace tzinfo)."""
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=datetime.timezone.utc)
+    return dt
+
+
+def _seconds_since(dt):
+    """Return seconds elapsed since dt (dt may be naive or aware)."""
+    if dt is None:
+        return None
+    dt_aware = _ensure_aware(dt)
+    return (datetime.datetime.now(datetime.timezone.utc) - dt_aware).total_seconds()
+
+
 @client_blueprint.route("/signup", methods=["GET", "POST"])
 def signup():
     """Render and handle the client sign-up page"""
@@ -63,26 +81,26 @@ def signup():
         if education_level not in constants.allowed_education:
             flash("مقطع تحصیلی انتخاب‌شده نامعتبر است.", "error")
             response = render_template(
-                constants.client_html_names_data["sign_up"], **form_values
+                constants.client_html_names_data["sign_up"], form_values=form_values
             )
         elif password != request.form.get("confirm_password", ""):
             flash("رمز عبور و تکرار آن یکسان نیستند.", "error")
             response = render_template(
-                constants.client_html_names_data["sign_up"], **form_values
+                constants.client_html_names_data["sign_up"], form_values=form_values
             )
         else:
             is_valid, error_message = utils.is_valid_password(password)
             if not is_valid:
                 flash(error_message or "خطای نامشخص در رمز عبور.", "error")
                 response = render_template(
-                    constants.client_html_names_data["sign_up"], **form_values
+                    constants.client_html_names_data["sign_up"], form_values=form_values
                 )
             elif not utils.is_valid_iranian_phone(phone) or not utils.is_valid_email(
                 email
             ):
                 flash("ایمیل یا شماره موبایل نامعتبر است.", "error")
                 response = render_template(
-                    constants.client_html_names_data["sign_up"], **form_values
+                    constants.client_html_names_data["sign_up"], form_values=form_values
                 )
 
         if response is None:
@@ -132,7 +150,8 @@ def signup():
                         "error",
                     )
                     response = render_template(
-                        constants.client_html_names_data["sign_up"], **form_values
+                        constants.client_html_names_data["sign_up"],
+                        form_values=form_values,
                     )
                 except exc.SQLAlchemyError as error:
                     db.rollback()
@@ -141,7 +160,8 @@ def signup():
                         "خطایی در پایگاه داده رخ داد. لطفا دوباره تلاش کنید.", "error"
                     )
                     response = render_template(
-                        constants.client_html_names_data["sign_up"], **form_values
+                        constants.client_html_names_data["sign_up"],
+                        form_values=form_values,
                     )
                 except RuntimeError as error:
                     current_app.logger.exception("SignUp unexpected error: %s", error)
@@ -149,12 +169,12 @@ def signup():
                         "خطایی در هنگام ثبت نام رخ داد. لطفا دوباره تلاش کنید.", "error"
                     )
                     response = render_template(
-                        constants.client_html_names_data["sign_up"], **form_values
+                        constants.client_html_names_data["sign_up"],
+                        form_values=form_values,
                     )
 
         return response
-
-    return render_template(constants.client_html_names_data["sign_up"])
+    return render_template(constants.client_html_names_data["sign_up"], form_values={})
 
 
 @client_blueprint.route("/ResolveIssues", methods=["GET"])
@@ -656,30 +676,33 @@ def create_team():
 
 @client_blueprint.route("/Verify", methods=["GET", "POST"])
 def verify_code():
-    """Render and handle the verification page."""
     if request.method == "POST":
         csrf_protector.protect()
+
+        submitted_code = request.form.get("code") or request.form.get("Code")
         action = request.form.get("action")
+
         response_redirect_url = None
         flash_message = None
         flash_category = None
 
         if action == "phone_signup":
             client_id = request.form.get("client_id")
+
             with database.get_db_session() as db:
                 client = (
                     db.query(models.Client)
                     .filter(models.Client.client_id == client_id)
                     .first()
                 )
-                if client and client.phone_verification_code == request.form.get(
-                    "code"
-                ):
+
+                if client and client.phone_verification_code == submitted_code:
+                    client_ts = _ensure_aware(client.verification_code_timestamp)
+
                     if (
-                        client.verification_code_timestamp is not None
+                        client_ts
                         and (
-                            datetime.datetime.now(datetime.timezone.utc)
-                            - client.verification_code_timestamp
+                            datetime.datetime.now(datetime.timezone.utc) - client_ts
                         ).total_seconds()
                         > 900
                     ):
@@ -703,28 +726,33 @@ def verify_code():
                     flash_message = "کد وارد شده صحیح نمی باشد."
                     flash_category = "error"
                     response_redirect_url = url_for(
-                        "client.verify_code", action="phone_signup", client_id=client_id
+                        "client.verify_code",
+                        action="phone_signup",
+                        client_id=client_id,
                     )
 
         elif action == "password_reset":
             identifier = request.form.get("identifier")
             identifier_type = request.form.get("identifier_type")
+
             with database.get_db_session() as db:
                 reset_record = (
                     db.query(models.PasswordReset)
                     .filter(
                         models.PasswordReset.identifier == identifier,
                         models.PasswordReset.identifier_type == identifier_type,
-                        models.PasswordReset.code == request.form.get("code"),
+                        models.PasswordReset.code == submitted_code,
                     )
                     .first()
                 )
+
                 if reset_record:
+                    reset_ts = _ensure_aware(reset_record.timestamp)
+
                     if (
-                        reset_record.timestamp is not None
+                        reset_ts
                         and (
-                            datetime.datetime.now(datetime.timezone.utc)
-                            - reset_record.timestamp
+                            datetime.datetime.now(datetime.timezone.utc) - reset_ts
                         ).total_seconds()
                         > 900
                     ):
@@ -752,6 +780,7 @@ def verify_code():
                         identifier=identifier,
                         identifier_type=identifier_type,
                     )
+
         else:
             flash_message = "عملیات نامعتبر است."
             flash_category = "error"
@@ -759,17 +788,16 @@ def verify_code():
 
         if flash_message and flash_category:
             flash(flash_message, flash_category)
-        return (
-            redirect(response_redirect_url)
-            if response_redirect_url
-            else redirect(url_for("client.login_client"))
-        )
+
+        return redirect(response_redirect_url or url_for("client.login_client"))
+
     action = request.args.get("action")
     context = {"action": action, "cooldown": 0}
     redirect_to_login = False
 
     if action == "phone_signup":
         client_id = request.args.get("client_id")
+
         if not client_id:
             flash("شناسه کاربر نامعتبر است.", "error")
             redirect_to_login = True
@@ -780,18 +808,24 @@ def verify_code():
                     .filter(models.Client.client_id == client_id)
                     .first()
                 )
-                if client and client.verification_code_timestamp is not None:
-                    seconds_passed = (
-                        datetime.datetime.now(datetime.timezone.utc)
-                        - client.verification_code_timestamp
-                    ).total_seconds()
-                    if seconds_passed < 180:
-                        context["cooldown"] = 180 - int(seconds_passed)
+
+                if client and client.verification_code_timestamp:
+                    client_ts = _ensure_aware(client.verification_code_timestamp)
+
+                    if client_ts:
+                        seconds_passed = (
+                            datetime.datetime.now(datetime.timezone.utc) - client_ts
+                        ).total_seconds()
+
+                        if seconds_passed < 180:
+                            context["cooldown"] = 180 - int(seconds_passed)
+
             context["client_id"] = client_id
 
     elif action == "password_reset":
         identifier = request.args.get("identifier")
         identifier_type = request.args.get("identifier_type")
+
         if not identifier or not identifier_type:
             flash("اطلاعات مورد نیاز برای تایید کد موجود نیست.", "error")
             redirect_to_login = True
@@ -802,16 +836,19 @@ def verify_code():
                     .filter(models.PasswordReset.identifier == identifier)
                     .first()
                 )
+
                 if not reset_record:
                     flash("درخواست بازیابی یافت نشد یا منقضی شده است.", "error")
                     redirect_to_login = True
-                elif reset_record.timestamp is not None:
+                elif reset_record.timestamp:
+                    ts = _ensure_aware(reset_record.timestamp)
                     seconds_passed = (
-                        datetime.datetime.now(datetime.timezone.utc)
-                        - reset_record.timestamp
+                        datetime.datetime.now(datetime.timezone.utc) - ts
                     ).total_seconds()
+
                     if seconds_passed < 180:
                         context["cooldown"] = 180 - int(seconds_passed)
+
             context["identifier"] = identifier
             context["identifier_type"] = identifier_type
 
@@ -821,6 +858,7 @@ def verify_code():
 
     if redirect_to_login:
         return redirect(url_for("client.login_client"))
+
     return render_template(constants.client_html_names_data["verify"], **context)
 
 
@@ -912,7 +950,7 @@ def forgot_password():
 
 @client_blueprint.route("/ResetPassword", methods=["GET", "POST"])
 def reset_password():
-    """Render and handle the reset password page."""
+    "Render and handle the reset password page"
     token = request.args.get("token")
     if not token:
         flash("توکن بازیابی نامعتبر است یا وجود ندارد.", "error")
@@ -927,62 +965,65 @@ def reset_password():
 
         new_password = request.form.get("new_password") or ""
         is_valid, error_message = utils.is_valid_password(new_password)
+
         if not is_valid:
             flash_message = error_message or "خطای نامشخص در رمز عبور."
             flash_category = "error"
             redirect_url = url_for("client.reset_password", token=token)
         else:
             with database.get_db_session() as db:
-                valid_record = (
+                reset_record = (
                     db.query(models.PasswordReset)
                     .filter(models.PasswordReset.code == token)
                     .first()
                 )
 
-                if not valid_record:
+                if not reset_record:
                     flash_message = "توکن بازیابی نامعتبر است یا قبلا استفاده شده است."
                     flash_category = "error"
                     redirect_url = url_for("client.forgot_password")
-                elif (
-                    datetime.datetime.now(datetime.timezone.utc)
-                    - valid_record.timestamp
-                ).total_seconds() > 900:
-                    db.delete(valid_record)
-                    db.commit()
-                    flash_message = (
-                        "توکن بازیابی منقضی شده است. لطفا دوباره درخواست دهید."
-                    )
-                    flash_category = "error"
-                    redirect_url = url_for("client.forgot_password")
                 else:
-                    client_to_update = database.get_client_by(
-                        db, valid_record.identifier_type, valid_record.identifier
-                    )
-                    if client_to_update:
-                        hashed_password = bcrypt.hashpw(
-                            request.form.get("new_password").encode("utf-8"),
-                            bcrypt.gensalt(),
+                    timestamp = _ensure_aware(reset_record.timestamp)
+
+                    if (
+                        timestamp
+                        and (
+                            datetime.datetime.now(datetime.timezone.utc) - timestamp
+                        ).total_seconds()
+                        > 900
+                    ):
+                        db.delete(reset_record)
+                        db.commit()
+                        flash_message = (
+                            "توکن بازیابی منقضی شده است. لطفا دوباره درخواست دهید."
                         )
-                        client_to_update.password = hashed_password.decode("utf-8")
-                        db.delete(valid_record)
-                        db.commit()
-                        flash_message = "رمز عبور شما با موفقیت تغییر یافت."
-                        flash_category = "success"
-                        redirect_url = url_for("client.login_client")
-                    else:
-                        db.delete(valid_record)
-                        db.commit()
-                        flash_message = "کاربر مرتبط با این توکن یافت نشد."
                         flash_category = "error"
                         redirect_url = url_for("client.forgot_password")
+                    else:
+                        client_to_update = database.get_client_by(
+                            db, reset_record.identifier_type, reset_record.identifier
+                        )
+                        if client_to_update:
+                            hashed_password = bcrypt.hashpw(
+                                new_password.encode("utf-8"), bcrypt.gensalt()
+                            ).decode("utf-8")
 
-        if flash_message:
-            flash(flash_message, flash_category)
-        return (
-            redirect(redirect_url)
-            if redirect_url
-            else redirect(url_for("client.forgot_password"))
-        )
+                            client_to_update.password = hashed_password
+                            db.delete(reset_record)
+                            db.commit()
+
+                            flash_message = "رمز عبور شما با موفقیت تغییر یافت."
+                            flash_category = "success"
+                            redirect_url = url_for("client.login_client")
+                        else:
+                            db.delete(reset_record)
+                            db.commit()
+                            flash_message = "کاربر مرتبط با این توکن یافت نشد."
+                            flash_category = "error"
+                            redirect_url = url_for("client.forgot_password")
+
+        flash(flash_message, flash_category)
+        return redirect(redirect_url)
 
     return render_template(
         constants.client_html_names_data["reset_password"], token=token
@@ -1065,7 +1106,6 @@ def payment(team_id):
 @client_blueprint.route("/ResendCode", methods=["POST"])
 @limiter.limit("5 per 15 minutes")
 def resend_code():
-    """Handle resending verification or password reset codes via a single endpoint"""
     request_data = request.get_json() or {}
     action = request_data.get("action")
 
@@ -1073,133 +1113,137 @@ def resend_code():
     status_code = 400
 
     if not action:
-        response_data["message"] = "عملیات نامعتبر است."
         return jsonify(response_data), status_code
 
     if action == "phone_signup":
         client_id = request_data.get("client_id")
+
         if not client_id:
             response_data["message"] = "شناسه کاربر نامعتبر است."
-        else:
-            with database.get_db_session() as db:
-                client = (
-                    db.query(models.Client)
-                    .filter(models.Client.client_id == client_id)
-                    .first()
-                )
-                if not client:
-                    response_data["message"] = "کاربر یافت نشد."
-                    status_code = 404
-                elif (
-                    client.verification_code_timestamp is not None
-                    and (
-                        datetime.datetime.now(datetime.timezone.utc)
-                        - client.verification_code_timestamp
-                    ).total_seconds()
-                    < 180
-                ):
-                    response_data["message"] = "لطفا ۳ دقیقه صبر کنید."
-                    status_code = 429
-                else:
-                    new_code = "".join(random.choices(string.digits, k=6))
-                    client.phone_verification_code = new_code
-                    client.verification_code_timestamp = datetime.datetime.now(
-                        datetime.timezone.utc
-                    )
-                    db.commit()
+            return jsonify(response_data), status_code
 
-                    Thread(
-                        target=utils.send_templated_sms_async,
-                        args=(
-                            current_app._get_current_object(),
-                            client.client_id,
-                            config.melli_payamak["template_id_verification"],
-                            new_code,
-                            config.melli_payamak,
-                        ),
-                    ).start()
-                    response_data = {"success": True, "message": "کد جدید ارسال شد."}
-                    status_code = 200
+        with database.get_db_session() as db:
+            client = (
+                db.query(models.Client)
+                .filter(models.Client.client_id == client_id)
+                .first()
+            )
+
+            if not client:
+                response_data["message"] = "کاربر یافت نشد."
+                return jsonify(response_data), 404
+
+            timestamp = _ensure_aware(client.verification_code_timestamp)
+
+            if (
+                timestamp
+                and (
+                    datetime.datetime.now(datetime.timezone.utc) - timestamp
+                ).total_seconds()
+                < 180
+            ):
+                response_data["message"] = "لطفا ۳ دقیقه صبر کنید."
+                return jsonify(response_data), 429
+
+            new_code = "".join(random.choices(string.digits, k=6))
+            client.phone_verification_code = new_code
+            client.verification_code_timestamp = datetime.datetime.now(
+                datetime.timezone.utc
+            )
+            db.commit()
+
+        Thread(
+            target=utils.send_templated_sms_async,
+            args=(
+                current_app._get_current_object(),
+                client.client_id,
+                config.melli_payamak["template_id_verification"],
+                new_code,
+                config.melli_payamak,
+            ),
+        ).start()
+
+        return jsonify({"success": True, "message": "کد جدید ارسال شد."}), 200
 
     elif action == "password_reset":
         identifier = request_data.get("identifier")
         identifier_type = request_data.get("identifier_type")
+
         if not identifier or not identifier_type:
             response_data["message"] = "اطلاعات ناقص است."
-        else:
-            with database.get_db_session() as db:
-                reset_record = (
-                    db.query(models.PasswordReset)
-                    .filter(models.PasswordReset.identifier == identifier)
-                    .first()
+            return jsonify(response_data), status_code
+
+        with database.get_db_session() as db:
+            reset_record = (
+                db.query(models.PasswordReset)
+                .filter(models.PasswordReset.identifier == identifier)
+                .first()
+            )
+
+            timestamp = _ensure_aware(reset_record.timestamp) if reset_record else None
+
+            if (
+                timestamp
+                and (
+                    datetime.datetime.now(datetime.timezone.utc) - timestamp
+                ).total_seconds()
+                < 180
+            ):
+                return (
+                    jsonify({"success": False, "message": "لطفا ۳ دقیقه صبر کنید."}),
+                    429,
                 )
-                if (
-                    reset_record
-                    and reset_record.timestamp is not None
-                    and (
-                        datetime.datetime.now(datetime.timezone.utc)
-                        - reset_record.timestamp
-                    ).total_seconds()
-                    < 180
-                ):
-                    response_data["message"] = "لطفا ۳ دقیقه صبر کنید."
-                    status_code = 429
-                else:
-                    client = database.get_client_by(db, identifier_type, identifier)
-                    if not client:
-                        response_data["message"] = "کاربر یافت نشد."
-                        status_code = 404
-                    else:
-                        new_code = "".join(random.choices(string.digits, k=6))
-                        timestamp = datetime.datetime.now(datetime.timezone.utc)
-                        if reset_record:
-                            reset_record.code = new_code
-                            reset_record.timestamp = timestamp
-                        else:
-                            db.add(
-                                models.PasswordReset(
-                                    identifier=identifier,
-                                    identifier_type=identifier_type,
-                                    code=new_code,
-                                    timestamp=timestamp,
-                                )
-                            )
-                        db.commit()
 
-                        if identifier_type == "email":
-                            subject = "کد بازیابی رمز عبور آیروکاپ"
-                            body = f"کد بازیابی رمز عبور شما: {new_code}"
-                            Thread(
-                                target=utils.send_async_email,
-                                args=(
-                                    current_app._get_current_object(),
-                                    client.client_id,
-                                    subject,
-                                    body,
-                                    config.mail_configuration,
-                                ),
-                            ).start()
-                        elif identifier_type == "phone_number":
-                            Thread(
-                                target=utils.send_templated_sms_async,
-                                args=(
-                                    current_app._get_current_object(),
-                                    client.client_id,
-                                    config.melli_payamak["template_id_password_reset"],
-                                    new_code,
-                                    config.melli_payamak,
-                                ),
-                            ).start()
+            client = database.get_client_by(db, identifier_type, identifier)
 
-                        response_data = {
-                            "success": True,
-                            "message": "کد جدید ارسال شد.",
-                        }
-                        status_code = 200
-    else:
-        response_data["message"] = "عملیات ناشناخته است."
+            if not client:
+                return jsonify({"success": False, "message": "کاربر یافت نشد."}), 404
 
-    return jsonify(response_data), status_code
+            new_code = "".join(random.choices(string.digits, k=6))
+            now = datetime.datetime.now(datetime.timezone.utc)
+
+            if reset_record:
+                reset_record.code = new_code
+                reset_record.timestamp = now
+            else:
+                db.add(
+                    models.PasswordReset(
+                        identifier=identifier,
+                        identifier_type=identifier_type,
+                        code=new_code,
+                        timestamp=now,
+                    )
+                )
+
+            db.commit()
+
+        if identifier_type == "email":
+            Thread(
+                target=utils.send_async_email,
+                args=(
+                    current_app._get_current_object(),
+                    client.client_id,
+                    "کد بازیابی رمز عبور آیروکاپ",
+                    f"کد بازیابی رمز عبور شما: {new_code}",
+                    config.mail_configuration,
+                ),
+            ).start()
+
+        elif identifier_type == "phone_number":
+            Thread(
+                target=utils.send_templated_sms_async,
+                args=(
+                    current_app._get_current_object(),
+                    client.client_id,
+                    config.melli_payamak["template_id_password_reset"],
+                    new_code,
+                    config.melli_payamak,
+                ),
+            ).start()
+
+        return jsonify({"success": True, "message": "کد جدید ارسال شد."}), 200
+
+    return jsonify({"success": False, "message": "عملیات ناشناخته است."}), 400
 
 
 @client_blueprint.route("/Dashboard")

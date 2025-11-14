@@ -1,5 +1,15 @@
 "use strict";
 
+const Validators = {
+    IsValidEmail(email) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    },
+
+    IsValidIranianPhone(phone) {
+        return /^09\d{9}$/.test(phone);
+    }
+};
+
 const airocupApp = {
   constants: {
     SELECTORS: {
@@ -773,31 +783,69 @@ const airocupApp = {
     },
 
     initializeMobileMenu() {
-      const menuButton = document.querySelector(
-        airocupApp.constants.SELECTORS.MOBILE_MENU_BTN
-      );
-      const navigation = document.querySelector(
-        airocupApp.constants.SELECTORS.NAV_ITEMS
-      );
-      if (!menuButton || !navigation) return;
+      const menuBtn = document.getElementById("mobile-menu-btn");
+      const mobileMenu = document.getElementById("mobile-menu");
+      const mobileNavList = document.getElementById("mobile-nav-list");
+      const backdrop = document.getElementById("mobile-menu-backdrop");
+      const navList = document.getElementById("nav-list");
+      const footer = document.querySelector(".site-footer");
 
-      menuButton.addEventListener("click", () => {
-        const shouldShow = !navigation.classList.contains(
-          airocupApp.constants.CLASSES.SHOW
+      if (!menuBtn || !mobileMenu || !navList) return;
+
+      function toggleMenu(forceOpen = null) {
+        const isOpen =
+          forceOpen !== null
+            ? forceOpen
+            : !mobileMenu.classList.contains("is-open");
+
+        mobileMenu.classList.toggle("is-open", isOpen);
+        backdrop.classList.toggle("is-visible", isOpen);
+        document.body.classList.toggle("body-no-scroll", isOpen);
+        menuBtn.classList.toggle("is-active", isOpen);
+
+        // Animate hamburger → X
+        const spans = menuBtn.querySelectorAll(".hamburger span");
+        spans.forEach(
+          (s, i) =>
+            (s.style.transform = isOpen
+              ? i === 0
+                ? "rotate(45deg) translateY(8px)"
+                : i === 1
+                ? "scale(0)"
+                : "rotate(-45deg) translateY(-8px)"
+              : "")
         );
-        navigation.classList.toggle(
-          airocupApp.constants.CLASSES.SHOW,
-          shouldShow
-        );
-        const icon = menuButton.querySelector("i");
-        if (icon) {
-          icon.className = shouldShow ? "fas fa-times" : "fas fa-bars";
+
+        // Footer moves up when menu opens
+        if (footer)
+          footer.style.marginBottom = isOpen
+            ? `${mobileMenu.scrollHeight}px`
+            : "";
+
+        mobileMenu.setAttribute("aria-hidden", !isOpen);
+        menuBtn.setAttribute("aria-expanded", isOpen);
+      }
+
+      menuBtn.addEventListener("click", () => toggleMenu());
+      backdrop?.addEventListener("click", () => toggleMenu(false));
+
+      // Move overflow items to mobile menu
+      function updateMenuOverflow() {
+        if (window.innerWidth < 992) {
+          mobileNavList.innerHTML = "";
+          navList.querySelectorAll("li").forEach((li) => {
+            mobileNavList.appendChild(li.cloneNode(true));
+          });
+        } else {
+          mobileNavList.innerHTML = "";
         }
-        document.body.classList.toggle(
-          airocupApp.constants.CLASSES.BODY_NO_SCROLL,
-          shouldShow
-        );
-      });
+      }
+
+      window.addEventListener(
+        "resize",
+        airocupApp.helpers.debounce(updateMenuOverflow, 300)
+      );
+      updateMenuOverflow();
     },
 
     initializeAccordion() {
@@ -1485,4 +1533,37 @@ const airocupApp = {
   },
 };
 
-document.addEventListener("DOMContentLoaded", () => airocupApp.init());
+document.addEventListener("DOMContentLoaded", function () {
+  const mobileBtn = document.getElementById("mobile-menu-btn");
+  const mobileMenu = document.getElementById("mobile-menu");
+  const backdrop = document.getElementById("mobile-menu-backdrop");
+
+  if (!mobileBtn || !mobileMenu) return;
+
+  function openMenu() {
+    mobileBtn.classList.add("open");
+    mobileMenu.classList.add("open");
+    backdrop && backdrop.classList.add("open");
+    document.body.classList.add("mobile-menu-open");
+  }
+
+  function closeMenu() {
+    mobileBtn.classList.remove("open");
+    mobileMenu.classList.remove("open");
+    backdrop && backdrop.classList.remove("open");
+    document.body.classList.remove("mobile-menu-open");
+  }
+
+  mobileBtn.addEventListener("click", function (e) {
+    e.preventDefault();
+    const isOpen = mobileMenu.classList.contains("open");
+    if (isOpen) closeMenu();
+    else openMenu();
+  });
+
+  backdrop && backdrop.addEventListener("click", closeMenu);
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") closeMenu();
+  });
+});

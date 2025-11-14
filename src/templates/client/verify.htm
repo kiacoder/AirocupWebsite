@@ -1,0 +1,125 @@
+{% extends "global/base.html" %} {% block title %}تایید کد | آیروکاپ{% endblock
+%} {% block body %}
+<main class="app-container">
+  <div class="form-container form-container--small">
+    <form
+      method="POST"
+      id="verification-form"
+      action="{{ url_for('client.verify_code') }}"
+    >
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+      {# These hidden fields carry the context for the server #}
+      <input type="hidden" name="action" value="{{ action }}" />
+      <input type="hidden" name="client_id" value="{{ client_id or '' }}" />
+      <input type="hidden" name="identifier" value="{{ identifier or '' }}" />
+      <input
+        type="hidden"
+        name="identifier_type"
+        value="{{ identifier_type or '' }}"
+      />
+
+      <h1 class="form-title">تایید کد</h1>
+
+      {# Dynamic subtitle based on the action #}
+      <p class="form-subtitle">
+        {% if action == 'phone_signup' %} یک کد ۶ رقمی به شماره موبایل شما ارسال
+        شد. لطفا آن را وارد کنید. {% elif action == 'password_reset' %} یک کد ۶
+        رقمی به {{ 'ایمیل' if identifier_type == 'email' else 'شماره موبایل' }}
+        شما ارسال شد. لطفا آن را وارد کنید. {% else %} لطفا کد تاییدی که برایتان
+        ارسال شده را وارد نمایید. {% endif %}
+      </p>
+
+      <div class="form-group">
+        <label for="code">کد تایید:</label>
+        <input
+          type="text"
+          id="code"
+          name="code"
+          class="form-control"
+          placeholder="کد ۶ رقمی"
+          required
+          autofocus
+          dir="ltr"
+          maxlength="6"
+          pattern="\d{6}"
+          inputmode="numeric"
+          title="لطفا یک کد ۶ رقمی وارد کنید."
+        />
+      </div>
+
+      <div class="form-group">
+        <button type="submit" class="btn btn-primary btn--full-width">
+          تایید کد
+        </button>
+      </div>
+
+      <div class="form-links" style="text-align: center">
+        <button type="button" id="resendButton" class="link-button">
+          ارسال مجدد کد
+        </button>
+        <span id="timerDisplay" style="margin-right: 10px"></span>
+      </div>
+    </form>
+  </div>
+</main>
+{% endblock %} {% block scripts %} {{ super() }}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+      const form = document.getElementById("verification-form");
+      const resendButton = document.getElementById("resendButton");
+      const timerDisplay = document.getElementById("timerDisplay");
+
+      if (!form || !resendButton || !timerDisplay) return;
+
+      const action = "{{ action }}";
+      const clientId = "{{ client_id or '' }}";
+      const identifier = "{{ identifier or '' }}";
+      const identifierType = "{{ identifier_type or '' }}";
+      const csrfToken = "{{ csrf_token() }}";
+      let countdown = {{ cooldown or 0 }};
+
+      const resendCode = async () => {
+          if (countdown > 0) return;
+
+          try {
+              const response = await fetch("{{ url_for('client.resend_code') }}", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken },
+                  body: JSON.stringify({ action, client_id: clientId, identifier, identifier_type: identifierType }),
+              });
+              const data = await response.json();
+
+              if (response.ok && data.success) {
+                  airocupApp.ui.createFlash('success', data.message || 'کد با موفقیت ارسال شد.');
+                  startTimer(180);
+              } else {
+                  airocupApp.ui.createFlash('error', data.message || 'خطایی در ارسال مجدد کد رخ داد.');
+              }
+          } catch (error) {
+              console.error("Resend error:", error);
+              airocupApp.ui.createFlash('error', 'خطا در ارتباط با سرور.');
+          }
+      };
+
+      function startTimer(duration) {
+          countdown = duration;
+          resendButton.disabled = true;
+          timerDisplay.textContent = `(${Math.floor(countdown/60)}:${(countdown%60).toString().padStart(2,'0')})`;
+
+          const interval = setInterval(() => {
+              countdown--;
+              timerDisplay.textContent = `(${Math.floor(countdown/60)}:${(countdown%60).toString().padStart(2,'0')})`;
+              if (countdown <= 0) {
+                  clearInterval(interval);
+                  timerDisplay.textContent = "";
+                  resendButton.disabled = false;
+              }
+          }, 1000);
+      }
+
+      resendButton.addEventListener('click', resendCode);
+      if (countdown > 0) startTimer(countdown);
+  });
+</script>
+{% endblock %}

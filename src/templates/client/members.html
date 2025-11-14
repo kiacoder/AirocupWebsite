@@ -1,23 +1,24 @@
-{% extends "Global/Base.html" %}
-
-{% block Title %}مدیریت اعضای تیم: {{ Team.TeamName }} | آیروکاپ{% endblock %}
-
-{% block Body %}
-<div class="AppContainer MembersPage" data-team-id="{{ Team.TeamID }}">
+{% extends "Global/Base.html" %} {% block Title %}مدیریت اعضای تیم: {{
+team.team_name }} | آیروکاپ{% endblock %} {% block Body %}
+<div class="AppContainer MembersPage" data-team-id="{{ team.team_id }}">
   <div class="Container">
     <div class="PageHeader">
-      <h1 class="SectionTitle">تیم شما: {{ Team.TeamName }}</h1>
+      <h1 class="SectionTitle">تیم شما: {{ team.team_name }}</h1>
       <p class="SectionSubtitle">
         در این بخش اعضای تیم خود را اضافه، ویرایش یا حذف کنید.
       </p>
     </div>
 
-    {% if is_paid and Team.UnpaidMembersCount > 0 %}
+    {% if is_paid and team.unpaid_members_count > 0 %}
     <div class="Alert Alert--Warning" role="alert">
       <i class="fas fa-exclamation-triangle"></i>
       <p>
-        <strong>توجه:</strong> شما {{ Team.UnpaidMembersCount | persian_digits }} عضو جدید اضافه کرده‌اید که هزینه آن‌ها پرداخت نشده است. لطفاً برای نهایی کردن ثبت‌نام آن‌ها به
-        <a href="{{ url_for('Client.Payment', TeamID=Team.TeamID) }}">صفحه پرداخت</a>
+        <strong>توجه:</strong> شما {{ team.unpaid_members_count | persian_digits
+        }} عضو جدید اضافه کرده‌اید که هزینه آن‌ها پرداخت نشده است. لطفاً برای
+        نهایی کردن ثبت‌نام آن‌ها به
+        <a href="{{ url_for('client.payment', team_id=team.team_id) }}"
+          >صفحه پرداخت</a
+        >
         مراجعه کنید.
       </p>
     </div>
@@ -25,7 +26,8 @@
 
     <div class="Card Card--table">
       <h2 class="Card__header">
-        اعضای فعلی ({{ Members|length | persian_digits }} از {{ AppConfig.MaxMembersPerTeam | persian_digits }})
+        اعضای فعلی ({{ members|length | persian_digits }} از {{
+        app_config.max_members_per_team | persian_digits }})
       </h2>
       <div class="UserTableWrapper">
         <table class="UserTable">
@@ -38,20 +40,45 @@
             </tr>
           </thead>
           <tbody>
-            {% for Member in Members %}
+            {% for member in members %}
             <tr>
-              <td data-label="نام">{{ Member.Name }}</td>
-              <td data-label="نقش">{{ Member.Role.label }}</td>
+              <td data-label="نام">{{ member.name }}</td>
+              <td data-label="نقش">{{ member.role.label }}</td>
               <td data-label="کد ملی" dir="ltr">
-                {{ Member.NationalID | persian_digits or '-' }}
+                {{ member.national_id | persian_digits or '-' }}
               </td>
               <td class="Actions">
-                <a href="{{ url_for('Client.EditMember', TeamID=Team.TeamID, MemberID=Member.MemberID) }}" class="Btn BtnSecondary">
+                <a
+                  href="{{ url_for('client.edit_member', team_id=team.team_id, member_id=member.member_id) }}"
+                  class="Btn BtnSecondary"
+                >
                   <i class="fas fa-edit"></i> ویرایش
                 </a>
-                <form action="{{ url_for('Client.DeleteMember', TeamID=Team.TeamID, MemberID=Member.MemberID) }}" method="POST" style="display: inline;">
-                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                  <button type="button" class="Btn BtnDanger DeleteBtn" data-modal-title="تایید حذف عضو" data-modal-text="آیا از حذف «{{ Member.Name }}» اطمینان دارید؟" data-modal-confirm="بله، حذف کن" {% if is_paid %}disabled title="پس از تایید پرداخت، امکان حذف عضو وجود ندارد."{% endif %}>
+                <form
+                  action="{{ url_for('client.delete_member', team_id=team.team_id, member_id=member.member_id) }}"
+                  method="POST"
+                  style="display: inline"
+                >
+                  <input
+                    type="hidden"
+                    name="csrf_token"
+                    value="{{ csrf_token() }}"
+                  />
+                  <button
+                    type="button"
+                    class="Btn BtnDanger DeleteBtn"
+                    data-modal-title="تایید حذف عضو"
+                    data-modal-body="آیا از حذف «{{ member.name }}» اطمینان دارید؟"
+                    data-modal-confirm-text="بله، حذف کن"
+                    {%
+                    if
+                    is_paid
+                    %}disabled
+                    title="پس از تایید پرداخت، امکان حذف عضو وجود ندارد."
+                    {%
+                    endif
+                    %}
+                  >
                     <i class="fas fa-trash"></i> حذف
                   </button>
                 </form>
@@ -70,14 +97,18 @@
       </div>
     </div>
 
-    {% if Members|length < AppConfig.MaxMembersPerTeam %}
+    {% if members|length < app_config.max_members_per_team %}
     <div class="FormContainer" id="AddMemberFormContainer">
       <h2 class="FormTitle">افزودن عضو جدید</h2>
-      <form method="POST" action="{{ url_for('Client.AddMember', TeamID=Team.TeamID) }}" id="AddMemberForm" novalidate>
+      <form
+        method="POST"
+        action="{{ url_for('client.add_member', team_id=team.team_id) }}"
+        id="AddMemberForm"
+        novalidate
+      >
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-        {% with IdPrefix='Add-', MemberData=None, FormData=None %}
-          {% include 'Client/MemberFormFields.html' %}
-        {% endwith %}
+        {% with id_prefix='Add-', member_data=None, form_data=None %} {% include
+        'Client/MemberFormFields.html' %} {% endwith %}
         <div class="FormGroup">
           <button type="submit" class="Btn BtnPrimary Btn--fullWidth">
             افزودن عضو
@@ -88,35 +119,12 @@
     {% endif %}
 
     <div class="SectionCta" style="text-align: center; margin-bottom: 30px">
-      <a href="{{ url_for('Client.Dashboard') }}" class="Btn BtnSecondary"><i class="fas fa-arrow-left"></i> بازگشت به داشبورد</a>
+      <a href="{{ url_for('client.dashboard') }}" class="Btn BtnSecondary"
+        ><i class="fas fa-arrow-left"></i> بازگشت به داشبورد</a
+      >
     </div>
   </div>
 </div>
-{% endblock %}
-
-{% block Scripts %}
-{{ super() }}
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-    const addMemberForm = document.getElementById("AddMemberForm");
-    if (addMemberForm) {
-        FormHelpers.PopulateProvinces(addMemberForm.querySelector('[name="Province"]'));
-        FormHelpers.SetupDatePicker(addMemberForm);
-        FormHelpers.SetupProvinceCityListener(addMemberForm);
-    }
-    
-    document.querySelectorAll('.DeleteBtn').forEach(button => {
-        if (button.disabled) return;
-        button.addEventListener('click', function() {
-            const form = this.closest('form');
-            FormHelpers.showConfirmModal(
-                this.dataset.modalTitle,
-                this.dataset.modalText,
-                this.dataset.modalConfirm,
-                () => form.submit()
-            );
-        });
-    });
-});
-</script>
-{% endblock %}
+{% endblock %} {% block Scripts %} {{ super() }} {# All JavaScript has been
+removed. main.js handles the delete confirmation modal and form setup. #} {%
+endblock %}

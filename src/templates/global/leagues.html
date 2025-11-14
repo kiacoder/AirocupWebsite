@@ -1,95 +1,112 @@
-{% extends "global/base.html" %} {% block Title %}لیگ‌ها | آیروکاپ{% endblock %}
-{% block SEO_Description %}
+{% extends "global/base.html" %}
+{% block title %}لیگ‌ها | آیروکاپ{% endblock %}
+
+{% block seo_description %}
 <meta
   name="description"
   content="آشنایی با ۱۴ لیگ جذاب و نوآورانه مسابقات ملی هوش مصنوعی و رباتیک آیروکاپ. لیگ‌های تخصصی برای دانش‌آموزان و دانشجویان."
 />
-{% endblock %} {% block Body %}
-<main class="AppContainer LeaguesPage">
-  <div class="Container">
-    <header class="PageHeader TextCenter">
-      <h1 class="PageTitle">لیگ‌های مسابقات آیروکاپ</h1>
-      <p class="PageSubtitle">
+{% endblock %}
+
+{% block body %}
+<main class="app-container leagues-page">
+  <div class="container">
+
+    <!-- Page Header -->
+    <header class="page-header text-center">
+      <h1 class="page-title">لیگ‌های مسابقات آیروکاپ</h1>
+
+      <p class="page-subtitle">
         برای مشاهده جزئیات کامل، آئین‌نامه‌ها و قوانین هر لیگ، می‌توانید سند
         راهنمای جامع را از طریق دکمه زیر دانلود کنید.
       </p>
-      <a
-        href="{{ url_for('global.download_pdf') }}"
-        class="Btn BtnPrimary BtnLarge"
-      >
+
+      <a href="{{ url_for('global.download_pdf') }}" class="btn btn-primary btn-large">
         <i class="fas fa-file-pdf" aria-hidden="true"></i>
         دانلود راهنمای کامل لیگ‌ها (PDF)
       </a>
     </header>
 
-    <div class="LeagueFilterContainer">
-      <div class="InputGroup">
-        <i class="fas fa-search InputIcon"></i>
+    <!-- Filter -->
+    <div class="league-filter-container">
+      <div class="input-group">
+        <i class="fas fa-search input-icon"></i>
         <input
           type="search"
           id="leagueFilter"
-          class="FormControl"
+          class="form-control"
           placeholder="جستجو در نام یا توضیحات لیگ‌ها..."
         />
       </div>
     </div>
 
-    <section class="AccordionContainer" aria-label="لیست لیگ‌های مسابقات">
+    <!-- Accordion -->
+    <section class="accordion-container" aria-label="لیست لیگ‌های مسابقات">
       {% for league in leagues_list %}
-      <div class="Card AccordionItem">
-        <div class="AccordionHeader">
+      <div class="card accordion-item">
+
+        <div class="accordion-header">
           <button
-            class="AccordionButton"
+            class="accordion-button"
             aria-expanded="false"
             aria-controls="league-panel-{{ league.id }}"
             id="league-header-{{ league.id }}"
           >
-            <span class="AccordionTitle">
+            <span class="accordion-title">
               <i class="fas {{ league.icon }}" aria-hidden="true"></i>
               {{ league.name }}
             </span>
-            <i class="fas fa-chevron-down AccordionIcon" aria-hidden="true"></i>
+
+            <i class="fas fa-chevron-down accordion-icon" aria-hidden="true"></i>
           </button>
         </div>
+
         <div
           id="league-panel-{{ league.id }}"
-          class="AccordionContent"
+          class="accordion-content"
           role="region"
           aria-labelledby="league-header-{{ league.id }}"
         >
-          <div class="LeagueDetailsBody">
+          <div class="league-details-body">
             <p>{{ league.description }}</p>
           </div>
         </div>
+
       </div>
       {% endfor %}
-      <div
-        id="noResultsMessage"
-        class="Card EmptyStateCard"
-        style="display: none"
-      >
-        <i class="fas fa-search EmptyStateIcon"></i>
+
+      <!-- No Results -->
+      <div id="noResultsMessage" class="card empty-state-card" style="display: none">
+        <i class="fas fa-search empty-state-icon"></i>
         <h3>هیچ لیگی با عبارت جستجو شده مطابقت ندارد.</h3>
         <p>لطفاً عبارت دیگری را امتحان کنید.</p>
       </div>
+
     </section>
 
-    <section class="CtaSection TextCenter">
+    <!-- Final CTA -->
+    <section class="cta-section text-center">
       <h2>آماده رقابت هستید؟</h2>
       <p>
         به بزرگترین رویداد هوش مصنوعی و رباتیک ایران بپیوندید و مهارت‌های خود را
         به نمایش بگذارید!
       </p>
-      <a href="{{ url_for('client.signup') }}" class="Btn BtnPrimary BtnLarge">
+
+      <a href="{{ url_for('client.signup') }}" class="btn btn-primary btn-large">
         <i class="fas fa-rocket" aria-hidden="true"></i>
         همین حالا ثبت‌نام کنید
       </a>
     </section>
+
   </div>
 </main>
-{% endblock %} {% block Scripts %}
+{% endblock %}
+
+{% block scripts %}
 <script>
   document.addEventListener("DOMContentLoaded", () => {
+
+    // Keep JS unchanged
     const accordionContainer = document.querySelector(".AccordionContainer");
     if (!accordionContainer) return;
 
@@ -116,33 +133,28 @@
 
       button.setAttribute("aria-expanded", String(!isExpanded));
       if (content) {
-        content.style.maxHeight = isExpanded
-          ? null
-          : content.scrollHeight + "px";
+        content.style.maxHeight = isExpanded ? null : content.scrollHeight + "px";
       }
     });
 
+    // Open From Hash
     const openAccordionByHash = () => {
       if (window.location.hash) {
         const targetId = window.location.hash.substring(1);
         const buttonToOpen = document.getElementById(targetId);
-        if (
-          buttonToOpen &&
-          buttonToOpen.classList.contains("AccordionButton")
-        ) {
+        if (buttonToOpen && buttonToOpen.classList.contains("AccordionButton")) {
           buttonToOpen.click();
           setTimeout(() => {
-            buttonToOpen.scrollIntoView({
-              behavior: "smooth",
-              block: "center",
-            });
+            buttonToOpen.scrollIntoView({ behavior: "smooth", block: "center" });
           }, 300);
         }
       }
     };
+
     openAccordionByHash();
     window.addEventListener("hashchange", openAccordionByHash);
 
+    // Filter
     const filterInput = document.getElementById("leagueFilter");
     const noResultsMessage = document.getElementById("noResultsMessage");
     const allItems = Array.from(
@@ -161,11 +173,10 @@
           if (isMatch) visibleCount++;
         });
 
-        if (noResultsMessage) {
-          noResultsMessage.style.display = visibleCount === 0 ? "" : "none";
-        }
+        noResultsMessage.style.display = visibleCount === 0 ? "" : "none";
       });
     }
+
   });
 </script>
 {% endblock %}

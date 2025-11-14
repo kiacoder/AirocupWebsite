@@ -1,18 +1,16 @@
-{% extends "Global/Base.html" %}
+{% extends "global/base.html" %}
 
-{% block Title %}ویرایش تیم: {{ Team.TeamName }}{% endblock %}
+{% block title %}ویرایش تیم: {{ team.team_name }}{% endblock %}
 
-{% block Head %}
+{% block head %}
 <style>
-  .TabContainer {
-    width: 100%;
-  }
-  .TabButtons {
+  .tab-container { width: 100%; }
+  .tab-buttons {
     border-bottom: 2px solid #e2e8f0;
     margin-bottom: 1.5rem;
     display: flex;
   }
-  .TabButton {
+  .tab-button {
     background: none;
     border: none;
     padding: 12px 20px;
@@ -23,80 +21,86 @@
     position: relative;
     bottom: -2px;
   }
-  .TabButton.active {
-    border-bottom: 2px solid var(--ColorPrimary);
+  .tab-button.active {
+    border-bottom: 2px solid var(--color-primary);
     font-weight: bold;
-    color: var(--ColorPrimary);
+    color: var(--color-primary);
   }
-  .TabButton:disabled {
+  .tab-button:disabled {
     color: #cbd5e0;
     cursor: not-allowed;
   }
-  .TabContent {
+  .tab-content {
     display: none;
     animation: fadeIn 0.5s;
   }
-  .TabContent.active {
-    display: block;
-  }
+  .tab-content.active { display: block; }
   @keyframes fadeIn {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
-  .DataTable {
+  .data-table {
     width: 100%;
     border-collapse: collapse;
   }
-  .DataTable th,
-  .DataTable td {
+  .data-table th,
+  .data-table td {
     padding: 12px;
-    border: 1px solid var(--ColorBorder);
+    border: 1px solid var(--color-border);
     text-align: right;
   }
-  .DataTable th {
-    background-color: var(--ColorBackgroundMuted);
+  .data-table th {
+    background-color: var(--color-background-muted);
   }
 </style>
 {% endblock %}
 
-{% block Body %}
-<div class="AppContainer">
-  <div class="Container">
-    <div class="PageHeader">
-      <h1 class="SectionTitle">
+{% block body %}
+<div class="app-container">
+  <div class="container">
+
+    <div class="page-header">
+      <h1 class="section-title">
         ویرایش تیم:
-        <span style="color: var(--ColorPrimary)">{{ Team.TeamName }}</span>
+        <span style="color: var(--color-primary)">{{ team.team_name }}</span>
       </h1>
-      <p class="SectionSubtitle">
+      <p class="section-subtitle">
         در این بخش می‌توانید نام تیم خود را تغییر دهید و در صورت تایید پرداخت، مستندات پروژه را بارگذاری کنید.
       </p>
     </div>
 
-    <div class="TabContainer">
-      <div class="TabButtons">
-        <button class="TabButton active" data-tab="edit-info">
+    <div class="tab-container">
+
+      <div class="tab-buttons">
+        <button class="tab-button active" data-tab="edit-info">
           <i class="fas fa-edit"></i> ویرایش نام
         </button>
-        <button class="TabButton" data-tab="documents" {% if not IsPaid %}disabled title="برای فعال‌سازی، پرداخت تیم باید تایید شده باشد."{% endif %}>
-          <i class="fas fa-file-upload"></i> ارسال مستندات {% if not IsPaid %}(<i class="fas fa-lock"></i>){% endif %}
+
+        <button class="tab-button"
+                data-tab="documents"
+                {% if not is_paid %}disabled title="برای فعال‌سازی، پرداخت تیم باید تایید شده باشد."{% endif %}>
+          <i class="fas fa-file-upload"></i> ارسال مستندات 
+          {% if not is_paid %}(<i class="fas fa-lock"></i>){% endif %}
         </button>
       </div>
 
-      <div id="edit-info" class="TabContent active">
-        <div class="FormContainer FormContainer--medium" style="margin-top: 1rem">
-          <h2 class="FormTitle">تغییر نام تیم</h2>
-          <form method="POST" action="{{ url_for('Client.UpdateTeam', TeamID=Team.TeamID) }}">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-            <div class="FormGroup">
-              <label for="TeamName">نام جدید تیم:<span class="RequiredStar">*</span></label>
-              <input type="text" id="TeamName" name="TeamName" value="{{ Team.TeamName }}" required minlength="3" maxlength="30" />
+      <!-- EDIT TEAM NAME -->
+      <div id="edit-info" class="tab-content active">
+        <div class="form-container form-container--medium" style="margin-top: 1rem">
+          <h2 class="form-title">تغییر نام تیم</h2>
+
+          <form method="POST" action="{{ url_for('client.update_team', team_id=team.team_id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="form-group">
+              <label for="teamName">نام جدید تیم:<span class="required-star">*</span></label>
+              <input type="text" id="teamName" name="teamName"
+                     value="{{ team.team_name }}"
+                     required minlength="3" maxlength="30">
             </div>
-            <div class="FormGroup">
-              <button type="submit" class="Btn BtnPrimary Btn--fullWidth">
+
+            <div class="form-group">
+              <button type="submit" class="btn btn-primary btn--full-width">
                 ذخیره نام جدید
               </button>
             </div>
@@ -104,36 +108,50 @@
         </div>
       </div>
 
-      <div id="documents" class="TabContent">
-        {% if IsPaid %}
-        <div class="FormContainer FormContainer--medium" style="margin-top: 1rem">
-          <h2 class="FormTitle">بارگذاری مستندات</h2>
-          <p class="FormSubtitle" style="font-size: 0.9rem">
+      <!-- DOCUMENTS -->
+      <div id="documents" class="tab-content">
+
+        {% if is_paid %}
+
+        <div class="form-container form-container--medium" style="margin-top: 1rem">
+          <h2 class="form-title">بارگذاری مستندات</h2>
+          <p class="form-subtitle" style="font-size: 0.9rem">
             فایل‌های پروژه مانند ویدئو، پوستر، فایل‌های متنی و... را بارگذاری کنید.
           </p>
 
-          <form id="DocumentUploadForm" method="POST" action="{{ url_for('Client.UploadDocument', TeamID=Team.TeamID) }}" enctype="multipart/form-data">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-            <div class="FormGroup">
-              <label for="documentFile" class="Btn BtnSecondary FileUploadBtn"><i class="fas fa-paperclip"></i> انتخاب فایل</label>
-              <input type="file" id="documentFile" name="File" class="FileUploadInput" required />
-              <span id="filename" class="FileNameDisplay">هیچ فایلی انتخاب نشده</span>
+          <form id="document-upload-form"
+                method="POST"
+                action="{{ url_for('client.upload_document', team_id=team.team_id) }}"
+                enctype="multipart/form-data">
+
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="form-group">
+              <label for="documentFile" class="btn btn-secondary file-upload-btn">
+                <i class="fas fa-paperclip"></i> انتخاب فایل
+              </label>
+
+              <input type="file" id="documentFile" name="file" class="file-upload-input" required>
+              <span id="filename" class="file-name-display">هیچ فایلی انتخاب نشده</span>
+
               <small style="display: block; margin-top: 10px; text-align: center">
-                حداکثر حجم فایل سند: {{ (AppConfig.MaxDocumentSize / 1024 / 1024)|int }} مگابایت
+                حداکثر حجم فایل سند: {{ (app_config.max_document_size / 1024 / 1024)|int }} مگابایت
               </small>
             </div>
-            <button type="submit" class="Btn BtnPrimary Btn--fullWidth">
+
+            <button type="submit" class="btn btn-primary btn--full-width">
               بارگذاری فایل
             </button>
           </form>
         </div>
 
-        <hr style="margin: 2.5rem 0" />
+        <hr style="margin: 2.5rem 0">
 
         <h3>مستندات بارگذاری شده</h3>
-        {% if Documents %}
-        <div class="UserTableWrapper">
-          <table class="DataTable">
+
+        {% if documents %}
+        <div class="user-table-wrapper">
+          <table class="data-table">
             <thead>
               <tr>
                 <th>نام فایل</th>
@@ -143,13 +161,15 @@
               </tr>
             </thead>
             <tbody>
-              {% for doc in Documents %}
+              {% for doc in documents %}
               <tr>
-                <td data-label="نام فایل">{{ doc.FileName | truncate(40) }}</td>
-                <td data-label="نوع">{{ doc.FileType }}</td>
-                <td data-label="تاریخ">{{ doc.UploadDate | formatdate }}</td>
-                <td data-label="دانلود">
-                  <a href="{{ url_for('Client.GetDocument', TeamID=doc.TeamID, filename=doc.FileName) }}" class="Btn BtnSm BtnSecondary" download>
+                <td>{{ doc.file_name | truncate(40) }}</td>
+                <td>{{ doc.file_type }}</td>
+                <td>{{ doc.upload_date | formatdate }}</td>
+                <td>
+                  <a href="{{ url_for('client.get_document', team_id=doc.team_id, filename=doc.file_name) }}"
+                     class="btn btn-sm btn-secondary"
+                     download>
                     <i class="fas fa-download"></i>
                   </a>
                 </td>
@@ -163,49 +183,60 @@
           هنوز هیچ مستنداتی برای این تیم بارگذاری نشده است.
         </p>
         {% endif %}
+
         {% else %}
         <div style="text-align: center; padding: 2rem">
           <i class="fas fa-lock" style="font-size: 2.5rem; color: #aaa"></i>
           <h3 style="margin-top: 1.5rem">بخش مستندات قفل است</h3>
-          <p style="color: var(--ColorTextMuted)">
-            این بخش پس از پرداخت هزینه تیم و <strong>تایید نهایی</strong> آن توسط مدیریت، به صورت خودکار فعال خواهد شد.
+          <p style="color: var(--color-text-muted)">
+            این بخش پس از پرداخت هزینه تیم و <strong>تایید نهایی</strong> فعال خواهد شد.
           </p>
         </div>
         {% endif %}
       </div>
     </div>
 
-    <div class="SectionCta" style="text-align: center; margin-top: 2rem; margin-bottom: 30px">
-      <a href="{{ url_for('Client.Dashboard') }}" class="Btn BtnSecondary"><i class="fas fa-arrow-left"></i> بازگشت به داشبورد</a>
+    <div class="section-cta" style="text-align: center; margin-top: 2rem; margin-bottom: 30px">
+      <a href="{{ url_for('client.dashboard') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> بازگشت به داشبورد
+      </a>
     </div>
+
   </div>
 </div>
 {% endblock %}
 
-{% block Scripts %}
+{% block scripts %}
 <script>
-  document.addEventListener("DOMContentLoaded", () => {
-    const tabButtons = document.querySelectorAll(".TabButton");
-    const tabContents = document.querySelectorAll(".TabContent");
-    tabButtons.forEach((button) => {
-      if (button.disabled) return;
-      button.addEventListener("click", () => {
-        tabButtons.forEach((btn) => btn.classList.remove("active"));
-        button.classList.add("active");
-        const tabId = button.dataset.tab;
-        tabContents.forEach((content) => {
-          content.classList.toggle("active", content.id === tabId);
-        });
+document.addEventListener("DOMContentLoaded", () => {
+  const tabButtons = document.querySelectorAll(".tab-button");
+  const tabContents = document.querySelectorAll(".tab-content");
+
+  tabButtons.forEach(button => {
+    if (button.disabled) return;
+
+    button.addEventListener("click", () => {
+      tabButtons.forEach(btn => btn.classList.remove("active"));
+      button.classList.add("active");
+
+      const tabId = button.dataset.tab;
+      tabContents.forEach(content => {
+        content.classList.toggle("active", content.id === tabId);
       });
     });
-
-    const fileInput = document.getElementById("documentFile");
-    const filenameDisplay = document.getElementById("filename");
-    if (fileInput && filenameDisplay) {
-      fileInput.addEventListener("change", () => {
-        filenameDisplay.textContent = fileInput.files.length > 0 ? fileInput.files[0].name : "هیچ فایلی انتخاب نشده";
-      });
-    }
   });
+
+  const fileInput = document.getElementById("documentFile");
+  const filenameDisplay = document.getElementById("filename");
+
+  if (fileInput && filenameDisplay) {
+    fileInput.addEventListener("change", () => {
+      filenameDisplay.textContent =
+        fileInput.files.length > 0
+          ? fileInput.files[0].name
+          : "هیچ فایلی انتخاب نشده";
+    });
+  }
+});
 </script>
 {% endblock %}
