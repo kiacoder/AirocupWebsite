@@ -575,18 +575,24 @@ const airocupApp = {
       const modal = document.querySelector(
         airocupApp.constants.SELECTORS.CONFIRMATION_MODAL
       );
-      if (!modal) return;
-
-      const confirmBtn = modal.querySelector(
+      const confirmBtn = modal?.querySelector(
         airocupApp.constants.SELECTORS.CONFIRM_MODAL_BTN
       );
-      const titleEl = modal.querySelector(
+      const titleEl = modal?.querySelector(
         airocupApp.constants.SELECTORS.MODAL_TITLE
       );
-      const bodyEl = modal.querySelector(
+      const bodyEl = modal?.querySelector(
         airocupApp.constants.SELECTORS.MODAL_BODY
       );
       let formToSubmit = null;
+
+      const getFallbackMessage = (deleteBtn) => {
+        const rawMessage =
+          deleteBtn.dataset.modalBody || "آیا از انجام این عملیات اطمینان دارید؟";
+        const temp = document.createElement("div");
+        temp.innerHTML = rawMessage;
+        return temp.textContent?.trim() || temp.innerText?.trim() || rawMessage;
+      };
 
       document.body.addEventListener("click", (event) => {
         const deleteBtn = event.target.closest(
@@ -594,10 +600,20 @@ const airocupApp = {
         );
         if (!deleteBtn) return;
 
-        event.preventDefault();
-        formToSubmit = deleteBtn.closest("form");
-        if (!formToSubmit) return;
+        const form = deleteBtn.closest("form");
+        if (!form) return;
 
+        event.preventDefault();
+
+        if (!modal || !confirmBtn || !titleEl || !bodyEl) {
+          const confirmationMessage = getFallbackMessage(deleteBtn);
+          if (window.confirm(confirmationMessage)) {
+            form.submit();
+          }
+          return;
+        }
+
+        formToSubmit = form;
         titleEl.textContent = deleteBtn.dataset.modalTitle || "تایید عملیات";
         bodyEl.innerHTML =
           deleteBtn.dataset.modalBody ||
@@ -610,13 +626,15 @@ const airocupApp = {
         airocupApp.ui.openModal(modal, deleteBtn);
       });
 
-      confirmBtn.addEventListener("click", () => {
-        if (formToSubmit) {
-          formToSubmit.submit();
-          formToSubmit = null;
-          airocupApp.ui.closeModal(modal);
-        }
-      });
+      if (confirmBtn) {
+        confirmBtn.addEventListener("click", () => {
+          if (formToSubmit) {
+            formToSubmit.submit();
+            formToSubmit = null;
+            airocupApp.ui.closeModal(modal);
+          }
+        });
+      }
     },
     initializePasswordConfirmation(form, passwordInput, confirmInput) {
       if (!form || !passwordInput || !confirmInput) return;
