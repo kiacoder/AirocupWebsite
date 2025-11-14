@@ -910,6 +910,7 @@ const airocupApp = {
       this.initializeMembersPage();
       this.initializeLeagueSelector();
       this.initializeFileUploadValidation();
+      this.initializePaymentPage();
     },
 
     initializeMobileMenu() {
@@ -1200,6 +1201,39 @@ const airocupApp = {
             `حجم فایل نباید بیشتر از ${maxSizeMB} مگابایت باشد.`
           );
           fileInput.value = "";
+        }
+      });
+    },
+
+    initializePaymentPage() {
+      const form = document.querySelector("#teamPaymentForm");
+      if (!form) return;
+
+      const fileInput = form.querySelector('input[type="file"][name="receipt"]');
+      const fileNameDisplay = document.getElementById("filename");
+      const submitButton = form.querySelector('button[type="submit"]');
+      const loadingText = submitButton?.dataset.loadingText || "در حال ارسال...";
+
+      if (fileInput && fileNameDisplay) {
+        fileInput.addEventListener("change", () => {
+          const file = fileInput.files[0];
+          fileNameDisplay.textContent = file ? file.name : "هیچ فایلی انتخاب نشده";
+          fileNameDisplay.classList.toggle("file-name-display--active", Boolean(file));
+        });
+      }
+
+      form.addEventListener("submit", (event) => {
+        if (form.dataset.submitting === "true") {
+          event.preventDefault();
+          return;
+        }
+        form.dataset.submitting = "true";
+
+        if (submitButton) {
+          submitButton.dataset.originalText = submitButton.innerHTML;
+          submitButton.textContent = loadingText;
+          submitButton.classList.add("btn--loading");
+          submitButton.disabled = true;
         }
       });
     },

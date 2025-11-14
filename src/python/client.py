@@ -1,5 +1,6 @@
 "Client-side routes and logic for the web application"
 
+import io
 import os
 import random
 import string
@@ -1058,9 +1059,22 @@ def payment(team_id):
                 flash("لطفا فایل رسید پرداخت را انتخاب کنید.", "error")
                 return redirect(request.url)
 
-            if request.content_length is None or request.content_length > max_size:
+            upload_size = _determine_upload_size(receipt_file)
+            if upload_size is None:
                 flash(
-                    f"حجم فایل رسید نباید بیشتر از { max_size / 1024 / 1024:.1f} مگابایت باشد.",
+                    "امکان بررسی اندازه فایل رسید وجود ندارد. لطفاً مجدداً تلاش کنید.",
+                    "error",
+                )
+                return redirect(request.url)
+
+            if upload_size <= 0:
+                flash("فایل انتخاب‌شده خالی است. لطفاً رسید صحیحی بارگذاری کنید.", "error")
+                return redirect(request.url)
+
+            if upload_size > max_size:
+                max_size_mb = max_size / 1024 / 1024
+                flash(
+                    f"حجم فایل رسید نباید بیشتر از {max_size_mb:.1f} مگابایت باشد.",
                     "error",
                 )
                 return redirect(request.url)
@@ -1817,51 +1831,128 @@ def select_league(team_id):
 
 def _calculate_payment_details(db, team):
     """Calculates payment details for a team based on its status and members."""
+    latest_payment = (
+        db.query(models.Payment)
+        .filter(models.Payment.team_id == team.team_id)
+        .order_by(models.Payment.upload_date.desc())
+        .first()
+    )
+
+    if latest_payment and latest_payment.status == models.PaymentStatus.PENDING:
+        return (
+            {},
+            "رسید پرداخت قبلی شما در حال بررسی است. لطفاً تا اعلام نتیجه صبر کنید.",
+            "info",
+            True,
+        )
+
+    active_members_count = (
+        db.query(func.count(models.Member.member_id))
+        .filter(
+            models.Member.team_id == team.team_id,
+            models.Member.status == models.EntityStatus.ACTIVE,
+        )
+        .scalar()
+        or 0
+    )
+
+    if active_members_count == 0:
+        return (
+            {},
+            "برای پرداخت، ابتدا باید حداقل یک عضو فعال در تیم ثبت شده باشد.",
+            "warning",
+            True,
+        )
+
+    if not team.league_one_id:
+        return (
+            {},
+            "لطفاً ابتدا لیگ اصلی تیم را از بخش «انتخاب لیگ» مشخص کنید.",
+            "warning",
+            True,
+        )
+
     is_new_member_payment = database.check_if_team_is_paid(db, team.team_id)
-    total_cost = 0
+    fee_per_person = config.payment_config.get("fee_per_person") or 0
+    fee_team = config.payment_config.get("fee_team") or 0
+    league_two_discount_percent = config.payment_config.get("league_two_discount") or 0
+
     members_to_pay_for = 0
-    num_members = 0
+    total_cost = 0
     league_one_cost = 0
     league_two_cost = 0
     discount_amount = 0
 
     if is_new_member_payment:
-        members_to_pay_for = (
-            team.unpaid_members_count if team.unpaid_members_count is not None else 0
-        )
-        if members_to_pay_for == 0:
-            return {}, "در حال حاضر عضو جدیدی برای پرداخت وجود ندارد.", "info", True
-        total_cost = members_to_pay_for * config.payment_config["fee_per_person"]
-    else:
-        num_members = (
-            db.query(models.Member)
-            .filter(
-                models.Member.team_id == team.team_id,
-                models.Member.status == models.EntityStatus.ACTIVE,
+        members_to_pay_for = team.unpaid_members_count or 0
+        if members_to_pay_for <= 0:
+            return (
+                {},
+                "در حال حاضر عضو جدیدی برای پرداخت وجود ندارد.",
+                "info",
+                True,
             )
-            .count()
-        )
-        members_to_pay_for = num_members
-        members_fee = num_members * config.payment_config["fee_per_person"]
-        league_one_cost = config.payment_config["fee_team"] + members_fee
+
+        total_cost = members_to_pay_for * fee_per_person
+    else:
+        members_to_pay_for = active_members_count
+        members_fee = members_to_pay_for * fee_per_person
+        league_one_cost = fee_team + members_fee
         total_cost = league_one_cost
 
         if team.league_two_id is not None:
-            discount_percent = config.payment_config["league_two_discount"] / 100
-            discount_amount = members_fee * discount_percent
-            league_two_cost = members_fee - discount_amount
+            discount_amount = int(
+                round(members_fee * (league_two_discount_percent / 100))
+            )
+            league_two_cost = max(0, members_fee - discount_amount)
             total_cost += league_two_cost
 
     context = {
         "is_new_member_payment": is_new_member_payment,
         "members_to_pay_for": members_to_pay_for,
-        "total_fee": total_cost,
-        "num_members": num_members,
-        "league_one_cost": league_one_cost,
-        "league_two_cost": league_two_cost,
-        "discount_amount": discount_amount,
+        "total_fee": int(total_cost),
+        "num_members": active_members_count,
+        "league_one_cost": int(league_one_cost),
+        "league_two_cost": int(league_two_cost),
+        "discount_amount": int(discount_amount),
+        "latest_payment": latest_payment,
+        "bank_info_complete": all(
+            config.payment_config.get(field)
+            for field in ("bank_name", "owner_name", "card_number", "iban")
+        ),
     }
     return context, None, None, False
+
+
+def _determine_upload_size(file_storage):
+    """Best-effort helper to determine the size of an uploaded file."""
+    size = getattr(file_storage, "content_length", None)
+    if size is not None and size > 0:
+        return size
+
+    stream = getattr(file_storage, "stream", None)
+    if stream is None:
+        return size
+
+    try:
+        stream.seek(0, os.SEEK_END)
+        size = stream.tell()
+    except (OSError, AttributeError):
+        try:
+            stream.seek(0)
+        except (OSError, AttributeError):
+            return size
+        data = stream.read()
+        size = len(data)
+        stream = io.BytesIO(data)
+        file_storage.stream = stream
+    finally:
+        try:
+            file_storage.stream.seek(0)
+        except (OSError, AttributeError):
+            pass
+
+    return size
 
 
 def _process_payment_submission(db, team, receipt_file, total_cost, members_to_pay_for):
@@ -1870,7 +1961,7 @@ def _process_payment_submission(db, team, receipt_file, total_cost, members_to_p
     extension = (
         original_filename.rsplit(".", 1)[1].lower() if "." in original_filename else ""
     )
-    secure_name = f"{uuid.uuid4()}.{extension}"
+    secure_name = f"{uuid.uuid4()}.{extension}" if extension else str(uuid.uuid4())
 
     new_payment = models.Payment(
         team_id=team.team_id,

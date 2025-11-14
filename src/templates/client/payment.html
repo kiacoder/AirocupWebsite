@@ -14,11 +14,20 @@
   <div class="payment-grid">
     <div class="card payment-info-card">
       <h2><i class="fas fa-university"></i> اطلاعات حساب بانکی</h2>
+      {% set has_bank_info = bank_info_complete if bank_info_complete is defined else payment.bank_name and payment.owner_name and payment.card_number and payment.iban %}
       <div class="payment-details">
+        {% if not has_bank_info %}
+        <div class="alert alert--warning payment-status-alert">
+          اطلاعات حساب بانکی به‌طور کامل در دسترس نیست. لطفاً در صورت نیاز با پشتیبانی آیروکاپ تماس بگیرید تا آخرین جزئیات پرداخت را دریافت کنید.
+        </div>
+        {% endif %}
+        {% if payment.bank_name %}
         <div class="detail-item">
           <span>بانک</span>
           <strong>{{ payment.bank_name }}</strong>
         </div>
+        {% endif %}
+        {% if payment.owner_name %}
         <div class="detail-item copyable">
           <span>صاحب حساب</span>
           <div class="value-with-copy">
@@ -28,6 +37,8 @@
             </button>
           </div>
         </div>
+        {% endif %}
+        {% if payment.card_number %}
         <div class="detail-item copyable">
           <span>شماره کارت</span>
           <div class="value-with-copy">
@@ -41,6 +52,8 @@
             </button>
           </div>
         </div>
+        {% endif %}
+        {% if payment.iban %}
         <div class="detail-item copyable">
           <span>شماره شبا (IBAN)</span>
           <div class="value-with-copy">
@@ -50,6 +63,7 @@
             </button>
           </div>
         </div>
+        {% endif %}
       </div>
     </div>
 
@@ -107,8 +121,63 @@
         </div>
       </div>
 
+      {% if latest_payment %}
+      {% set status_class_map = {
+        'approved': 'status-approved',
+        'pending': 'status-pending',
+        'rejected': 'status-rejected'
+      } %}
+      <div class="payment-status-card">
+        <div class="payment-status-card__header">
+          <span class="payment-status-card__title">آخرین وضعیت پرداخت</span>
+          {% if latest_payment.status %}
+          <span class="status-badge {{ status_class_map.get(latest_payment.status.value, 'status-not-started') }}">
+            {{ latest_payment.status.label }}
+          </span>
+          {% endif %}
+        </div>
+        <div class="payment-status-card__body">
+          <div class="payment-status-card__row">
+            <span>تاریخ ارسال</span>
+            <strong>{{ latest_payment.upload_date | formatdate | persian_digits }}</strong>
+          </div>
+          <div class="payment-status-card__row">
+            <span>مبلغ پرداختی</span>
+            <strong>{{ latest_payment.amount | humanize_number | persian_digits }} ریال</strong>
+          </div>
+          {% if latest_payment.members_paid_for %}
+          <div class="payment-status-card__row">
+            <span>تعداد اعضای پوشش داده شده</span>
+            <strong>{{ latest_payment.members_paid_for | persian_digits }} نفر</strong>
+          </div>
+          {% endif %}
+        </div>
+        {% if latest_payment.receipt_filename %}
+        <a
+          href="{{ url_for('client.get_receipt', client_id=latest_payment.client_id, filename=latest_payment.receipt_filename) }}"
+          class="btn btn-secondary btn-sm"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <i class="fas fa-receipt"></i> مشاهده رسید
+        </a>
+        {% endif %}
+      </div>
+
+      {% if latest_payment.status and latest_payment.status.value == 'rejected' %}
+      <div class="alert alert--warning payment-status-alert">
+        پرداخت قبلی شما تایید نشد. لطفاً پس از رفع ایراد، رسید جدیدی را بارگذاری کنید.
+      </div>
+      {% elif latest_payment.status and latest_payment.status.value == 'approved' and is_new_member_payment %}
+      <div class="alert alert--info payment-status-alert">
+        پرداخت اولیه تیم شما تایید شده است. در صورت اضافه شدن اعضای جدید، هزینه آن‌ها را از طریق این بخش پرداخت کنید.
+      </div>
+      {% endif %}
+      {% endif %}
+
       <div style="margin-top: 1.5rem">
         <form
+          id="teamPaymentForm"
           method="POST"
           action="{{ url_for('client.payment', team_id=team.team_id) }}"
           enctype="multipart/form-data"
@@ -131,7 +200,7 @@
             />
             <span id="filename" class="file-name-display">هیچ فایلی انتخاب نشده</span>
           </div>
-          <button type="submit" class="btn btn-primary btn--full-width">
+          <button type="submit" class="btn btn-primary btn--full-width" data-loading-text="در حال ارسال...">
             ارسال رسید و نهایی کردن پرداخت
           </button>
         </form>
