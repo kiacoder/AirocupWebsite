@@ -1,5 +1,8 @@
-{% extends "Global/Base.html" %} {% block Title %}داشبورد | آیروکاپ{% endblock
-%} {% block Body %}
+{% extends "global/base.html" %}
+
+{% block title %}داشبورد | آیروکاپ{% endblock %}
+
+{% block body %}
 <div class="Container" style="margin-top: 2rem; margin-bottom: 2rem">
   <div class="WelcomeHeader">
     <h2>به داشبورد خود خوش آمدید</h2>
@@ -274,5 +277,9 @@
     </div>
   </div>
 </div>
-{% endblock %} {% block Scripts %} {{ super() }} {# All JavaScript has been
-removed because it is now handled globally by main.js #} {% endblock %}
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  {# All JavaScript has been removed because it is now handled globally by main.js #}
+{% endblock %}
