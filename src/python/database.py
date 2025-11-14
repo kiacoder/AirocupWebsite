@@ -7,6 +7,34 @@ from typing import Any, Iterator, List, Optional, Tuple
 import bcrypt
 from sqlalchemy import create_engine, func
 from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.util import typing as sa_typing
+
+# SQLAlchemy 2.0.x expects ``typing.Union.__getitem__`` to accept either
+# positional arguments or a tuple. Python 3.14 tightened the descriptor
+# semantics which causes SQLAlchemy to occasionally pass a single tuple
+# argument and trigger ``TypeError: descriptor '__getitem__' requires a
+# 'typing.Union' object but received a 'tuple'`` during model import. Expand
+# the tuple transparently so SQLAlchemy keeps working on newer interpreters.
+if hasattr(sa_typing, "make_union_type"):
+    _sa_make_union_type = sa_typing.make_union_type
+
+    def _patched_make_union_type(*types):
+        if len(types) == 1 and isinstance(types[0], tuple):
+            types = types[0]
+        try:
+            return _sa_make_union_type(*types)
+        except TypeError:
+            iterator = iter(types)
+            try:
+                union_type = next(iterator)
+            except StopIteration as stop_error:  # pragma: no cover
+                raise stop_error
+            for typ in iterator:
+                union_type = union_type | typ
+            return union_type
+
+    sa_typing.make_union_type = _patched_make_union_type  # type: ignore[attr-defined]
+
 from . import constants
 from . import models
 from . import utils

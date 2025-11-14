@@ -1,8 +1,11 @@
 """ORM models for the application using SQLAlchemy."""
 
+from __future__ import annotations
+
 import enum
 import datetime
 from typing import Optional
+
 from sqlalchemy.orm import (
     DeclarativeBase,
     relationship,
