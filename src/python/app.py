@@ -63,6 +63,7 @@ for path in [
     flask_app.config["UPLOAD_FOLDER_RECEIPTS"],
     flask_app.config["UPLOAD_FOLDER_DOCUMENTS"],
     flask_app.config["UPLOAD_FOLDER_NEWS"],
+    constants.Path.guideline_dir,
     os.path.dirname(constants.Path.database_dir),
 ]:
     os.makedirs(path, exist_ok=True)

@@ -31,13 +31,18 @@
       {% if technical_committee_members %}
         {% for member in technical_committee_members %}
         <div class="card committee-member" itemscope itemtype="https://schema.org/Person">
-          <div class="committee-photo">
+          <div
+            class="committee-photo"
+            data-initial="{{ member.name[0] }}"
+            role="img"
+            aria-label="تصویر {{ member.name }}"
+          >
             <img
               src="{{ url_for('static', filename=member.image) }}"
               alt="تصویر پرسنلی {{ member.name }}"
               loading="lazy"
               itemprop="image"
-              onerror="this.onerror=null; this.src='{{ url_for('static', filename='images/placeholder-avatar.png') }}';"
+              onerror="this.closest('.committee-photo').classList.add('photo-fallback'); this.remove();"
             />
           </div>
 

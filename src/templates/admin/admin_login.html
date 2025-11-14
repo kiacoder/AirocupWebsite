@@ -3,44 +3,71 @@
 {% block Title %}ورود مدیر | پنل آیروکاپ{% endblock %}
 
 {% block Body %}
-<div class="AppContainer">
-  <div class="FormContainer FormContainer--small FormContainer--centered">
-    <form method="POST" action="{{ url_for('admin.admin_login') }}" id="adminLoginForm">
+<div class="admin-auth">
+  <div class="admin-auth__illustration">
+    <div class="admin-auth__logo">
+      <img
+        src="{{ url_for('static', filename=path.transparent_logos['transparent_white']) }}"
+        alt="آیروکاپ"
+        loading="lazy"
+      />
+      <h1>ورود مدیر آیروکاپ</h1>
+    </div>
+    <p class="admin-auth__description">
+      با ورود به حساب مدیریت، می‌توانید لیگ‌ها، تیم‌ها و اخبار را به‌روزرسانی کنید و
+      از وضعیت پرداخت‌ها مطلع شوید. امنیت این دسترسی برای ما اهمیت ویژه‌ای دارد.
+    </p>
+    <ul class="admin-auth__features">
+      <li><i class="fas fa-lock"></i> اتصال امن و رمزنگاری‌شده</li>
+      <li><i class="fas fa-chart-line"></i> گزارش‌های لحظه‌ای از وضعیت تیم‌ها</li>
+      <li><i class="fas fa-bell"></i> اعلان رویدادهای مهم و ثبت‌نام‌های جدید</li>
+    </ul>
+  </div>
+
+  <div class="admin-auth__card">
+    <form method="POST" action="{{ url_for('admin.admin_login') }}" id="adminLoginForm" class="admin-auth__form">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
-      <div class="FormHeader">
-        <div class="FormIcon">
-          <i class="fas fa-user-shield"></i>
+      <div class="admin-auth__form-header">
+        <span class="admin-auth__badge"><i class="fas fa-shield-alt"></i> دسترسی محدود</span>
+        <h2>ورود به پنل مدیریت</h2>
+        <p>برای ادامه رمز عبور مدیریت را وارد کنید.</p>
+      </div>
+
+      <div class="admin-auth__form-group">
+        <label for="password">رمز عبور ادمین *</label>
+        <div class="admin-auth__input-wrapper">
+          <i class="fas fa-key"></i>
+          <input
+            type="password"
+            id="password"
+            name="Password"
+            required
+            autofocus
+            autocomplete="current-password"
+            minlength="8"
+            placeholder="رمز عبور مدیریت را وارد کنید"
+          />
         </div>
-        <h1 class="FormTitle">ورود به پنل مدیریت</h1>
-        <p class="FormSubtitle">
-          لطفا برای ادامه، رمز عبور مدیریت را وارد کنید.
-        </p>
       </div>
 
-      <div class="FormGroup">
-        <label for="password" class="FormLabel">رمز عبور ادمین *</label>
-        <input type="password" id="password" name="Password" class="FormControl" required autofocus autocomplete="current-password" minlength="8" placeholder="رمز عبور مدیریت را وارد کنید" />
-      </div>
+      <button type="submit" class="admin-auth__submit">
+        <span>ورود به داشبورد</span>
+        <i class="fas fa-arrow-left"></i>
+      </button>
 
-      <div class="FormGroup">
-        <button type="submit" class="Btn BtnPrimary Btn--fullWidth">
-          <i class="fas fa-sign-in-alt"></i> ورود به پنل
-        </button>
-      </div>
-
-      <div class="FormHelp">
+      <div class="admin-auth__tips">
         <p>
-          <i class="fas fa-info-circle"></i> این صفحه فقط برای دسترسی مدیریت سیستم می‌باشد.
+          <i class="fas fa-info-circle"></i>
+          برای امنیت بیشتر از رمز عبور قوی و محرمانه استفاده کنید.
         </p>
       </div>
     </form>
 
-    <div class="SectionCta">
-      <a href="{{ url_for('Global.index') }}" class="Btn BtnSecondary Btn--fullWidth">
-        <i class="fas fa-home"></i> بازگشت به صفحه اصلی
-      </a>
-    </div>
+    <a href="{{ url_for('Global.index') }}" class="admin-auth__back-link">
+      <i class="fas fa-home"></i>
+      بازگشت به صفحه اصلی آیروکاپ
+    </a>
   </div>
 </div>
 {% endblock %}

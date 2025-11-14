@@ -35,7 +35,7 @@ const airocupApp = {
       ACCORDION_BUTTON: ".accordion-button",
       ACCORDION_ITEM: ".accordion-item",
       GALLERY_GRID: ".gallery-grid",
-      IMAGE_MODAL: "#imageModal",
+      IMAGE_MODAL: "#image-modal",
       MODAL_IMAGE: ".modal-image",
       GALLERY_ITEM_IMG: ".gallery-item img",
       LOGIN_FORM: "#login-form",
