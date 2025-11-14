@@ -8,6 +8,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     {% set _is_admin = request.blueprint == 'admin' %}
+    {% set _current_endpoint = request.endpoint or '' %}
+    {% set _is_admin_auth = _is_admin and _current_endpoint in ['admin.admin_login'] %}
     <meta
       name="robots"
       content="{{ 'noindex, nofollow' if _is_admin else 'index, follow' }}"
@@ -103,7 +105,7 @@
   </head>
 
   <body
-    class="{{ 'admin-body' if _is_admin else 'client-page' }}"
+    class="{{ 'admin-body' if _is_admin else 'client-page' }}{{ ' admin-body--auth' if _is_admin_auth else '' }}"
     {%
     if
     not
@@ -114,8 +116,8 @@
     endif
     %}
   >
-    {% if _is_admin %}
-    <header class="admin-header">
+    {% if _is_admin and not _is_admin_auth %}
+    <header class="admin-header" data-header="admin">
       <div class="admin-header-container container">
         <a
           href="{{ url_for('admin.admin_dashboard') }}"
@@ -128,11 +130,35 @@
           <span>پنل مدیریت آیروکاپ</span>
         </a>
 
-        <nav class="admin-header-nav" id="admin-nav">
-          <a href="{{ url_for('admin.admin_dashboard') }}">داشبورد</a>
-          <a href="{{ url_for('admin.admin_clients_list') }}">کاربران</a>
-          <a href="{{ url_for('admin.admin_manage_teams') }}">تیم‌ها</a>
-          <a href="{{ url_for('admin.admin_manage_news') }}">اخبار</a>
+        <nav
+          class="admin-header-nav"
+          id="admin-nav"
+          aria-label="منوی مدیریت"
+        >
+          <a
+            href="{{ url_for('admin.admin_dashboard') }}"
+            class="{{ 'active' if _current_endpoint == 'admin.admin_dashboard' else '' }}"
+            {% if _current_endpoint == 'admin.admin_dashboard' %}aria-current="page"{% endif %}
+            >داشبورد</a
+          >
+          <a
+            href="{{ url_for('admin.admin_clients_list') }}"
+            class="{{ 'active' if _current_endpoint == 'admin.admin_clients_list' else '' }}"
+            {% if _current_endpoint == 'admin.admin_clients_list' %}aria-current="page"{% endif %}
+            >کاربران</a
+          >
+          <a
+            href="{{ url_for('admin.admin_manage_teams') }}"
+            class="{{ 'active' if _current_endpoint == 'admin.admin_manage_teams' else '' }}"
+            {% if _current_endpoint == 'admin.admin_manage_teams' %}aria-current="page"{% endif %}
+            >تیم‌ها</a
+          >
+          <a
+            href="{{ url_for('admin.admin_manage_news') }}"
+            class="{{ 'active' if _current_endpoint == 'admin.admin_manage_news' else '' }}"
+            {% if _current_endpoint == 'admin.admin_manage_news' %}aria-current="page"{% endif %}
+            >اخبار</a
+          >
           <a href="{{ url_for('global.logout') }}" class="btn btn-secondary"
             >خروج</a
           >
@@ -140,15 +166,17 @@
 
         <button
           class="admin-header-mobile-toggle"
+          type="button"
           aria-controls="admin-nav"
           aria-expanded="false"
+          aria-label="باز و بسته کردن منو"
         >
-          <i class="fas fa-bars"></i>
+          <i class="fas fa-bars" aria-hidden="true"></i>
         </button>
       </div>
     </header>
 
-    {% else %}
+    {% elif not _is_admin %}
     <!-- HEADER (replace existing non-admin header) -->
     <header class="site-header">
       <div class="container header-inner">
@@ -174,7 +202,8 @@
               <a
                 role="menuitem"
                 href="{{ url_for('global.index') }}"
-                class="{{ 'active' if request.endpoint == 'global.index' }}"
+                class="{{ 'active' if _current_endpoint == 'global.index' else '' }}"
+                {% if _current_endpoint == 'global.index' %}aria-current="page"{% endif %}
                 >صفحه اصلی</a
               >
             </li>
@@ -182,7 +211,8 @@
               <a
                 role="menuitem"
                 href="{{ url_for('global.leagues') }}"
-                class="{{ 'active' if request.endpoint == 'global.leagues' }}"
+                class="{{ 'active' if _current_endpoint == 'global.leagues' else '' }}"
+                {% if _current_endpoint == 'global.leagues' %}aria-current="page"{% endif %}
                 >لیگ‌ها</a
               >
             </li>
@@ -190,7 +220,8 @@
               <a
                 role="menuitem"
                 href="{{ url_for('global.committee') }}"
-                class="{{ 'active' if request.endpoint == 'global.committee' }}"
+                class="{{ 'active' if _current_endpoint == 'global.committee' else '' }}"
+                {% if _current_endpoint == 'global.committee' %}aria-current="page"{% endif %}
                 >کمیته</a
               >
             </li>
@@ -198,7 +229,8 @@
               <a
                 role="menuitem"
                 href="{{ url_for('global.sponsors') }}"
-                class="{{ 'active' if request.endpoint == 'global.sponsors' }}"
+                class="{{ 'active' if _current_endpoint == 'global.sponsors' else '' }}"
+                {% if _current_endpoint == 'global.sponsors' %}aria-current="page"{% endif %}
                 >حامیان</a
               >
             </li>
@@ -206,7 +238,8 @@
               <a
                 role="menuitem"
                 href="{{ url_for('global.gallery') }}"
-                class="{{ 'active' if request.endpoint == 'global.gallery' }}"
+                class="{{ 'active' if _current_endpoint == 'global.gallery' else '' }}"
+                {% if _current_endpoint == 'global.gallery' %}aria-current="page"{% endif %}
                 >گالری</a
               >
             </li>
@@ -214,7 +247,8 @@
               <a
                 role="menuitem"
                 href="{{ url_for('global.news') }}"
-                class="{{ 'active' if request.endpoint == 'global.news' }}"
+                class="{{ 'active' if _current_endpoint == 'global.news' else '' }}"
+                {% if _current_endpoint == 'global.news' %}aria-current="page"{% endif %}
                 >اخبار</a
               >
             </li>
@@ -222,7 +256,8 @@
               <a
                 role="menuitem"
                 href="{{ url_for('global.about') }}"
-                class="{{ 'active' if request.endpoint == 'global.about' }}"
+                class="{{ 'active' if _current_endpoint == 'global.about' else '' }}"
+                {% if _current_endpoint == 'global.about' %}aria-current="page"{% endif %}
                 >درباره ما</a
               >
             </li>
@@ -230,7 +265,8 @@
               <a
                 role="menuitem"
                 href="{{ url_for('global.contact') }}"
-                class="{{ 'active' if request.endpoint == 'global.contact' }}"
+                class="{{ 'active' if _current_endpoint == 'global.contact' else '' }}"
+                {% if _current_endpoint == 'global.contact' %}aria-current="page"{% endif %}
                 >تماس با ما</a
               >
             </li>

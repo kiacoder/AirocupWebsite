@@ -1,8 +1,8 @@
-{% extends "Global/Base.html" %}
+{% extends "global/base.html" %}
 
-{% block Title %}افزودن عضو جدید به تیم {{ Team.TeamName }} | پنل آیروکاپ{% endblock %}
+{% block title %}افزودن عضو جدید به تیم {{ Team.TeamName }} | پنل آیروکاپ{% endblock %}
 
-{% block Body %}
+{% block body %}
 <div class="Container AdminMembersPage" data-team-id="{{ Team.TeamID }}">
   <div class="PageHeader">
     <h1 class="SectionTitle">افزودن عضو جدید</h1>
@@ -44,7 +44,7 @@
 </div>
 {% endblock %}
 
-{% block Scripts %}
+{% block scripts %}
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     const addMemberForm = document.getElementById("AddMemberForm");
