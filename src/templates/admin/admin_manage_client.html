@@ -1,213 +1,306 @@
-{% extends "Global/Base.html" %} {% block Title %}مدیریت کاربر: {{ Client.Email
-}} | پنل آیروکاپ{% endblock %} {% block Body %}
-<div class="Container">
-  <div class="PageHeader">
-    <h1 class="SectionTitle">مدیریت کاربر: {{ Client.Email }}</h1>
-    <p class="FormSubtitle">
-      اطلاعات کاربر و تیم‌های ثبت شده توسط او را مدیریت کنید.
-    </p>
-  </div>
+{% extends "global/base.html" %}
 
-  <div class="Card">
-    <h2 class="Card__header">
-      <i class="fas fa-user-circle"></i> اطلاعات کاربر
-    </h2>
-    <div class="Card__body" style="padding: 1.5rem">
-      <dl class="InfoList">
-        <dt>ایمیل:</dt>
-        <dd>{{ Client.Email }}</dd>
-        <dt>شماره تماس:</dt>
-        <dd>{{ Client.PhoneNumber | persian_digits }}</dd>
-        <dt>تاریخ ثبت نام:</dt>
-        <dd>{{ Client.RegistrationDate | formatdate | persian_digits }}</dd>
-        <dt>سطح تحصیلات:</dt>
-        <dd>{{ Client.EducationLevel or 'ثبت نشده' }}</dd>
-      </dl>
+{% block title %}مدیریت کاربر: {{ client.email }} | پنل آیروکاپ{% endblock %}
+
+{% block body %}
+<div class="admin-page">
+  <header class="admin-page__header">
+    <div class="admin-page__title">
+      <h1>مدیریت کاربر</h1>
+      <p class="admin-page__subtitle">
+        جزئیات حساب <strong dir="ltr">{{ client.email }}</strong> و تیم‌های ثبت‌شده توسط او را مدیریت کنید.
+      </p>
     </div>
-    <div class="ClientActions">
-      <button class="Btn BtnPrimary" data-modal-target="EditClientModal">
-        <i class="fas fa-edit"></i> ویرایش حساب
+    <div class="admin-page__actions">
+      <button class="btn btn-primary" data-modal-target="EditClientModal">
+        <i class="fas fa-user-edit"></i>
+        ویرایش حساب
       </button>
       <a
-        href="{{ url_for('Admin.AdminChat', ClientID=Client.ClientID) }}"
-        class="Btn BtnSecondary"
-        ><i class="fas fa-comments"></i> چت با کاربر</a
+        href="{{ url_for('admin.admin_chat', client_id=client.client_id) }}"
+        class="btn btn-secondary"
       >
+        <i class="fas fa-comments"></i>
+        گفتگو با کاربر
+      </a>
     </div>
-  </div>
+  </header>
 
-  <div class="Card Card--table">
-    <h2 class="Card__header">
-      <i class="fas fa-layer-group"></i> تیم‌های ثبت شده توسط کاربر
-      <button class="Btn BtnPrimary" data-modal-target="AddTeamModal">
-        <i class="fas fa-plus"></i> افزودن تیم
-      </button>
-    </h2>
-    <div class="UserTableWrapper">
-      <table class="UserTable">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>نام تیم</th>
-            <th>اعضا</th>
-            <th>وضعیت پرداخت</th>
-            <th class="ActionsHeader">عملیات</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for TeamData in Teams %}
-          <tr>
-            <td data-label="ID">#{{ TeamData.TeamID | persian_digits }}</td>
-            <td data-label="نام تیم">{{ TeamData.TeamName }}</td>
-            <td data-label="اعضا">
-              {{ TeamData.TotalMembers | persian_digits }} نفر
-            </td>
-            <td data-label="وضعیت پرداخت">
-              {% set status_enum = TeamData.LastPaymentStatus %}
-              <span
-                class="StatusBadge {% if status_enum == 'Approved' %}StatusApproved{% elif status_enum == 'Pending' %}StatusPending{% elif status_enum == 'Rejected' %}StatusRejected{% else %}StatusNotStarted{% endif %}"
-              >
-                {{ status_enum.label if status_enum else 'شروع نشده' }}
-              </span>
-            </td>
-            <td class="Actions">
-              <a
-                href="{{ url_for('Admin.AdminEditTeam', TeamID=TeamData.TeamID) }}"
-                class="Btn BtnPrimary"
-                ><i class="fas fa-edit"></i> مدیریت</a
-              >
-              <form
-                method="POST"
-                action="{{ url_for('Admin.AdminDeleteTeam', TeamID=TeamData.TeamID) }}"
-              >
-                <input
-                  type="hidden"
-                  name="csrf_token"
-                  value="{{ csrf_token() }}"
-                />
-                <button
-                  type="button"
-                  class="Btn BtnDanger DeleteBtn"
-                  data-modal-title="تایید آرشیو تیم"
-                  data-modal-text="آیا از آرشیو کردن تیم «{{ TeamData.TeamName }}» و تمام اعضای آن اطمینان دارید؟"
-                  data-modal-confirm="بله، آرشیو کن"
-                >
-                  <i class="fas fa-archive"></i> آرشیو
-                </button>
-              </form>
-            </td>
-          </tr>
-          {% else %}
-          <tr class="EmptyStateRow">
-            <td colspan="5">این کاربر هنوز تیمی ثبت نکرده است.</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="SectionCta">
-    <a href="{{ url_for('Admin.AdminClientsList') }}" class="Btn BtnSecondary"
-      ><i class="fas fa-arrow-left"></i> بازگشت به لیست کاربران</a
-    >
-  </div>
-</div>
-
-<div id="EditClientModal" class="Modal" aria-hidden="true">
-  <div class="ModalContent">
-    <button class="CloseBtn" data-dismiss="modal" aria-label="بستن">
-      &times;
-    </button>
-    <h2 class="FormTitle">ویرایش حساب کاربر</h2>
-    <form
-      id="editClientForm"
-      method="POST"
-      action="{{ url_for('Admin.AdminEditClient', ClientID=Client.ClientID) }}"
-    >
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-      <div class="FormGroup">
-        <label for="EditEmail">ایمیل</label>
-        <input
-          type="email"
-          id="EditEmail"
-          name="Email"
-          value="{{ Client.Email }}"
-          required
-          dir="ltr"
-          class="FormControl"
-        />
+  <section class="admin-page__section">
+    <article class="admin-surface">
+      <header class="admin-surface__header">
+        <div class="admin-surface__title">
+          <h2><i class="fas fa-id-card"></i> اطلاعات کاربری</h2>
+          <p>مروری سریع بر اطلاعات تماس و وضعیت ثبت‌نام کاربر.</p>
+        </div>
+        <span class="admin-badge">
+          <i class="fas fa-calendar-alt"></i>
+          ثبت‌نام: {{ client.registration_date | formatdate | persian_digits }}
+        </span>
+      </header>
+      <div class="admin-surface__body">
+        <dl class="admin-info-list">
+          <div>
+            <dt>ایمیل</dt>
+            <dd dir="ltr">{{ client.email }}</dd>
+          </div>
+          <div>
+            <dt>شماره تماس</dt>
+            <dd dir="ltr">{{ client.phone_number | persian_digits }}</dd>
+          </div>
+          <div>
+            <dt>تعداد تیم‌ها</dt>
+            <dd>{{ teams|length | persian_digits }} تیم</dd>
+          </div>
+          <div>
+            <dt>سطح تحصیلات</dt>
+            <dd>{{ client.education_level or 'ثبت نشده' }}</dd>
+          </div>
+        </dl>
       </div>
-      <div class="FormGroup">
-        <label for="EditPhone">شماره تلفن</label>
-        <input
-          type="tel"
-          id="EditPhone"
-          name="PhoneNumber"
-          value="{{ Client.PhoneNumber }}"
-          required
-          dir="ltr"
-          class="FormControl"
-        />
-      </div>
-      <div class="FormGroup">
-        <label for="EditPassword">رمز عبور جدید (اختیاری)</label>
-        <div class="PasswordWrapper">
-          <input
-            type="password"
-            id="EditPassword"
-            name="Password"
-            placeholder="برای تغییر، رمز جدید را وارد کنید"
-            dir="ltr"
-            class="FormControl"
-          />
-          <button
-            type="button"
-            class="PasswordToggle"
-            id="EditPasswordToggle"
-            data-target="#EditPassword"
-          >
-            <i class="fas fa-eye-slash"></i>
+    </article>
+
+    <article class="admin-surface">
+      <header class="admin-surface__header">
+        <div class="admin-surface__title">
+          <h2><i class="fas fa-layer-group"></i> تیم‌های ثبت‌شده</h2>
+          <p>مدیریت تیم‌ها، وضعیت پرداخت و دسترسی سریع به اعضا.</p>
+        </div>
+        <div class="admin-surface__actions">
+          <button class="btn btn-primary" data-modal-target="AddTeamModal">
+            <i class="fas fa-plus"></i>
+            افزودن تیم جدید
           </button>
         </div>
+      </header>
+
+      <div class="admin-surface__body">
+        <div class="admin-table-wrapper">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>شناسه</th>
+                <th>نام تیم</th>
+                <th>تعداد اعضا</th>
+                <th>وضعیت پرداخت</th>
+                <th>عملیات</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for team in teams %}
+              {% set status_enum = team.last_payment_status %}
+              {% set status_value = status_enum.value if status_enum else None %}
+              <tr>
+                <td>#{{ team.team_id | persian_digits }}</td>
+                <td>{{ team.team_name }}</td>
+                <td>{{ team.total_members | persian_digits }} نفر</td>
+                <td>
+                  <span
+                    class="admin-status {% if status_value == 'approved' %}admin-status--approved{% elif status_value == 'pending' %}admin-status--pending{% elif status_value == 'rejected' %}admin-status--rejected{% else %}admin-status--idle{% endif %}"
+                  >
+                    <i class="fas fa-circle"></i>
+                    {{ status_enum.label if status_enum else 'منتظر اقدام' }}
+                  </span>
+                </td>
+                <td class="admin-table__actions">
+                  <a
+                    href="{{ url_for('admin.admin_edit_team', team_id=team.team_id) }}"
+                    class="btn btn-primary btn-small"
+                  >
+                    <i class="fas fa-clipboard-list"></i>
+                    مدیریت تیم
+                  </a>
+                  <form
+                    method="POST"
+                    action="{{ url_for('admin.admin_delete_team', team_id=team.team_id) }}"
+                  >
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <button
+                      type="submit"
+                      class="btn btn-danger btn-small delete-btn"
+                      data-modal-title="تایید آرشیو تیم"
+                      data-modal-body="آیا از آرشیو کردن تیم «{{ team.team_name }}» و تمام اعضای آن اطمینان دارید؟"
+                      data-modal-confirm-text="بله، آرشیو کن"
+                      data-modal-confirm-class="btn-danger"
+                    >
+                      <i class="fas fa-archive"></i>
+                      آرشیو
+                    </button>
+                  </form>
+                </td>
+              </tr>
+              {% else %}
+              <tr class="admin-table__empty">
+                <td colspan="5">
+                  <div class="admin-empty-state">
+                    <i class="fas fa-layer-group"></i>
+                    این کاربر هنوز تیمی ایجاد نکرده است.
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       </div>
-      <div class="FormGroup">
-        <button type="submit" class="Btn BtnPrimary Btn--fullWidth">
-          ذخیره تغییرات
-        </button>
+    </article>
+  </section>
+
+  <footer class="admin-page__footer">
+    <a href="{{ url_for('admin.admin_clients_list') }}" class="btn btn-secondary">
+      <i class="fas fa-arrow-right"></i>
+      بازگشت به لیست کاربران
+    </a>
+  </footer>
+</div>
+
+<div
+  id="EditClientModal"
+  class="modal modal--admin"
+  aria-hidden="true"
+  role="dialog"
+  aria-labelledby="editClientModalTitle"
+>
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <button class="modal-close" data-dismiss="modal" aria-label="بستن">&times;</button>
+      <header class="modal-header">
+        <h2 id="editClientModalTitle" class="modal-title">ویرایش حساب کاربر</h2>
+      </header>
+      <div class="modal-body">
+        <form
+          id="editClientForm"
+          class="admin-form"
+          method="POST"
+          action="{{ url_for('admin.admin_edit_client', client_id=client.client_id) }}"
+        >
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+          <div class="form-group">
+            <label for="EditEmail">ایمیل</label>
+            <input
+              type="email"
+              id="EditEmail"
+              name="email"
+              value="{{ client.email }}"
+              required
+              dir="ltr"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="EditPhone">شماره تلفن</label>
+            <input
+              type="tel"
+              id="EditPhone"
+              name="phone_number"
+              value="{{ client.phone_number }}"
+              required
+              dir="ltr"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="EditPassword">رمز عبور جدید (اختیاری)</label>
+            <div class="admin-input-group">
+              <input
+                type="password"
+                id="EditPassword"
+                name="password"
+                placeholder="برای تغییر، رمز جدید را وارد کنید"
+                dir="ltr"
+              />
+              <button
+                type="button"
+                class="btn btn-secondary"
+                data-action="toggle-password"
+                data-target="#EditPassword"
+              >
+                <i class="fas fa-eye-slash"></i>
+              </button>
+            </div>
+            <p class="form-helper-text">در صورت خالی گذاشتن این فیلد، رمز عبور فعلی بدون تغییر باقی می‌ماند.</p>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+              ذخیره تغییرات
+            </button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">
+              انصراف
+            </button>
+          </div>
+        </form>
       </div>
-    </form>
+    </div>
   </div>
 </div>
 
-<div id="AddTeamModal" class="Modal" aria-hidden="true">
-  <div class="ModalContent">
-    <button class="CloseBtn" data-dismiss="modal" aria-label="بستن">
-      &times;
-    </button>
-    <h2 class="FormTitle">افزودن تیم جدید برای {{ Client.Email }}</h2>
-    <form
-      id="addTeamForm"
-      method="POST"
-      action="{{ url_for('Admin.AdminAddTeam', ClientID=Client.ClientID) }}"
-    >
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-      <div class="FormGroup">
-        <label for="AddTeamName">نام تیم</label>
-        <input
-          type="text"
-          id="AddTeamName"
-          name="TeamName"
-          required
-          class="FormControl"
-        />
+<div
+  id="AddTeamModal"
+  class="modal modal--admin"
+  aria-hidden="true"
+  role="dialog"
+  aria-labelledby="addTeamModalTitle"
+>
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <button class="modal-close" data-dismiss="modal" aria-label="بستن">&times;</button>
+      <header class="modal-header">
+        <h2 id="addTeamModalTitle" class="modal-title">افزودن تیم جدید برای {{ client.email }}</h2>
+      </header>
+      <div class="modal-body">
+        <form
+          id="addTeamForm"
+          class="admin-form"
+          method="POST"
+          action="{{ url_for('admin.admin_add_team', client_id=client.client_id) }}"
+        >
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+          <div class="form-group">
+            <label for="AddTeamName">نام تیم</label>
+            <input
+              type="text"
+              id="AddTeamName"
+              name="TeamName"
+              required
+              maxlength="30"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="AddLeagueOne">انتخاب لیگ اصلی</label>
+            <select id="AddLeagueOne" name="LeagueOne" required>
+              <option value="">-- انتخاب لیگ اول --</option>
+              {% for league in leagues_list %}
+              <option value="{{ league.id }}">{{ league.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="AddLeagueTwo">انتخاب لیگ دوم (اختیاری)</label>
+            <select id="AddLeagueTwo" name="LeagueTwo">
+              <option value="">-- بدون لیگ دوم --</option>
+              {% for league in leagues_list %}
+              <option value="{{ league.id }}">{{ league.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-plus"></i>
+              ایجاد تیم
+            </button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">
+              انصراف
+            </button>
+          </div>
+        </form>
       </div>
-      <div class="FormGroup">
-        <button type="submit" class="Btn BtnPrimary Btn--fullWidth">
-          ساخت تیم
-        </button>
-      </div>
-    </form>
+    </div>
   </div>
 </div>
 {% endblock %}

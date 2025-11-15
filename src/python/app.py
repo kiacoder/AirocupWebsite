@@ -63,6 +63,7 @@ for path in [
     flask_app.config["UPLOAD_FOLDER_RECEIPTS"],
     flask_app.config["UPLOAD_FOLDER_DOCUMENTS"],
     flask_app.config["UPLOAD_FOLDER_NEWS"],
+    constants.Path.guideline_dir,
     os.path.dirname(constants.Path.database_dir),
 ]:
     os.makedirs(path, exist_ok=True)
@@ -278,17 +279,22 @@ def to_iso_format_filter(date_object):
 
 def get_distribution_query(db, entity, join_chain, label="count", limit=10):
     """Generic helper to build distribution queries for City/Province/etc."""
+
+    query = db.query(
+        entity.name.label("name"),
+        func.count(models.Member.member_id).label(label),
+    ).select_from(entity)
+
+    for join_target, on_clause in join_chain:
+        query = query.join(join_target, on_clause)
+
     query = (
-        db.query(
-            entity.name.label("name"),
-            func.count(models.Member.member_id).label(label),
-        )
-        .join(*join_chain)
-        .filter(models.Member.status == models.EntityStatus.ACTIVE)
+        query.filter(models.Member.status == models.EntityStatus.ACTIVE)
         .group_by(entity.name)
         .order_by(func.count(models.Member.member_id).desc())
         .limit(limit)
     )
+
     return query.all()
 
 
@@ -300,7 +306,9 @@ def api_city_distribution():
         city_data = get_distribution_query(
             db,
             models.City,
-            [models.City, models.Member.city_id == models.City.city_id],
+            [
+                (models.Member, models.Member.city_id == models.City.city_id),
+            ],
         )
 
     return jsonify(
@@ -320,11 +328,8 @@ def api_province_distribution():
             db,
             models.Province,
             [
-                (models.City, models.Member.city_id == models.City.city_id),
-                (
-                    models.Province,
-                    models.City.province_id == models.Province.province_id,
-                ),
+                (models.City, models.City.province_id == models.Province.province_id),
+                (models.Member, models.Member.city_id == models.City.city_id),
             ],
         )
 
