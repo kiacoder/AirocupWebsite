@@ -1,97 +1,76 @@
-{% extends "Global/Base.html" %}
+{% extends "global/base.html" %}
 
-{% block Title %}ویرایش خبر: {{ Article.Title | truncate(30) }} | پنل آیروکاپ{% endblock %}
+{% block title %}ویرایش مقاله | پنل آیروکاپ{% endblock %}
 
-{% block Body %}
-<div class="Container">
-  <div class="PageHeader">
-    <h1 class="SectionTitle">ویرایش خبر</h1>
-    <p class="FormSubtitle">ویرایش خبر «{{ Article.Title }}»</p>
-  </div>
+{% block body %}
+<div class="admin-page">
+  <header class="admin-page__header">
+    <div class="admin-page__title">
+      <h1>ویرایش مقاله</h1>
+      <p class="admin-page__subtitle">
+        تغییرات موردنظر را روی مقاله «{{ article.Title }}» اعمال و ذخیره کنید.
+      </p>
+    </div>
+    <div class="admin-page__actions">
+      <a href="{{ url_for('admin.admin_manage_news') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-right"></i>
+        بازگشت به لیست مقالات
+      </a>
+    </div>
+  </header>
 
-  <div class="FormContainer FormContainer--large">
-    <form method="POST" action="{{ url_for('Admin.AdminEditNews', ArticleID=Article.NewsID) }}" enctype="multipart/form-data" id="editNewsForm">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-
-      <div class="FormGroup">
-        <label for="Title" class="FormLabel">عنوان خبر *</label>
-        <input type="text" id="Title" name="Title" value="{{ Article.Title }}" required class="FormControl" maxlength="200" />
-      </div>
-
-      <div class="FormGroup">
-        <label for="Content" class="FormLabel">محتوای خبر *</label>
-        <textarea id="Content" name="Content" rows="12" required class="FormControl" placeholder="متن کامل خبر را اینجا وارد کنید...">{{ Article.Content }}</textarea>
-      </div>
-
-      <div class="FormGroup">
-        <label for="TemplatePath" class="FormLabel">مسیر قالب اختصاصی (اختیاری)</label>
-        <input type="text" id="TemplatePath" name="TemplatePath" value="{{ Article.TemplatePath or '' }}" placeholder="مثال: News/custom_article.html" class="FormControl" />
-        <p class="FormHelpText">
-          برای استفاده از قالب پیش‌فرض، این فیلد را خالی بگذارید. مسیر باید نسبت به پوشه Templates باشد.
-        </p>
-      </div>
-
-      <div class="FormGroup">
-        <label for="Image" class="FormLabel">تصویر جدید (اختیاری)</label>
-        <p class="FormHelpText">
-          برای جایگزین کردن تصویر فعلی، فایل جدیدی را انتخاب کنید. در غیر این صورت، این فیلد را خالی بگذارید. فرمت‌های مجاز: JPG, PNG, GIF.
-        </p>
-        <input type="file" id="Image" name="Image" accept=".jpg,.jpeg,.png,.gif" class="FormControl" />
-      </div>
-
-      {% if Article.ImagePath %}
-      <div class="FormGroup">
-        <label class="FormLabel">تصویر فعلی</label>
-        <div class="ImagePreviewContainer">
-          <img class="ImagePreview" src="{{ url_for('Admin.UploadedNewsImage', filename=Article.ImagePath) }}" alt="{{ Article.Title }}" onerror="this.style.display='none'" />
-          <p class="FormHelpText">مسیر فایل: {{ Article.ImagePath }}</p>
+  <section class="admin-page__section">
+    <article class="admin-surface">
+      <header class="admin-surface__header">
+        <div class="admin-surface__title">
+          <h2><i class="fas fa-pen"></i> جزییات مقاله</h2>
+          <p>عنوان، محتوا و تصویر شاخص خبر را ویرایش کنید.</p>
         </div>
-      </div>
-      {% endif %}
+      </header>
+      <div class="admin-surface__body">
+        <form
+          method="POST"
+          action="{{ url_for('admin.admin_edit_news', article_id=article.NewsID) }}"
+          enctype="multipart/form-data"
+          class="admin-form"
+        >
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
-      <div class="FormGrid FormGrid--2">
-        <button type="submit" class="Btn BtnPrimary Btn--fullWidth">
-          <i class="fas fa-save"></i> ذخیره تغییرات
-        </button>
-        <a href="{{ url_for('Admin.AdminManageNews') }}" class="Btn BtnSecondary Btn--fullWidth">
-          <i class="fas fa-times"></i> انصراف
-        </a>
+          <div class="form-group">
+            <label for="Title">عنوان مقاله</label>
+            <input type="text" id="Title" name="Title" required value="{{ article.Title }}" />
+          </div>
+
+          <div class="form-group">
+            <label for="Content">محتوای مقاله</label>
+            <textarea id="Content" name="Content" rows="6" required>{{ article.Content }}</textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="TemplatePath">مسیر قالب اختصاصی (اختیاری)</label>
+            <input type="text" id="TemplatePath" name="TemplatePath" value="{{ article.TemplatePath }}" placeholder="مثال: custom_article.html" />
+          </div>
+
+          <div class="form-group">
+            <label for="Image">تصویر مقاله (اختیاری)</label>
+            <input type="file" id="Image" name="Image" accept="image/png, image/jpeg, image/gif" class="upload-input" />
+            {% if article.ImagePath %}
+            <p class="form-helper-text">تصویر فعلی: {{ article.ImagePath }}</p>
+            {% endif %}
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-save"></i>
+              ذخیره تغییرات
+            </button>
+            <a href="{{ url_for('admin.admin_manage_news') }}" class="btn btn-secondary">
+              انصراف
+            </a>
+          </div>
+        </form>
       </div>
-    </form>
-  </div>
+    </article>
+  </section>
 </div>
-{% endblock %}
-
-{% block Scripts %}
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const form = document.getElementById("editNewsForm");
-    const fileInput = document.getElementById("Image");
-
-    if (fileInput) {
-      fileInput.addEventListener("change", function (e) {
-        const file = e.target.files[0];
-        if (file) {
-          if (file.size > 50 * 1024 * 1024) { // 50MB
-            alert("حجم فایل نباید بیشتر از ۵۰ مگابایت باشد.");
-            e.target.value = "";
-          }
-        }
-      });
-    }
-
-    if (form) {
-      form.addEventListener("submit", function (e) {
-        const title = document.getElementById("Title").value.trim();
-        const content = document.getElementById("Content").value.trim();
-
-        if (!title || !content) {
-          e.preventDefault();
-          alert("لطفا عنوان و محتوای خبر را وارد کنید.");
-          return false;
-        }
-      });
-    }
-  });
-</script>
 {% endblock %}
