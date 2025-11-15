@@ -60,6 +60,22 @@
             />
           </div>
 
+          <div class="form-group">
+            <label for="education_level">مقطع تحصیلی تیم *</label>
+            <select id="education_level" name="education_level" required>
+              <option value="">-- انتخاب مقطع --</option>
+              {% for level_name, level_info in education_levels.items() %}
+              {% set ages = level_info.get('ages') %}
+              <option
+                value="{{ level_name }}"
+                {% if team.education_level == level_name %}selected{% endif %}
+              >
+                {{ level_name }}{% if ages %} ({{ ages[0] | persian_digits }} تا {{ ages[1] | persian_digits }} سال){% endif %}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
           <div class="form-grid form-grid--two">
             <div class="form-group">
               <label for="league_one_id">لیگ اول (اجباری) *</label>
