@@ -235,7 +235,7 @@ def handle_server_error(error):
 def on_join_message(data_dictionary):
     """Handles a user joining a chat room."""
     room_name = data_dictionary.get("room")
-    client_id = session.get("client_id")
+    client_id = session.get("client_id") or session.get("client_id_for_resolution")
 
     if session.get("admin_logged_in", False):
         join_room(room_name)
@@ -267,17 +267,19 @@ def handle_send_message(json_data):
 
         if session.get("admin_logged_in", False):
             sender_type = "admin"
-        elif session.get("client_id") and str(session.get("client_id")) == str(
-            target_room
-        ):
-            sender_type = "client"
         else:
-            flask_app.logger.warning(
-                "Unauthorized chat message attempt by session %s in room %s",
-                session.get("client_id"),
-                target_room,
+            client_id = session.get("client_id") or session.get(
+                "client_id_for_resolution"
             )
-            return
+            if client_id and str(client_id) == str(target_room):
+                sender_type = "client"
+            else:
+                flask_app.logger.warning(
+                    "Unauthorized chat message attempt by session %s in room %s",
+                    client_id,
+                    target_room,
+                )
+                return
 
         sanitized_message = bleach.clean(message)
         if len(sanitized_message) > 1000:

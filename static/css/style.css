@@ -132,10 +132,11 @@
   --font-english: "TwCenMT", sans-serif;
   --font-persian-num: "IRANYekanX-FaNum", sans-serif;
   --font-persian-no-english: "IRANYekanX-NoEn", sans-serif;
-  --color-primary: #005a9c;
-  --color-primary-dark: #004a80;
-  --color-secondary: #f7a600;
-  --color-secondary-dark: #d68f00;
+  --color-primary: #7b4baa;
+  --color-primary-dark: #5f3488;
+  --color-primary-light: #e5d9fb;
+  --color-secondary: #f0b90b;
+  --color-secondary-dark: #c69000;
   --color-danger: #b00000;
   --color-danger-dark: #900000;
   --color-success: #28a745;
@@ -2788,7 +2789,7 @@ select option {
   top: 0;
   width: 100%;
   z-index: 1000;
-  background: linear-gradient(135deg, rgba(25, 31, 89, 0.92), rgba(87, 36, 124, 0.9));
+  background: linear-gradient(135deg, rgba(43, 23, 72, 0.95), rgba(123, 75, 170, 0.92));
   box-shadow: var(--shadow-md);
   height: var(--site-header-height);
   padding: 0.5rem 0;
@@ -2971,7 +2972,7 @@ MOBILE MENU & HAMBURGER
   cursor: pointer;
   padding: 0.35rem 0.45rem;
   margin-left: 0.5rem;
-  display: inline-flex;
+  display: none;
   align-items: center;
   justify-content: center;
   z-index: 2015;
@@ -4648,64 +4649,6 @@ FOOTER
 .btn-sm {
   padding: 5px 10px;
   font-size: 0.9rem;
-}
-
-.mobile-menu-btn {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 0.25rem;
-  margin-left: 0.5rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2015;
-  color: var(--color-surface);
-  font-size: 1.5rem;
-}
-
-.mobile-menu-btn .hamburger {
-  display: inline-block;
-  width: 26px;
-  height: 18px;
-  position: relative;
-}
-
-.mobile-menu-btn .hamburger span {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: currentColor;
-  border-radius: 3px;
-  transition: transform 0.28s ease, opacity 0.2s ease, top 0.28s ease;
-}
-
-.mobile-menu-btn .hamburger span:nth-child(1) {
-  top: 0;
-}
-
-.mobile-menu-btn .hamburger span:nth-child(2) {
-  top: 7.5px;
-}
-
-.mobile-menu-btn .hamburger span:nth-child(3) {
-  top: 15px;
-}
-
-.mobile-menu-btn.is-active .hamburger span:nth-child(1) {
-  top: 7.5px;
-  transform: rotate(45deg);
-}
-
-.mobile-menu-btn.is-active .hamburger span:nth-child(2) {
-  opacity: 0;
-  transform: scale(0.6);
-}
-
-.mobile-menu-btn.is-active .hamburger span:nth-child(3) {
-  top: 7.5px;
-  transform: rotate(-45deg);
 }
 
 /* @ Queries */

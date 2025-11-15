@@ -299,9 +299,8 @@ def login_client():
                 .count()
             )
 
-            # --- FIX: Pass 'team_count' to fix AttributeError from log ---
             needs_resolution, problems = utils.check_for_data_completion_issues(
-                db, client_check.client_id, team_count
+                db, client_check.client_id
             )
             if needs_resolution:
                 session.clear()
@@ -510,13 +509,25 @@ def manage_members(team_id):
 
 
 @client_blueprint.route("/SupportChat")
-@auth.login_required
 def support_chat():
-    "Render the support chat page for the logged-in client"
+    "Render the support chat page for the logged-in or resolving client"
+
     client_user = utils.get_current_client(allow_inactive=True)
+
     if not client_user:
-        flash("خطا در بارگیری اطلاعات کاربری. لطفا دوباره وارد شوید.", "error")
-        return redirect(url_for("client.login_client"))
+        resolution_id = session.get("client_id_for_resolution")
+        if isinstance(resolution_id, int):
+            with database.get_db_session() as db:
+                client_user = (
+                    db.query(models.Client)
+                    .filter(models.Client.client_id == resolution_id)
+                    .first()
+                )
+
+    if not client_user:
+        flash("برای دسترسی به پشتیبانی ابتدا وارد حساب کاربری شوید.", "warning")
+        return redirect(url_for("client.login_client", next=request.url))
+
     return render_template(
         constants.client_html_names_data["support_chat"],
         user=client_user,
@@ -1579,7 +1590,7 @@ def submit_data_resolution():
                 .count()
             )
             needs_resolution, new_problems = utils.check_for_data_completion_issues(
-                db, client_id_for_resolution, team_count
+                db, client_id_for_resolution
             )
 
             if members_with_location_errors:
