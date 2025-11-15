@@ -6,19 +6,19 @@
 />
 
 {% endblock %} {% block Body %}
-<main class="ErrorPageContainer">
-  <div class="ErrorContent">
-    <div class="ErrorIconWrapper">
+<main class="error-page-container">
+  <div class="error-content">
+    <div class="error-icon-wrapper">
       <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
     </div>
-    <h1 class="ErrorTitle">خطای ۴۰۰: درخواست نامعتبر</h1>
-    <p class="ErrorMessage">
+    <h1 class="error-title">خطای ۴۰۰: درخواست نامعتبر</h1>
+    <p class="error-message">
       متاسفانه، درخواستی که مرورگر شما ارسال کرده است دارای مشکلی فنی بوده و
       سرور قادر به پردازش آن نیست. این مشکل معمولاً به دلیل یک آدرس نادرست یا
       فرم دستکاری‌شده رخ می‌دهد.
     </p>
-    <div class="ErrorButtons">
-      <a href="{{ url_for('global.index') }}" class="Btn BtnPrimary">
+    <div class="error-buttons">
+      <a href="{{ url_for('global.index') }}" class="btn btn-primary">
         <i class="fas fa-home" aria-hidden="true"></i>
         بازگشت به صفحه اصلی
       </a>
