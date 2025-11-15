@@ -373,9 +373,18 @@ def is_valid_password(password: str) -> Tuple[bool, Optional[str]]:
 
 
 def create_member_from_form_data(
-    db: Session, form_data: dict
+    db: Session,
+    form_data: dict,
+    *,
+    team_id: Optional[int] = None,
+    member_id: Optional[int] = None,
 ) -> Tuple[Optional[dict], Optional[str]]:
-    "Create a member dictionary from form data after validation"
+    """Create a member dictionary from form data after validation.
+
+    ``team_id`` and ``member_id`` are optional and let the validator ignore the
+    current record when editing as well as block duplicates within the same
+    team without preventing members from joining different teams/leagues.
+    """
     try:
         name = bleach.clean(form_data.get("name", "").strip())
         national_id = fa_to_en(form_data.get("national_id", "").strip())
@@ -398,6 +407,8 @@ def create_member_from_form_data(
         birth_month,
         birth_day,
         role_value,
+        team_id=team_id,
+        member_id_to_exclude=member_id,
     )
     if errors:
         return None, " ".join(errors)
@@ -491,7 +502,9 @@ def internal_add_member(
     db: Session, team_id: int, form_data: dict
 ) -> Tuple[Optional[models.Member], Optional[str]]:
     "Add a new member to a team after validating the data"
-    new_member_data, error = create_member_from_form_data(db, form_data)
+    new_member_data, error = create_member_from_form_data(
+        db, form_data, team_id=team_id
+    )
     if error:
         return None, error
     if not new_member_data:
@@ -533,21 +546,21 @@ def internal_add_member(
         return None, "خطایی داخلی در هنگام افزودن عضو رخ داد."
 
 
-def get_current_client() -> Optional[models.Client]:
-    "Retrieve the currently logged-in Client based on session data"
+def get_current_client(allow_inactive: bool = False) -> Optional[models.Client]:
+    """Retrieve the currently logged-in Client based on session data."""
     client_id = session.get("client_id")
     if not client_id:
         return None
     try:
         with database.get_db_session() as db:
-            return (
-                db.query(models.Client)
-                .filter(
-                    models.Client.client_id == client_id,
-                    models.Client.status == models.EntityStatus.ACTIVE,
-                )
-                .first()
+            query = db.query(models.Client).filter(
+                models.Client.client_id == client_id
             )
+            if not allow_inactive:
+                query = query.filter(
+                    models.Client.status == models.EntityStatus.ACTIVE
+                )
+            return query.first()
     except SQLAlchemyError as error:
         current_app.logger.error(f"error fetching current Client: {error}")
         return None

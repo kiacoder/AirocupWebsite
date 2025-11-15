@@ -754,7 +754,7 @@ def admin_edit_member(team_id, member_id):
     """Edit a team member's details."""
     with database.get_db_session() as db:
         updated_member_data, error = utils.create_member_from_form_data(
-            db, request.form
+            db, request.form, team_id=team_id, member_id=member_id
         )
         if error:
             flash(error, "error")

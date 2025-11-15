@@ -513,7 +513,7 @@ def manage_members(team_id):
 @auth.login_required
 def support_chat():
     "Render the support chat page for the logged-in client"
-    client_user = utils.get_current_client()
+    client_user = utils.get_current_client(allow_inactive=True)
     if not client_user:
         flash("خطا در بارگیری اطلاعات کاربری. لطفا دوباره وارد شوید.", "error")
         return redirect(url_for("client.login_client"))
@@ -576,7 +576,10 @@ def edit_member(team_id, member_id):
 
             # --- FIX: Re-validating all data on POST (Req #8) ---
             new_member_data, error_message = utils.create_member_from_form_data(
-                db, request.form
+                db,
+                request.form,
+                team_id=team_id,
+                member_id=member_id,
             )
             if error_message:
                 flash(error_message, "error")
@@ -1992,7 +1995,7 @@ def add_member(team_id):
 
             # 3. CORE DATA VALIDATION (Checks required fields, national ID format, etc.)
             new_member_data, error_message = utils.create_member_from_form_data(
-                db_session, request.form
+                db_session, request.form, team_id=team_id
             )
             if error_message:
                 return _render_error(error_message)

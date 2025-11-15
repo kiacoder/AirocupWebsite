@@ -368,32 +368,4 @@
   </div>
 </div>
 
-{# This is the global confirmation modal that main.js will use #}
-<div
-  class="modal"
-  id="confirmationModal"
-  role="alertdialog"
-  aria-modal="true"
-  aria-labelledby="modalTitle"
->
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <button class="close-btn" data-dismiss="modal" aria-label="بستن">
-        &times;
-      </button>
-      <h3 id="modalTitle" class="modal-title"></h3>
-      <p class="modal-body"></p>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">
-          انصراف
-        </button>
-        <button
-          type="button"
-          id="confirmModalBtn"
-          class="btn btn-danger"
-        ></button>
-      </div>
-    </div>
-  </div>
-</div>
 {% endblock %} {% block scripts %} {{ super() }} {% endblock %}

@@ -280,6 +280,9 @@ def validate_new_member_data(
     birth_month: int,
     birth_day: int,
     role_value: str,
+    *,
+    team_id: Optional[int] = None,
+    member_id_to_exclude: Optional[int] = None,
 ) -> List[str]:
     "Validate new member data and return a list of error messages if any"
     errors = []
@@ -290,20 +293,21 @@ def validate_new_member_data(
     if not utils.is_valid_national_id(national_id):
         errors.append("کد ملی وارد شده معتبر نیست.")
 
-    elif role_value == models.MemberRole.MEMBER.value:
-        existing_member = (
+    elif team_id:
+        duplicate_query = (
             db.query(models.Member.member_id)
             .filter(
+                models.Member.team_id == team_id,
                 models.Member.national_id == national_id,
-                models.Member.role == models.MemberRole.MEMBER,
                 models.Member.status == models.EntityStatus.ACTIVE,
             )
-            .first()
         )
-        if existing_member:
-            errors.append(
-                "این کد ملی قبلاً برای (عضو) دیگری در یک تیم فعال ثبت شده است."
+        if member_id_to_exclude:
+            duplicate_query = duplicate_query.filter(
+                models.Member.member_id != member_id_to_exclude
             )
+        if duplicate_query.first():
+            errors.append("این کد ملی قبلاً برای این تیم ثبت شده است.")
 
     if not (
         db.query(models.City.city_id)
