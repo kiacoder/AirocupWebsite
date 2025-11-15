@@ -96,12 +96,155 @@
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
-      integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg=="
+      xintegrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg=="
       crossorigin="anonymous"
       referrerpolicy="no-referrer"
     />
 
-    {% block head %}{% endblock %}
+    {% block head %}
+    <!-- Improved Mobile Menu Styles -->
+    <style>
+      /* --- Hamburger Menu Animation --- */
+      .mobile-menu-btn {
+        background-color: transparent;
+        border: none;
+        cursor: pointer;
+        padding: 10px;
+        z-index: 1000; /* Ensure it's above other header elements */
+        display: none; /* Will be shown by @media query in main.css */
+      }
+      .mobile-menu-btn .hamburger {
+        display: block;
+        position: relative;
+        width: 24px;
+        height: 18px;
+        transition: all 0.3s ease-in-out;
+      }
+      .mobile-menu-btn .hamburger span {
+        display: block;
+        position: absolute;
+        height: 3px;
+        width: 100%;
+        background: var(--color-white);
+        border-radius: 3px;
+        opacity: 1;
+        left: 0;
+        transition: all 0.25s ease-in-out;
+      }
+      .mobile-menu-btn .hamburger span:nth-child(1) {
+        top: 0px;
+      }
+      .mobile-menu-btn .hamburger span:nth-child(2) {
+        top: 7px;
+      }
+      .mobile-menu-btn .hamburger span:nth-child(3) {
+        top: 14px;
+      }
+
+      /* "X" Animation */
+      .mobile-menu-btn.is-active .hamburger span:nth-child(1) {
+        top: 7px;
+        transform: rotate(135deg);
+      }
+      .mobile-menu-btn.is-active .hamburger span:nth-child(2) {
+        opacity: 0;
+        left: -24px;
+      }
+      .mobile-menu-btn.is-active .hamburger span:nth-child(3) {
+        top: 7px;
+        transform: rotate(-135deg);
+      }
+
+      /* --- Mobile Menu & Backdrop --- */
+      .mobile-menu {
+        position: absolute;
+        top: 100%; /* Positioned right below the header */
+        left: 0;
+        right: 0;
+        width: 100%;
+        background: var(--color-background-dark);
+        border-top: 1px solid var(--color-border);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        padding: 1rem;
+        z-index: 998;
+        
+        /* Slide-in/out animation */
+        transform: translateY(-120%);
+        opacity: 0;
+        visibility: hidden;
+        transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1), 
+                    opacity 0.3s ease, 
+                    visibility 0.4s;
+      }
+
+      .mobile-menu.is-active {
+        transform: translateY(0);
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .mobile-menu-backdrop {
+        position: fixed;
+        top: 0; /* Start from the very top */
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 997;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.4s ease, visibility 0.4s;
+      }
+
+      .mobile-menu-backdrop.is-active {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      /* Ensure body doesn't scroll when menu is open */
+      body.mobile-menu-open {
+        overflow: hidden;
+      }
+
+      /* Mobile Nav List Styles */
+      .mobile-nav-list {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 1.5rem 0;
+      }
+      .mobile-nav-list li[role="none"] {
+        border-bottom: 1px solid var(--color-border-muted);
+      }
+      .mobile-nav-list li[role="none"]:last-child {
+        border-bottom: none;
+      }
+      .mobile-nav-list a[role="menuitem"] {
+        display: block;
+        padding: 1rem 0.5rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--color-text-light);
+        text-decoration: none;
+        transition: background-color 0.2s ease, color 0.2s ease;
+      }
+      .mobile-nav-list a[role="menuitem"]:hover,
+      .mobile-nav-list a[role="menuitem"].active {
+        background-color: var(--color-primary-muted);
+        color: var(--color-primary);
+      }
+
+      .mobile-cta {
+        display: flex;
+        gap: 1rem;
+        padding: 1rem 0.5rem;
+        border-top: 1px solid var(--color-border-muted);
+      }
+      .mobile-cta .btn {
+        flex: 1;
+        text-align: center;
+      }
+    </style>
+    {% endblock %}
   </head>
 
   <body
@@ -117,6 +260,9 @@
     %}
   >
     {% if _is_admin and not _is_admin_auth %}
+    <!-- ================== -->
+    <!--     ADMIN HEADER   -->
+    <!-- ================== -->
     <header class="admin-header" data-header="admin">
       <div class="admin-header-container container">
         <a
@@ -177,7 +323,9 @@
     </header>
 
     {% elif not _is_admin %}
-    <!-- HEADER (replace existing non-admin header) -->
+    <!-- ================== -->
+    <!--    CLIENT HEADER   -->
+    <!-- ================== -->
     <header class="site-header">
       <div class="container header-inner">
         <!-- Logo (left) -->
@@ -190,7 +338,7 @@
           </a>
         </div>
 
-        <!-- Main navigation (visible items) -->
+        <!-- Main navigation (visible on desktop) -->
         <nav
           class="main-nav"
           id="main-nav"
@@ -273,7 +421,7 @@
           </ul>
         </nav>
 
-        <!-- Primary actions (always visible) -->
+        <!-- Primary actions (visible on desktop) -->
         <div class="header-actions" id="header-actions">
           {% if 'client_id' in session %}
           <a href="{{ url_for('client.dashboard') }}" class="btn btn-secondary"
@@ -294,7 +442,7 @@
           {% endif %}
         </div>
 
-        <!-- Hamburger (always visible) -->
+        <!-- Hamburger (visible on mobile) -->
         <button
           class="mobile-menu-btn"
           id="mobile-menu-btn"
@@ -308,7 +456,7 @@
         </button>
       </div>
 
-      <!-- Mobile Menu (hidden by default). It sits directly under the header (not overlaying it). -->
+      <!-- Mobile Menu (hidden by default) -->
       <div
         id="mobile-menu"
         class="mobile-menu"
@@ -317,10 +465,86 @@
         aria-modal="true"
       >
         <div class="mobile-menu-inner">
-          <!-- visible nav items get moved here when overflowed -->
-          <ul class="mobile-nav-list" id="mobile-nav-list" role="menu"></ul>
+          
+          <!-- ***** FIX IS HERE ***** -->
+          <!-- Navigation links are now duplicated from the main nav -->
+          <ul class="mobile-nav-list" id="mobile-nav-list" role="menu">
+            <li role="none">
+              <a
+                role="menuitem"
+                href="{{ url_for('global.index') }}"
+                class="{{ 'active' if _current_endpoint == 'global.index' else '' }}"
+                {% if _current_endpoint == 'global.index' %}aria-current="page"{% endif %}
+                >صفحه اصلی</a
+              >
+            </li>
+            <li role="none">
+              <a
+                role="menuitem"
+                href="{{ url_for('global.leagues') }}"
+                class="{{ 'active' if _current_endpoint == 'global.leagues' else '' }}"
+                {% if _current_endpoint == 'global.leagues' %}aria-current="page"{% endif %}
+                >لیگ‌ها</a
+              >
+            </li>
+            <li role="none">
+              <a
+                role="menuitem"
+                href="{{ url_for('global.committee') }}"
+                class="{{ 'active' if _current_endpoint == 'global.committee' else '' }}"
+                {% if _current_endpoint == 'global.committee' %}aria-current="page"{% endif %}
+                >کمیته</a
+              >
+            </li>
+            <li role="none">
+              <a
+                role="menuitem"
+                href="{{ url_for('global.sponsors') }}"
+                class="{{ 'active' if _current_endpoint == 'global.sponsors' else '' }}"
+                {% if _current_endpoint == 'global.sponsors' %}aria-current="page"{% endif %}
+                >حامیان</a
+              >
+            </li>
+            <li role="none">
+              <a
+                role="menuitem"
+                href="{{ url_for('global.gallery') }}"
+                class="{{ 'active' if _current_endpoint == 'global.gallery' else '' }}"
+                {% if _current_endpoint == 'global.gallery' %}aria-current="page"{% endif %}
+                >گالری</a
+              >
+            </li>
+            <li role="none">
+              <a
+                role="menuitem"
+                href="{{ url_for('global.news') }}"
+                class="{{ 'active' if _current_endpoint == 'global.news' else '' }}"
+                {% if _current_endpoint == 'global.news' %}aria-current="page"{% endif %}
+                >اخبار</a
+              >
+            </li>
+            <li role="none">
+              <a
+                role="menuitem"
+                href="{{ url_for('global.about') }}"
+                class="{{ 'active' if _current_endpoint == 'global.about' else '' }}"
+                {% if _current_endpoint == 'global.about' %}aria-current="page"{% endif %}
+                >درباره ما</a
+              >
+            </li>
+            <li role="none">
+              <a
+                role="menuitem"
+                href="{{ url_for('global.contact') }}"
+                class="{{ 'active' if _current_endpoint == 'global.contact' else '' }}"
+                {% if _current_endpoint == 'global.contact' %}aria-current="page"{% endif %}
+                >تماس با ما</a
+              >
+            </li>
+          </ul>
+          <!-- ***** END OF FIX ***** -->
 
-          <!-- secondary area for other links (optional) -->
+          <!-- Mobile-only CTAs -->
           <div class="mobile-cta">
             {% if 'client_id' in session %}
             <a
@@ -347,7 +571,7 @@
         </div>
       </div>
 
-      <!-- invisible backdrop used to block page interaction (but menu itself scrolls) -->
+      <!-- Backdrop for mobile menu -->
       <div
         id="mobile-menu-backdrop"
         class="mobile-menu-backdrop"
@@ -355,34 +579,49 @@
       ></div>
     </header>
 
-    {% endif %} {% with messages = get_flashed_messages(with_categories=true) %}
+    {% endif %} 
+    
+    <!-- ================== -->
+    <!--  FLASH MESSAGES    -->
+    <!-- ================== -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
     <div id="flash-container" aria-live="polite" aria-atomic="true">
-      {% set category_map = { 'success': {'icon': 'fa-check-circle', 'class':
-      'flash-success'}, 'error': {'icon': 'fa-exclamation-triangle', 'class':
-      'flash-error'}, 'warning': {'icon': 'fa-exclamation-circle', 'class':
-      'flash-warning'}, 'info': {'icon': 'fa-info-circle', 'class':
-      'flash-info'} } %} {% for category, message in messages %} {% set flash =
-      category_map.get(category, category_map['info']) %}
-      <div class="flash-message {{ flash.class }}" role="alert">
-        <i class="fas {{ flash.icon }}" aria-hidden="true"></i>
-        <span>{{ message }}</span>
-        <button
-          class="flash-close-btn"
-          data-action="dismiss-flash"
-          aria-label="بستن اعلان"
-        >
-          &times;
-        </button>
-      </div>
+      {% set category_map = { 
+        'success': {'icon': 'fa-check-circle', 'class': 'flash-success'}, 
+        'error': {'icon': 'fa-exclamation-triangle', 'class': 'flash-error'}, 
+        'warning': {'icon': 'fa-exclamation-circle', 'class': 'flash-warning'}, 
+        'info': {'icon': 'fa-info-circle', 'class': 'flash-info'} 
+      } %} 
+      {% for category, message in messages %} 
+        {% set flash = category_map.get(category, category_map['info']) %}
+        <div class="flash-message {{ flash.class }}" role="alert">
+          <i class="fas {{ flash.icon }}" aria-hidden="true"></i>
+          <span>{{ message }}</span>
+          <button
+            class="flash-close-btn"
+            data-action="dismiss-flash"
+            aria-label="بستن اعلان"
+          >
+            &times;
+          </button>
+        </div>
       {% endfor %}
     </div>
-    {% endif %} {% endwith %}
+    {% endif %}
+    {% endwith %}
 
+    <!-- ================== -->
+    <!--   MAIN CONTENT     -->
+    <!-- ================== -->
     <main class="main-content">
-      {% block breadcrumbs %}{% endblock %} {% block body %}{% endblock %}
+      {% block breadcrumbs %}{% endblock %} 
+      {% block body %}{% endblock %}
     </main>
 
+    <!-- ================== -->
+    <!--       FOOTER       -->
+    <!-- ================== -->
     {% if not _is_admin %}
     <footer class="site-footer">
       <!-- Top Blue Line -->
@@ -432,12 +671,23 @@
             <div class="social-icons">
               <a
                 href="https://instagram.com/{{ contact.instagram|replace('@','') }}"
+                target="_blank" 
+                rel="noopener noreferrer"
+                aria-label="اینستاگرام آیروکاپ"
                 ><i class="fab fa-instagram"></i
               ></a>
-              <a href="{{ contact.bale }}"
+              <a 
+                href="{{ contact.bale }}" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                aria-label="کانال بله آیروکاپ"
                 ><i class="fas fa-comment-dots"></i
               ></a>
-              <a href="{{ contact.aparat_playlist }}"
+              <a 
+                href="{{ contact.aparat_playlist }}" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                aria-label="کانال آپارات آیروکاپ"
                 ><i class="fas fa-play-circle"></i
               ></a>
             </div>
@@ -457,6 +707,9 @@
 
     {% endif %}
 
+    <!-- ================== -->
+    <!-- GLOBAL SCRIPT TAGS -->
+    <!-- ================== -->
     <script
       src="{{ url_for('static', filename='js/socket.io.min.js', v=static_version) }}"
       defer
@@ -471,12 +724,16 @@
       window.AirocupData = {{ airocup_data | tojson | safe }};
     </script>
     {% endif %}
+    
     <script
       src="{{ url_for('static', filename=path.js_main, v=static_version) }}"
       defer
     ></script>
+    
     {% block scripts %}
+    <!-- Page-specific scripts can be inserted here -->
     <script>
+      // This script adds a fade-in animation to footer cards when they scroll into view
       document.addEventListener("DOMContentLoaded", function () {
         if (!("IntersectionObserver" in window)) {
           // If observer isn't available, reveal everything
@@ -495,8 +752,8 @@
               }
             });
           },
-          { threshold: 0.12 }
-        ); // adjust threshold if you want earlier/late trigger
+          { threshold: 0.12 } // Trigger when 12% of the element is visible
+        ); 
 
         document
           .querySelectorAll(".footer-card")
