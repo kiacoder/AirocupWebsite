@@ -55,46 +55,65 @@ def is_file_allowed(file_stream: IO[bytes]) -> bool:
         file_stream.seek(0)
 
 
-def check_age_against_league(
-    birth_date: datetime.date, league: models.League
+def calculate_age(
+    birth_date: datetime.date, reference_date: Optional[datetime.date] = None
+) -> int:
+    """Return the age in completed years at the given reference date (today by default)."""
+
+    if reference_date is None:
+        reference_date = datetime.date.today()
+
+    has_had_birthday = (reference_date.month, reference_date.day) >= (
+        birth_date.month,
+        birth_date.day,
+    )
+    return reference_date.year - birth_date.year - (0 if has_had_birthday else 1)
+
+
+def validate_member_age(
+    birth_date: datetime.date,
+    role: Optional[models.MemberRole],
+    education_level: Optional[str],
 ) -> Tuple[bool, Optional[str]]:
-    """Checks if a member's age is compatible with a given league based on the sketch rules."""
+    """Validate a member's age against role-specific and education-level rules."""
 
-    # Define rules: Elementary(<=12), Middle 1(<=15), Middle 2(<=18), Adult (>18)
-    MAX_AGE_MAP = {1: 12, 2: 15, 3: 18}  # Assuming 1, 2, 3 are the youth league IDs
-    MIN_AGE_MAP = {4: 18, 5: 18}  # Assuming 4 and 5 are the adult league IDs
+    if role is None:
+        return False, "نقش عضو مشخص نشده است."
 
-    try:
-        today = datetime.date.today()
-        # Calculate age as of today (simple calculation)
-        age = (
-            today.year
-            - birth_date.year
-            - ((today.month, today.day) < (birth_date.month, birth_date.day))
+    age = calculate_age(birth_date)
+
+    if role == models.MemberRole.LEADER:
+        if age < 18 or age > 70:
+            return False, "سن سرپرست باید بین ۱۸ تا ۷۰ سال باشد."
+        return True, None
+
+    if role == models.MemberRole.COACH:
+        if age < 16 or age > 70:
+            return False, "سن مربی باید بین ۱۶ تا ۷۰ سال باشد."
+        return True, None
+
+    if role != models.MemberRole.MEMBER:
+        return True, None
+
+    if not education_level:
+        return False, "مقطع تحصیلی تیم مشخص نشده است."
+
+    level_config = constants.education_levels.get(education_level)
+    if not level_config:
+        return False, "مقطع تحصیلی انتخاب شده معتبر نیست."
+
+    age_range = level_config.get("ages")
+    if not age_range:
+        return True, None
+
+    min_age, max_age = age_range
+    if age < min_age or age > max_age:
+        return (
+            False,
+            f"سن عضو ({age} سال) با بازه مجاز برای مقطع «{education_level}» (بین {min_age} تا {max_age} سال) همخوانی ندارد.",
         )
 
-        league_id = league.league_id
-
-        if league_id in MAX_AGE_MAP:
-            max_age = MAX_AGE_MAP[league_id]
-            if age > max_age:
-                return (
-                    False,
-                    f"سن عضو ({age} سال) برای لیگ «{league.name}» (حداکثر {max_age} سال) بیش از حد مجاز است.",
-                )
-
-        if league_id in MIN_AGE_MAP:
-            min_age = MIN_AGE_MAP[league_id]
-            if age <= min_age:
-                return (
-                    False,
-                    f"سن عضو ({age} سال) برای لیگ «{league.name}» (حداقل {min_age} سال) کمتر از حد مجاز است.",
-                )
-
-        return True, None
-    except Exception as e:
-        current_app.logger.error(f"Error during age validation: {e}")
-        return False, "خطای داخلی در اعتبارسنجی سن عضو رخ داد."
+    return True, None
 
 
 def validate_persian_date(year: Any, month: Any, day: Any) -> Tuple[bool, str]:
@@ -404,7 +423,7 @@ def create_member_from_form_data(
 
 
 def validate_member_for_resolution(
-    member: models.Member, team_league_id: Optional[int]
+    member: models.Member, education_level: Optional[str]
 ) -> dict:
     "Validate a member's data for missing or invalid fields"
     problems: dict[str, list[str]] = {"missing": [], "invalid": []}
@@ -419,56 +438,17 @@ def validate_member_for_resolution(
     if member.birth_date is None:
         problems["missing"].append("birth_date")
 
-    # --- FIX IS HERE ---
-    # We now check age against the team's league ID, not a client attribute
-
     if member.birth_date is not None:
         try:
-            today = datetime.date.today()
-            age = (
-                today.year
-                - member.birth_date.year
-                - (
-                    (today.month, today.day)
-                    < (member.birth_date.month, member.birth_date.day)
-                )
+            is_valid_age, age_error = validate_member_age(
+                member.birth_date,
+                member.role,
+                education_level,
             )
-
-            # Check general roles first
-            if member.role == models.MemberRole.LEADER and not (18 <= age <= 70):
-                problems["invalid"].append(
-                    f"سن سرپرست باید بین 18 تا 70 باشد (سن فعلی: {age})"
-                )
-            elif member.role == models.MemberRole.COACH and not (16 <= age <= 70):
-                problems["invalid"].append(
-                    f"سن مربی باید بین 16 تا 70 باشد (سن فعلی: {age})"
-                )
-
-            # Now check member age against league rules (from your sketch)
-            if member.role == models.MemberRole.MEMBER:
-                # Assumes league IDs 1, 2, 3 are youth, 4, 5 are adult
-                MAX_AGE_MAP = {1: 12, 2: 15, 3: 18}  # ابتدایی, متوسطه ۱, متوسطه ۲
-                MIN_AGE_MAP = {4: 18, 5: 18}  # دانشجویی, آزاد
-
-                if team_league_id in MAX_AGE_MAP:
-                    max_age = MAX_AGE_MAP[team_league_id]
-                    if age > max_age:
-                        problems["invalid"].append(
-                            f"سن عضو ({age} سال) برای این مقطع (حداکثر {max_age} سال) مجاز نیست."
-                        )
-                elif team_league_id in MIN_AGE_MAP:
-                    min_age = MIN_AGE_MAP[team_league_id]
-                    if age <= min_age:  # Must be > 18
-                        problems["invalid"].append(
-                            f"سن عضو ({age} سال) برای این مقطع (حداقل {min_age + 1} سال) مجاز نیست."
-                        )
-                elif not team_league_id:
-                    # This is also a problem: the team has no league
-                    problems["missing"].append("team_league")
-
+            if not is_valid_age and age_error:
+                problems["invalid"].append(age_error)
         except (ValueError, AttributeError):
             problems["invalid"].append("تاریخ تولد نامعتبر است")
-    # --- END OF FIX ---
 
     return problems
 
@@ -494,17 +474,13 @@ def check_for_data_completion_issues(db: Session, client_id: int) -> Tuple[bool,
     problematic_members = {}
     needs_resolution = False
     for team in teams:
-        # --- FIX IS HERE ---
-        # Get the team's league ID, (the "Educational Level")
-        team_league_id = team.league_one_id
+        education_level = getattr(team, "education_level", None)
 
         for member in filter(
             lambda m: m.status == models.EntityStatus.ACTIVE, team.members
         ):
-            # Pass the team's league ID to the validator
-            problems = validate_member_for_resolution(member, team_league_id)
+            problems = validate_member_for_resolution(member, education_level)
             if problems["missing"] or problems["invalid"]:
-                # --- END OF FIX ---
                 problematic_members[member.member_id] = problems
                 needs_resolution = True
 
@@ -525,6 +501,19 @@ def internal_add_member(
         "role"
     ] == models.MemberRole.LEADER and database.has_existing_leader(db, team_id):
         return None, "خطا: این تیم از قبل یک سرپرست دارد."
+
+    team = db.query(models.Team).filter(models.Team.team_id == team_id).first()
+    education_level = getattr(team, "education_level", None) if team else None
+    if new_member_data["role"] == models.MemberRole.MEMBER and not education_level:
+        return None, "ابتدا مقطع تحصیلی تیم را مشخص کنید."
+
+    is_age_valid, age_error = validate_member_age(
+        new_member_data["birth_date"],
+        new_member_data["role"],
+        education_level,
+    )
+    if not is_age_valid:
+        return None, age_error or "سن عضو با قوانین مقطع انتخاب شده همخوانی ندارد."
 
     has_conflict, error_message = database.is_member_league_conflict(
         db, new_member_data["national_id"], team_id

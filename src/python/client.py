@@ -370,6 +370,7 @@ def update_team(team_id):
     with database.get_db_session() as db:
         team = (
             db.query(models.Team)
+            .options(subqueryload(models.Team.members))
             .filter(
                 models.Team.team_id == team_id,
                 models.Team.client_id == session["client_id"],
@@ -432,6 +433,7 @@ def update_team(team_id):
 
             return redirect(url_for("client.update_team", team_id=team_id))
 
+        has_any_payment = database.has_team_made_any_payment(db, team_id)
         is_paid = database.check_if_team_is_paid(db, team_id)
         # --- FIX: Added 'is_payment_approved' for Document tab (Req #6) ---
         is_payment_approved = (
@@ -456,6 +458,7 @@ def update_team(team_id):
         constants.client_html_names_data["update_team"],
         team=team,
         is_paid=is_paid,
+        has_any_payment=has_any_payment,
         is_payment_approved=is_payment_approved,  # Pass new variable
         documents=documents,
     )
@@ -492,12 +495,15 @@ def manage_members(team_id):
             .all()
         )
         is_paid = database.check_if_team_is_paid(db, team_id)
+        has_any_payment = database.has_team_made_any_payment(db, team_id)
 
     return render_template(
         constants.client_html_names_data["members"],
         team=team,
         members=members,
         is_paid=is_paid,
+        has_any_payment=has_any_payment,
+        education_levels=constants.education_levels,
         form_data=None,  # Pass None on GET request
         **utils.get_form_context(),
     )
@@ -542,6 +548,13 @@ def edit_member(team_id, member_id):
 
         if not team:
             abort(404, "تیم مورد نظر پیدا نشد یا شما دسترسی به این تیم را ندارید")
+
+        if not team.education_level:
+            flash(
+                "برای ویرایش اعضا، ابتدا باید مقطع تحصیلی تیم را مشخص کنید.",
+                "error",
+            )
+            return redirect(url_for("client.select_league", team_id=team_id))
 
         member = (
             db.query(models.Member)
@@ -593,24 +606,22 @@ def edit_member(team_id, member_id):
                         )
                     )
 
-            # --- AGE VALIDATION (Req from Sketch) ---
-            if birth_date and role_value == models.MemberRole.MEMBER:
-                leagues = [team.league_one, team.league_two]
-                for league in leagues:
-                    if league:
-                        # This function must be added to utils.py
-                        is_valid, age_error = utils.check_age_against_league(
-                            birth_date, league
-                        )
-                        if not is_valid:
-                            flash(age_error, "error")
-                            return render_template(
-                                template_name,
-                                team=team,
-                                member=member,
-                                form_data=request.form,
-                                **utils.get_form_context(),
-                            )
+            # --- AGE VALIDATION BASED ON EDUCATION LEVEL ---
+            if birth_date and role_value:
+                is_valid, age_error = utils.validate_member_age(
+                    birth_date,
+                    role_value,
+                    team.education_level,
+                )
+                if not is_valid:
+                    flash(age_error, "error")
+                    return render_template(
+                        template_name,
+                        team=team,
+                        member=member,
+                        form_data=request.form,
+                        **utils.get_form_context(),
+                    )
 
             # --- LEAGUE CONFLICT CHECK (Req #7) ---
             if national_id and role_value == models.MemberRole.MEMBER:
@@ -786,7 +797,7 @@ def create_team():
 
     form_context = utils.get_form_context()
     return render_template(
-        constants.client_html_names_data["create_team"], form_data=None, **form_context
+        constants.client_html_names_data["create_team"], form_data={}, **form_context
     )
 
 
@@ -1654,7 +1665,7 @@ def delete_team(team_id):
 
             if database.has_team_made_any_payment(db, team_id):
                 flash(
-                    "پس از ارسال رسید پرداخت، امکان آرشیو تیم توسط شما وجود ندارد.",
+                    "پس از ارسال رسید پرداخت (در انتظار تایید/تایید شده/رد شده)، آرشیو تیم تنها توسط ادمین امکان‌پذیر است.",
                     "error",
                 )
                 return redirect(url_for("client.dashboard"))
@@ -1697,7 +1708,10 @@ def delete_member(team_id, member_id):
                 abort(404)
 
             if database.has_team_made_any_payment(db, team_id):
-                flash("پس از ارسال رسید پرداخت، امکان حذف عضو وجود ندارد.", "error")
+                flash(
+                    "پس از ارسال رسید پرداخت (در انتظار تایید/تایید شده/رد شده)، حذف عضو تنها توسط ادمین امکان‌پذیر است.",
+                    "error",
+                )
                 return redirect(url_for("client.manage_members", team_id=team_id))
 
             member_to_delete = (
@@ -1799,15 +1813,35 @@ def upload_document(team_id):
             flash("فایلی برای بارگذاری انتخاب نشده است.", "error")
             return redirect(url_for("client.update_team", team_id=team_id))
 
-        max_size = constants.AppConfig.max_document_size
         file = request.files["file"]
 
         if not file or not file.filename:
             flash("نام فایل نامعتبر است.", "error")
             return redirect(url_for("client.update_team", team_id=team_id))
+        original_filename = secure_filename(file.filename)
+        extension = (
+            original_filename.rsplit(".", 1)[1].lower()
+            if "." in original_filename
+            else ""
+        )
+        if not extension:
+            flash("پسوند فایل نامعتبر است.", "error")
+            return redirect(url_for("client.update_team", team_id=team_id))
+
+        if extension not in constants.AppConfig.allowed_extensions:
+            flash("نوع فایل انتخاب شده مجاز نیست.", "error")
+            return redirect(url_for("client.update_team", team_id=team_id))
+
+        if extension in constants.AppConfig.video_extensions:
+            max_size = constants.AppConfig.max_video_size
+        elif extension in constants.AppConfig.image_extensions:
+            max_size = constants.AppConfig.max_image_size
+        else:
+            max_size = constants.AppConfig.max_office_size
+
         if request.content_length is not None and request.content_length > max_size:
             flash(
-                f"حجم فایل سند نباید بیشتر از {max_size / 1024 / 1024:.1f} مگابایت باشد.",
+                f"حجم فایل انتخابی نباید بیشتر از {max_size / 1024 / 1024:.1f} مگابایت باشد.",
                 "error",
             )
             return redirect(url_for("client.update_team", team_id=team_id))
@@ -1817,7 +1851,7 @@ def upload_document(team_id):
         file.stream.seek(0)
         if file_size > max_size:
             flash(
-                f"حجم فایل سند نباید بیشتر از {max_size / 1024 / 1024:.1f} مگابایت باشد.",
+                f"حجم فایل انتخابی نباید بیشتر از {max_size / 1024 / 1024:.1f} مگابایت باشد.",
                 "error",
             )
             return redirect(url_for("client.update_team", team_id=team_id))
@@ -1828,12 +1862,6 @@ def upload_document(team_id):
             return redirect(url_for("client.update_team", team_id=team_id))
         file.stream.seek(0)
 
-        original_filename = secure_filename(file.filename)
-        extension = (
-            original_filename.rsplit(".", 1)[1].lower()
-            if "." in original_filename
-            else ""
-        )
         secure_name = f"{uuid.uuid4()}.{extension}"
 
         new_document = models.TeamDocument(
@@ -1916,6 +1944,13 @@ def add_member(team_id):
         if not team:
             abort(404)
 
+        if not team.education_level:
+            return _render_error(
+                "برای افزودن عضو، ابتدا باید مقطع تحصیلی تیم را انتخاب کنید."
+            )
+
+        has_any_payment = database.has_team_made_any_payment(db_session, team_id)
+
         # Helper to return error to template, passing back the submitted form data
         def _render_error(error_msg, error_type="error"):
             flash(error_msg, error_type)
@@ -1930,6 +1965,8 @@ def add_member(team_id):
                 )
                 .all(),
                 is_paid=database.check_if_team_is_paid(db_session, team_id),
+                has_any_payment=has_any_payment,
+                education_levels=constants.education_levels,
                 form_data=request.form,  # CRITICAL: Passes data back for pre-filling (Req #8 fix)
                 **utils.get_form_context(),
             )
@@ -1966,16 +2003,15 @@ def add_member(team_id):
         role_value = new_member_data_safe.get("role")
         birth_date = new_member_data_safe.get("birth_date")
 
-        # 4. AGE VALIDATION (Req from Sketch)
-        if birth_date and role_value == models.MemberRole.MEMBER:
-            leagues = [team.league_one, team.league_two]
-            for league in leagues:
-                if league:
-                    is_valid, age_error = utils.check_age_against_league(
-                        birth_date, league
-                    )
-                    if not is_valid:
-                        return _render_error(age_error)
+        # 4. AGE VALIDATION (based on selected education level)
+        if birth_date and role_value:
+            is_age_valid, age_error = utils.validate_member_age(
+                birth_date,
+                role_value,
+                team.education_level,
+            )
+            if not is_age_valid:
+                return _render_error(age_error)
 
         # 5. LEAGUE CONFLICT CHECK (Req #7)
         if (
@@ -2075,6 +2111,11 @@ def select_league(team_id):
             csrf_protector.protect()
             league_one_id = request.form.get("league_one")
             league_two_id = request.form.get("league_two")
+            education_level = request.form.get("education_level", "").strip()
+
+            if education_level not in constants.allowed_education:
+                flash("لطفاً مقطع تحصیلی معتبری را انتخاب کنید.", "error")
+                return redirect(url_for("client.select_league", team_id=team_id))
 
             if not league_one_id:
                 flash("لطفاً لیگ اول (اجباری) را انتخاب کنید.", "error")
@@ -2084,8 +2125,37 @@ def select_league(team_id):
                 flash("شما نمی‌توانید یک لیگ را دو بار انتخاب کنید.", "error")
                 return redirect(url_for("client.select_league", team_id=team_id))
 
+            if education_level != (team.education_level or ""):
+                level_info = constants.education_levels.get(education_level)
+                age_range = level_info.get("ages") if level_info else None
+                if age_range:
+                    min_age, max_age = age_range
+                    violating_member = next(
+                        (
+                            member
+                            for member in team.members
+                            if member.status == models.EntityStatus.ACTIVE
+                            and member.role == models.MemberRole.MEMBER
+                            and not (
+                                min_age
+                                <= utils.calculate_age(member.birth_date)
+                                <= max_age
+                            )
+                        ),
+                        None,
+                    )
+                    if violating_member:
+                        flash(
+                            f"عضو «{violating_member.name}» با سن فعلی خود در بازه مجاز مقطع «{education_level}» قرار نمی‌گیرد.",
+                            "error",
+                        )
+                        return redirect(
+                            url_for("client.select_league", team_id=team_id)
+                        )
+
             team.league_one_id = int(league_one_id) if league_one_id else None
             team.league_two_id = int(league_two_id) if league_two_id else None
+            team.education_level = education_level
             db.commit()
             flash("لیگ‌های تیم با موفقیت به‌روزرسانی شد.", "success")
             return redirect(url_for("client.dashboard"))
@@ -2094,6 +2164,7 @@ def select_league(team_id):
         constants.client_html_names_data["select_league"],
         team=team,
         leagues=constants.leagues_list,
+        education_levels=constants.education_levels,
     )
 
 
@@ -2140,16 +2211,32 @@ def _calculate_payment_details(db, team):
             True,
         )
 
+    if not team.education_level:
+        return (
+            {},
+            "لطفاً ابتدا مقطع تحصیلی تیم را از بخش «انتخاب مقطع و لیگ» تعیین کنید.",
+            "warning",
+            True,
+        )
+
     is_new_member_payment = database.check_if_team_is_paid(db, team.team_id)
     fee_per_person = config.payment_config.get("fee_per_person") or 0
     fee_team = config.payment_config.get("fee_team") or 0
-    league_two_discount_percent = config.payment_config.get("league_two_discount") or 0
+    league_two_discount_percent = (
+        config.payment_config.get("league_two_discount") or 0
+    )
+    new_member_fee_per_league = (
+        config.payment_config.get("new_member_fee_per_league") or 0
+    )
+    selected_leagues_count = 1 + (1 if team.league_two_id is not None else 0)
+    selected_leagues_count = max(1, selected_leagues_count)
 
     members_to_pay_for = 0
     total_cost = 0
     league_one_cost = 0
     league_two_cost = 0
     discount_amount = 0
+    per_member_total = 0
 
     if is_new_member_payment:
         members_to_pay_for = team.unpaid_members_count or 0
@@ -2161,7 +2248,8 @@ def _calculate_payment_details(db, team):
                 True,
             )
 
-        total_cost = members_to_pay_for * fee_per_person
+        per_member_total = new_member_fee_per_league * selected_leagues_count
+        total_cost = members_to_pay_for * per_member_total
     else:
         members_to_pay_for = active_members_count
         members_fee = members_to_pay_for * fee_per_person
@@ -2188,6 +2276,9 @@ def _calculate_payment_details(db, team):
             config.payment_config.get(field)
             for field in ("bank_name", "owner_name", "card_number", "iban")
         ),
+        "new_member_fee_per_league": int(new_member_fee_per_league),
+        "selected_leagues_count": selected_leagues_count,
+        "new_member_total_per_member": int(per_member_total),
     }
     return context, None, None, False
 
