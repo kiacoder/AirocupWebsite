@@ -3,63 +3,86 @@
 {% block title %}صندوق ورودی پیام‌ها | پنل آیروکاپ{% endblock %}
 
 {% block body %}
-<div class="Container">
-  <div class="PageHeader">
-    <h1 class="SectionTitle">صندوق ورودی پیام‌ها</h1>
-    <p class="FormSubtitle">
-      لیست کاربرانی که پیام ارسال کرده‌اند و منتظر پاسخ هستند.
-    </p>
-  </div>
-
-  <div class="Card Card--table">
-    <h2 class="Card__header">
-      <i class="fas fa-inbox"></i> پیام‌های خوانده نشده
-    </h2>
-    <div class="UserTableWrapper">
-      <table class="UserTable">
-        <thead>
-          <tr>
-            <th>ایمیل کاربر</th>
-            <th>آخرین پیام</th>
-            <th>تعداد پیام جدید</th>
-            <th class="ActionsHeader">عملیات</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for client in clients %}
-          <tr>
-            <td>{{ client.email }}</td>
-            <td class="RelativeTime" data-timestamp="{{ client.last_message_timestamp.isoformat() if client.last_message_timestamp else '' }}">
-              {{ client.last_message_timestamp | formatdate | persian_digits }}
-            </td>
-            <td>
-              <span class="Badge Badge--primary">
-                {{ client.unread_count | persian_digits }}
-              </span>
-            </td>
-            <td class="Actions">
-              <a href="{{ url_for('admin.admin_chat', client_id=client.client_id) }}" class="Btn BtnPrimary">
-                <i class="fas fa-eye"></i> مشاهده و پاسخ
-              </a>
-            </td>
-          </tr>
-          {% else %}
-          <tr class="EmptyStateRow">
-            <td colspan="4" class="EmptyState">
-              <i class="fas fa-inbox EmptyState__icon"></i>
-              هیچ پیام خوانده نشده‌ای وجود ندارد.
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+<div class="admin-page">
+  <header class="admin-page__header">
+    <div class="admin-page__title">
+      <h1>صندوق ورودی پیام‌ها</h1>
+      <p class="admin-page__subtitle">
+        لیست کاربرانی که پیام ارسال کرده‌اند و منتظر پاسخ هستند. از اینجا می‌توانید سریعاً گفتگوها را باز کنید.
+      </p>
     </div>
-  </div>
+    <div class="admin-page__actions">
+      <span class="admin-badge">
+        <i class="fas fa-envelope-open-text"></i>
+        {{ clients|length | persian_digits }} گفتگو فعال
+      </span>
+    </div>
+  </header>
 
-  <div class="SectionCta">
-    <a href="{{ url_for('admin.admin_dashboard') }}" class="Btn BtnSecondary">
-      <i class="fas fa-arrow-left"></i> بازگشت به داشبورد
+  <section class="admin-page__section">
+    <article class="admin-surface">
+      <header class="admin-surface__header">
+        <div class="admin-surface__title">
+          <h2><i class="fas fa-inbox"></i> پیام‌های خوانده نشده</h2>
+          <p>به پیام‌های جدید کاربرها پاسخ دهید و وضعیت پشتیبانی را به‌روز نگه دارید.</p>
+        </div>
+      </header>
+      <div class="admin-surface__body">
+        <div class="admin-table-wrapper">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>ایمیل کاربر</th>
+                <th>آخرین پیام</th>
+                <th>تعداد پیام جدید</th>
+                <th>عملیات</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for client in clients %}
+              <tr>
+                <td>{{ client.email }}</td>
+                <td class="RelativeTime" data-timestamp="{{ client.last_message_timestamp.isoformat() if client.last_message_timestamp else '' }}">
+                  {{ client.last_message_timestamp | formatdate | persian_digits }}
+                </td>
+                <td>
+                  <span class="admin-status admin-status--pending">
+                    <i class="fas fa-comment-dots"></i>
+                    {{ client.unread_count | persian_digits }} پیام
+                  </span>
+                </td>
+                <td class="admin-table__actions">
+                  <a
+                    href="{{ url_for('admin.admin_chat', client_id=client.client_id) }}"
+                    class="btn btn-primary btn-small"
+                  >
+                    <i class="fas fa-eye"></i>
+                    مشاهده و پاسخ
+                  </a>
+                </td>
+              </tr>
+              {% else %}
+              <tr class="admin-table__empty">
+                <td colspan="4">
+                  <div class="admin-empty-state">
+                    <i class="fas fa-inbox"></i>
+                    هیچ پیام خوانده نشده‌ای وجود ندارد.
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <footer class="admin-page__footer">
+    <a href="{{ url_for('admin.admin_dashboard') }}" class="btn btn-secondary">
+      <i class="fas fa-arrow-right"></i>
+      بازگشت به داشبورد
     </a>
-  </div>
+  </footer>
 </div>
 {% endblock %}

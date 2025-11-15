@@ -1465,14 +1465,29 @@ const airocupApp = {
     initializeAdminMembersPage() {
       const page = document.querySelector(".admin-edit-team-page");
       if (!page) return;
+
+      const teamId = page.dataset.teamId;
       const addForm = page.querySelector("#adminAddMemberForm");
       if (addForm) {
         airocupApp.formHelpers.initializeDynamicSelects(addForm);
         airocupApp.formHelpers.setupDatePicker(addForm);
       }
+
       const editModal = document.querySelector("#editMemberModal");
       const editForm = editModal?.querySelector("form");
       if (!editModal || !editForm) return;
+
+      const assignValue = (name, value) => {
+        if (!name) return;
+        const field = editForm.querySelector(`[name="${name}"]`);
+        if (!field) return;
+
+        if (name === "province" || name === "city") {
+          field.dataset.initialValue = value;
+        } else {
+          field.value = value;
+        }
+      };
 
       airocupApp.formHelpers.initializeDynamicSelects(editForm);
       airocupApp.formHelpers.setupDatePicker(editForm);
@@ -1484,22 +1499,21 @@ const airocupApp = {
         if (!editBtn) return;
 
         const data = editBtn.dataset;
+        if (teamId && data.memberId) {
+          editForm.action = `/Admin/Team/${teamId}/EditMember/${data.memberId}`;
+        }
 
-        Object.keys(data).forEach((key) => {
-          const input = editForm.querySelector(`[name="${key}"]`);
-          if (input) {
-            if (key === "province" || key === "city") {
-              input.dataset.initialValue = data[key];
-            } else {
-              input.value = data[key];
-            }
-          }
-        });
+        assignValue("name", data.name || "");
+        assignValue("national_id", data.nationalId || "");
+        assignValue("role", data.role || "");
+        assignValue("province", data.province || "");
+        assignValue("city", data.city || "");
 
         const [year, month, day] = (data.birthDate || "0-0-0").split("-");
-        editForm.querySelector('[name="birth_year"]').value = year;
-        editForm.querySelector('[name="birth_month"]').value = month;
-        editForm.querySelector('[name="birth_day"]').value = day;
+        assignValue("birth_year", year);
+        assignValue("birth_month", month);
+        assignValue("birth_day", day);
+
         airocupApp.formHelpers.initializeDynamicSelects(editForm);
         airocupApp.formHelpers.setupDatePicker(editForm);
 
