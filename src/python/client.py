@@ -2071,10 +2071,12 @@ def add_member(team_id):
                 f"Added new member '{new_member.name}' to Team ID {team_id}.",
             )
 
-            if database.check_if_team_is_paid(db_session, team_id):
+            if has_any_payment:
                 team.unpaid_members_count = (team.unpaid_members_count or 0) + 1
                 flash(
-                    f"عضو «{new_member.name}» با موفقیت اضافه شد. لطفاً برای فعال‌سازی، هزینه عضو جدید را پرداخت نمایید.",
+                    "عضو «{name}» اضافه شد. چون قبلاً پرداختی ارسال کرده‌اید (در انتظار تایید/تایید شده/رد شده)، باید برای این عضو جدید تنها مبلغ ۹,۵۰۰,۰۰۰ ریال به ازای هر لیگ پرداخت و رسید را بارگذاری کنید تا ثبت‌نام نهایی شود.".format(
+                        name=new_member.name
+                    ),
                     "warning",
                 )
             else:
@@ -2230,7 +2232,8 @@ def _calculate_payment_details(db, team):
             True,
         )
 
-    is_new_member_payment = database.check_if_team_is_paid(db, team.team_id)
+    has_any_payment = database.has_team_made_any_payment(db, team.team_id)
+    is_new_member_payment = has_any_payment
     fee_per_person = config.payment_config.get("fee_per_person") or 0
     fee_team = config.payment_config.get("fee_team") or 0
     league_two_discount_percent = (
