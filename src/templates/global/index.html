@@ -39,6 +39,22 @@
           <p><strong>مرحله دوم:</strong> {{ event_details.stage_two }}</p>
         </div>
 
+        {% set total_committee = committee_members|length + technical_committee_members|length %}
+        <div class="hero-stats" aria-label="نمای کلی رویداد">
+          <div class="stat-card">
+            <span class="stat-value">{{ leagues_list|length }}</span>
+            <span class="stat-label">لیگ تخصصی</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-value">{{ total_committee }}</span>
+            <span class="stat-label">عضو کمیته</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-value">۲</span>
+            <span class="stat-label">مرحله رقابتی</span>
+          </div>
+        </div>
+
         <div class="olympiad-highlight">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -108,7 +124,11 @@
       مسابقات ملی هوش مصنوعی و رباتیک آیروکاپ (AIROCUP)، رویدادی پیشرو در ایران...
     </p>
 
-    <div class="video-wrapper lazy-video" data-src="{{ contact.aparat_embed_url }}?recom=self">
+    <div
+      class="video-wrapper lazy-video"
+      data-src="{{ contact.aparat_embed_url }}?recom=self"
+      data-title="تیزر رسمی مسابقات"
+    >
       <div class="video-play-button" aria-label="پخش تیزر رسمی مسابقات">
         <svg ... class="icon"> ... </svg>
       </div>

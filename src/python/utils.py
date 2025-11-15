@@ -75,6 +75,28 @@ def validate_persian_date(year: Any, month: Any, day: Any) -> Tuple[bool, str]:
         return False, "لطفاً اعداد معتبر برای تاریخ وارد کنید"
 
 
+_PERSIAN_NORMALIZATION_TABLE = str.maketrans({"ي": "ی", "ك": "ک"})
+
+
+def normalize_persian_text(value: Optional[str]) -> str:
+    """Normalize Persian text for consistent comparisons.
+
+    This helper removes leading/trailing whitespace, replaces Arabic Ya/Kaf
+    variants with their Persian counterparts, and collapses internal
+    whitespace. The function returns an empty string when the provided value is
+    falsy or not a string, allowing callers to safely chain the result in
+    dictionary lookups without additional guards.
+    """
+
+    if not isinstance(value, str):
+        return ""
+
+    normalized = value.translate(_PERSIAN_NORMALIZATION_TABLE).strip()
+    # Collapse consecutive whitespace (including zero-width non-joiners)
+    normalized = normalized.replace("\u200c", " ")
+    return " ".join(normalized.split())
+
+
 def get_form_context() -> dict:
     "Provide context data for forms (excluding hardcoded days_in_month)"
     return {
