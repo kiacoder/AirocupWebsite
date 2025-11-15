@@ -79,6 +79,33 @@ for path in [
     os.makedirs(path, exist_ok=True)
 
 
+def _compute_static_version_token() -> str:
+    """Return a cache-busting token derived from core static asset mtimes."""
+
+    tracked_assets = [
+        constants.Path.css_style,
+        constants.Path.js_main,
+        "js/socket.io.min.js",
+        "js/chart.umd.min.js",
+    ]
+
+    mtimes = []
+    for rel_path in tracked_assets:
+        absolute_path = os.path.join(constants.Path.static_dir, rel_path)
+        try:
+            mtimes.append(int(os.path.getmtime(absolute_path)))
+        except OSError:
+            continue
+
+    if mtimes:
+        return str(max(mtimes))
+
+    return str(int(datetime.datetime.now().timestamp()))
+
+
+STATIC_VERSION_TOKEN = _compute_static_version_token()
+
+
 @flask_app.template_filter("formatdate")
 def format_date_filter(date_object):
     """Formats a datetime/date object to a Jalali date string (YYYY-MM-DD)."""
@@ -133,6 +160,7 @@ def inject_global_variables():
         "technical_committee_members": constants.technical_committee_members,
         "homepage_sponsors": constants.homepage_sponsors_data,
         "app_version": config.app_version,
+        "static_version": STATIC_VERSION_TOKEN,
     }
 
 

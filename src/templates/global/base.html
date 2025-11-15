@@ -73,23 +73,23 @@
 
     <link
       rel="stylesheet"
-      href="{{ url_for('static', filename=path.css_style) }}"
+      href="{{ url_for('static', filename=path.css_style, v=static_version) }}"
     />
 
     {% if not _is_admin %}
     <link
       rel="icon"
-      href="{{ url_for('static', filename=path.solid_logos['solid_white_favicon']) }}"
+      href="{{ url_for('static', filename=path.solid_logos['solid_white_favicon'], v=static_version) }}"
       type="image/x-icon"
     />
     <link
       rel="icon"
       type="image/png"
-      href="{{ url_for('static', filename=path.solid_logos['main_fest_192']) }}"
+      href="{{ url_for('static', filename=path.solid_logos['main_fest_192'], v=static_version) }}"
     />
     <link
       rel="apple-touch-icon"
-      href="{{ url_for('static', filename=path.solid_logos['main_fest_192']) }}"
+      href="{{ url_for('static', filename=path.solid_logos['main_fest_192'], v=static_version) }}"
     />
     {% endif %}
 
@@ -124,7 +124,7 @@
           class="admin-header-logo"
         >
           <img
-            src="{{ url_for('static', filename=path.transparent_logos['transparent_white']) }}"
+            src="{{ url_for('static', filename=path.transparent_logos['transparent_white'], v=static_version) }}"
             alt="پنل مدیریت آیروکاپ"
           />
           <span>پنل مدیریت آیروکاپ</span>
@@ -184,7 +184,7 @@
         <div class="logo" aria-hidden="false">
           <a href="{{ url_for('global.index') }}">
             <img
-              src="{{ url_for('static', filename=path.transparent_logos['transparent_white']) }}"
+              src="{{ url_for('static', filename=path.transparent_logos['transparent_white'], v=static_version) }}"
               alt="لوگو آیروکاپ"
             />
           </a>
@@ -411,7 +411,7 @@
           <!-- Logo and Description -->
           <div class="footer-card fade-up delay-1">
             <img
-              src="{{ url_for('static', filename=path.transparent_logos['transparent_white']) }}"
+              src="{{ url_for('static', filename=path.transparent_logos['transparent_white'], v=static_version) }}"
               alt="لوگو آیروکاپ"
               class="footer-logo"
             />
@@ -458,11 +458,11 @@
     {% endif %}
 
     <script
-      src="{{ url_for('static', filename='js/socket.io.min.js') }}"
+      src="{{ url_for('static', filename='js/socket.io.min.js', v=static_version) }}"
       defer
     ></script>
     <script
-      src="{{ url_for('static', filename='js/chart.umd.min.js') }}"
+      src="{{ url_for('static', filename='js/chart.umd.min.js', v=static_version) }}"
       defer
     ></script>
 
@@ -471,7 +471,10 @@
       window.AirocupData = {{ airocup_data | tojson | safe }};
     </script>
     {% endif %}
-    <script src="{{ url_for('static', filename=path.js_main) }}" defer></script>
+    <script
+      src="{{ url_for('static', filename=path.js_main, v=static_version) }}"
+      defer
+    ></script>
     {% block scripts %}
     <script>
       document.addEventListener("DOMContentLoaded", function () {
