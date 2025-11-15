@@ -1,84 +1,122 @@
-{% extends "Global/Base.html" %}
+{% extends "global/base.html" %}
 
-{% block Title %}مدیریت اخبار و اطلاعیه‌ها | پنل آیروکاپ{% endblock %}
+{% block title %}مدیریت اخبار و اطلاعیه‌ها | پنل آیروکاپ{% endblock %}
 
-{% block Body %}
-<div class="Container">
-  <div class="PageHeader">
-    <h1 class="SectionTitle">مدیریت اخبار و اطلاعیه‌ها</h1>
-    <p class="FormSubtitle">
-      در این بخش مقالات جدید را اضافه کرده یا موارد موجود را مدیریت کنید.
-    </p>
-  </div>
-
-  <div class="FormContainer add-form">
-    <h2 class="FormTitle">
-      <i class="fas fa-plus-circle"></i> افزودن مقاله جدید
-    </h2>
-    <form method="POST" action="{{ url_for('admin.admin_manage_news') }}" enctype="multipart/form-data">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-      <div class="FormGroup">
-        <label for="Title">عنوان مقاله</label>
-        <input type="text" id="Title" name="Title" required class="FormControl" />
-      </div>
-      <div class="FormGroup">
-        <label for="Content">محتوای مقاله</label>
-        <textarea id="Content" name="Content" rows="6" required class="FormControl"></textarea>
-      </div>
-      <div class="FormGroup">
-        <label for="TemplatePath">مسیر قالب اختصاصی (اختیاری)</label>
-        <input type="text" id="TemplatePath" name="TemplatePath" placeholder="مثال: custom_article.html" class="FormControl" />
-      </div>
-      <div class="FormGroup">
-        <label for="Image">تصویر مقاله (اختیاری)</label>
-        <input type="file" id="Image" name="Image" accept="image/png, image/jpeg, image/gif" class="FormControl" />
-      </div>
-      <button type="submit" class="Btn BtnPrimary">
-        <i class="fas fa-save"></i> ذخیره مقاله
-      </button>
-    </form>
-  </div>
-
-  <div class="Card Card--table">
-    <h2 class="Card__header">
-      <i class="fas fa-list-alt"></i> لیست مقالات منتشر شده
-    </h2>
-    <div class="UserTableWrapper">
-      <table class="UserTable">
-        <thead>
-          <tr>
-            <th>عنوان</th>
-            <th>تاریخ انتشار</th>
-            <th class="ActionsHeader">عملیات</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for ArticleData in Articles %}
-          <tr>
-            <td data-label="عنوان">{{ ArticleData.Title }}</td>
-            <td data-label="تاریخ انتشار" dir="ltr">
-              {{ ArticleData.PublishDate | formatdate | persian_digits }}
-            </td>
-            <td class="Actions">
-              <a href="{{ url_for('Admin.AdminEditNews', ArticleID=ArticleData.NewsID) }}" class="Btn BtnSecondary">
-                <i class="fas fa-edit"></i> ویرایش
-              </a>
-              <form method="POST" action="{{ url_for('Admin.AdminDeleteNews', ArticleID=ArticleData.NewsID) }}" class="ConfirmDelete" data-confirm="آیا از حذف مقاله «{{ ArticleData.Title }}» اطمینان دارید؟">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                <button type="submit" class="Btn BtnDanger">
-                  <i class="fas fa-trash-alt"></i> حذف
-                </button>
-              </form>
-            </td>
-          </tr>
-          {% else %}
-          <tr class="EmptyStateRow">
-            <td colspan="3">هنوز هیچ مقاله‌ای منتشر نشده است.</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+{% block body %}
+<div class="admin-page">
+  <header class="admin-page__header">
+    <div class="admin-page__title">
+      <h1>مدیریت اخبار و اطلاعیه‌ها</h1>
+      <p class="admin-page__subtitle">
+        مقالات و اطلاعیه‌های جدید را منتشر کنید یا موارد موجود را ویرایش و حذف نمایید.
+      </p>
     </div>
-  </div>
+  </header>
+
+  <section class="admin-page__section">
+    <article class="admin-surface">
+      <header class="admin-surface__header">
+        <div class="admin-surface__title">
+          <h2><i class="fas fa-plus-circle"></i> افزودن مقاله جدید</h2>
+          <p>عنوان، محتوا و در صورت نیاز تصویر شاخص خبر را تکمیل کنید.</p>
+        </div>
+      </header>
+      <div class="admin-surface__body">
+        <form method="POST" action="{{ url_for('admin.admin_manage_news') }}" enctype="multipart/form-data" class="admin-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+          <div class="form-group">
+            <label for="Title">عنوان مقاله</label>
+            <input type="text" id="Title" name="Title" required />
+          </div>
+
+          <div class="form-group">
+            <label for="Content">محتوای مقاله</label>
+            <textarea id="Content" name="Content" rows="6" required></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="TemplatePath">مسیر قالب اختصاصی (اختیاری)</label>
+            <input type="text" id="TemplatePath" name="TemplatePath" placeholder="مثال: custom_article.html" />
+            <p class="form-helper-text">در صورت نیاز می‌توانید فایل قالب مجزایی برای نمایش خبر معرفی کنید.</p>
+          </div>
+
+          <div class="form-group">
+            <label for="Image">تصویر مقاله (اختیاری)</label>
+            <input type="file" id="Image" name="Image" accept="image/png, image/jpeg, image/gif" class="upload-input" />
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-save"></i>
+              ذخیره مقاله
+            </button>
+          </div>
+        </form>
+      </div>
+    </article>
+
+    <article class="admin-surface">
+      <header class="admin-surface__header">
+        <div class="admin-surface__title">
+          <h2><i class="fas fa-list-alt"></i> لیست مقالات منتشر شده</h2>
+          <p>همه مقالات موجود به همراه امکان ویرایش یا حذف.</p>
+        </div>
+      </header>
+      <div class="admin-surface__body">
+        <div class="admin-table-wrapper">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>عنوان</th>
+                <th>تاریخ انتشار</th>
+                <th>عملیات</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for ArticleData in Articles %}
+              <tr>
+                <td>{{ ArticleData.Title }}</td>
+                <td dir="ltr">{{ ArticleData.PublishDate | formatdate | persian_digits }}</td>
+                <td class="admin-table__actions">
+                  <a href="{{ url_for('admin.admin_edit_news', article_id=ArticleData.NewsID) }}" class="btn btn-secondary btn-small">
+                    <i class="fas fa-edit"></i>
+                    ویرایش
+                  </a>
+                  <form
+                    method="POST"
+                    action="{{ url_for('admin.admin_delete_news', article_id=ArticleData.NewsID) }}"
+                  >
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <button
+                      type="submit"
+                      class="btn btn-danger btn-small delete-btn"
+                      data-modal-title="حذف مقاله"
+                      data-modal-body="آیا از حذف مقاله «{{ ArticleData.Title }}» اطمینان دارید؟"
+                      data-modal-confirm-text="بله، حذف کن"
+                      data-modal-confirm-class="btn-danger"
+                    >
+                      <i class="fas fa-trash-alt"></i>
+                      حذف
+                    </button>
+                  </form>
+                </td>
+              </tr>
+              {% else %}
+              <tr class="admin-table__empty">
+                <td colspan="3">
+                  <div class="admin-empty-state">
+                    <i class="fas fa-newspaper"></i>
+                    هنوز هیچ مقاله‌ای منتشر نشده است.
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </article>
+  </section>
 </div>
 {% endblock %}
