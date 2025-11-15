@@ -797,7 +797,7 @@ def create_team():
 
     form_context = utils.get_form_context()
     return render_template(
-        constants.client_html_names_data["create_team"], form_data=None, **form_context
+        constants.client_html_names_data["create_team"], form_data={}, **form_context
     )
 
 
