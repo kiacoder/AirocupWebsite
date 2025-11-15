@@ -6,25 +6,25 @@
     <nav class="AdminHeader__nav" id="admin-nav">
       <a
         href="{{ url_for('admin.admin_dashboard') }}"
-        class="{{ 'Active' if request.endpoint == 'admin.admin_dashboard' else '' }}"
+        class="{{ 'active' if request.endpoint == 'admin.admin_dashboard' else '' }}"
         >داشبورد</a
       >
       <a
         href="{{ url_for('admin.admin_clients_list') }}"
-        class="{{ 'Active' if request.endpoint == 'admin.admin_clients_list' else '' }}"
+        class="{{ 'active' if request.endpoint == 'admin.admin_clients_list' else '' }}"
         >کاربران</a
       >
       <a
         href="{{ url_for('admin.admin_manage_teams') }}"
-        class="{{ 'Active' if request.endpoint == 'admin.admin_manage_teams' else '' }}"
+        class="{{ 'active' if request.endpoint == 'admin.admin_manage_teams' else '' }}"
         >تیم‌ها</a
       >
       <a
         href="{{ url_for('admin.admin_manage_news') }}"
-        class="{{ 'Active' if request.endpoint == 'admin.admin_manage_news' else '' }}"
+        class="{{ 'active' if request.endpoint == 'admin.admin_manage_news' else '' }}"
         >اخبار</a
       >
-      <a href="{{ url_for('Global.logout') }}" class="Btn BtnSecondary">خروج</a>
+      <a href="{{ url_for('global.logout') }}" class="Btn BtnSecondary">خروج</a>
     </nav>
     <button
       class="AdminHeader__mobile-toggle"
