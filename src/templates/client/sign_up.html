@@ -44,19 +44,6 @@
         />
       </div>
 
-      <!-- EDUCATION -->
-      <div class="form-group">
-        <label for="education_level">مقطع تحصیلی <span class="required-star">*</span></label>
-        <select id="education_level" name="education_level" class="form-control" required>
-          <option value="" disabled {% if not form_values.education_level %}selected{% endif %}>انتخاب کنید...</option>
-          <option value="ابتدایی" {% if form_values.education_level == 'ابتدایی' %}selected{% endif %}>ابتدایی</option>
-          <option value="متوسطه اول" {% if form_values.education_level == 'متوسطه اول' %}selected{% endif %}>متوسطه اول</option>
-          <option value="متوسطه دوم" {% if form_values.education_level == 'متوسطه دوم' %}selected{% endif %}>متوسطه دوم</option>
-          <option value="دانشجویی" {% if form_values.education_level == 'دانشجویی' %}selected{% endif %}>دانشجویی</option>
-          <option value="آزاد" {% if form_values.education_level == 'آزاد' %}selected{% endif %}>آزاد</option>
-        </select>
-      </div>
-
       <!-- PASSWORD -->
       <div class="form-group">
         <label for="password">رمز عبور <span class="required-star">*</span></label>

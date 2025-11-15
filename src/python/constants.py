@@ -1,10 +1,9 @@
 "containing various constants used throughout the airocup application"
 
 import os
-import datetime
 from typing import Dict, Optional, Tuple
 from better_profanity import profanity
-import jdatetime 
+import jdatetime
 
 class Path:
     "Define All Paths Of Files"
@@ -1172,6 +1171,7 @@ class ForbiddenContent:
         ForbiddenContent._initialize_filter()
         return profanity.contains_profanity(text)
 
+
 class Date:
     "Date-related constants and methods for the application"
     persian_months = {
@@ -1255,7 +1255,6 @@ class Details:
 
 class Contact:
     "Contact information for airocup"
-
     phone = "09352117339"
     email_primary = "airocupiran@gmail.com"
     email_secondary = "ai90maharat@gmail.com"
@@ -1303,13 +1302,6 @@ contact_points_data = [
         "icon": "fab fa-instagram",
         "label": "اینستاگرام",
         "display": Contact.instagram,
-        "target": "_blank",
-    },
-    {
-        "href": f"https://{Contact.linked_in}",
-        "icon": "fab fa-linkedin",
-        "label": "لینکدین",
-        "display": "airocup LinkedIn",
         "target": "_blank",
     },
     {

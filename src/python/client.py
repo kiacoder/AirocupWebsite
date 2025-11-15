@@ -69,22 +69,14 @@ def signup():
         phone = fa_to_en(request.form.get("phone_number", "").strip())
         email = fa_to_en(request.form.get("email", "").strip().lower())
         password = request.form.get("password", "")
-        education_level = request.form.get("education_level", "").strip()
 
         form_values = {
             "phone_number": phone,
             "email": email,
-            "education_level": education_level,
         }
 
         response = None
-
-        if education_level not in constants.allowed_education:
-            flash("مقطع تحصیلی انتخاب‌شده نامعتبر است.", "error")
-            response = render_template(
-                constants.client_html_names_data["sign_up"], form_values=form_values
-            )
-        elif password != request.form.get("confirm_password", ""):
+        if password != request.form.get("confirm_password", ""):
             flash("رمز عبور و تکرار آن یکسان نیستند.", "error")
             response = render_template(
                 constants.client_html_names_data["sign_up"], form_values=form_values
@@ -116,7 +108,6 @@ def signup():
                         email=email,
                         password=hashed_password.decode("utf-8"),
                         registration_date=datetime.datetime.now(datetime.timezone.utc),
-                        education_level=education_level,
                         phone_verification_code=verification_code,
                         verification_code_timestamp=datetime.datetime.now(
                             datetime.timezone.utc

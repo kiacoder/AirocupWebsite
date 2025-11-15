@@ -79,7 +79,6 @@ class Client(Base):
         DateTime,
         default=lambda: datetime.datetime.now(datetime.timezone.utc),
     )
-    education_level: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     status: Mapped[EntityStatus] = mapped_column(
         sql_alchemy_enum(EntityStatus),
         default=EntityStatus.ACTIVE,
