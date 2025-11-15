@@ -1316,7 +1316,22 @@ def dashboard():
         team_ids = [team.team_id for team in teams]
         payment_statuses = {}
 
+        active_member_counts: dict[int, int] = {}
+
         if team_ids:
+            active_member_counts = dict(
+                db.query(
+                    models.Member.team_id,
+                    func.count(models.Member.member_id),
+                )
+                .filter(
+                    models.Member.team_id.in_(team_ids),
+                    models.Member.status == models.EntityStatus.ACTIVE,
+                )
+                .group_by(models.Member.team_id)
+                .all()
+            )
+
             subquery = (
                 select(
                     models.Payment.team_id,
@@ -1344,6 +1359,11 @@ def dashboard():
 
         for team in teams:
             setattr(team, "last_payment_status", payment_statuses.get(team.team_id))
+            setattr(
+                team,
+                "active_member_count",
+                active_member_counts.get(team.team_id, 0),
+            )
 
     return render_template(
         constants.client_html_names_data["dashboard"],
