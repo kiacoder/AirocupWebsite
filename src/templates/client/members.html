@@ -30,6 +30,30 @@ team.team_name }}{% endblock %} {% block body %}
         اعضای فعلی ({{ members|length | persian_digits }} از {{
         app_config.max_members_per_team | persian_digits }})
       </h2>
+
+      <div
+        style="
+          padding: 0 1.5rem 1rem;
+          border-bottom: 1px solid var(--color-border-muted);
+        "
+      >
+        <span style="font-weight: 600; color: var(--color-text-muted)"
+          >مقطع تحصیلی (لیگ):</span
+        >
+        {% if team.league_one %}
+        <strong style="color: var(--color-primary)"
+          >{{ team.league_one.name }}</strong
+        >
+        {% if team.league_two %}
+        <span style="color: var(--color-text-muted)">&</span>
+        <strong style="color: var(--color-primary)"
+          >{{ team.league_two.name }}</strong
+        >
+        {% endif %} {% else %}
+        <strong style="color: var(--color-error)">هنوز انتخاب نشده</strong>
+        {% endif %}
+      </div>
+
       <div class="user-table-wrapper">
         <table class="user-table">
           <thead>
@@ -102,7 +126,26 @@ team.team_name }}{% endblock %} {% block body %}
       </div>
     </div>
 
-    {% if members|length < app_config.max_members_per_team %}
+    {% if not team.league_one_id %}
+    <div class="alert alert--warning" role="alert" style="text-align: center">
+      <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+      <p style="font-weight: 600; font-size: 1.1rem; margin-top: 0.5rem">
+        مرحله بعد: انتخاب مقطع تحصیلی
+      </p>
+      <p>
+        برای افزودن اعضا، ابتدا باید حداقل یک لیگ (مقطع تحصیلی) برای تیم خود
+        انتخاب کنید.
+      </p>
+      <a
+        href="{{ url_for('client.select_league', team_id=team.team_id) }}"
+        class="btn btn-primary"
+        style="margin-top: 1rem"
+      >
+        <i class="fas fa-trophy"></i> برو به صفحه انتخاب لیگ
+      </a>
+    </div>
+
+    {% elif members|length < app_config.max_members_per_team %}
     <div
       class="form-container"
       id="addMemberFormContainer"
@@ -128,7 +171,6 @@ team.team_name }}{% endblock %} {% block body %}
       </form>
     </div>
     {% endif %}
-
     <div style="text-align: center; margin-bottom: 2rem">
       <a href="{{ url_for('client.dashboard') }}" class="btn btn-secondary">
         <i class="fas fa-arrow-left"></i> بازگشت به داشبورد

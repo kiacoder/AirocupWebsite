@@ -55,29 +55,41 @@ def is_file_allowed(file_stream: IO[bytes]) -> bool:
         file_stream.seek(0)
 
 
-def check_age_against_league(birth_date: datetime.date, league: models.League) -> Tuple[bool, Optional[str]]:
+def check_age_against_league(
+    birth_date: datetime.date, league: models.League
+) -> Tuple[bool, Optional[str]]:
     """Checks if a member's age is compatible with a given league based on the sketch rules."""
 
     # Define rules: Elementary(<=12), Middle 1(<=15), Middle 2(<=18), Adult (>18)
-    MAX_AGE_MAP = {1: 12, 2: 15, 3: 18} # Assuming 1, 2, 3 are the youth league IDs
-    MIN_AGE_MAP = {4: 18, 5: 18} # Assuming 4 and 5 are the adult league IDs
+    MAX_AGE_MAP = {1: 12, 2: 15, 3: 18}  # Assuming 1, 2, 3 are the youth league IDs
+    MIN_AGE_MAP = {4: 18, 5: 18}  # Assuming 4 and 5 are the adult league IDs
 
     try:
         today = datetime.date.today()
         # Calculate age as of today (simple calculation)
-        age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+        age = (
+            today.year
+            - birth_date.year
+            - ((today.month, today.day) < (birth_date.month, birth_date.day))
+        )
 
         league_id = league.league_id
 
         if league_id in MAX_AGE_MAP:
             max_age = MAX_AGE_MAP[league_id]
             if age > max_age:
-                return False, f"سن عضو ({age} سال) برای لیگ «{league.name}» (حداکثر {max_age} سال) بیش از حد مجاز است."
+                return (
+                    False,
+                    f"سن عضو ({age} سال) برای لیگ «{league.name}» (حداکثر {max_age} سال) بیش از حد مجاز است.",
+                )
 
         if league_id in MIN_AGE_MAP:
             min_age = MIN_AGE_MAP[league_id]
             if age <= min_age:
-                return False, f"سن عضو ({age} سال) برای لیگ «{league.name}» (حداقل {min_age} سال) کمتر از حد مجاز است."
+                return (
+                    False,
+                    f"سن عضو ({age} سال) برای لیگ «{league.name}» (حداقل {min_age} سال) کمتر از حد مجاز است.",
+                )
 
         return True, None
     except Exception as e:
@@ -391,7 +403,9 @@ def create_member_from_form_data(
     }, None
 
 
-def validate_member_for_resolution(member: models.Member, education_level: str) -> dict:
+def validate_member_for_resolution(
+    member: models.Member, team_league_id: Optional[int]
+) -> dict:
     "Validate a member's data for missing or invalid fields"
     problems: dict[str, list[str]] = {"missing": [], "invalid": []}
     if member.name is None:
@@ -405,6 +419,9 @@ def validate_member_for_resolution(member: models.Member, education_level: str) 
     if member.birth_date is None:
         problems["missing"].append("birth_date")
 
+    # --- FIX IS HERE ---
+    # We now check age against the team's league ID, not a client attribute
+
     if member.birth_date is not None:
         try:
             today = datetime.date.today()
@@ -417,6 +434,7 @@ def validate_member_for_resolution(member: models.Member, education_level: str) 
                 )
             )
 
+            # Check general roles first
             if member.role == models.MemberRole.LEADER and not (18 <= age <= 70):
                 problems["invalid"].append(
                     f"سن سرپرست باید بین 18 تا 70 باشد (سن فعلی: {age})"
@@ -426,15 +444,31 @@ def validate_member_for_resolution(member: models.Member, education_level: str) 
                     f"سن مربی باید بین 16 تا 70 باشد (سن فعلی: {age})"
                 )
 
-            if education_level in constants.education_age_ranges:
-                min_age, max_age = constants.education_age_ranges[education_level]
-                if not (min_age <= age <= max_age):
-                    problems["invalid"].append(
-                        f"سن عضو ({age}) با مقطع تحصیلی ({education_level}) "
-                        f"مطابقت ندارد. محدوده مجاز: {min_age}-{max_age} سال."
-                    )
+            # Now check member age against league rules (from your sketch)
+            if member.role == models.MemberRole.MEMBER:
+                # Assumes league IDs 1, 2, 3 are youth, 4, 5 are adult
+                MAX_AGE_MAP = {1: 12, 2: 15, 3: 18}  # ابتدایی, متوسطه ۱, متوسطه ۲
+                MIN_AGE_MAP = {4: 18, 5: 18}  # دانشجویی, آزاد
+
+                if team_league_id in MAX_AGE_MAP:
+                    max_age = MAX_AGE_MAP[team_league_id]
+                    if age > max_age:
+                        problems["invalid"].append(
+                            f"سن عضو ({age} سال) برای این مقطع (حداکثر {max_age} سال) مجاز نیست."
+                        )
+                elif team_league_id in MIN_AGE_MAP:
+                    min_age = MIN_AGE_MAP[team_league_id]
+                    if age <= min_age:  # Must be > 18
+                        problems["invalid"].append(
+                            f"سن عضو ({age} سال) برای این مقطع (حداقل {min_age + 1} سال) مجاز نیست."
+                        )
+                elif not team_league_id:
+                    # This is also a problem: the team has no league
+                    problems["missing"].append("team_league")
+
         except (ValueError, AttributeError):
             problems["invalid"].append("تاریخ تولد نامعتبر است")
+    # --- END OF FIX ---
 
     return problems
 
@@ -460,13 +494,17 @@ def check_for_data_completion_issues(db: Session, client_id: int) -> Tuple[bool,
     problematic_members = {}
     needs_resolution = False
     for team in teams:
+        # --- FIX IS HERE ---
+        # Get the team's league ID, (the "Educational Level")
+        team_league_id = team.league_one_id
+
         for member in filter(
             lambda m: m.status == models.EntityStatus.ACTIVE, team.members
         ):
-            problems = validate_member_for_resolution(
-                member, str(client.education_level)
-            )
+            # Pass the team's league ID to the validator
+            problems = validate_member_for_resolution(member, team_league_id)
             if problems["missing"] or problems["invalid"]:
+                # --- END OF FIX ---
                 problematic_members[member.member_id] = problems
                 needs_resolution = True
 
