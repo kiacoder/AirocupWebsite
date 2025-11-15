@@ -193,6 +193,11 @@
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
           <p class="upload-instruction">
             پس از واریز وجه، لطفاً <strong>تصویر رسید پرداخت</strong> را بارگذاری کنید.
+            {% if is_new_member_payment %}
+            <span>
+              توجه: برای اعضای جدید، بارگذاری رسید ۹,۵۰۰,۰۰۰ ریالی هر لیگ الزامی است و بدون آن ثبت‌نام آنان انجام نمی‌شود.
+            </span>
+            {% endif %}
           </p>
           <div class="form-group">
             <label for="receipt" class="btn btn-secondary file-upload-btn">

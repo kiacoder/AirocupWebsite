@@ -603,10 +603,14 @@ def admin_add_member(team_id):
                 flash(error_message, "error")
             else:
 
-                if database.check_if_team_is_paid(db, team_id):
+                has_any_payment = database.has_team_made_any_payment(db, team_id)
+
+                if has_any_payment:
                     team.unpaid_members_count = (team.unpaid_members_count or 0) + 1
                     flash(
-                        f"عضو «{new_member.name}» اضافه شد. لطفاً هزینه عضو جدید را برای فعال‌سازی پرداخت نمایید.",
+                        "عضو «{name}» اضافه شد. چون این تیم قبلاً رسید پرداختی ارسال کرده است، باید هزینه ۹,۵۰۰,۰۰۰ ریال به ازای هر لیگ برای عضو جدید پرداخت و رسید آن بارگذاری شود تا ثبت‌نام کامل گردد.".format(
+                            name=new_member.name
+                        ),
                         "warning",
                     )
                 else:

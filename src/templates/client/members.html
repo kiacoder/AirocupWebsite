@@ -9,18 +9,21 @@ team.team_name }}{% endblock %} {% block body %}
       </p>
     </div>
 
-    {% if is_paid and team.unpaid_members_count > 0 %}
+    {% if has_any_payment and team.unpaid_members_count > 0 %}
     <div class="alert alert--warning" role="alert">
       <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
       <p>
         <strong>توجه:</strong>
         شما {{ team.unpaid_members_count | persian_digits }} عضو جدید اضافه
-        کرده‌اید که هزینه آن‌ها پرداخت نشده است. لطفاً برای نهایی کردن ثبت‌نام
+        کرده‌اید که به دلیل ارسال رسید پرداخت قبلی (در انتظار تایید / تایید
+        شده / رد شده) فقط با پرداخت مبلغ
+        <strong>۹,۵۰۰,۰۰۰ ریال برای هر لیگ و هر عضو</strong>
+        نهایی می‌شوند. لطفاً برای بارگذاری رسید پرداخت جدید و تکمیل ثبت‌نام
         آن‌ها به
         <a href="{{ url_for('client.payment', team_id=team.team_id) }}"
           >صفحه پرداخت</a
         >
-        مراجعه کنید.
+        مراجعه کنید. بدون بارگذاری رسید جدید ثبت‌نام این اعضا تکمیل نخواهد شد.
       </p>
     </div>
     {% endif %}
