@@ -1,7 +1,4 @@
-{% extends "global/base.html" %}
-
-{% block title %}ایجاد تیم جدید{% endblock %}
-
+{% extends "global/base.html" %} {% block title %}ایجاد تیم جدید{% endblock %}
 {% block body %}
 <div class="container" style="margin: 2rem auto">
   <div class="form-container form-container--medium">
@@ -71,21 +68,18 @@
         >
           ۲. اطلاعات سرپرست تیم
         </legend>
-        <p class="form-subtitle" style="font-size: 0.9rem; margin-bottom: 1.5rem">
-          اولین عضوی که ثبت می‌کنید به عنوان سرپرست تیم شناخته می‌شود.
-        </p>
-        {% with
-          id_prefix='add-',
-          member_data=None,
-          form_data=request.form
-        %}
-          {% include 'client/member_form_fields.html' %}
-        {% endwith %}
+        <p
+          class="form-subtitle"
+          style="font-size: 0.9rem; margin-bottom: 1.5rem"
+        ></p>
+        {% with id_prefix='add-', member_data=None, form_data=request.form %} {%
+        include 'client/member_form_fields.html' %} {% endwith %}
       </fieldset>
 
       <div class="form-group" style="margin-top: 2rem">
         <button type="submit" class="btn btn-primary btn--full-width">
-          <i class="fas fa-check" style="margin-left: 8px"></i> ایجاد تیم و ادامه
+          <i class="fas fa-check" style="margin-left: 8px"></i> ایجاد تیم و
+          ادامه
         </button>
       </div>
     </form>
@@ -113,20 +107,17 @@
     </div>
   </div>
 </div>
-{% endblock %}
-
-{% block scripts %}
-  {{ super() }}
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const form = document.getElementById("create-team-form");
-      if (!form || !window.airocupApp) return;
-      try {
-        window.airocupApp.formHelpers.initializeDynamicSelects(form);
-        window.airocupApp.formHelpers.setupDatePicker(form);
-      } catch (error) {
-        console.error("Failed to initialize create team form:", error);
-      }
-    });
-  </script>
+{% endblock %} {% block scripts %} {{ super() }}
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const form = document.getElementById("create-team-form");
+    if (!form || !window.airocupApp) return;
+    try {
+      window.airocupApp.formHelpers.initializeDynamicSelects(form);
+      window.airocupApp.formHelpers.setupDatePicker(form);
+    } catch (error) {
+      console.error("Failed to initialize create team form:", error);
+    }
+  });
+</script>
 {% endblock %}

@@ -1261,7 +1261,6 @@ class Contact:
     email_secondary = "ai90maharat@gmail.com"
     website = "https://airocup.org"
     instagram = "@airo.cup"
-    linked_in = "linkedin.com/in/airo-cup-آیروکاپ-5b4818231"
     bale = "https://ble.ir/join/8VwzjR1U3f"
     aparat_channel = "https://www.aparat.com/Kia_coder"
     aparat_playlist = "https://www.aparat.com/playlist/22114839"

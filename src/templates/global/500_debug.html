@@ -1,28 +1,28 @@
 {% extends "global/base.html" %} {% block Title %}خطای سرور (500) - حالت دیباگ{%
 endblock %} {% block BodyClass %}ErrorDebug{% endblock %} {% block Body %}
-<main class="Container ErrorDebugContainer">
-  <h1 class="ErrorDebugTitle">
+<main class="container error-debug-container">
+  <h1 class="error-debug-title">
     <i class="fas fa-bug" aria-hidden="true"></i>
     خطای داخلی سرور (500)
   </h1>
-  <p class="ErrorDebugSubtitle">
+  <p class="error-debug-subtitle">
     یک استثنا (Exception) در سرور رخ داده است. این صفحه فقط در حالت دیباگ نمایش
     داده می‌شود.
   </p>
 
-  <a href="{{ url_for('global.index') }}" class="Btn BtnPrimary">
+  <a href="{{ url_for('global.index') }}" class="btn btn-primary">
     <i class="fas fa-home" aria-hidden="true"></i> بازگشت به صفحه اصلی
   </a>
 
-  <div class="TracebackWrapper">
+  <div class="traceback-wrapper">
     <button
       id="copyTracebackBtn"
-      class="Btn BtnSecondary"
+      class="btn btn-secondary"
       title="کپی کردن متن خطا"
     >
       <i class="fas fa-copy" aria-hidden="true"></i> کپی کردن خطا
     </button>
-    <div class="TracebackArea">
+    <div class="traceback-area">
       <pre id="tracebackContent">{{ error }}</pre>
     </div>
   </div>
