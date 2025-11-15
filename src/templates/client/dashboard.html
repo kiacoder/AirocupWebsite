@@ -231,6 +231,18 @@
             if team.league_two %}<br />و {{ team.league_two.name }}{% endif %}
           </strong>
         </div>
+        <div class="team-card-meta-item">
+          <span class="team-card-meta-label"
+            ><i class="fas fa-graduation-cap"></i> مقطع تحصیلی</span
+          >
+          {% if team.education_level %}
+          <strong class="team-card-meta-value">{{ team.education_level }}</strong>
+          {% else %}
+          <strong class="team-card-meta-value team-card-meta-value--muted"
+            >انتخاب نشده</strong
+          >
+          {% endif %}
+        </div>
         {% if team.average_age and team.average_age > 0 %}
         <div class="team-card-meta-item">
           <span class="team-card-meta-label"
@@ -279,16 +291,16 @@
           is_league_selection_disabled
           %}
           aria-disabled="true"
-          title="امکان تغییر لیگ پس از تایید پرداخت وجود ندارد."
+          title="امکان تغییر مقطع تحصیلی و لیگ پس از تایید پرداخت وجود ندارد."
           {%
           endif
           %}
         >
-          <i class="fas fa-trophy"></i> انتخاب لیگ
+          <i class="fas fa-trophy"></i> انتخاب مقطع و لیگ
         </a>
 
         {% set is_ready_for_payment = team.members|length > 0 and
-        team.league_one_id %}
+        team.league_one_id and team.education_level %}
         <a
           href="{{ url_for('client.payment', team_id=team.team_id) if is_ready_for_payment else '#' }}"
           class="btn btn-success {% if not is_ready_for_payment %}btn-disabled{% endif %}"
@@ -298,7 +310,7 @@
           is_ready_for_payment
           %}
           aria-disabled="true"
-          title="برای پرداخت، تیم باید حداقل یک عضو و یک لیگ انتخاب شده داشته باشد."
+          title="برای پرداخت، تیم باید حداقل یک عضو فعال، مقطع تحصیلی و یک لیگ انتخاب شده داشته باشد."
           {%
           endif
           %}
