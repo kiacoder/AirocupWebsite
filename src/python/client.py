@@ -186,7 +186,10 @@ def resolve_data_issues():
         client = (
             db.query(models.Client)
             .options(
-                subqueryload(models.Client.teams).subqueryload(models.Team.members)
+                subqueryload(models.Client.teams)
+                .subqueryload(models.Team.members)
+                .joinedload(models.Member.city)
+                .joinedload(models.City.province)
             )
             .filter(models.Client.client_id == session.get("client_id_for_resolution"))
             .first()
