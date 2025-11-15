@@ -2541,12 +2541,24 @@ select option {
   top: 0;
   width: 100%;
   z-index: 1000;
-  background-color: var(--color-header);
+  background: linear-gradient(135deg, rgba(25, 31, 89, 0.92), rgba(87, 36, 124, 0.9));
+  backdrop-filter: blur(14px);
   box-shadow: var(--shadow-md);
   height: var(--site-header-height);
   padding: 0.5rem 0;
   font-family: var(--font-persian);
   color: var(--color-surface);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.site-header::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at top right, rgba(247, 166, 0, 0.22), transparent 65%);
+  pointer-events: none;
+  z-index: -1;
 }
 
 /* make sure logo area can align correctly in header */
@@ -2709,10 +2721,11 @@ MOBILE MENU & HAMBURGER
 
 /* hamburger button */
 .mobile-menu-btn {
-  background: transparent;
-  border: none;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 14px;
   cursor: pointer;
-  padding: 0.25rem;
+  padding: 0.35rem 0.45rem;
   margin-left: 0.5rem;
   display: inline-flex;
   align-items: center;
@@ -2720,6 +2733,14 @@ MOBILE MENU & HAMBURGER
   z-index: 2015;
   color: var(--color-surface);
   font-size: 1.5rem;
+  transition: background 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
+}
+
+.mobile-menu-btn:hover,
+.mobile-menu-btn:focus-visible {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.35);
+  transform: translateY(-1px);
 }
 
 /* hamburger visual */
