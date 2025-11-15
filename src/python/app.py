@@ -55,6 +55,16 @@ flask_app.config.update(
     ALLOWED_EXTENSIONS=list(constants.AppConfig.allowed_extensions),
 )
 
+# Ensure the database schema exists before serving any requests. The call to
+# ``create_all`` is idempotent, so running it on every startup keeps new
+# deployments from failing with missing-table errors (e.g. ``clients`` during
+# login) while leaving existing data untouched. Populate required lookup tables
+# only when they are empty.
+database.create_database()
+with database.get_db_session() as _db_bootstrap_session:
+    database.populate_geography_data(_db_bootstrap_session)
+    database.populate_leagues(_db_bootstrap_session)
+
 flask_app.register_blueprint(admin.admin_blueprint)
 flask_app.register_blueprint(client.client_blueprint)
 flask_app.register_blueprint(globals_file.global_blueprint)
@@ -63,9 +73,37 @@ for path in [
     flask_app.config["UPLOAD_FOLDER_RECEIPTS"],
     flask_app.config["UPLOAD_FOLDER_DOCUMENTS"],
     flask_app.config["UPLOAD_FOLDER_NEWS"],
+    constants.Path.guideline_dir,
     os.path.dirname(constants.Path.database_dir),
 ]:
     os.makedirs(path, exist_ok=True)
+
+
+def _compute_static_version_token() -> str:
+    """Return a cache-busting token derived from core static asset mtimes."""
+
+    tracked_assets = [
+        constants.Path.css_style,
+        constants.Path.js_main,
+        "js/socket.io.min.js",
+        "js/chart.umd.min.js",
+    ]
+
+    mtimes = []
+    for rel_path in tracked_assets:
+        absolute_path = os.path.join(constants.Path.static_dir, rel_path)
+        try:
+            mtimes.append(int(os.path.getmtime(absolute_path)))
+        except OSError:
+            continue
+
+    if mtimes:
+        return str(max(mtimes))
+
+    return str(int(datetime.datetime.now().timestamp()))
+
+
+STATIC_VERSION_TOKEN = _compute_static_version_token()
 
 
 @flask_app.template_filter("formatdate")
@@ -122,6 +160,7 @@ def inject_global_variables():
         "technical_committee_members": constants.technical_committee_members,
         "homepage_sponsors": constants.homepage_sponsors_data,
         "app_version": config.app_version,
+        "static_version": STATIC_VERSION_TOKEN,
     }
 
 
@@ -278,17 +317,22 @@ def to_iso_format_filter(date_object):
 
 def get_distribution_query(db, entity, join_chain, label="count", limit=10):
     """Generic helper to build distribution queries for City/Province/etc."""
+
+    query = db.query(
+        entity.name.label("name"),
+        func.count(models.Member.member_id).label(label),
+    ).select_from(entity)
+
+    for join_target, on_clause in join_chain:
+        query = query.join(join_target, on_clause)
+
     query = (
-        db.query(
-            entity.name.label("name"),
-            func.count(models.Member.member_id).label(label),
-        )
-        .join(*join_chain)
-        .filter(models.Member.status == models.EntityStatus.ACTIVE)
+        query.filter(models.Member.status == models.EntityStatus.ACTIVE)
         .group_by(entity.name)
         .order_by(func.count(models.Member.member_id).desc())
         .limit(limit)
     )
+
     return query.all()
 
 
@@ -300,7 +344,9 @@ def api_city_distribution():
         city_data = get_distribution_query(
             db,
             models.City,
-            [models.City, models.Member.city_id == models.City.city_id],
+            [
+                (models.Member, models.Member.city_id == models.City.city_id),
+            ],
         )
 
     return jsonify(
@@ -320,11 +366,8 @@ def api_province_distribution():
             db,
             models.Province,
             [
-                (models.City, models.Member.city_id == models.City.city_id),
-                (
-                    models.Province,
-                    models.City.province_id == models.Province.province_id,
-                ),
+                (models.City, models.City.province_id == models.Province.province_id),
+                (models.Member, models.Member.city_id == models.City.city_id),
             ],
         )
 
