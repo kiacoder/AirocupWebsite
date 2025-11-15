@@ -1,151 +1,207 @@
-{% extends "Global/Base.html" %}
+{% extends "global/base.html" %}
 
-{% block Title %}مدیریت کاربران | پنل آیروکاپ{% endblock %}
+{% block title %}مدیریت کاربران | پنل آیروکاپ{% endblock %}
 
-{% block Body %}
-<div class="Container">
-  <div class="PageHeader">
-    <h1 class="SectionTitle">مدیریت کاربران</h1>
-    <p class="FormSubtitle">افزودن و مدیریت تمام کاربران ثبت شده در سیستم.</p>
-  </div>
-
-  <div class="Toolbar">
-    <button class="Btn BtnPrimary" data-modal-target="addClientModal">
-      <i class="fas fa-plus"></i> افزودن کاربر جدید
-    </button>
-    <div class="SearchInputGroup">
-      <i class="fas fa-search"></i>
-      <input type="search" id="ClientSearchInput" class="FormControl" placeholder="جستجو بر اساس ایمیل یا شماره تماس..." aria-label="جستجوی کاربران" />
+{% block body %}
+<div class="admin-page">
+  <header class="admin-page__header">
+    <div class="admin-page__title">
+      <h1>مدیریت کاربران</h1>
+      <p class="admin-page__subtitle">
+        افزودن، جستجو و مدیریت تمام کاربران ثبت‌نام شده در سامانه آیروکاپ.
+      </p>
     </div>
-  </div>
-
-  <div class="Card Card--table">
-    <h2 class="Card__header"><i class="fas fa-users"></i> لیست کاربران</h2>
-    <div class="UserTableWrapper">
-      <table class="UserTable" id="clients-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>ایمیل</th>
-            <th>شماره تماس</th>
-            <th>تاریخ ثبت نام</th>
-            <th class="ActionsHeader">عملیات</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for ClientData in Clients %}
-          <tr>
-            <td>#{{ ClientData.ClientID | persian_digits }}</td>
-            <td dir="ltr">{{ ClientData.Email }}</td>
-            <td dir="ltr">{{ ClientData.PhoneNumber | persian_digits }}</td>
-            <td>
-              {{ ClientData.RegistrationDate | formatdate | persian_digits }}
-            </td>
-            <td class="Actions">
-              <a href="{{ url_for('Admin.AdminManageClient', ClientID=ClientData.ClientID) }}" class="Btn BtnPrimary">
-                <i class="fas fa-tasks"></i> مدیریت
-              </a>
-              <form method="POST" action="{{ url_for('Admin.AdminDeleteClient', ClientID=ClientData.ClientID) }}">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                <button type="button" class="Btn BtnDanger DeleteBtn" data-modal-title="تایید آرشیو کاربر" data-modal-text="آیا از آرشیو کردن کاربر {{ ClientData.Email }} اطمینان دارید؟" data-modal-confirm="بله، آرشیو کن">
-                  <i class="fas fa-archive"></i> آرشیو
-                </button>
-              </form>
-            </td>
-          </tr>
-          {% else %}
-          <tr class="EmptyStateRow">
-            <td colspan="5" class="EmptyState">
-              <i class="fas fa-users EmptyState__icon"></i>
-              هیچ کاربری برای نمایش یافت نشد.
-            </td>
-          </tr>
-          {% endfor %}
-          <tr id="NoResultsMessage" class="EmptyStateRow" style="display: none">
-            <td colspan="5" class="EmptyState">
-              <i class="fas fa-search EmptyState__icon"></i>
-              هیچ کاربری با مشخصات وارد شده یافت نشد.
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="admin-page__actions">
+      <button class="btn btn-primary" data-modal-target="addClientModal">
+        <i class="fas fa-user-plus"></i>
+        افزودن کاربر جدید
+      </button>
     </div>
+  </header>
 
-    {% if TotalPagesCount > 1 %}
-    <div class="Pagination">
-      {% if CurrentPage > 1 %}
-      <a href="{{ url_for('admin.admin_clients_list', page=CurrentPage-1) }}" class="Btn BtnSecondary">&laquo; قبلی</a>
-      {% endif %}
-      <span class="Pagination__info">صفحه {{ CurrentPage | persian_digits }} از {{ TotalPagesCount | persian_digits }}</span>
-      {% if CurrentPage < TotalPagesCount %}
-      <a href="{{ url_for('admin.admin_clients_list', page=CurrentPage+1) }}" class="Btn BtnSecondary">بعدی &raquo;</a>
-      {% endif %}
-    </div>
-    {% endif %}
-  </div>
+  <section class="admin-page__section">
+    <article class="admin-surface">
+      <header class="admin-surface__header">
+        <div class="admin-surface__title">
+          <h2><i class="fas fa-users"></i> لیست کاربران</h2>
+          <p>نمای کلی از همه حساب‌های فعال به همراه ابزارهای سریع جستجو و مدیریت.</p>
+        </div>
+        <div class="admin-toolbar">
+          <div class="admin-toolbar__search">
+            <i class="fas fa-search" aria-hidden="true"></i>
+            <input
+              type="search"
+              id="clientSearchInput"
+              placeholder="جستجو بر اساس ایمیل، شماره تماس یا شناسه..."
+              aria-label="جستجوی کاربران"
+            />
+          </div>
+        </div>
+      </header>
+
+      <div class="admin-surface__body">
+        <div class="admin-table-wrapper">
+          <table class="admin-table" id="clients-table">
+            <thead>
+              <tr>
+                <th>شناسه</th>
+                <th>ایمیل</th>
+                <th>شماره تماس</th>
+                <th>تاریخ ثبت‌نام</th>
+                <th>عملیات</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for ClientData in Clients %}
+              <tr>
+                <td>#{{ ClientData.client_id | persian_digits }}</td>
+                <td dir="ltr">{{ ClientData.email }}</td>
+                <td dir="ltr">{{ ClientData.phone_number | persian_digits }}</td>
+                <td>{{ ClientData.registration_date | formatdate | persian_digits }}</td>
+                <td class="admin-table__actions">
+                  <a
+                    href="{{ url_for('admin.admin_manage_client', client_id=ClientData.client_id) }}"
+                    class="btn btn-primary btn-small"
+                  >
+                    <i class="fas fa-tasks"></i>
+                    مدیریت
+                  </a>
+                  <form
+                    method="POST"
+                    action="{{ url_for('admin.admin_delete_client', client_id=ClientData.client_id) }}"
+                  >
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <button
+                      type="submit"
+                      class="btn btn-danger btn-small delete-btn"
+                      data-modal-title="تایید آرشیو کاربر"
+                      data-modal-body="آیا از آرشیو کردن کاربر <strong>{{ ClientData.email }}</strong> اطمینان دارید؟"
+                      data-modal-confirm-text="بله، آرشیو کن"
+                      data-modal-confirm-class="btn-danger"
+                    >
+                      <i class="fas fa-archive"></i>
+                      آرشیو
+                    </button>
+                  </form>
+                </td>
+              </tr>
+              {% else %}
+              <tr class="admin-table__empty">
+                <td colspan="5">
+                  <div class="admin-empty-state">
+                    <i class="fas fa-users"></i>
+                    هیچ کاربری برای نمایش یافت نشد.
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+              <tr id="noResultsMessage" class="admin-table__empty" style="display: none">
+                <td colspan="5">
+                  <div class="admin-empty-state">
+                    <i class="fas fa-search"></i>
+                    هیچ کاربری با مشخصات وارد شده یافت نشد.
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {% if TotalPagesCount > 1 %}
+        <div class="admin-pagination" role="navigation" aria-label="صفحه‌بندی کاربران">
+          <div class="admin-pagination__info">
+            صفحه {{ CurrentPage | persian_digits }} از {{ TotalPagesCount | persian_digits }}
+          </div>
+          <div class="admin-pagination__controls">
+            {% if CurrentPage > 1 %}
+            <a href="{{ url_for('admin.admin_clients_list', page=CurrentPage-1) }}" class="btn btn-secondary">
+              <i class="fas fa-arrow-right"></i>
+              قبلی
+            </a>
+            {% endif %}
+            {% if CurrentPage < TotalPagesCount %}
+            <a href="{{ url_for('admin.admin_clients_list', page=CurrentPage+1) }}" class="btn btn-secondary">
+              بعدی
+              <i class="fas fa-arrow-left"></i>
+            </a>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </article>
+  </section>
 </div>
 
-{# "Add Client" Modal #}
-<div id="addClientModal" class="Modal" aria-hidden="true">
-  <div class="ModalContent">
-    <button class="CloseBtn" data-dismiss="modal" aria-label="بستن">&times;</button>
-    <h2 class="FormTitle">افزودن کاربر جدید</h2>
-    <form action="{{ url_for('Admin.AdminAddClient') }}" method="POST" id="addClientForm">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-      <div class="FormGroup">
-        <label for="addEmail">ایمیل</label>
-        <input type="email" id="addEmail" name="Email" required dir="ltr" class="FormControl" pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$" title="لطفا یک ایمیل معتبر وارد کنید" />
+<div
+  id="addClientModal"
+  class="modal modal--admin"
+  aria-hidden="true"
+  role="dialog"
+  aria-labelledby="addClientModalTitle"
+>
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <button class="modal-close" data-dismiss="modal" aria-label="بستن">&times;</button>
+      <header class="modal-header">
+        <h2 id="addClientModalTitle" class="modal-title">افزودن کاربر جدید</h2>
+      </header>
+      <div class="modal-body">
+        <form action="{{ url_for('admin.admin_add_client') }}" method="POST" id="addClientForm" class="admin-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+          <div class="form-group">
+            <label for="addEmail">ایمیل</label>
+            <input
+              type="email"
+              id="addEmail"
+              name="Email"
+              required
+              dir="ltr"
+              pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+              title="لطفا یک ایمیل معتبر وارد کنید"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="addPhone">شماره تلفن</label>
+            <input
+              type="tel"
+              id="addPhone"
+              name="PhoneNumber"
+              required
+              dir="ltr"
+              pattern="09[0-9]{9}"
+              title="لطفا یک شماره تلفن معتبر وارد کنید (09xxxxxxxxx)"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="addPassword">رمز عبور موقت</label>
+            <input
+              type="password"
+              id="addPassword"
+              name="Password"
+              required
+              dir="ltr"
+              minlength="8"
+              title="رمز عبور باید حداقل ۸ کاراکتر باشد"
+            />
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-save"></i>
+              ذخیره کاربر
+            </button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">
+              <i class="fas fa-times"></i>
+              انصراف
+            </button>
+          </div>
+        </form>
       </div>
-      <div class="FormGroup">
-        <label for="addPhone">شماره تلفن</label>
-        <input type="tel" id="addPhone" name="PhoneNumber" required dir="ltr" class="FormControl" pattern="09[0-9]{9}" title="لطفا یک شماره تلفن معتبر وارد کنید (09xxxxxxxxx)" />
-      </div>
-      <div class="FormGroup">
-        <label for="addPassword">رمز عبور موقت</label>
-        <input type="password" id="addPassword" name="Password" required dir="ltr" class="FormControl" minlength="8" title="رمز عبور باید حداقل ۸ کاراکتر باشد" />
-      </div>
-      <div class="FormGroup">
-        <button type="submit" class="Btn BtnPrimary Btn--fullWidth">
-          <i class="fas fa-save"></i> ذخیره کاربر
-        </button>
-      </div>
-    </form>
+    </div>
   </div>
 </div>
-{% endblock %}
-
-{% block Scripts %}
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const searchInput = document.getElementById("ClientSearchInput");
-    const clientsTable = document.getElementById("clients-table");
-    const noResultsMessage = document.getElementById("NoResultsMessage");
-
-    if (searchInput && clientsTable) {
-      searchInput.addEventListener("input", function () {
-        const searchTerm = this.value.toLowerCase().trim();
-        const rows = clientsTable.querySelectorAll("tbody tr:not(.EmptyStateRow)");
-        let hasResults = false;
-
-        rows.forEach((row) => {
-          const email = row.cells[1].textContent.toLowerCase();
-          const phone = row.cells[2].textContent.toLowerCase();
-
-          if (email.includes(searchTerm) || phone.includes(searchTerm)) {
-            row.style.display = "";
-            hasResults = true;
-          } else {
-            row.style.display = "none";
-          }
-        });
-
-        noResultsMessage.style.display = hasResults ? "none" : "";
-      });
-    }
-
-    if (typeof ModalHelpers !== "undefined") {
-      ModalHelpers.init();
-    }
-  });
-</script>
 {% endblock %}

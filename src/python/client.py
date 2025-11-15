@@ -182,11 +182,15 @@ def signup():
 @auth.resolution_required
 def resolve_data_issues():
     """Render the data resolution form for clients with incomplete/invalid data."""
+    province_city_rows: list[tuple[str, str]] = []
     with database.get_db_session() as db:
         client = (
             db.query(models.Client)
             .options(
-                subqueryload(models.Client.teams).subqueryload(models.Team.members)
+                subqueryload(models.Client.teams)
+                .subqueryload(models.Team.members)
+                .joinedload(models.Member.city)
+                .joinedload(models.City.province)
             )
             .filter(models.Client.client_id == session.get("client_id_for_resolution"))
             .first()
@@ -197,11 +201,35 @@ def resolve_data_issues():
             flash("خطا: اطلاعات کاربری برای اصلاح یافت نشد.", "error")
             return redirect(url_for("client.login_client"))
 
+        province_city_rows = (
+            db.query(models.Province.name, models.City.name)
+            .join(models.City)
+            .all()
+        )
+
+    session_problems = session.get("resolution_problems", {})
+    normalized_problems = {
+        int(member_id): details
+        for member_id, details in session_problems.items()
+        if str(member_id).isdigit()
+    }
+
+    province_city_map: dict[str, list[str]] = {}
+    for province_name, city_name in province_city_rows:
+        province_city_map.setdefault(province_name, []).append(city_name)
+
+    for cities in province_city_map.values():
+        cities.sort()
+
+    form_context = utils.get_form_context()
+    if province_city_map:
+        form_context = {**form_context, "Provinces": province_city_map}
+
     return render_template(
         constants.client_html_names_data["resolve_issues"],
         client=client,
-        problems=session.get("resolution_problems", {}),
-        **utils.get_form_context(),
+        problems=normalized_problems,
+        **form_context,
     )
 
 
@@ -273,7 +301,9 @@ def login_client():
             )
             if needs_resolution:
                 session.clear()
-                session["resolution_problems"] = problems
+                session["resolution_problems"] = {
+                    str(member_id): details for member_id, details in problems.items()
+                }
                 session["client_id_for_resolution"] = client_check.client_id
                 flash(
                     "حساب کاربری شما دارای اطلاعات ناقص یا نامعتبر است. "
@@ -1336,6 +1366,22 @@ def submit_data_resolution():
                 if k.startswith("member_name_")
             }
 
+            province_city_rows = (
+                db.query(models.Province.name, models.City.name, models.City.city_id)
+                .join(models.City)
+                .all()
+            )
+
+            city_lookup = {
+                (
+                    utils.normalize_persian_text(province_name),
+                    utils.normalize_persian_text(city_name),
+                ): city_id
+                for province_name, city_name, city_id in province_city_rows
+            }
+
+            members_with_location_errors: set[int] = set()
+
             for member_id in updated_member_ids:
                 member = (
                     db.query(models.Member)
@@ -1360,20 +1406,21 @@ def submit_data_resolution():
                         models.MemberRole.MEMBER,
                     )
 
-                    city_id = (
-                        db.query(models.City.city_id)
-                        .join(models.Province)
-                        .filter(
-                            models.Province.name
-                            == request.form.get(
-                                f"member_province_{member_id}", ""
-                            ).strip(),
-                            models.City.name
-                            == request.form.get(f"member_city_{member_id}", "").strip(),
-                        )
-                        .scalar()
+                    province_value = utils.normalize_persian_text(
+                        request.form.get(f"member_province_{member_id}", "")
                     )
-                    member.city_id = city_id
+                    city_value = utils.normalize_persian_text(
+                        request.form.get(f"member_city_{member_id}", "")
+                    )
+
+                    if province_value and city_value:
+                        matched_city_id = city_lookup.get((province_value, city_value))
+                        if matched_city_id is not None:
+                            member.city_id = matched_city_id
+                        else:
+                            members_with_location_errors.add(member_id)
+                    else:
+                        members_with_location_errors.add(member_id)
 
                     if (
                         request.form.get(f"member_birth_year_{member_id}")
@@ -1412,6 +1459,12 @@ def submit_data_resolution():
                 db, client_id_for_resolution
             )
 
+            if members_with_location_errors:
+                flash(
+                    "لطفاً استان و شهر اعضای مشخص‌شده را دوباره انتخاب کنید.",
+                    "error",
+                )
+
             if not needs_resolution:
                 client = (
                     db.query(models.Client)
@@ -1443,7 +1496,10 @@ def submit_data_resolution():
                     )
                     flash("خطا: اطلاعات کاربری برای اصلاح یافت نشد.", "error")
                     return redirect(url_for("client.login_client"))
-            session["resolution_problems"] = new_problems
+            session["resolution_problems"] = {
+                str(member_id): details
+                for member_id, details in new_problems.items()
+            }
             flash(
                 "برخی از مشکلات همچنان باقی است. لطفا موارد مشخص شده را اصلاح نمایید.",
                 "error",
