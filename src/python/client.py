@@ -182,6 +182,7 @@ def signup():
 @auth.resolution_required
 def resolve_data_issues():
     """Render the data resolution form for clients with incomplete/invalid data."""
+    province_city_rows: list[tuple[str, str]] = []
     with database.get_db_session() as db:
         client = (
             db.query(models.Client)
@@ -200,6 +201,12 @@ def resolve_data_issues():
             flash("خطا: اطلاعات کاربری برای اصلاح یافت نشد.", "error")
             return redirect(url_for("client.login_client"))
 
+        province_city_rows = (
+            db.query(models.Province.name, models.City.name)
+            .join(models.City)
+            .all()
+        )
+
     session_problems = session.get("resolution_problems", {})
     normalized_problems = {
         int(member_id): details
@@ -207,11 +214,22 @@ def resolve_data_issues():
         if str(member_id).isdigit()
     }
 
+    province_city_map: dict[str, list[str]] = {}
+    for province_name, city_name in province_city_rows:
+        province_city_map.setdefault(province_name, []).append(city_name)
+
+    for cities in province_city_map.values():
+        cities.sort()
+
+    form_context = utils.get_form_context()
+    if province_city_map:
+        form_context = {**form_context, "Provinces": province_city_map}
+
     return render_template(
         constants.client_html_names_data["resolve_issues"],
         client=client,
         problems=normalized_problems,
-        **utils.get_form_context(),
+        **form_context,
     )
 
 
@@ -1348,6 +1366,22 @@ def submit_data_resolution():
                 if k.startswith("member_name_")
             }
 
+            province_city_rows = (
+                db.query(models.Province.name, models.City.name, models.City.city_id)
+                .join(models.City)
+                .all()
+            )
+
+            city_lookup = {
+                (
+                    utils.normalize_persian_text(province_name),
+                    utils.normalize_persian_text(city_name),
+                ): city_id
+                for province_name, city_name, city_id in province_city_rows
+            }
+
+            members_with_location_errors: set[int] = set()
+
             for member_id in updated_member_ids:
                 member = (
                     db.query(models.Member)
@@ -1372,20 +1406,21 @@ def submit_data_resolution():
                         models.MemberRole.MEMBER,
                     )
 
-                    city_id = (
-                        db.query(models.City.city_id)
-                        .join(models.Province)
-                        .filter(
-                            models.Province.name
-                            == request.form.get(
-                                f"member_province_{member_id}", ""
-                            ).strip(),
-                            models.City.name
-                            == request.form.get(f"member_city_{member_id}", "").strip(),
-                        )
-                        .scalar()
+                    province_value = utils.normalize_persian_text(
+                        request.form.get(f"member_province_{member_id}", "")
                     )
-                    member.city_id = city_id
+                    city_value = utils.normalize_persian_text(
+                        request.form.get(f"member_city_{member_id}", "")
+                    )
+
+                    if province_value and city_value:
+                        matched_city_id = city_lookup.get((province_value, city_value))
+                        if matched_city_id is not None:
+                            member.city_id = matched_city_id
+                        else:
+                            members_with_location_errors.add(member_id)
+                    else:
+                        members_with_location_errors.add(member_id)
 
                     if (
                         request.form.get(f"member_birth_year_{member_id}")
@@ -1423,6 +1458,12 @@ def submit_data_resolution():
             needs_resolution, new_problems = utils.check_for_data_completion_issues(
                 db, client_id_for_resolution
             )
+
+            if members_with_location_errors:
+                flash(
+                    "لطفاً استان و شهر اعضای مشخص‌شده را دوباره انتخاب کنید.",
+                    "error",
+                )
 
             if not needs_resolution:
                 client = (
