@@ -1,0 +1,314 @@
+{% extends "global/base.html" %}
+{% block title %}تکمیل اطلاعات حساب کاربری{% endblock %}
+
+{% block body %}
+<div class="app-container">
+  <div class="form-container form-container--xlarge resolution-flow">
+    <form
+      method="POST"
+      action="{{ url_for('client.submit_data_resolution') }}"
+      novalidate
+      data-resolution-form
+    >
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+      <header class="resolution-flow__header">
+        <h1 class="form-title">تکمیل و اصلاح اطلاعات</h1>
+        <p class="form-subtitle">
+          حساب کاربری شما به دلیل وجود اطلاعات ناقص یا نامعتبر به طور موقت غیرفعال شده است.
+          لطفاً موارد مشخص شده را اصلاح کنید تا دوباره به داشبورد دسترسی داشته باشید.
+        </p>
+      </header>
+
+      {% set role_options = [
+        ('member', 'عضو'),
+        ('coach', 'مربی'),
+        ('leader', 'سرپرست')
+      ] %}
+
+      {% for team in client.teams %}
+        {% set issues = namespace(count=0) %}
+        {% for member in team.members %}
+          {% if problems.get(member.member_id) %}
+            {% set issues.count = issues.count + 1 %}
+          {% endif %}
+        {% endfor %}
+        {% if issues.count > 0 %}
+          <section class="resolution-team">
+            <header class="resolution-team__header">
+              <div>
+                <h2>تیم {{ team.team_name }}</h2>
+                <p>اعضای زیر نیاز به بازبینی و اصلاح اطلاعات دارند.</p>
+              </div>
+              <span class="resolution-team__badge">{{ issues.count | persian_digits }} عضو</span>
+            </header>
+
+            <div class="resolution-team__members">
+              {% for member in team.members %}
+                {% set member_problems = problems.get(member.member_id) %}
+                {% if member_problems %}
+                  {% set missing_fields = member_problems.missing | default([]) %}
+                  {% set invalid_messages = member_problems.invalid | default([]) %}
+                  {% set jalali_birth = member.birth_date | formatdate %}
+                  {% set birth_year = jalali_birth[0:4] if jalali_birth else '' %}
+                  {% set birth_month = jalali_birth[5:7] if jalali_birth else '' %}
+                  {% set birth_day = jalali_birth[8:10] if jalali_birth else '' %}
+                  {% set province_value = member.city.province.name if member.city and member.city.province is not none else '' %}
+                  {% set city_value = member.city.name if member.city is not none else '' %}
+                  {% set role_value = member.role.value if member.role is not none else '' %}
+
+                  <article
+                    class="resolution-member"
+                    data-resolution-member
+                    data-member-id="{{ member.member_id }}"
+                  >
+                    <header class="resolution-member__header">
+                      <h3>{{ member.name or 'عضو بدون نام' }}</h3>
+                      <p>کد عضو: {{ member.member_id | persian_digits }}</p>
+                    </header>
+
+                    {% if invalid_messages %}
+                      <ul class="resolution-member__issues">
+                        {% for issue in invalid_messages %}
+                          <li>{{ issue }}</li>
+                        {% endfor %}
+                      </ul>
+                    {% endif %}
+
+                    <div class="form-grid">
+                      <div class="form-group {% if 'name' in missing_fields %}has-error{% endif %}">
+                        <label for="member_name_{{ member.member_id }}">نام و نام خانوادگی<span class="required-star">*</span></label>
+                        <input
+                          id="member_name_{{ member.member_id }}"
+                          name="member_name_{{ member.member_id }}"
+                          type="text"
+                          class="form-control"
+                          required
+                          value="{{ member.name or '' }}"
+                        />
+                        {% if 'name' in missing_fields %}
+                          <span class="error-msg">نام و نام خانوادگی الزامی است.</span>
+                        {% endif %}
+                      </div>
+
+                      <div class="form-group {% if 'national_id' in missing_fields %}has-error{% endif %}">
+                        <label for="member_national_id_{{ member.member_id }}">کد ملی<span class="required-star">*</span></label>
+                        <input
+                          id="member_national_id_{{ member.member_id }}"
+                          name="member_national_id_{{ member.member_id }}"
+                          type="text"
+                          class="form-control"
+                          inputmode="numeric"
+                          maxlength="10"
+                          required
+                          dir="ltr"
+                          value="{{ member.national_id or '' }}"
+                        />
+                        {% if 'national_id' in missing_fields %}
+                          <span class="error-msg">کد ملی الزامی است.</span>
+                        {% endif %}
+                      </div>
+                    </div>
+
+                    <div class="form-grid">
+                      <div class="form-group {% if 'role' in missing_fields %}has-error{% endif %}">
+                        <label for="member_role_{{ member.member_id }}">نقش در تیم<span class="required-star">*</span></label>
+                        <select
+                          id="member_role_{{ member.member_id }}"
+                          name="member_role_{{ member.member_id }}"
+                          class="form-control"
+                          required
+                        >
+                          <option value="">انتخاب کنید...</option>
+                          {% for value, label in role_options %}
+                            <option value="{{ value }}" {% if role_value == value %}selected{% endif %}>{{ label }}</option>
+                          {% endfor %}
+                        </select>
+                        {% if 'role' in missing_fields %}
+                          <span class="error-msg">انتخاب نقش الزامی است.</span>
+                        {% endif %}
+                      </div>
+                    </div>
+
+                    <div class="form-grid">
+                      <div class="form-group {% if 'city' in missing_fields %}has-error{% endif %}">
+                        <label for="member_province_{{ member.member_id }}">استان<span class="required-star">*</span></label>
+                        <select
+                          id="member_province_{{ member.member_id }}"
+                          name="member_province_{{ member.member_id }}"
+                          class="form-control"
+                          required
+                          data-role="province"
+                        >
+                          <option value="">استان را انتخاب کنید</option>
+                          {% for province_name, cities in Provinces | dictsort %}
+                            <option value="{{ province_name }}" {% if province_value == province_name %}selected{% endif %}>{{ province_name }}</option>
+                          {% endfor %}
+                        </select>
+                        {% if 'city' in missing_fields %}
+                          <span class="error-msg">انتخاب استان الزامی است.</span>
+                        {% endif %}
+                      </div>
+
+                      <div class="form-group {% if 'city' in missing_fields %}has-error{% endif %}">
+                        <label for="member_city_{{ member.member_id }}">شهر<span class="required-star">*</span></label>
+                        <select
+                          id="member_city_{{ member.member_id }}"
+                          name="member_city_{{ member.member_id }}"
+                          class="form-control"
+                          required
+                          data-role="city"
+                          data-initial-city="{{ city_value }}"
+                        >
+                          {% set city_options = Provinces.get(province_value, []) %}
+                          <option value="">{{ 'ابتدا استان را انتخاب کنید' if not city_options else 'شهر را انتخاب کنید' }}</option>
+                          {% for city_name in city_options | sort %}
+                            <option value="{{ city_name }}" {% if city_value == city_name %}selected{% endif %}>{{ city_name }}</option>
+                          {% endfor %}
+                        </select>
+                        {% if 'city' in missing_fields %}
+                          <span class="error-msg">انتخاب شهر الزامی است.</span>
+                        {% endif %}
+                      </div>
+                    </div>
+
+                    <div class="form-group {% if 'birth_date' in missing_fields or invalid_messages %}has-error{% endif %}">
+                      <label>تاریخ تولد<span class="required-star">*</span></label>
+                      <div class="datepicker-group" data-role="birth-wrapper">
+                        <select
+                          name="member_birth_day_{{ member.member_id }}"
+                          class="form-control"
+                          required
+                          data-role="birth-day"
+                          data-initial-value="{{ birth_day }}"
+                        >
+                          <option value="">روز</option>
+                          {% for day in range(1, 32) %}
+                            {% set day_str = "%02d" % day %}
+                            <option value="{{ day }}" {% if birth_day == day_str %}selected{% endif %}>{{ day | persian_digits }}</option>
+                          {% endfor %}
+                        </select>
+                        <select
+                          name="member_birth_month_{{ member.member_id }}"
+                          class="form-control"
+                          required
+                          data-role="birth-month"
+                          data-initial-value="{{ birth_month }}"
+                        >
+                          <option value="">ماه</option>
+                          {% for month_number, month_name in PersianMonths | dictsort %}
+                            {% set month_str = "%02d" % month_number %}
+                            <option value="{{ month_number }}" {% if birth_month == month_str %}selected{% endif %}>{{ month_name }}</option>
+                          {% endfor %}
+                        </select>
+                        <select
+                          name="member_birth_year_{{ member.member_id }}"
+                          class="form-control"
+                          required
+                          data-role="birth-year"
+                          data-initial-value="{{ birth_year }}"
+                        >
+                          <option value="">سال</option>
+                          {% for year in AllowedYears | sort(reverse=True) %}
+                            <option value="{{ year }}" {% if birth_year == year|string %}selected{% endif %}>{{ year | persian_digits }}</option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                      {% if 'birth_date' in missing_fields %}
+                        <span class="error-msg">تاریخ تولد الزامی است.</span>
+                      {% endif %}
+                    </div>
+                  </article>
+                {% endif %}
+              {% endfor %}
+            </div>
+          </section>
+        {% endif %}
+      {% endfor %}
+
+      <div class="form-group resolution-flow__actions">
+        <button type="submit" class="btn btn-primary btn--full-width">
+          ذخیره و فعال‌سازی حساب
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const provincesData = window.AirocupData?.provinces_data || {};
+      const months = window.AirocupData?.persian_months || {};
+      const years = window.AirocupData?.allowed_years || [];
+
+      const isLeapYear = (year) => {
+        const value = parseInt(year, 10);
+        if (Number.isNaN(value)) return false;
+        const remainder = (value + 12) % 33;
+        return [1, 5, 9, 13, 17, 22, 26, 30].includes(remainder);
+      };
+
+        document.querySelectorAll("[data-resolution-member]").forEach((memberCard) => {
+          const provinceSelect = memberCard.querySelector("[data-role='province']");
+          const citySelect = memberCard.querySelector("[data-role='city']");
+        const daySelect = memberCard.querySelector("[data-role='birth-day']");
+        const monthSelect = memberCard.querySelector("[data-role='birth-month']");
+        const yearSelect = memberCard.querySelector("[data-role='birth-year']");
+
+        if (provinceSelect && citySelect) {
+          provinceSelect.addEventListener("change", () => {
+            const selectedProvince = provinceSelect.value;
+            const cities = provincesData[selectedProvince] || [];
+            citySelect.innerHTML = "";
+            citySelect.add(new Option(cities.length ? "شهر را انتخاب کنید" : "ابتدا استان را انتخاب کنید", ""));
+            cities
+              .slice()
+              .sort((a, b) => a.localeCompare(b, "fa"))
+              .forEach((city) => citySelect.add(new Option(city, city)));
+          });
+        }
+
+        if (monthSelect && monthSelect.options.length <= 1) {
+          Object.entries(months).forEach(([value, label]) => {
+            monthSelect.add(new Option(label, value));
+          });
+        }
+
+        if (yearSelect && yearSelect.options.length <= 1) {
+          years.forEach((year) => {
+            yearSelect.add(new Option(window.airocupApp?.helpers?.toPersianDigits(year) || year, year));
+          });
+        }
+
+        const updateDays = () => {
+          if (!daySelect || !monthSelect) return;
+          const selectedMonth = parseInt(monthSelect.value, 10);
+          const selectedYear = parseInt(yearSelect?.value ?? "", 10);
+          let maxDays = 31;
+          if (selectedMonth >= 7 && selectedMonth <= 11) {
+            maxDays = 30;
+          } else if (selectedMonth === 12) {
+            maxDays = isLeapYear(selectedYear) ? 30 : 29;
+          }
+          const current = daySelect.value;
+          daySelect.innerHTML = "";
+          daySelect.add(new Option("روز", ""));
+          for (let day = 1; day <= maxDays; day += 1) {
+            const label = window.airocupApp?.helpers?.toPersianDigits(day) || day;
+            daySelect.add(new Option(label, day));
+          }
+          if (current && parseInt(current, 10) <= maxDays) {
+            daySelect.value = current;
+          }
+        };
+
+        if (monthSelect) monthSelect.addEventListener("change", updateDays);
+        if (yearSelect) yearSelect.addEventListener("change", updateDays);
+        updateDays();
+      });
+    });
+  </script>
+{% endblock %}
