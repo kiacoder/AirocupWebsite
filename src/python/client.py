@@ -186,7 +186,10 @@ def resolve_data_issues():
         client = (
             db.query(models.Client)
             .options(
-                subqueryload(models.Client.teams).subqueryload(models.Team.members)
+                subqueryload(models.Client.teams)
+                .subqueryload(models.Team.members)
+                .joinedload(models.Member.city)
+                .joinedload(models.City.province)
             )
             .filter(models.Client.client_id == session.get("client_id_for_resolution"))
             .first()
@@ -197,10 +200,17 @@ def resolve_data_issues():
             flash("خطا: اطلاعات کاربری برای اصلاح یافت نشد.", "error")
             return redirect(url_for("client.login_client"))
 
+    session_problems = session.get("resolution_problems", {})
+    normalized_problems = {
+        int(member_id): details
+        for member_id, details in session_problems.items()
+        if str(member_id).isdigit()
+    }
+
     return render_template(
         constants.client_html_names_data["resolve_issues"],
         client=client,
-        problems=session.get("resolution_problems", {}),
+        problems=normalized_problems,
         **utils.get_form_context(),
     )
 
@@ -273,7 +283,9 @@ def login_client():
             )
             if needs_resolution:
                 session.clear()
-                session["resolution_problems"] = problems
+                session["resolution_problems"] = {
+                    str(member_id): details for member_id, details in problems.items()
+                }
                 session["client_id_for_resolution"] = client_check.client_id
                 flash(
                     "حساب کاربری شما دارای اطلاعات ناقص یا نامعتبر است. "
@@ -1443,7 +1455,10 @@ def submit_data_resolution():
                     )
                     flash("خطا: اطلاعات کاربری برای اصلاح یافت نشد.", "error")
                     return redirect(url_for("client.login_client"))
-            session["resolution_problems"] = new_problems
+            session["resolution_problems"] = {
+                str(member_id): details
+                for member_id, details in new_problems.items()
+            }
             flash(
                 "برخی از مشکلات همچنان باقی است. لطفا موارد مشخص شده را اصلاح نمایید.",
                 "error",
