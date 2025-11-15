@@ -55,6 +55,16 @@ flask_app.config.update(
     ALLOWED_EXTENSIONS=list(constants.AppConfig.allowed_extensions),
 )
 
+# Ensure the database schema exists before serving any requests. The call to
+# ``create_all`` is idempotent, so running it on every startup keeps new
+# deployments from failing with missing-table errors (e.g. ``clients`` during
+# login) while leaving existing data untouched. Populate required lookup tables
+# only when they are empty.
+database.create_database()
+with database.get_db_session() as _db_bootstrap_session:
+    database.populate_geography_data(_db_bootstrap_session)
+    database.populate_leagues(_db_bootstrap_session)
+
 flask_app.register_blueprint(admin.admin_blueprint)
 flask_app.register_blueprint(client.client_blueprint)
 flask_app.register_blueprint(globals_file.global_blueprint)
