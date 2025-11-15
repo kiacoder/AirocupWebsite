@@ -503,7 +503,7 @@ def admin_manage_client(client_id):
                 models.Team.client_id == client_id,
                 models.Team.status == models.EntityStatus.ACTIVE,
             )
-            .group_by(models.Team.team_id)
+            .group_by(models.Team.team_id, models.Client.email)
             .order_by(models.Team.team_registration_date.desc())
             .all()
         )
@@ -538,6 +538,7 @@ def admin_manage_teams():
             db.query(
                 models.Team.team_id,
                 models.Team.team_name,
+                models.Client.email.label("client_email"),
                 count(models.Member.member_id).label("member_count"),
                 subquery.label("last_payment_status"),
             )
@@ -548,7 +549,7 @@ def admin_manage_teams():
                 & (models.Member.status == models.EntityStatus.ACTIVE),
             )
             .filter(models.Team.status == models.EntityStatus.ACTIVE)
-            .group_by(models.Team.team_id)
+            .group_by(models.Team.team_id, models.Client.email)
             .order_by(models.Team.team_registration_date.desc())
             .all()
         )
@@ -727,10 +728,13 @@ def admin_clients_list():
             .scalar()
         ) or 0
 
+    total_pages = math.ceil(total_active / per_page) if total_active else 0
+
     return render_template(
         constants.admin_html_names_data["admin_clients_list"],
-        clients=clients,
-        total_pages_count=math.ceil(total_active / per_page),
+        Clients=clients,
+        CurrentPage=page,
+        TotalPagesCount=total_pages,
     )
 
 
@@ -738,9 +742,17 @@ def admin_clients_list():
 @admin_required
 def admin_add_client():
     "Add a new client to the database"
-    email = (request.form.get("email") or "").strip().lower()
-    phone = (request.form.get("phone_number") or "").strip()
-    password = request.form.get("password") or ""
+    email = (
+        request.form.get("email")
+        or request.form.get("Email")
+        or ""
+    ).strip().lower()
+    phone = (
+        request.form.get("phone_number")
+        or request.form.get("PhoneNumber")
+        or ""
+    ).strip()
+    password = request.form.get("password") or request.form.get("Password") or ""
 
     if not all(
         [
@@ -894,6 +906,17 @@ def admin_dashboard():
             .count()
         )
 
+        new_clients_this_week = (
+            db.query(models.Client)
+            .filter(
+                models.Client.status == models.EntityStatus.ACTIVE,
+                models.Client.registration_date
+                >= datetime.datetime.now(datetime.timezone.utc)
+                - datetime.timedelta(days=7),
+            )
+            .count()
+        )
+
         stats = {
             "total_clients": total_clients,
             "total_teams": total_teams,
@@ -901,6 +924,7 @@ def admin_dashboard():
             "total_members": total_members,
             "total_leaders": total_leaders,
             "total_coaches": total_coaches,
+            "new_clients_this_week": new_clients_this_week,
         }
 
         pending_payments = (
@@ -916,6 +940,8 @@ def admin_dashboard():
         constants.admin_html_names_data["admin_dashboard"],
         stats=stats,
         pending_payments=pending_payments,
+        pending_payments_count=len(pending_payments),
+        admin_greeting_name=session.get("admin_display_name", "مدیر محترم"),
     )
 
 

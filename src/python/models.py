@@ -119,6 +119,23 @@ class Client(Base):
         cascade="all, delete-orphan",
     )
 
+    # Compatibility aliases for legacy template attribute names
+    @property
+    def ClientID(self) -> int:
+        return self.client_id
+
+    @property
+    def Email(self) -> str:
+        return self.email
+
+    @property
+    def PhoneNumber(self) -> str:
+        return self.phone_number
+
+    @property
+    def RegistrationDate(self) -> datetime.datetime:
+        return self.registration_date
+
 
 class League(Base):
     """Represents a competition league that a team can join."""

@@ -57,13 +57,14 @@
           <div class="gallery-item fade-in-element">
             <button
               class="gallery-item-button"
+              type="button"
               aria-label="بزرگنمایی تصویر {{ loop.index }}"
             >
               <img
                 src="{{ url_for('admin.uploaded_gallery_image', filename=image_file) }}"
                 alt="تصویر گالری آیروکاپ شماره {{ loop.index }}"
                 loading="lazy"
-                onerror="this.onerror=null; this.src='{{ url_for('static', filename='images/placeholder-image.png') }}';"
+                onerror="this.onerror=null; this.src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+XZKQAAAAASUVORK5CYII=';"
               />
             </button>
           </div>
