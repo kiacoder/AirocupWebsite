@@ -977,16 +977,12 @@ def admin_manage_payment(payment_id, action):
                 ).update(
                     {"status": models.EntityStatus.ACTIVE}, synchronize_session=False
                 )
+                team = db_session.query(models.Team).get(payment.team_id)
+                if team:
+                    members_paid = payment.members_paid_for or 0
+                    current_unpaid = team.unpaid_members_count or 0
+                    team.unpaid_members_count = max(0, current_unpaid - members_paid)
 
-                members_just_paid_for = payment.members_paid_for or 0
-                db_session.query(models.Team).filter(
-                    models.Team.team_id == payment.team_id
-                ).update(
-                    {
-                        "unpaid_members_count": models.Team.unpaid_members_count - members_just_paid_for
-                    },
-                    synchronize_session=False,
-                )
                 database.log_action(
                     db_session,
                     payment.client_id,

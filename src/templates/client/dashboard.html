@@ -1,8 +1,5 @@
-{% extends "global/base.html" %}
-
-{% block title %}داشبورد | آیروکاپ{% endblock %}
-
-{% block body %}
+{% extends "global/base.html" %} {% block title %}داشبورد | آیروکاپ{% endblock
+%} {% block body %}
 <div class="dashboard-container container" style="margin: 2rem auto">
   <div class="section-header" style="margin-bottom: 2rem">
     <h1 class="section-title">به داشبورد خود خوش آمدید</h1>
@@ -82,7 +79,10 @@
         font-size: 1.3rem;
       "
     >
-      <i class="fas fa-file-invoice-dollar" style="color: var(--color-primary)"></i>
+      <i
+        class="fas fa-file-invoice-dollar"
+        style="color: var(--color-primary)"
+      ></i>
       اطلاعات و هزینه‌های ثبت‌نام
     </h3>
     <div class="form-grid" style="gap: 1.5rem">
@@ -119,7 +119,10 @@
         "
       >
         <span style="display: flex; align-items: center; gap: 0.5rem">
-          <i class="fas fa-user-plus" style="color: var(--color-primary-dark)"></i>
+          <i
+            class="fas fa-user-plus"
+            style="color: var(--color-primary-dark)"
+          ></i>
           هزینه هر عضو
         </span>
         <strong>
@@ -140,7 +143,10 @@
         "
       >
         <span style="display: flex; align-items: center; gap: 0.5rem">
-          <i class="fas fa-percent" style="color: var(--color-secondary-dark)"></i>
+          <i
+            class="fas fa-percent"
+            style="color: var(--color-secondary-dark)"
+          ></i>
           تخفیف ثبت‌نام در لیگ دوم
         </span>
         <strong>
@@ -184,17 +190,10 @@
   {% endif %}
 
   <div class="team-card-grid">
-    {% set status_class_map = {
-      'approved': 'status-approved',
-      'pending': 'status-pending',
-      'rejected': 'status-rejected'
-    } %}
-    {% set status_label_map = {
-      'approved': 'تایید شده',
-      'pending': 'در حال بررسی',
-      'rejected': 'رد شده'
-    } %}
-    {% for team in teams %}
+    {% set status_class_map = { 'approved': 'status-approved', 'pending':
+    'status-pending', 'rejected': 'status-rejected' } %} {% set status_label_map
+    = { 'approved': 'تایید شده', 'pending': 'در حال بررسی', 'rejected': 'رد شده'
+    } %} {% for team in teams %}
     <div class="card card-team">
       <div class="team-card-header">
         <div class="team-card-title">
@@ -203,16 +202,12 @@
           </span>
           <h3 class="team-card-name">{{ team.team_name }}</h3>
         </div>
-        {% set status_enum = team.last_payment_status %}
-        {% set status_value =
-          status_enum.value if status_enum and status_enum is not string else status_enum
-        %}
-        {% set status_label =
-          status_enum.label
-          if status_enum and status_enum is not string
-          else status_label_map.get(status_value, 'شروع نشده')
-        %}
-        {% set status_class = status_class_map.get(status_value, 'status-not-started') %}
+        {% set status_enum = team.last_payment_status %} {% set status_value =
+        status_enum.value if status_enum and status_enum is not string else
+        status_enum %} {% set status_label = status_enum.label if status_enum
+        and status_enum is not string else status_label_map.get(status_value,
+        'شروع نشده') %} {% set status_class = status_class_map.get(status_value,
+        'status-not-started') %}
         <span class="status-badge {{ status_class }}">{{ status_label }}</span>
       </div>
 
@@ -221,7 +216,8 @@
           <span class="team-card-meta-label"
             ><i class="fas fa-user-friends"></i> تعداد اعضا</span
           >
-          {% set member_count = team.active_member_count if team.active_member_count is defined else team.members|length %}
+          {% set member_count = team.active_member_count if
+          team.active_member_count is defined else team.members|length %}
           <strong class="team-card-meta-value">
             {{ member_count | persian_digits }} نفر
           </strong>
@@ -231,8 +227,8 @@
             ><i class="fas fa-trophy"></i> لیگ‌ها</span
           >
           <strong class="team-card-meta-value">
-            {{ team.league_one.name if team.league_one else 'انتخاب نشده' }}{% if
-            team.league_two %}<br />و {{ team.league_two.name }}{% endif %}
+            {{ team.league_one.name if team.league_one else 'انتخاب نشده' }}{%
+            if team.league_two %}<br />و {{ team.league_two.name }}{% endif %}
           </strong>
         </div>
         {% if team.average_age and team.average_age > 0 %}
@@ -244,8 +240,7 @@
             >~{{ team.average_age | persian_digits }} سال</strong
           >
         </div>
-        {% endif %}
-        {% if team.average_provinces %}
+        {% endif %} {% if team.average_provinces %}
         <div class="team-card-meta-item">
           <span class="team-card-meta-label"
             ><i class="fas fa-map-marker-alt"></i> استان‌ها</span
@@ -253,7 +248,9 @@
           <strong class="team-card-meta-value team-card-meta-value--muted"
             >{{ team.average_provinces }}</strong
           >
-          <strong style="font-size: 0.9rem">{{ team.average_provinces }}</strong>
+          <strong style="font-size: 0.9rem"
+            >{{ team.average_provinces }}</strong
+          >
         </div>
         {% endif %}
       </div>
@@ -277,22 +274,34 @@
         <a
           href="{{ url_for('client.select_league', team_id=team.team_id) if not is_league_selection_disabled else '#' }}"
           class="btn btn-secondary {% if is_league_selection_disabled %}btn-disabled{% endif %}"
-          {% if is_league_selection_disabled %}
-            aria-disabled="true"
-            title="امکان تغییر لیگ پس از تایید پرداخت وجود ندارد."
-          {% endif %}
+          {%
+          if
+          is_league_selection_disabled
+          %}
+          aria-disabled="true"
+          title="امکان تغییر لیگ پس از تایید پرداخت وجود ندارد."
+          {%
+          endif
+          %}
         >
           <i class="fas fa-trophy"></i> انتخاب لیگ
         </a>
 
-        {% set is_ready_for_payment = team.members|length > 0 and team.league_one_id %}
+        {% set is_ready_for_payment = team.members|length > 0 and
+        team.league_one_id %}
         <a
           href="{{ url_for('client.payment', team_id=team.team_id) if is_ready_for_payment else '#' }}"
           class="btn btn-success {% if not is_ready_for_payment %}btn-disabled{% endif %}"
-          {% if not is_ready_for_payment %}
-            aria-disabled="true"
-            title="برای پرداخت، تیم باید حداقل یک عضو و یک لیگ انتخاب شده داشته باشد."
-          {% endif %}
+          {%
+          if
+          not
+          is_ready_for_payment
+          %}
+          aria-disabled="true"
+          title="برای پرداخت، تیم باید حداقل یک عضو و یک لیگ انتخاب شده داشته باشد."
+          {%
+          endif
+          %}
         >
           <i class="fas fa-credit-card"></i> پرداخت
         </a>
@@ -303,18 +312,26 @@
           class="team-card-archive-form"
         >
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
           {% set is_archive_disabled = team.last_payment_status and
-          team.last_payment_status.value in ['approved', 'pending'] %}
+          team.last_payment_status.value in ['approved', 'pending', 'rejected']
+          %}
+
           <button
             type="button"
             class="btn btn-danger delete-btn"
             data-modal-title="تایید آرشیو تیم"
             data-modal-body="آیا از آرشیو کردن تیم «{{ team.team_name }}» اطمینان دارید؟"
             data-modal-confirm-text="بله، آرشیو کن"
-            {% if is_archive_disabled %}
-              disabled
-              title="پس از تایید یا در زمان بررسی پرداخت، امکان آرشیو تیم وجود ندارد."
-            {% endif %}
+            {%
+            if
+            is_archive_disabled
+            %}
+            disabled
+            title="پس از ارسال رسید پرداخت، امکان آرشیو تیم وجود ندارد."
+            {%
+            endif
+            %}
           >
             <i class="fas fa-archive"></i> آرشیو
           </button>
@@ -358,13 +375,13 @@
         <button type="button" class="btn btn-secondary" data-dismiss="modal">
           انصراف
         </button>
-        <button type="button" id="confirmModalBtn" class="btn btn-danger"></button>
+        <button
+          type="button"
+          id="confirmModalBtn"
+          class="btn btn-danger"
+        ></button>
       </div>
     </div>
   </div>
 </div>
-{% endblock %}
-
-{% block scripts %}
-  {{ super() }}
-{% endblock %}
+{% endblock %} {% block scripts %} {{ super() }} {% endblock %}

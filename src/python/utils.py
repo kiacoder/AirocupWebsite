@@ -55,6 +55,36 @@ def is_file_allowed(file_stream: IO[bytes]) -> bool:
         file_stream.seek(0)
 
 
+def check_age_against_league(birth_date: datetime.date, league: models.League) -> Tuple[bool, Optional[str]]:
+    """Checks if a member's age is compatible with a given league based on the sketch rules."""
+
+    # Define rules: Elementary(<=12), Middle 1(<=15), Middle 2(<=18), Adult (>18)
+    MAX_AGE_MAP = {1: 12, 2: 15, 3: 18} # Assuming 1, 2, 3 are the youth league IDs
+    MIN_AGE_MAP = {4: 18, 5: 18} # Assuming 4 and 5 are the adult league IDs
+
+    try:
+        today = datetime.date.today()
+        # Calculate age as of today (simple calculation)
+        age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+
+        league_id = league.league_id
+
+        if league_id in MAX_AGE_MAP:
+            max_age = MAX_AGE_MAP[league_id]
+            if age > max_age:
+                return False, f"سن عضو ({age} سال) برای لیگ «{league.name}» (حداکثر {max_age} سال) بیش از حد مجاز است."
+
+        if league_id in MIN_AGE_MAP:
+            min_age = MIN_AGE_MAP[league_id]
+            if age <= min_age:
+                return False, f"سن عضو ({age} سال) برای لیگ «{league.name}» (حداقل {min_age} سال) کمتر از حد مجاز است."
+
+        return True, None
+    except Exception as e:
+        current_app.logger.error(f"Error during age validation: {e}")
+        return False, "خطای داخلی در اعتبارسنجی سن عضو رخ داد."
+
+
 def validate_persian_date(year: Any, month: Any, day: Any) -> Tuple[bool, str]:
     """Validate a Persian date given year, month, and day"""
     try:

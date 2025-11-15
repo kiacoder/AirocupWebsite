@@ -1,8 +1,5 @@
-{% extends "global/base.html" %}
-
-{% block title %}مدیریت اعضای تیم: {{ team.team_name }}{% endblock %}
-
-{% block body %}
+{% extends "global/base.html" %} {% block title %}مدیریت اعضای تیم: {{
+team.team_name }}{% endblock %} {% block body %}
 <div class="members-page" data-team-id="{{ team.team_id }}">
   <div class="container" style="margin: 2rem auto">
     <div class="section-header" style="margin-bottom: 2rem">
@@ -17,9 +14,12 @@
       <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
       <p>
         <strong>توجه:</strong>
-        شما {{ team.unpaid_members_count | persian_digits }} عضو جدید اضافه کرده‌اید که هزینه آن‌ها پرداخت نشده است.
-        لطفاً برای نهایی کردن ثبت‌نام آن‌ها به
-        <a href="{{ url_for('client.payment', team_id=team.team_id) }}">صفحه پرداخت</a>
+        شما {{ team.unpaid_members_count | persian_digits }} عضو جدید اضافه
+        کرده‌اید که هزینه آن‌ها پرداخت نشده است. لطفاً برای نهایی کردن ثبت‌نام
+        آن‌ها به
+        <a href="{{ url_for('client.payment', team_id=team.team_id) }}"
+          >صفحه پرداخت</a
+        >
         مراجعه کنید.
       </p>
     </div>
@@ -27,7 +27,8 @@
 
     <div class="card card--table" style="margin-bottom: 2rem">
       <h2 style="padding: 1.5rem 1.5rem 0; font-size: 1.4rem; font-weight: 700">
-        اعضای فعلی ({{ members|length | persian_digits }} از {{ app_config.max_members_per_team | persian_digits }})
+        اعضای فعلی ({{ members|length | persian_digits }} از {{
+        app_config.max_members_per_team | persian_digits }})
       </h2>
       <div class="user-table-wrapper">
         <table class="user-table">
@@ -44,7 +45,9 @@
             <tr>
               <td data-label="نام">{{ member.name }}</td>
               <td data-label="نقش">{{ member.role.label }}</td>
-              <td data-label="کد ملی" dir="ltr">{{ member.national_id | persian_digits or '-' }}</td>
+              <td data-label="کد ملی" dir="ltr">
+                {{ member.national_id | persian_digits or '-' }}
+              </td>
               <td class="actions">
                 <a
                   href="{{ url_for('client.edit_member', team_id=team.team_id, member_id=member.member_id) }}"
@@ -57,17 +60,26 @@
                   method="POST"
                   style="display: inline"
                 >
-                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                  <input
+                    type="hidden"
+                    name="csrf_token"
+                    value="{{ csrf_token() }}"
+                  />
                   <button
                     type="button"
                     class="btn btn-danger btn-sm delete-btn"
                     data-modal-title="تایید حذف عضو"
                     data-modal-body="آیا از حذف «{{ member.name }}» اطمینان دارید؟"
                     data-modal-confirm-text="بله، حذف کن"
-                    {% if is_paid %}
-                      disabled
-                      title="پس از تایید پرداخت، امکان حذف عضو وجود ندارد."
-                    {% endif %}
+                    {%
+                    if
+                    is_paid
+                    %}
+                    disabled
+                    title="پس از تایید پرداخت، امکان حذف عضو وجود ندارد."
+                    {%
+                    endif
+                    %}
                   >
                     <i class="fas fa-trash"></i> حذف
                   </button>
@@ -77,7 +89,10 @@
             {% else %}
             <tr class="empty-state-row">
               <td colspan="4" class="empty-state">
-                <i class="fas fa-users-slash empty-state__icon" aria-hidden="true"></i>
+                <i
+                  class="fas fa-users-slash empty-state__icon"
+                  aria-hidden="true"
+                ></i>
                 این تیم هنوز عضوی ندارد.
               </td>
             </tr>
@@ -88,7 +103,11 @@
     </div>
 
     {% if members|length < app_config.max_members_per_team %}
-    <div class="form-container" id="addMemberFormContainer" style="margin-bottom: 2rem">
+    <div
+      class="form-container"
+      id="addMemberFormContainer"
+      style="margin-bottom: 2rem"
+    >
       <h2 class="form-title">افزودن عضو جدید</h2>
       <form
         method="POST"
@@ -97,9 +116,10 @@
         novalidate
       >
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-        {% with id_prefix='add-', member_data=None, form_data=None %}
-          {% include 'client/member_form_fields.html' %}
-        {% endwith %}
+
+        {% with id_prefix='add-', member_data=None, form_data=form_data %} {%
+        include 'client/member_form_fields.html' %} {% endwith %}
+
         <div class="form-group">
           <button type="submit" class="btn btn-primary btn--full-width">
             افزودن عضو
@@ -116,8 +136,4 @@
     </div>
   </div>
 </div>
-{% endblock %}
-
-{% block scripts %}
-  {{ super() }}
-{% endblock %}
+{% endblock %} {% block scripts %} {{ super() }} {% endblock %}
