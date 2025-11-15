@@ -324,13 +324,8 @@
           >
         </nav>
 
-        <!-- 
-          FIX #3: Changed class to match main.js (admin.initializeMenu)
-          FROM: class="admin-header-mobile-toggle"
-          TO:   class="admin-header__mobile-toggle"
-        -->
         <button
-          class="admin-header__mobile_toggle"
+          class="admin-header-mobile-toggle"
           type="button"
           aria-controls="admin-nav"
           aria-expanded="false"
@@ -485,9 +480,71 @@
       >
         <div class="mobile-menu-inner">
           
-          <!-- This list is populated by main.js (client.initializeMobileMenu) -->
+          <!-- Server-rendered fallback list; JS keeps it in sync when available -->
           <ul class="mobile-nav-list" id="mobile-nav-list" role="menu">
-            <!-- Links are duplicated here by JS -->
+            <li role="none">
+              <a
+                role="menuitem"
+                href="{{ url_for('global.index') }}"
+                class="{{ 'active' if _current_endpoint == 'global.index' else '' }}"
+                {% if _current_endpoint == 'global.index' %}aria-current="page"{% endif %}
+                >صفحه اصلی</a
+              >
+            </li>
+            <li role="none">
+              <a
+                role="menuitem"
+                href="{{ url_for('global.leagues') }}"
+                class="{{ 'active' if _current_endpoint == 'global.leagues' else '' }}"
+                {% if _current_endpoint == 'global.leagues' %}aria-current="page"{% endif %}
+                >لیگ‌ها</a
+              >
+            </li>
+            <li role="none">
+              <a
+                role="menuitem"
+                href="{{ url_for('global.sponsors') }}"
+                class="{{ 'active' if _current_endpoint == 'global.sponsors' else '' }}"
+                {% if _current_endpoint == 'global.sponsors' %}aria-current="page"{% endif %}
+                >حامیان</a
+              >
+            </li>
+            <li role="none">
+              <a
+                role="menuitem"
+                href="{{ url_for('global.gallery') }}"
+                class="{{ 'active' if _current_endpoint == 'global.gallery' else '' }}"
+                {% if _current_endpoint == 'global.gallery' %}aria-current="page"{% endif %}
+                >گالری</a
+              >
+            </li>
+            <li role="none">
+              <a
+                role="menuitem"
+                href="{{ url_for('global.news') }}"
+                class="{{ 'active' if _current_endpoint == 'global.news' else '' }}"
+                {% if _current_endpoint == 'global.news' %}aria-current="page"{% endif %}
+                >اخبار</a
+              >
+            </li>
+            <li role="none">
+              <a
+                role="menuitem"
+                href="{{ url_for('global.about') }}"
+                class="{{ 'active' if _current_endpoint == 'global.about' else '' }}"
+                {% if _current_endpoint == 'global.about' %}aria-current="page"{% endif %}
+                >درباره ما</a
+              >
+            </li>
+            <li role="none">
+              <a
+                role="menuitem"
+                href="{{ url_for('global.contact') }}"
+                class="{{ 'active' if _current_endpoint == 'global.contact' else '' }}"
+                {% if _current_endpoint == 'global.contact' %}aria-current="page"{% endif %}
+                >تماس با ما</a
+              >
+            </li>
           </ul>
 
           <!-- Mobile-only CTAs -->
@@ -567,9 +624,35 @@
     <!--   MAIN CONTENT     -->
     <!-- ================== -->
     <main class="main-content">
-      {% block breadcrumbs %}{% endblock %} 
+      {% block breadcrumbs %}{% endblock %}
       {% block body %}{% endblock %}
     </main>
+
+    <!-- Global confirmation modal available to every page -->
+    <div
+      class="modal"
+      id="confirmationModal"
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="modalTitle"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <button class="close-btn" data-dismiss="modal" aria-label="بستن">
+            &times;
+          </button>
+          <h3 id="modalTitle" class="modal-title"></h3>
+          <p class="modal-body"></p>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">
+              انصراف
+            </button>
+            <button type="button" id="confirmModalBtn" class="btn btn-danger">
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- ================== -->
     <!--       FOOTER       -->
