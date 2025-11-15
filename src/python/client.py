@@ -1801,7 +1801,6 @@ def get_document(team_id, filename):
 def add_member(team_id):
     "Handle adding a new member to a specific team"
     csrf_protector.protect()
-    # No need for try block here, internal functions have try blocks
 
     with database.get_db_session() as db:
         team = (
@@ -1818,6 +1817,19 @@ def add_member(team_id):
         if not team:
             abort(404)
 
+        # Helper to return error to template, passing back the submitted form data
+        def _render_error(error_msg, error_type="error"):
+            flash(error_msg, error_type)
+            return render_template(
+                constants.client_html_names_data["members"],
+                team=team,
+                # Re-fetch active members for display
+                members=db.query(models.Member).filter(models.Member.team_id == team_id, models.Member.status == models.EntityStatus.ACTIVE).all(),
+                is_paid=database.check_if_team_is_paid(db, team_id),
+                form_data=request.form, # CRITICAL: Passes data back for pre-filling (Req #8 fix)
+                **utils.get_form_context()
+            )
+
         current_member_count = (
             db.query(models.Member)
             .filter(
@@ -1828,112 +1840,89 @@ def add_member(team_id):
         )
 
         if current_member_count >= constants.AppConfig.max_members_per_team:
-            flash("خطا: شما به حداکثر تعداد اعضای تیم رسیده‌اید.", "error")
-            return redirect(url_for("client.manage_members", team_id=team_id))
+            return _render_error("خطا: شما به حداکثر تعداد اعضای تیم رسیده‌اید.")
+        
+        
+        # 1. CORE DATA VALIDATION (Get data and check required fields, national ID format, etc.)
+        #    This is done first to get a clean member_data dictionary/error_message.
+        new_member_data, error_message = utils.create_member_from_form_data(
+            db, request.form
+        )
+        if error_message:
+            return _render_error(error_message)
 
-        # --- NEW LOGIC: AGE CHECK (Req from Sketch) ---
-        try:
-            birth_year = int(request.form.get("birth_year", "0"))
-            birth_month = int(request.form.get("birth_month", "0"))
-            birth_day = int(request.form.get("birth_day", "0"))
-            birth_date = jdatetime.date(birth_year, birth_month, birth_day).togregorian()
-        except (ValueError, TypeError):
-            # If the date is invalid, we will let internal_add_member catch the error message.
-            # We still proceed to internal_add_member to get the specific validation error text.
-            birth_date = None
+        # Data is valid, now we proceed to business rule checks
+        new_member_data_safe = new_member_data or {}
+        national_id = new_member_data_safe.get("national_id", "")
+        role_value = new_member_data_safe.get("role")
+        birth_date = new_member_data_safe.get("birth_date")
 
+
+        # 2. AGE VALIDATION (Req from Sketch)
         if birth_date:
             leagues = [team.league_one, team.league_two]
             for league in leagues:
                 if league:
                     is_valid, age_error = utils.check_age_against_league(birth_date, league)
                     if not is_valid:
-                        flash(age_error, "error")
-                        # Return to manage_members but render with the submitted form data
-                        return render_template(
-                            constants.client_html_names_data["members"],
-                            team=team,
-                            members=db.query(models.Member).filter(models.Member.team_id == team_id, models.Member.status == models.EntityStatus.ACTIVE).all(),
-                            is_paid=database.check_if_team_is_paid(db, team_id),
-                            form_data=request.form,
-                            **utils.get_form_context()
-                        )
-        # --- END NEW LOGIC: AGE CHECK ---
+                        return _render_error(age_error)
 
-        national_id = fa_to_en(request.form.get("national_id", "").strip())
-        role_value = request.form.get("role", "").strip()
 
-        if national_id and role_value == models.MemberRole.MEMBER.value:
-                existing_leagues_query = (
-                    db.query(models.Team.league_one_id, models.Team.league_two_id)
-                    .join(models.Member, models.Team.team_id == models.Member.team_id)
-                    .filter(
-                        models.Member.national_id == national_id,
-                        models.Member.status == models.EntityStatus.ACTIVE,
-                        models.Team.status == models.EntityStatus.ACTIVE,
-                    )
-                    .all()
+        # 3. LEAGUE CONFLICT CHECK (Req #7)
+        if national_id and role_value == models.MemberRole.MEMBER: # Only check if role is 'member'
+            existing_leagues_query = (
+                db.query(models.Team.league_one_id, models.Team.league_two_id)
+                .join(models.Member, models.Team.team_id == models.Member.team_id)
+                .filter(
+                    models.Member.national_id == national_id,
+                    models.Member.status == models.EntityStatus.ACTIVE,
+                    models.Team.status == models.EntityStatus.ACTIVE,
                 )
-
-                leagues_user_is_in = set()
-                for l1, l2 in existing_leagues_query:
-                    if l1:
-                        leagues_user_is_in.add(l1)
-                    if l2:
-                        leagues_user_is_in.add(l2)
-
-                conflict_league_name = None
-                if team.league_one_id and team.league_one_id in leagues_user_is_in:
-                    conflict_league_name = team.league_one.name
-                elif team.league_two_id and team.league_two_id in leagues_user_is_in:
-                    conflict_league_name = team.league_two.name
-
-                if conflict_league_name:
-                    flash(
-                        f"این عضو ({national_id}) هم‌اکنون در لیگ '{conflict_league_name}' در تیم دیگری عضو است.",
-                        "error",
-                    )
-                    return render_template(
-                        constants.client_html_names_data["members"],
-                        team=team,
-                        members=db.query(models.Member).filter(models.Member.team_id == team_id, models.Member.status == models.EntityStatus.ACTIVE).all(),
-                        is_paid=database.check_if_team_is_paid(db, team_id),
-                        form_data=request.form,
-                        **utils.get_form_context()
-                    )
-
-            new_member, error_message = utils.internal_add_member(
-                db, team_id, request.form
+                .all()
             )
 
-            new_member_data, error_message = utils.create_member_from_form_data(
-                db, request.form
-            )
-            if error_message:
-                flash(error_message, "error")
-            elif new_member:
-                database.log_action(
-                    db,
-                    session["client_id"],
-                    f"Added new member '{new_member.name}' to Team ID {team_id}.",
+            leagues_user_is_in = set()
+            for l1, l2 in existing_leagues_query:
+                if l1: leagues_user_is_in.add(l1)
+                if l2: leagues_user_is_in.add(l2)
+
+            conflict_league_name = None
+            if team.league_one_id and team.league_one_id in leagues_user_is_in:
+                conflict_league_name = team.league_one.name
+            elif team.league_two_id and team.league_two_id in leagues_user_is_in:
+                conflict_league_name = team.league_two.name
+
+            if conflict_league_name:
+                return _render_error(
+                    f"این عضو ({national_id}) هم‌اکنون در لیگ '{conflict_league_name}' در تیم دیگری عضو است."
                 )
 
-                if database.check_if_team_is_paid(db, team_id):
-                    team.unpaid_members_count = (team.unpaid_members_count or 0) + 1
-                    flash(
-                        f"عضو «{new_member.name}» با موفقیت اضافه شد. لطفاً برای فعال‌سازی، هزینه عضو جدید را پرداخت نمایید.",
-                        "warning",
-                    )
-                else:
-                    flash(f"عضو «{new_member.name}» با موفقیت اضافه شد!", "success")
 
-                db.commit()
-                utils.update_team_stats(db, team_id)
+        # 4. SUCCESS: Add member to database
+        new_member = models.Member(**new_member_data_safe, team_id=team_id)
+        db.add(new_member)
+        database.log_action(
+            db,
+            session["client_id"],
+            f"Added new member '{new_member.name}' to Team ID {team_id}.",
+        )
 
-    except (exc.SQLAlchemyError, ValueError, TypeError) as error:
-        current_app.logger.error("error adding member to Team %s: %s", team_id, error)
-        flash("خطایی در هنگام افزودن عضو رخ داد.", "error")
+        if database.check_if_team_is_paid(db, team_id):
+            team.unpaid_members_count = (team.unpaid_members_count or 0) + 1
+            flash(
+                f"عضو «{new_member.name}» با موفقیت اضافه شد. لطفاً برای فعال‌سازی، هزینه عضو جدید را پرداخت نمایید.",
+                "warning",
+            )
+        else:
+            flash(f"عضو «{new_member.name}» با موفقیت اضافه شد!", "success")
 
+        db.commit()
+        utils.update_team_stats(db, team_id)
+
+    # Note: The original file had a final try/except wrap for SQLAlchemyError 
+    # outside this block, which is assumed to be handled by the Flask app's
+    # error handlers or a higher-level try/except.
+    
     return redirect(url_for("client.manage_members", team_id=team_id))
 
 
