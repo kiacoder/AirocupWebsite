@@ -70,6 +70,9 @@ payment_config = {
     "fee_per_person": get_env("payment_fee_per_person", 0, cast=int),
     "fee_team": get_env("payment_fee_team", 0, cast=int),
     "league_two_discount": get_env("payment_league_two_discount", 0, cast=int),
+    "new_member_fee_per_league": get_env(
+        "payment_new_member_fee_per_league", 9_500_000, cast=int
+    ),
     "bank_name": get_env("payment_bank_name"),
     "owner_name": get_env("payment_owner_name"),
     "card_number": get_env("payment_card_number"),

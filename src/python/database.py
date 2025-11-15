@@ -370,7 +370,10 @@ def check_if_team_is_paid(db: Session, team_id: int) -> bool:
 
 
 def is_member_league_conflict(
-    db: Session, national_id: str, target_team_id: int
+    db: Session,
+    national_id: str,
+    target_team_id: int,
+    member_id_to_exclude: Optional[int] = None,
 ) -> Tuple[bool, str]:
     "Check if adding a member to the target team would create league conflict"
     target_team = (
@@ -390,7 +393,7 @@ def is_member_league_conflict(
     if not target_league_ids:
         return False, ""
 
-    conflicting_team = (
+    query = (
         db.query(models.Team)
         .join(models.Member)
         .filter(
@@ -406,8 +409,11 @@ def is_member_league_conflict(
                 | models.Team.league_two_id.in_(target_league_ids)
             ),
         )
-        .first()
     )
+    if member_id_to_exclude:
+        query = query.filter(models.Member.member_id != member_id_to_exclude)
+
+    conflicting_team = query.first()
 
     if conflicting_team:
         conflicting_team_league_ids = {

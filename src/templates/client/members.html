@@ -97,10 +97,10 @@ team.team_name }}{% endblock %} {% block body %}
                     data-modal-confirm-text="بله، حذف کن"
                     {%
                     if
-                    is_paid
+                    has_any_payment
                     %}
                     disabled
-                    title="پس از تایید پرداخت، امکان حذف عضو وجود ندارد."
+                    title="پس از ارسال رسید پرداخت (در انتظار تایید/تایید شده/رد شده)، امکان حذف عضو فقط برای ادمین وجود دارد."
                     {%
                     endif
                     %}
