@@ -1,13 +1,21 @@
+/**
+ * Airocup Global JavaScript
+ *
+ * Handles global UI interactions like mobile navigation,
+ * flash messages, and other site-wide behaviors.
+ */
+
+// Strict mode helps catch common coding errors
 "use strict";
 
 const Validators = {
-    IsValidEmail(email) {
-        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    },
+  IsValidEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  },
 
-    IsValidIranianPhone(phone) {
-        return /^09\d{9}$/.test(phone);
-    }
+  IsValidIranianPhone(phone) {
+    return /^09\d{9}$/.test(phone);
+  },
 };
 
 const airocupApp = {
@@ -168,10 +176,12 @@ const airocupApp = {
       flash.className = `flash-message flash-${type}`;
       flash.setAttribute("role", "alert");
       flash.innerHTML = `
-        <i class="fas ${iconMap[type] || iconMap.info}" aria-hidden="true"></i>
-        <span>${message}</span>
-        <button class="flash-close-btn" data-action="dismiss-flash" aria-label="بستن اعلان">&times;</button>
-      `;
+                <i class="fas ${
+                  iconMap[type] || iconMap.info
+                }" aria-hidden="true"></i>
+                <span>${message}</span>
+                <button class="flash-close-btn" data-action="dismiss-flash" aria-label="بستن اعلان">&times;</button>
+            `;
       container.appendChild(flash);
 
       setTimeout(() => this.dismissFlash(flash), duration);
@@ -886,6 +896,7 @@ const airocupApp = {
             ? message.sender
             : "ادمین");
 
+<<<<<<< Updated upstream
       const senderElement = document.createElement("span");
       senderElement.className = "chat-message--sender";
       senderElement.textContent = senderLabel;
@@ -903,6 +914,18 @@ const airocupApp = {
 
       bubble.append(senderElement, textElement, metaElement);
       elements.chatBox.appendChild(bubble);
+=======
+      messageEl.innerHTML = `
+                    <div class="message-meta">
+                        <strong>${senderName}</strong>
+                        <time>${new Date(msg.timestamp).toLocaleTimeString(
+                          "fa-IR"
+                        )}</time>
+                    </div>
+                    <p class="message-text">${msg.message_text}</p>
+                `;
+      elements.chatBox.appendChild(messageEl);
+>>>>>>> Stashed changes
     };
 
     const sendMessage = () => {
@@ -1385,6 +1408,111 @@ const airocupApp = {
       }
     },
 
+<<<<<<< Updated upstream
+=======
+      const state = {
+        roomId: container.dataset.clientId,
+        historyUrl: container.dataset.historyUrl,
+        isClient: container.matches(
+          airocupApp.constants.SELECTORS.CLIENT_CHAT_CONTAINER
+        ),
+        socket: airocupApp.helpers.safeSocket(),
+      };
+      if (!state.roomId || !state.historyUrl) return;
+
+      const scrollToBottom = () => {
+        elements.chatBox.scrollTop = elements.chatBox.scrollHeight;
+      };
+
+      const addMessage = (msg) => {
+        const isSentByUser = state.isClient
+          ? msg.sender === "client"
+          : msg.sender !== "client";
+        const messageEl = document.createElement("div");
+        messageEl.className = `chat-message ${
+          isSentByUser ? "message-sent" : "message-received"
+        }`;
+
+        const senderName = state.isClient
+          ? isSentByUser
+            ? "شما"
+            : "پشتیبانی"
+          : isSentByUser
+          ? msg.sender
+          : "کاربر";
+
+        messageEl.innerHTML = `
+                    <div class="message-meta">
+                        <strong>${senderName}</strong>
+                        <time>${new Date(
+                          msg.timestamp
+                        ).toLocaleTimeString()}</time>
+                    </div>
+                    <p class="message-text">${msg.message_text}</p>
+                `;
+        elements.chatBox.appendChild(messageEl);
+      };
+
+      const sendMessage = () => {
+        const messageText = elements.messageInput.value.trim();
+        if (!messageText || !state.socket) return;
+
+        const sender = state.isClient
+          ? "client"
+          : container.querySelector("#personaSelect")?.value || "Admin";
+
+        state.socket.emit("send_message", {
+          room: state.roomId,
+          message: messageText,
+          sender: sender,
+        });
+        addMessage({
+          sender: sender,
+          message_text: messageText,
+          timestamp: new Date().toISOString(),
+        });
+        elements.messageInput.value = "";
+        elements.messageInput.focus();
+        scrollToBottom();
+      };
+
+      elements.sendButton.addEventListener("click", sendMessage);
+      elements.messageInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
+        }
+      });
+
+      if (state.socket) {
+        state.socket.on("connect", () =>
+          state.socket.emit("join", { room: state.roomId })
+        );
+        state.socket.on("new_message", (data) => {
+          addMessage(data);
+          scrollToBottom();
+        });
+      }
+
+      airocupApp.helpers
+        .fetchJSON(state.historyUrl)
+        .then((data) => {
+          elements.chatBox.innerHTML = "";
+          if (data.messages && data.messages.length > 0) {
+            data.messages.forEach(addMessage);
+          } else {
+            elements.chatBox.innerHTML =
+              '<div class="chat-empty-state">هنوز پیامی وجود ندارد.</div>';
+          }
+          scrollToBottom();
+        })
+        .catch((err) => {
+          console.error("Failed to load chat history:", err);
+          elements.chatBox.innerHTML =
+            '<div class="chat-error-state">خطا در بارگذاری تاریخچه گفتگو.</div>';
+        });
+    },
+>>>>>>> Stashed changes
   },
 
   admin: {
@@ -1603,6 +1731,123 @@ const airocupApp = {
     // This function should be placed inside the main airocupApp object,
     // alongside helpers, ui, and forms.
 
+<<<<<<< Updated upstream
+=======
+      const state = {
+        roomId: container.dataset.clientId,
+        isClient: container.matches(
+          this.constants.SELECTORS.CLIENT_CHAT_CONTAINER
+        ),
+        socket: this.helpers.safeSocket(),
+      };
+
+      if (!state.roomId) {
+        console.error("Chat Error: Missing client ID.");
+        return;
+      }
+
+      state.historyUrl = state.isClient
+        ? "/get_my_chat_history"
+        : `/Admin/GetChatHistory/${state.roomId}`;
+
+      const scrollToBottom = () => {
+        elements.chatBox.scrollTop = elements.chatBox.scrollHeight;
+      };
+
+      const addMessage = (msg, isLocalSend = false) => {
+        const isSentByThisUser =
+          isLocalSend ||
+          (state.isClient ? msg.sender === "client" : msg.sender !== "client");
+        const senderName = isLocalSend
+          ? "شما"
+          : isSentByThisUser
+          ? state.isClient
+            ? "شما"
+            : msg.sender
+          : state.isClient
+          ? "پشتیبانی"
+          : "کاربر";
+
+        const messageEl = document.createElement("div");
+        messageEl.className = `chat-message ${
+          isSentByThisUser ? "message-sent" : "message-received"
+        }`;
+
+        messageEl.innerHTML = `
+                <div class="message-meta">
+                    <strong>${senderName}</strong>
+                    <time data-timestamp="${msg.timestamp}">${new Date(
+          msg.timestamp
+        ).toLocaleTimeString("fa-IR")}</time>
+                </div>
+                <p class="message-text">${msg.message_text || msg.message}</p> 
+            `;
+        elements.chatBox.appendChild(messageEl);
+      };
+
+      const sendMessage = () => {
+        const messageText = elements.messageInput.value.trim();
+        if (!messageText || !state.socket) return;
+
+        const sender = state.isClient
+          ? "client"
+          : container.querySelector("#personaSelect")?.value || "Admin";
+
+        state.socket.emit("send_message", {
+          room: state.roomId,
+          message: messageText,
+        });
+
+        addMessage(
+          {
+            message_text: messageText,
+            timestamp: new Date().toISOString(),
+          },
+          true
+        );
+
+        elements.messageInput.value = "";
+        elements.messageInput.focus();
+        scrollToBottom();
+      };
+
+      elements.sendButton.addEventListener("click", sendMessage);
+      elements.messageInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
+        }
+      });
+
+      if (state.socket) {
+        state.socket.on("connect", () =>
+          state.socket.emit("join", { room: state.roomId })
+        );
+        state.socket.on("new_message", (data) => {
+          addMessage(data);
+          scrollToBottom();
+        });
+      }
+
+      this.helpers
+        .fetchJSON(state.historyUrl)
+        .then((data) => {
+          elements.chatBox.innerHTML = "";
+          if (data.messages?.length) {
+            data.messages.forEach((msg) => addMessage(msg));
+          } else {
+            elements.chatBox.innerHTML =
+              '<div class="chat-empty-state">هنوز پیامی وجود ندارد.</div>';
+          }
+          scrollToBottom();
+        })
+        .catch((err) => {
+          console.error("Failed to load chat history:", err);
+          elements.chatBox.innerHTML =
+            '<div class="chat-error-state">خطا در بارگذاری تاریخچه گفتگو.</div>';
+        });
+    },
+>>>>>>> Stashed changes
   },
 
   init() {
