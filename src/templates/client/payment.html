@@ -77,8 +77,16 @@
           محاسبه شده است.
         </div>
         <div class="detail-item">
-          <span>هزینه هر عضو جدید</span>
-          <strong>{{ payment.fee_per_person | humanize_number | persian_digits }} ریال</strong>
+          <span>هزینه هر لیگ برای عضو جدید</span>
+          <strong>{{ new_member_fee_per_league | humanize_number | persian_digits }} ریال</strong>
+        </div>
+        <div class="detail-item">
+          <span>تعداد لیگ‌های فعال تیم</span>
+          <strong>{{ selected_leagues_count | persian_digits }} لیگ</strong>
+        </div>
+        <div class="detail-item">
+          <span>مجموع هزینه هر عضو جدید</span>
+          <strong>{{ new_member_total_per_member | humanize_number | persian_digits }} ریال</strong>
         </div>
         <div class="detail-item">
           <span>تعداد اعضای جدید</span>

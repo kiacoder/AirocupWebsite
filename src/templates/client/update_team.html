@@ -67,13 +67,13 @@
                 maxlength="30"
                 {%
                 if
-                is_paid
+                has_any_payment
                 %}disabled{%
                 endif
                 %}
               />
 
-              {% if is_paid %}
+              {% if has_any_payment %}
               <small
                 style="
                   display: block;
@@ -82,13 +82,13 @@
                 "
               >
                 <i class="fas fa-info-circle"></i>
-                نام تیم پس از ارسال رسید پرداخت قابل تغییر نیست.
+                پس از ارسال رسید پرداخت، تغییر نام تیم فقط توسط ادمین امکان‌پذیر است.
               </small>
               {% endif %}
             </div>
 
             <div class="form-group">
-              {% if not is_paid %}
+              {% if not has_any_payment %}
               <button type="submit" class="btn btn-primary btn--full-width">
                 ذخیره نام جدید
               </button>
@@ -140,8 +140,7 @@
               <small
                 style="display: block; margin-top: 10px; text-align: center"
               >
-                حداکثر حجم فایل سند: {{ (app_config.max_document_size / 1024 /
-                1024)|int }} مگابایت
+                حداکثر حجم مجاز: ویدئو تا ۲۰۰ مگابایت، تصویر و فایل‌های متنی/آفیس تا ۵۰ مگابایت.
               </small>
             </div>
 
