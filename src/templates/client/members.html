@@ -9,18 +9,21 @@ team.team_name }}{% endblock %} {% block body %}
       </p>
     </div>
 
-    {% if is_paid and team.unpaid_members_count > 0 %}
+    {% if has_any_payment and team.unpaid_members_count > 0 %}
     <div class="alert alert--warning" role="alert">
       <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
       <p>
         <strong>توجه:</strong>
         شما {{ team.unpaid_members_count | persian_digits }} عضو جدید اضافه
-        کرده‌اید که هزینه آن‌ها پرداخت نشده است. لطفاً برای نهایی کردن ثبت‌نام
+        کرده‌اید که به دلیل ارسال رسید پرداخت قبلی (در انتظار تایید / تایید
+        شده / رد شده) فقط با پرداخت مبلغ
+        <strong>۹,۵۰۰,۰۰۰ ریال برای هر لیگ و هر عضو</strong>
+        نهایی می‌شوند. لطفاً برای بارگذاری رسید پرداخت جدید و تکمیل ثبت‌نام
         آن‌ها به
         <a href="{{ url_for('client.payment', team_id=team.team_id) }}"
           >صفحه پرداخت</a
         >
-        مراجعه کنید.
+        مراجعه کنید. بدون بارگذاری رسید جدید ثبت‌نام این اعضا تکمیل نخواهد شد.
       </p>
     </div>
     {% endif %}
@@ -37,21 +40,55 @@ team.team_name }}{% endblock %} {% block body %}
           border-bottom: 1px solid var(--color-border-muted);
         "
       >
-        <span style="font-weight: 600; color: var(--color-text-muted)"
-          >مقطع تحصیلی (لیگ):</span
-        >
-        {% if team.league_one %}
-        <strong style="color: var(--color-primary)"
-          >{{ team.league_one.name }}</strong
-        >
-        {% if team.league_two %}
-        <span style="color: var(--color-text-muted)">&</span>
-        <strong style="color: var(--color-primary)"
-          >{{ team.league_two.name }}</strong
-        >
-        {% endif %} {% else %}
-        <strong style="color: var(--color-error)">هنوز انتخاب نشده</strong>
-        {% endif %}
+        <div style="margin-bottom: 0.5rem">
+          <span style="font-weight: 600; color: var(--color-text-muted)"
+            >مقطع تحصیلی تیم:</span
+          >
+          {% if team.education_level %}
+          {% set level_info = education_levels.get(team.education_level) %}
+          {% set ages = level_info.get('ages') if level_info else None %}
+          {% set age_min = ages[0] if ages else None %}
+          {% set age_max = ages[1] if ages else None %}
+          {% set age_label = '' %}
+          {% if ages %}
+            {% if age_min is not none and age_max is not none %}
+              {% set age_label = age_min | persian_digits ~ ' تا ' ~ age_max | persian_digits ~ ' سال' %}
+            {% elif age_min is not none %}
+              {% set age_label = 'از ' ~ (age_min | persian_digits) ~ ' سال به بالا' %}
+            {% elif age_max is not none %}
+              {% set age_label = 'تا ' ~ (age_max | persian_digits) ~ ' سال' %}
+            {% endif %}
+          {% endif %}
+          <strong style="color: var(--color-primary)"
+            >{{ team.education_level }}</strong
+          >
+          {% if age_label %}
+          <span style="color: var(--color-text-muted); margin-right: 0.75rem">
+            بازه سنی مجاز: {{ age_label }}
+          </span>
+          {% endif %}
+          {% else %}
+          <strong style="color: var(--color-error)">هنوز انتخاب نشده</strong>
+          {% endif %}
+        </div>
+        <div>
+          <span style="font-weight: 600; color: var(--color-text-muted)"
+            >لیگ‌های فعال:</span
+          >
+          {% if team.league_one %}
+          <strong style="color: var(--color-primary)"
+            >{{ team.league_one.name }}</strong
+          >
+          {% if team.league_two %}
+          <span style="color: var(--color-text-muted)">&</span>
+          <strong style="color: var(--color-primary)"
+            >{{ team.league_two.name }}</strong
+          >
+          {% endif %}
+          {% else %}
+          <strong style="color: var(--color-error)">هنوز انتخاب نشده</strong>
+          {% endif %}
+        </div>
       </div>
 
       <div class="user-table-wrapper">
@@ -97,10 +134,10 @@ team.team_name }}{% endblock %} {% block body %}
                     data-modal-confirm-text="بله، حذف کن"
                     {%
                     if
-                    is_paid
+                    has_any_payment
                     %}
                     disabled
-                    title="پس از تایید پرداخت، امکان حذف عضو وجود ندارد."
+                    title="پس از ارسال رسید پرداخت (در انتظار تایید/تایید شده/رد شده)، امکان حذف عضو فقط برای ادمین وجود دارد."
                     {%
                     endif
                     %}
@@ -126,14 +163,14 @@ team.team_name }}{% endblock %} {% block body %}
       </div>
     </div>
 
-    {% if not team.league_one_id %}
+    {% if not team.education_level or not team.league_one_id %}
     <div class="alert alert--warning" role="alert" style="text-align: center">
       <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
       <p style="font-weight: 600; font-size: 1.1rem; margin-top: 0.5rem">
-        مرحله بعد: انتخاب مقطع تحصیلی
+        مرحله بعد: انتخاب مقطع تحصیلی و لیگ
       </p>
       <p>
-        برای افزودن اعضا، ابتدا باید حداقل یک لیگ (مقطع تحصیلی) برای تیم خود
+        برای افزودن اعضا، ابتدا باید مقطع تحصیلی و حداقل یک لیگ برای تیم خود
         انتخاب کنید.
       </p>
       <a
