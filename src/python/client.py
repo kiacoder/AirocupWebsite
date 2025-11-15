@@ -2066,8 +2066,9 @@ def add_member(team_id):
             else:
                 flash(f"عضو «{new_member.name}» با موفقیت اضافه شد!", "success")
 
-            db_session.commit()
+            db_session.flush()
             utils.update_team_stats(db_session, team_id)
+            db_session.commit()
 
         except (exc.SQLAlchemyError, ValueError, TypeError) as error:
             db_session.rollback()

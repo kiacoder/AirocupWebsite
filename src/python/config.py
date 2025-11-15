@@ -80,3 +80,7 @@ payment_config = {
 }
 
 host = get_env("host", "0.0.0.0")
+port = get_env("port", 5000, cast=int)
+session_cookie_secure = get_bool("session_cookie_secure", False)
+session_cookie_httponly = get_bool("session_cookie_httponly", True)
+session_cookie_samesite = get_env("session_cookie_samesite", "Lax")

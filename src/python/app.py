@@ -46,8 +46,9 @@ limiter.init_app(flask_app)
 
 flask_app.config.update(
     PERMANENT_SESSION_LIFETIME=config.permanent_session_lifetime,
-    SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_HTTPONLY=config.session_cookie_httponly,
+    SESSION_COOKIE_SECURE=config.session_cookie_secure,
+    SESSION_COOKIE_SAMESITE=config.session_cookie_samesite,
     UPLOAD_FOLDER_RECEIPTS=constants.Path.receipts_dir,
     UPLOAD_FOLDER_DOCUMENTS=os.path.join(constants.Path.uploads_dir, "documents"),
     UPLOAD_FOLDER_NEWS=constants.Path.news_dir,
