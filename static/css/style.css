@@ -132,10 +132,11 @@
   --font-english: "TwCenMT", sans-serif;
   --font-persian-num: "IRANYekanX-FaNum", sans-serif;
   --font-persian-no-english: "IRANYekanX-NoEn", sans-serif;
-  --color-primary: #005a9c;
-  --color-primary-dark: #004a80;
-  --color-secondary: #f7a600;
-  --color-secondary-dark: #d68f00;
+  --color-primary: #7b4baa;
+  --color-primary-dark: #5f3488;
+  --color-primary-light: #e5d9fb;
+  --color-secondary: #f0b90b;
+  --color-secondary-dark: #c69000;
   --color-danger: #b00000;
   --color-danger-dark: #900000;
   --color-success: #28a745;
@@ -772,6 +773,40 @@ address {
   min-width: 320px;
 }
 
+.hero-image-frame {
+  position: relative;
+  display: inline-flex;
+  max-width: 520px;
+}
+
+.poster-zoom-trigger {
+  border: none;
+  padding: 0;
+  background: transparent;
+  cursor: zoom-in;
+  display: inline-flex;
+  border-radius: 1.5rem;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.poster-zoom-trigger:focus-visible {
+  outline: 3px solid rgba(123, 75, 170, 0.45);
+  outline-offset: 6px;
+}
+
+.poster-zoom-trigger:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 25px 45px rgba(123, 75, 170, 0.3);
+}
+
+.poster-zoom-trigger img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
 .committee-photo {
   width: 100%;
   aspect-ratio: 1 / 1;
@@ -1230,7 +1265,7 @@ address {
 
 #flash-container {
   position: fixed;
-  top: 90px;
+  top: calc(var(--site-header-height) + 10px);
   left: 50%;
   transform: translateX(-50%);
   z-index: 9999;
@@ -2788,14 +2823,14 @@ select option {
   top: 0;
   width: 100%;
   z-index: 1000;
-  background: linear-gradient(135deg, rgba(25, 31, 89, 0.92), rgba(87, 36, 124, 0.9));
+  background: linear-gradient(135deg, rgba(43, 23, 72, 0.95), rgba(123, 75, 170, 0.92));
   box-shadow: var(--shadow-md);
   height: var(--site-header-height);
   padding: 0.5rem 0;
   font-family: var(--font-persian);
   color: var(--color-surface);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .site-header::before {
@@ -2971,7 +3006,7 @@ MOBILE MENU & HAMBURGER
   cursor: pointer;
   padding: 0.35rem 0.45rem;
   margin-left: 0.5rem;
-  display: inline-flex;
+  display: none;
   align-items: center;
   justify-content: center;
   z-index: 2015;
@@ -4648,64 +4683,6 @@ FOOTER
 .btn-sm {
   padding: 5px 10px;
   font-size: 0.9rem;
-}
-
-.mobile-menu-btn {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 0.25rem;
-  margin-left: 0.5rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2015;
-  color: var(--color-surface);
-  font-size: 1.5rem;
-}
-
-.mobile-menu-btn .hamburger {
-  display: inline-block;
-  width: 26px;
-  height: 18px;
-  position: relative;
-}
-
-.mobile-menu-btn .hamburger span {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: currentColor;
-  border-radius: 3px;
-  transition: transform 0.28s ease, opacity 0.2s ease, top 0.28s ease;
-}
-
-.mobile-menu-btn .hamburger span:nth-child(1) {
-  top: 0;
-}
-
-.mobile-menu-btn .hamburger span:nth-child(2) {
-  top: 7.5px;
-}
-
-.mobile-menu-btn .hamburger span:nth-child(3) {
-  top: 15px;
-}
-
-.mobile-menu-btn.is-active .hamburger span:nth-child(1) {
-  top: 7.5px;
-  transform: rotate(45deg);
-}
-
-.mobile-menu-btn.is-active .hamburger span:nth-child(2) {
-  opacity: 0;
-  transform: scale(0.6);
-}
-
-.mobile-menu-btn.is-active .hamburger span:nth-child(3) {
-  top: 7.5px;
-  transform: rotate(-45deg);
 }
 
 /* @ Queries */
@@ -7130,3 +7107,70 @@ FOOTER
     color: var(--color-text-muted);
     font-style: italic;
   }
+.poster-modal-open {
+  overflow: hidden;
+}
+
+.poster-modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(9, 6, 15, 0.85);
+  z-index: 1200;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.poster-modal.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.poster-modal__backdrop {
+  position: absolute;
+  inset: 0;
+}
+
+.poster-modal__dialog {
+  position: relative;
+  background: var(--color-surface);
+  border-radius: 1.25rem;
+  padding: 1.25rem;
+  box-shadow: 0 35px 65px rgba(6, 3, 14, 0.45);
+  width: min(90vw, 720px);
+  max-height: 90vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.poster-modal__dialog img {
+  width: 100%;
+  height: auto;
+  border-radius: 1rem;
+}
+
+.poster-modal__close {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  border: none;
+  background: rgba(33, 37, 41, 0.65);
+  color: #fff;
+  font-size: 1.75rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+}
+
+.poster-modal__close:hover {
+  background: rgba(123, 75, 170, 0.85);
+}
