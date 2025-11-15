@@ -1241,6 +1241,11 @@ def payment(team_id):
                 db, team, receipt_file, total_cost, members_to_pay_for
             )
 
+            if success:
+                db.commit()
+            else:
+                db.rollback()
+
             flash(message, "success" if success else "error")
             return redirect(url_for("client.dashboard"))
 
@@ -1994,6 +1999,28 @@ def add_member(team_id):
                     "برای افزودن عضو، ابتدا باید حداقل یک لیگ (مقطع تحصیلی) برای تیم خود انتخاب کنید."
                 )
 
+            selected_leagues_count = 1 + (
+                1 if team.league_two_id is not None else 0
+            )
+            selected_leagues_count = max(1, selected_leagues_count)
+            new_member_fee_per_league = (
+                config.payment_config.get("new_member_fee_per_league") or 0
+            )
+            receipt_file = (
+                request.files.get("member_receipt") if has_any_payment else None
+            )
+
+            if has_any_payment:
+                if new_member_fee_per_league <= 0:
+                    return _render_error(
+                        "سامانه قادر به محاسبه هزینه عضو جدید نیست. لطفاً با پشتیبانی تماس بگیرید.",
+                        "error",
+                    )
+
+                receipt_error = _validate_new_member_receipt(receipt_file)
+                if receipt_error:
+                    return _render_error(receipt_error)
+
             # 2. MAX MEMBER CHECK
             current_member_count = (
                 db_session.query(models.Member)
@@ -2074,19 +2101,33 @@ def add_member(team_id):
                 f"Added new member '{new_member.name}' to Team ID {team_id}.",
             )
 
+            db_session.flush()
+            utils.update_team_stats(db_session, team_id)
+
             if has_any_payment:
                 team.unpaid_members_count = (team.unpaid_members_count or 0) + 1
+                per_member_total = new_member_fee_per_league * selected_leagues_count
+                success, payment_message = _process_payment_submission(
+                    db_session,
+                    team,
+                    receipt_file,
+                    per_member_total,
+                    1,
+                )
+
+                if not success:
+                    return _render_error(payment_message)
+
                 flash(
-                    "عضو «{name}» اضافه شد. چون قبلاً پرداختی ارسال کرده‌اید (در انتظار تایید/تایید شده/رد شده)، باید برای این عضو جدید تنها مبلغ ۹,۵۰۰,۰۰۰ ریال به ازای هر لیگ پرداخت و رسید را بارگذاری کنید تا ثبت‌نام نهایی شود.".format(
-                        name=new_member.name
+                    "عضو «{name}» اضافه شد و رسید پرداخت او ثبت شد. {msg}".format(
+                        name=new_member.name,
+                        msg=payment_message,
                     ),
-                    "warning",
+                    "success",
                 )
             else:
                 flash(f"عضو «{new_member.name}» با موفقیت اضافه شد!", "success")
 
-            db_session.flush()
-            utils.update_team_stats(db_session, team_id)
             db_session.commit()
 
         except (exc.SQLAlchemyError, ValueError, TypeError) as error:
@@ -2331,7 +2372,9 @@ def _determine_upload_size(file_storage):
     return size
 
 
-def _process_payment_submission(db, team, receipt_file, total_cost, members_to_pay_for):
+def _process_payment_submission(
+    db, team, receipt_file, total_cost, members_to_pay_for
+):
     """Handles saving the receipt file and creating a payment record."""
     original_filename = secure_filename(receipt_file.filename)
     extension = (
@@ -2350,8 +2393,10 @@ def _process_payment_submission(db, team, receipt_file, total_cost, members_to_p
     )
     db.add(new_payment)
 
-    if team.unpaid_members_count > 0 and members_to_pay_for > 0:
-        team.unpaid_members_count = 0
+    if team.unpaid_members_count and members_to_pay_for > 0:
+        team.unpaid_members_count = max(
+            0, (team.unpaid_members_count or 0) - members_to_pay_for
+        )
 
     try:
         user_receipts_folder = os.path.join(
@@ -2360,9 +2405,35 @@ def _process_payment_submission(db, team, receipt_file, total_cost, members_to_p
         )
         os.makedirs(user_receipts_folder, exist_ok=True)
         receipt_file.save(os.path.join(user_receipts_folder, secure_name))
-        db.commit()
+        db.flush()
         return True, "متشکریم! رسید شما با موفقیت بارگذاری و برای بررسی ارسال شد."
     except (IOError, OSError, exc.SQLAlchemyError) as error:
         db.rollback()
         current_app.logger.error("File save failed for payment: %s", error)
         return False, "خطایی در هنگام ذخیره فایل رسید رخ داد. لطفا دوباره تلاش کنید."
+
+
+def _validate_new_member_receipt(receipt_file):
+    """Ensure a receipt file exists and respects format/size rules."""
+    max_size = constants.AppConfig.max_image_size
+
+    if not receipt_file or receipt_file.filename == "":
+        return "لطفاً تصویر رسید پرداخت عضو جدید را بارگذاری کنید."
+
+    upload_size = _determine_upload_size(receipt_file)
+    if upload_size is None:
+        return "امکان بررسی اندازه فایل رسید وجود ندارد. لطفاً دوباره تلاش کنید."
+
+    if upload_size <= 0:
+        return "فایل انتخاب‌شده خالی است. لطفاً رسید صحیحی انتخاب کنید."
+
+    if upload_size > max_size:
+        max_size_mb = max_size / 1024 / 1024
+        return f"حجم فایل رسید نباید بیشتر از {max_size_mb:.1f} مگابایت باشد."
+
+    receipt_file.stream.seek(0)
+    if not utils.is_file_allowed(receipt_file.stream):
+        return "نوع فایل رسید مجاز نیست یا فایل خراب است."
+    receipt_file.stream.seek(0)
+
+    return None

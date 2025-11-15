@@ -147,6 +147,9 @@ def inject_global_variables():
         "app_config": {
             "max_team_per_client": constants.AppConfig.max_team_per_client,
             "max_members_per_team": constants.AppConfig.max_members_per_team,
+            "new_member_fee_per_league": config.payment_config.get(
+                "new_member_fee_per_league"
+            ),
         },
         "contact": constants.Contact,
         "leagues_list": constants.leagues_list,
