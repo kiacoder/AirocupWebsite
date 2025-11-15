@@ -1230,7 +1230,7 @@ address {
 
 #flash-container {
   position: fixed;
-  top: 90px;
+  top: calc(var(--site-header-height) + 10px);
   left: 50%;
   transform: translateX(-50%);
   z-index: 9999;
@@ -2795,7 +2795,7 @@ select option {
   font-family: var(--font-persian);
   color: var(--color-surface);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .site-header::before {

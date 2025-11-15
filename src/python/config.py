@@ -33,6 +33,30 @@ def get_bool(key: str, default: bool = False) -> bool:
     return val in ("true", "1", "t", "yes", "y")
 
 
+def _normalize_samesite(value: Any) -> str | None:
+    """Normalize SameSite strings to Flask-compatible values."""
+
+    if value is None:
+        return None
+
+    normalized = str(value).strip().strip('"').strip("'").lower()
+
+    if not normalized:
+        return None
+
+    if normalized == "none":
+        return "None"
+
+    if normalized == "lax":
+        return "Lax"
+
+    if normalized == "strict":
+        return "Strict"
+
+    # Fall back to Flask's default when an unsupported value is provided
+    return "Lax"
+
+
 admin_password_hash = get_env("admin_password_hash")
 secret_key = get_env("secret_key")
 if not admin_password_hash or not secret_key:
@@ -83,4 +107,21 @@ host = get_env("host", "0.0.0.0")
 port = get_env("port", 5000, cast=int)
 session_cookie_secure = get_bool("session_cookie_secure", False)
 session_cookie_httponly = get_bool("session_cookie_httponly", True)
-session_cookie_samesite = get_env("session_cookie_samesite", "Lax")
+session_cookie_samesite = _normalize_samesite(
+    get_env("session_cookie_samesite", "Lax"),
+)
+
+# Development ergonomics: running the debug server over HTTP should not lose
+# session data simply because production cookies are still enabled in the .env.
+if debug:
+    session_cookie_secure = False
+    if session_cookie_samesite == "None":
+        session_cookie_samesite = "Lax"
+
+# ``SameSite=None`` requires Secure cookies in modern browsers. If the
+# configuration requests "None" but Secure is disabled (for example on a local
+# HTTP setup), gracefully fall back to the safer ``Lax`` value so logins,
+# flashes, and chat sessions continue to work instead of silently dropping the
+# cookie.
+if session_cookie_samesite == "None" and not session_cookie_secure:
+    session_cookie_samesite = "Lax"
