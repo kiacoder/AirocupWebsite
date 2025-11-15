@@ -37,21 +37,43 @@ team.team_name }}{% endblock %} {% block body %}
           border-bottom: 1px solid var(--color-border-muted);
         "
       >
-        <span style="font-weight: 600; color: var(--color-text-muted)"
-          >مقطع تحصیلی (لیگ):</span
-        >
-        {% if team.league_one %}
-        <strong style="color: var(--color-primary)"
-          >{{ team.league_one.name }}</strong
-        >
-        {% if team.league_two %}
-        <span style="color: var(--color-text-muted)">&</span>
-        <strong style="color: var(--color-primary)"
-          >{{ team.league_two.name }}</strong
-        >
-        {% endif %} {% else %}
-        <strong style="color: var(--color-error)">هنوز انتخاب نشده</strong>
-        {% endif %}
+        <div style="margin-bottom: 0.5rem">
+          <span style="font-weight: 600; color: var(--color-text-muted)"
+            >مقطع تحصیلی تیم:</span
+          >
+          {% if team.education_level %}
+          <strong style="color: var(--color-primary)"
+            >{{ team.education_level }}</strong
+          >
+          {% set level_info = education_levels.get(team.education_level) %}
+          {% if level_info and level_info.get('ages') %}
+          <span style="color: var(--color-text-muted); margin-right: 0.75rem">
+            بازه سنی مجاز: {{ level_info.get('ages')[0] | persian_digits }} تا
+            {{ level_info.get('ages')[1] | persian_digits }} سال
+          </span>
+          {% endif %}
+          {% else %}
+          <strong style="color: var(--color-error)">هنوز انتخاب نشده</strong>
+          {% endif %}
+        </div>
+        <div>
+          <span style="font-weight: 600; color: var(--color-text-muted)"
+            >لیگ‌های فعال:</span
+          >
+          {% if team.league_one %}
+          <strong style="color: var(--color-primary)"
+            >{{ team.league_one.name }}</strong
+          >
+          {% if team.league_two %}
+          <span style="color: var(--color-text-muted)">&</span>
+          <strong style="color: var(--color-primary)"
+            >{{ team.league_two.name }}</strong
+          >
+          {% endif %}
+          {% else %}
+          <strong style="color: var(--color-error)">هنوز انتخاب نشده</strong>
+          {% endif %}
+        </div>
       </div>
 
       <div class="user-table-wrapper">
@@ -126,14 +148,14 @@ team.team_name }}{% endblock %} {% block body %}
       </div>
     </div>
 
-    {% if not team.league_one_id %}
+    {% if not team.education_level or not team.league_one_id %}
     <div class="alert alert--warning" role="alert" style="text-align: center">
       <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
       <p style="font-weight: 600; font-size: 1.1rem; margin-top: 0.5rem">
-        مرحله بعد: انتخاب مقطع تحصیلی
+        مرحله بعد: انتخاب مقطع تحصیلی و لیگ
       </p>
       <p>
-        برای افزودن اعضا، ابتدا باید حداقل یک لیگ (مقطع تحصیلی) برای تیم خود
+        برای افزودن اعضا، ابتدا باید مقطع تحصیلی و حداقل یک لیگ برای تیم خود
         انتخاب کنید.
       </p>
       <a

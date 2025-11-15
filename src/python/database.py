@@ -5,7 +5,7 @@ import os
 from contextlib import contextmanager
 from typing import Any, Iterator, List, Optional, Tuple
 import bcrypt
-from sqlalchemy import create_engine, func
+from sqlalchemy import create_engine, func, text
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.util import typing as sa_typing
 
@@ -40,7 +40,8 @@ from . import models
 from . import utils
 
 db_engine = create_engine(
-    f"sqlite:///{constants.Path.database.replace('\\', '/')}", connect_args={"check_same_thread": False}
+    f"sqlite:///{constants.Path.database.replace('\\', '/')}",
+    connect_args={"check_same_thread": False},
 )
 
 
@@ -48,6 +49,19 @@ def create_database():
     "Create the database and its tables if they do not exist"
     os.makedirs(os.path.dirname(constants.Path.database), exist_ok=True)
     models.Base.metadata.create_all(bind=db_engine)
+
+
+def ensure_schema_upgrades():
+    """Apply lightweight schema adjustments that older databases may lack."""
+
+    with db_engine.connect() as connection:
+        existing_columns = {
+            row[1] for row in connection.execute(text("PRAGMA table_info(teams);"))
+        }
+        if "education_level" not in existing_columns:
+            connection.execute(
+                text("ALTER TABLE teams ADD COLUMN education_level VARCHAR(50);")
+            )
 
 
 @contextmanager

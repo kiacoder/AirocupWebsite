@@ -370,6 +370,7 @@ def update_team(team_id):
     with database.get_db_session() as db:
         team = (
             db.query(models.Team)
+            .options(subqueryload(models.Team.members))
             .filter(
                 models.Team.team_id == team_id,
                 models.Team.client_id == session["client_id"],
@@ -502,6 +503,7 @@ def manage_members(team_id):
         members=members,
         is_paid=is_paid,
         has_any_payment=has_any_payment,
+        education_levels=constants.education_levels,
         form_data=None,  # Pass None on GET request
         **utils.get_form_context(),
     )
@@ -546,6 +548,13 @@ def edit_member(team_id, member_id):
 
         if not team:
             abort(404, "تیم مورد نظر پیدا نشد یا شما دسترسی به این تیم را ندارید")
+
+        if not team.education_level:
+            flash(
+                "برای ویرایش اعضا، ابتدا باید مقطع تحصیلی تیم را مشخص کنید.",
+                "error",
+            )
+            return redirect(url_for("client.select_league", team_id=team_id))
 
         member = (
             db.query(models.Member)
@@ -597,24 +606,22 @@ def edit_member(team_id, member_id):
                         )
                     )
 
-            # --- AGE VALIDATION (Req from Sketch) ---
-            if birth_date and role_value == models.MemberRole.MEMBER:
-                leagues = [team.league_one, team.league_two]
-                for league in leagues:
-                    if league:
-                        # This function must be added to utils.py
-                        is_valid, age_error = utils.check_age_against_league(
-                            birth_date, league
-                        )
-                        if not is_valid:
-                            flash(age_error, "error")
-                            return render_template(
-                                template_name,
-                                team=team,
-                                member=member,
-                                form_data=request.form,
-                                **utils.get_form_context(),
-                            )
+            # --- AGE VALIDATION BASED ON EDUCATION LEVEL ---
+            if birth_date and role_value:
+                is_valid, age_error = utils.validate_member_age(
+                    birth_date,
+                    role_value,
+                    team.education_level,
+                )
+                if not is_valid:
+                    flash(age_error, "error")
+                    return render_template(
+                        template_name,
+                        team=team,
+                        member=member,
+                        form_data=request.form,
+                        **utils.get_form_context(),
+                    )
 
             # --- LEAGUE CONFLICT CHECK (Req #7) ---
             if national_id and role_value == models.MemberRole.MEMBER:
@@ -1937,6 +1944,11 @@ def add_member(team_id):
         if not team:
             abort(404)
 
+        if not team.education_level:
+            return _render_error(
+                "برای افزودن عضو، ابتدا باید مقطع تحصیلی تیم را انتخاب کنید."
+            )
+
         has_any_payment = database.has_team_made_any_payment(db_session, team_id)
 
         # Helper to return error to template, passing back the submitted form data
@@ -1954,6 +1966,7 @@ def add_member(team_id):
                 .all(),
                 is_paid=database.check_if_team_is_paid(db_session, team_id),
                 has_any_payment=has_any_payment,
+                education_levels=constants.education_levels,
                 form_data=request.form,  # CRITICAL: Passes data back for pre-filling (Req #8 fix)
                 **utils.get_form_context(),
             )
@@ -1990,16 +2003,15 @@ def add_member(team_id):
         role_value = new_member_data_safe.get("role")
         birth_date = new_member_data_safe.get("birth_date")
 
-        # 4. AGE VALIDATION (Req from Sketch)
-        if birth_date and role_value == models.MemberRole.MEMBER:
-            leagues = [team.league_one, team.league_two]
-            for league in leagues:
-                if league:
-                    is_valid, age_error = utils.check_age_against_league(
-                        birth_date, league
-                    )
-                    if not is_valid:
-                        return _render_error(age_error)
+        # 4. AGE VALIDATION (based on selected education level)
+        if birth_date and role_value:
+            is_age_valid, age_error = utils.validate_member_age(
+                birth_date,
+                role_value,
+                team.education_level,
+            )
+            if not is_age_valid:
+                return _render_error(age_error)
 
         # 5. LEAGUE CONFLICT CHECK (Req #7)
         if (
@@ -2099,6 +2111,11 @@ def select_league(team_id):
             csrf_protector.protect()
             league_one_id = request.form.get("league_one")
             league_two_id = request.form.get("league_two")
+            education_level = request.form.get("education_level", "").strip()
+
+            if education_level not in constants.allowed_education:
+                flash("لطفاً مقطع تحصیلی معتبری را انتخاب کنید.", "error")
+                return redirect(url_for("client.select_league", team_id=team_id))
 
             if not league_one_id:
                 flash("لطفاً لیگ اول (اجباری) را انتخاب کنید.", "error")
@@ -2108,8 +2125,37 @@ def select_league(team_id):
                 flash("شما نمی‌توانید یک لیگ را دو بار انتخاب کنید.", "error")
                 return redirect(url_for("client.select_league", team_id=team_id))
 
+            if education_level != (team.education_level or ""):
+                level_info = constants.education_levels.get(education_level)
+                age_range = level_info.get("ages") if level_info else None
+                if age_range:
+                    min_age, max_age = age_range
+                    violating_member = next(
+                        (
+                            member
+                            for member in team.members
+                            if member.status == models.EntityStatus.ACTIVE
+                            and member.role == models.MemberRole.MEMBER
+                            and not (
+                                min_age
+                                <= utils.calculate_age(member.birth_date)
+                                <= max_age
+                            )
+                        ),
+                        None,
+                    )
+                    if violating_member:
+                        flash(
+                            f"عضو «{violating_member.name}» با سن فعلی خود در بازه مجاز مقطع «{education_level}» قرار نمی‌گیرد.",
+                            "error",
+                        )
+                        return redirect(
+                            url_for("client.select_league", team_id=team_id)
+                        )
+
             team.league_one_id = int(league_one_id) if league_one_id else None
             team.league_two_id = int(league_two_id) if league_two_id else None
+            team.education_level = education_level
             db.commit()
             flash("لیگ‌های تیم با موفقیت به‌روزرسانی شد.", "success")
             return redirect(url_for("client.dashboard"))
@@ -2118,6 +2164,7 @@ def select_league(team_id):
         constants.client_html_names_data["select_league"],
         team=team,
         leagues=constants.leagues_list,
+        education_levels=constants.education_levels,
     )
 
 
@@ -2160,6 +2207,14 @@ def _calculate_payment_details(db, team):
         return (
             {},
             "لطفاً ابتدا لیگ اصلی تیم را از بخش «انتخاب لیگ» مشخص کنید.",
+            "warning",
+            True,
+        )
+
+    if not team.education_level:
+        return (
+            {},
+            "لطفاً ابتدا مقطع تحصیلی تیم را از بخش «انتخاب مقطع و لیگ» تعیین کنید.",
             "warning",
             True,
         )
