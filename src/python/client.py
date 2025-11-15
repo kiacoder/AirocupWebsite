@@ -1765,25 +1765,28 @@ def delete_member(team_id, member_id):
 
 
 @client_blueprint.route("/get_my_chat_history")
-@auth.login_required
 def get_my_chat_history():
-    "Return the chat history for the logged-in client as JSON"
+    "Return the chat history for the logged-in or resolving client as JSON"
+
     client_id = session.get("client_id")
     if not isinstance(client_id, int):
-        return jsonify({"messages": []})
+        resolution_id = session.get("client_id_for_resolution")
+        client_id = resolution_id if isinstance(resolution_id, int) else None
+
+    if not isinstance(client_id, int):
+        return jsonify({"messages": []}), 401
+
     with database.get_db_session() as db:
-        return jsonify(
+        messages = [
             {
-                "messages": [
-                    {
-                        "message_text": message.message_text,
-                        "timestamp": message.timestamp.isoformat(),
-                        "sender": message.sender,
-                    }
-                    for message in database.get_chat_history_by_client_id(db, client_id)
-                ]
+                "message_text": message.message_text,
+                "timestamp": message.timestamp.isoformat(),
+                "sender": message.sender,
             }
-        )
+            for message in database.get_chat_history_by_client_id(db, client_id)
+        ]
+
+    return jsonify({"messages": messages})
 
 
 @client_blueprint.route("/Team/<int:team_id>/UploadDocument", methods=["POST"])
