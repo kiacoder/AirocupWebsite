@@ -1044,22 +1044,9 @@ const airocupApp = {
             : !mobileMenu.classList.contains("is-open");
 
         mobileMenu.classList.toggle("is-open", isOpen);
-        backdrop.classList.toggle("is-visible", isOpen);
+        backdrop?.classList.toggle("is-visible", isOpen);
         document.body.classList.toggle("body-no-scroll", isOpen);
         menuBtn.classList.toggle("is-active", isOpen);
-
-        // Animate hamburger → X
-        const spans = menuBtn.querySelectorAll(".hamburger span");
-        spans.forEach(
-          (s, i) =>
-            (s.style.transform = isOpen
-              ? i === 0
-                ? "rotate(45deg) translateY(8px)"
-                : i === 1
-                ? "scale(0)"
-                : "rotate(-45deg) translateY(-8px)"
-              : "")
-        );
 
         // Footer moves up when menu opens
         if (footer)
@@ -1073,6 +1060,11 @@ const airocupApp = {
 
       menuBtn.addEventListener("click", () => toggleMenu());
       backdrop?.addEventListener("click", () => toggleMenu(false));
+
+      mobileNavList?.addEventListener("click", (event) => {
+        const link = event.target.closest("a");
+        if (link) toggleMenu(false);
+      });
 
       // Move overflow items to mobile menu
       function updateMenuOverflow() {

@@ -2770,15 +2770,15 @@ MOBILE MENU & HAMBURGER
 }
 
 /* open state animation */
-.mobile-menu-btn.open .hamburger span:nth-child(1) {
+.mobile-menu-btn.is-active .hamburger span:nth-child(1) {
   top: 7.5px;
   transform: rotate(45deg);
 }
-.mobile-menu-btn.open .hamburger span:nth-child(2) {
+.mobile-menu-btn.is-active .hamburger span:nth-child(2) {
   opacity: 0;
   transform: scale(0.6);
 }
-.mobile-menu-btn.open .hamburger span:nth-child(3) {
+.mobile-menu-btn.is-active .hamburger span:nth-child(3) {
   top: 7.5px;
   transform: rotate(-45deg);
 }
@@ -2814,7 +2814,7 @@ MOBILE MENU & HAMBURGER
 }
 
 /* mobile open state */
-.mobile-menu.open {
+.mobile-menu.is-open {
   transform: translateY(0);
   opacity: 1;
   visibility: visible;
@@ -2866,14 +2866,14 @@ MOBILE MENU & HAMBURGER
   transition: opacity 0.2s ease, visibility 0.12s;
   pointer-events: none;
 }
-.mobile-menu-backdrop.open {
+.mobile-menu-backdrop.is-visible {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
 }
 
 /* prevent body scroll when mobile menu open */
-body.mobile-menu-open {
+body.body-no-scroll {
   overflow: hidden;
 }
 
@@ -4316,15 +4316,15 @@ FOOTER
   top: 15px;
 }
 
-.mobile-menu-btn.open .hamburger span:nth-child(1) {
+.mobile-menu-btn.is-active .hamburger span:nth-child(1) {
   top: 7.5px;
   transform: rotate(45deg);
 }
-.mobile-menu-btn.open .hamburger span:nth-child(2) {
+.mobile-menu-btn.is-active .hamburger span:nth-child(2) {
   opacity: 0;
   transform: scale(0.6);
 }
-.mobile-menu-btn.open .hamburger span:nth-child(3) {
+.mobile-menu-btn.is-active .hamburger span:nth-child(3) {
   top: 7.5px;
   transform: rotate(-45deg);
 }

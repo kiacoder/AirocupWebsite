@@ -4,7 +4,10 @@
 {% block page_title %}آیروکاپ - مسابقات ملی هوش مصنوعی و رباتیک{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/index.css', v=static_version) }}"
+/>
 {% endblock %}
 
 {% block body %}
@@ -44,7 +47,7 @@
 
         <div class="hero-details">
           <div class="detail-card">
-            <i class="fas fa-calendar-star" aria-hidden="true"></i>
+            <i class="fas fa-calendar-days" aria-hidden="true"></i>
             <div>
               <p class="detail-label">مرحله اول</p>
               <p class="detail-value">{{ event_details.stage_one }}</p>
@@ -93,11 +96,11 @@
 
         <div class="hero-highlights" role="list">
           <div class="highlight-pill" role="listitem">
-            <i class="fas fa-sparkles" aria-hidden="true"></i>
+            <i class="fas fa-star" aria-hidden="true"></i>
             تجربه‌ای آینده‌نگر با تمرکز بر نوآوری‌های هوش مصنوعی
           </div>
           <div class="highlight-pill" role="listitem">
-            <i class="fas fa-handshake-angle" aria-hidden="true"></i>
+            <i class="fas fa-handshake-simple" aria-hidden="true"></i>
             شبکه‌سازی با مربیان صنعتی و دانشگاهی برتر
           </div>
           <div class="highlight-pill" role="listitem">
@@ -106,24 +109,8 @@
           </div>
         </div>
 
-        {% set total_committee = committee_members|length + technical_committee_members|length %}
-        <div class="hero-stats" aria-label="نمای کلی رویداد">
-          <div class="stat-card">
-            <span class="stat-value">{{ leagues_list|length }}</span>
-            <span class="stat-label">لیگ تخصصی</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-value">{{ total_committee }}</span>
-            <span class="stat-label">عضو کمیته</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-value">۲</span>
-            <span class="stat-label">مرحله رقابتی</span>
-          </div>
-        </div>
-
         <div class="olympiad-highlight">
-          <i class="fas fa-trophy-star icon" aria-hidden="true"></i>
+          <i class="fas fa-trophy icon" aria-hidden="true"></i>
           <span><strong>این مرحله، انتخابی المپیاد بین‌المللی هوش مصنوعی COMSTECH است</strong></span>
         </div>
 
@@ -203,15 +190,15 @@
       <div class="about-card about-card--content">
         <ul class="about-highlights">
           <li>
-            <i class="fas fa-lightbulb-on" aria-hidden="true"></i>
+            <i class="fas fa-lightbulb" aria-hidden="true"></i>
             تمرکز بر ایده‌های نوآورانه و کاربردی در صنایع مختلف
           </li>
           <li>
-            <i class="fas fa-users-gear" aria-hidden="true"></i>
+            <i class="fas fa-users" aria-hidden="true"></i>
             منتورینگ حرفه‌ای با حضور اساتید دانشگاه و متخصصان صنعت
           </li>
           <li>
-            <i class="fas fa-business-time" aria-hidden="true"></i>
+            <i class="fas fa-briefcase" aria-hidden="true"></i>
             مسیر مشخص برای ورود به اکوسیستم کارآفرینی و سرمایه‌گذاری
           </li>
           <li>
