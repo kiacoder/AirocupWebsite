@@ -107,10 +107,20 @@ def validate_member_age(
         return True, None
 
     min_age, max_age = age_range
-    if age < min_age or age > max_age:
+    is_below_min = min_age is not None and age < min_age
+    is_above_max = max_age is not None and age > max_age
+
+    if is_below_min or is_above_max:
+        if min_age is None and max_age is not None:
+            allowed_text = f"تا {max_age} سال"
+        elif min_age is not None and max_age is None:
+            allowed_text = f"از {min_age} سال به بالا"
+        else:
+            allowed_text = f"بین {min_age} تا {max_age} سال"
+
         return (
             False,
-            f"سن عضو ({age} سال) با بازه مجاز برای مقطع «{education_level}» (بین {min_age} تا {max_age} سال) همخوانی ندارد.",
+            f"سن عضو ({age} سال) با بازه مجاز برای مقطع «{education_level}» ({allowed_text}) همخوانی ندارد.",
         )
 
     return True, None

@@ -42,14 +42,26 @@ team.team_name }}{% endblock %} {% block body %}
             >مقطع تحصیلی تیم:</span
           >
           {% if team.education_level %}
+          {% set level_info = education_levels.get(team.education_level) %}
+          {% set ages = level_info.get('ages') if level_info else None %}
+          {% set age_min = ages[0] if ages else None %}
+          {% set age_max = ages[1] if ages else None %}
+          {% set age_label = '' %}
+          {% if ages %}
+            {% if age_min is not none and age_max is not none %}
+              {% set age_label = age_min | persian_digits ~ ' تا ' ~ age_max | persian_digits ~ ' سال' %}
+            {% elif age_min is not none %}
+              {% set age_label = 'از ' ~ (age_min | persian_digits) ~ ' سال به بالا' %}
+            {% elif age_max is not none %}
+              {% set age_label = 'تا ' ~ (age_max | persian_digits) ~ ' سال' %}
+            {% endif %}
+          {% endif %}
           <strong style="color: var(--color-primary)"
             >{{ team.education_level }}</strong
           >
-          {% set level_info = education_levels.get(team.education_level) %}
-          {% if level_info and level_info.get('ages') %}
+          {% if age_label %}
           <span style="color: var(--color-text-muted); margin-right: 0.75rem">
-            بازه سنی مجاز: {{ level_info.get('ages')[0] | persian_digits }} تا
-            {{ level_info.get('ages')[1] | persian_digits }} سال
+            بازه سنی مجاز: {{ age_label }}
           </span>
           {% endif %}
           {% else %}
