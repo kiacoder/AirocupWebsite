@@ -17,7 +17,8 @@
             {{ admin_greeting_name | default('مدیر محترم', true) | persian_digits }}!
           </h1>
           <p>
-            تصویر کلی از وضعیت ثبت‌نام، پرداخت و مکاتبات شرکت‌کنندگان را در این صفحه دنبال کنید و سریع‌تر به اقدامات روزانه پاسخ دهید.
+            تصویر کلی از وضعیت ثبت‌نام، پرداخت و مکاتبات شرکت‌کنندگان را در این
+            صفحه دنبال کنید و سریع‌تر به اقدامات روزانه پاسخ دهید.
           </p>
         </div>
 
@@ -146,7 +147,9 @@
             <div class="admin-metric-card">
               <div class="admin-metric-card__icon"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
               <div>
-                <h3>{{ stats.approved_teams | default(0) | persian_digits }}</h3>
+                <h3>
+                  {{ stats.approved_teams | default(0) | persian_digits }}
+                </h3>
                 <p>تیم‌های تایید شده</p>
               </div>
             </div>
@@ -212,7 +215,9 @@
             <h2><i class="fas fa-credit-card" aria-hidden="true"></i> رسیدهای پرداخت در انتظار تایید</h2>
             <p>در صورت تایید، وضعیت تیم‌ها به‌روزرسانی خواهد شد.</p>
           </div>
-          <span class="admin-dashboard__badge">{{ pending_payments_count | persian_digits }} مورد</span>
+          <span class="admin-dashboard__badge"
+            >{{ pending_payments_count | persian_digits }} مورد</span
+          >
         </header>
 
         <div class="admin-table-wrapper">
@@ -233,12 +238,21 @@
               {% for payment in pending_payments %}
               <tr>
                 <td>
-                  <div class="admin-table__cell-title">{{ payment.team_name }}</div>
-                  <div class="admin-table__cell-subtitle">کد تیم: #{{ payment.team_id | persian_digits }}</div>
+                  <div class="admin-table__cell-title">
+                    {{ payment.team_name }}
+                  </div>
+                  <div class="admin-table__cell-subtitle">
+                    کد تیم: #{{ payment.team_id | persian_digits }}
+                  </div>
                 </td>
                 <td>
-                  <div class="admin-table__cell-title">{{ payment.client_email }}</div>
-                  <div class="admin-table__cell-subtitle">{{ payment.client_phone | default('—', true) | persian_digits }}</div>
+                  <div class="admin-table__cell-title">
+                    {{ payment.client_email }}
+                  </div>
+                  <div class="admin-table__cell-subtitle">
+                    {{ payment.client_phone | default('—', true) |
+                    persian_digits }}
+                  </div>
                 </td>
                 <td>{{ payment.amount | humanize_number | persian_digits }}</td>
                 <td>{{ payment.members_paid_for | persian_digits }} عضو</td>
@@ -281,7 +295,7 @@
                 </td>
               </tr>
               {% else %}
-              <tr class="admin-table__empty">
+              <tr class="empty-state-card">
                 <td colspan="7">
                   <div class="admin-empty-state">
                     <i class="fas fa-credit-card" aria-hidden="true"></i>
