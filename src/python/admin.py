@@ -1028,14 +1028,41 @@ def admin_dashboard():
             "new_clients_this_week": new_clients_this_week,
         }
 
-        pending_payments = (
-            db.query(models.Payment, models.Team.team_name, models.Client.email)
+        pending_payments_rows = (
+            db.query(
+                models.Payment,
+                models.Team.team_name,
+                models.Team.team_id,
+                models.Client.email,
+                models.Client.phone,
+            )
             .join(models.Team, models.Payment.team_id == models.Team.team_id)
             .join(models.Client, models.Payment.client_id == models.Client.client_id)
             .filter(models.Payment.status == models.PaymentStatus.PENDING)
             .order_by(models.Payment.upload_date.asc())
             .all()
         )
+
+        pending_payments = [
+            {
+                "payment_id": payment.payment_id,
+                "team_id": team_id,
+                "team_name": team_name,
+                "client_email": client_email,
+                "client_phone": client_phone,
+                "amount": payment.amount,
+                "members_paid_for": payment.members_paid_for,
+                "upload_date": payment.upload_date,
+                "receipt_filename": payment.receipt_filename,
+            }
+            for (
+                payment,
+                team_name,
+                team_id,
+                client_email,
+                client_phone,
+            ) in pending_payments_rows
+        ]
 
     return render_template(
         constants.admin_html_names_data["admin_dashboard"],
