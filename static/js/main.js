@@ -153,6 +153,7 @@ const airocupApp = {
 
   ui: {
     init() {
+      this.initializeHeaderLayout();
       this.initializeFlashMessages();
       this.initializeModals();
       this.initializeCopyButtons();
@@ -162,6 +163,46 @@ const airocupApp = {
       this.initializeRelativeTime();
       this.initializeSmoothScroll();
       this.initializePosterZoom();
+    },
+
+    initializeHeaderLayout() {
+      const header =
+        document.querySelector(".site-header") ||
+        document.querySelector(".admin-header");
+
+      if (!header) return;
+
+      const root = document.documentElement;
+      const setHeight = () => {
+        const height = Math.round(header.getBoundingClientRect().height);
+        if (height > 0) {
+          root.style.setProperty("--site-header-height", `${height}px`);
+        }
+      };
+
+      const debouncedUpdate = airocupApp.helpers.debounce(setHeight, 160);
+      window.addEventListener("resize", debouncedUpdate);
+      window.addEventListener("orientationchange", debouncedUpdate);
+      window.addEventListener("load", setHeight);
+
+      if ("ResizeObserver" in window) {
+        const resizeObserver = new ResizeObserver(() => setHeight());
+        resizeObserver.observe(header);
+      }
+
+      setHeight();
+
+      if (header.classList.contains("site-header")) {
+        const toggleCondensed = () => {
+          header.classList.toggle(
+            "site-header--condensed",
+            window.scrollY > 10
+          );
+        };
+
+        window.addEventListener("scroll", toggleCondensed, { passive: true });
+        toggleCondensed();
+      }
     },
 
     createFlash(type = "info", message = "", duration = 5000) {
