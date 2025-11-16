@@ -67,6 +67,9 @@ const airocupApp = {
       CLIENTS_TABLE_BODY: "#clients-table tbody",
       ADMIN_CHAT_CONTAINER: ".admin-chat-container",
       RELATIVE_TIME: "[data-timestamp]",
+      POSTER_TRIGGER: ".poster-zoom-trigger",
+      POSTER_MODAL: "#posterZoomModal",
+      POSTER_MODAL_CLOSE: "[data-action=\"close-poster-modal\"]",
     },
     CLASSES: {
       IS_VISIBLE: "is-visible",
@@ -77,6 +80,7 @@ const airocupApp = {
       VALID: "valid",
       INVALID: "is-invalid",
       IS_OPEN: "is-open",
+      POSTER_MODAL_OPEN: "poster-modal-open",
     },
     ATTRIBUTES: {
       ARIA_HIDDEN: "aria-hidden",
@@ -157,6 +161,7 @@ const airocupApp = {
       this.initializeVideoPlayer();
       this.initializeRelativeTime();
       this.initializeSmoothScroll();
+      this.initializePosterZoom();
     },
 
     createFlash(type = "info", message = "", duration = 5000) {
@@ -473,6 +478,70 @@ const airocupApp = {
             console.warn(`Smooth scroll failed for selector "${href}":`, error);
           }
         });
+      });
+    },
+
+    initializePosterZoom() {
+      const triggers = document.querySelectorAll(
+        airocupApp.constants.SELECTORS.POSTER_TRIGGER
+      );
+      const modal = document.querySelector(
+        airocupApp.constants.SELECTORS.POSTER_MODAL
+      );
+
+      if (!modal || !triggers.length) {
+        return;
+      }
+
+      const modalImage = modal.querySelector("img");
+      const closeTargets = modal.querySelectorAll(
+        airocupApp.constants.SELECTORS.POSTER_MODAL_CLOSE
+      );
+      const backdrop = modal.querySelector(".poster-modal__backdrop");
+
+      const openModal = (posterSrc) => {
+        if (posterSrc && modalImage) {
+          modalImage.setAttribute("src", posterSrc);
+        }
+        modal.classList.add(airocupApp.constants.CLASSES.IS_VISIBLE);
+        modal.setAttribute(
+          airocupApp.constants.ATTRIBUTES.ARIA_HIDDEN,
+          "false"
+        );
+        document.body.classList.add(
+          airocupApp.constants.CLASSES.POSTER_MODAL_OPEN
+        );
+      };
+
+      const closeModal = () => {
+        modal.classList.remove(airocupApp.constants.CLASSES.IS_VISIBLE);
+        modal.setAttribute(
+          airocupApp.constants.ATTRIBUTES.ARIA_HIDDEN,
+          "true"
+        );
+        document.body.classList.remove(
+          airocupApp.constants.CLASSES.POSTER_MODAL_OPEN
+        );
+      };
+
+      triggers.forEach((trigger) => {
+        trigger.addEventListener("click", () => {
+          const posterImage = trigger.querySelector("img");
+          const source = posterImage?.getAttribute("src");
+          openModal(source || modalImage?.getAttribute("src"));
+        });
+      });
+
+      closeTargets.forEach((btn) => btn.addEventListener("click", closeModal));
+      backdrop?.addEventListener("click", closeModal);
+
+      document.addEventListener("keydown", (event) => {
+        if (
+          event.key === "Escape" &&
+          modal.classList.contains(airocupApp.constants.CLASSES.IS_VISIBLE)
+        ) {
+          closeModal();
+        }
       });
     },
   },
