@@ -3,9 +3,10 @@
 import datetime
 import os
 from contextlib import contextmanager
+from pathlib import Path
 from typing import Any, Iterator, List, Optional, Tuple
 import bcrypt
-from sqlalchemy import create_engine, func
+from sqlalchemy import create_engine, func, text
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.util import typing as sa_typing
 
@@ -39,8 +40,11 @@ from . import constants
 from . import models
 from . import utils
 
+_normalized_sqlite_path = Path(constants.Path.database).as_posix()
+
 db_engine = create_engine(
-    f"sqlite:///{constants.Path.database.replace('\\', '/')}", connect_args={"check_same_thread": False}
+    f"sqlite:///{_normalized_sqlite_path}",
+    connect_args={"check_same_thread": False},
 )
 
 
@@ -48,6 +52,19 @@ def create_database():
     "Create the database and its tables if they do not exist"
     os.makedirs(os.path.dirname(constants.Path.database), exist_ok=True)
     models.Base.metadata.create_all(bind=db_engine)
+
+
+def ensure_schema_upgrades():
+    """Apply lightweight schema adjustments that older databases may lack."""
+
+    with db_engine.connect() as connection:
+        existing_columns = {
+            row[1] for row in connection.execute(text("PRAGMA table_info(teams);"))
+        }
+        if "education_level" not in existing_columns:
+            connection.execute(
+                text("ALTER TABLE teams ADD COLUMN education_level VARCHAR(50);")
+            )
 
 
 @contextmanager
@@ -266,6 +283,9 @@ def validate_new_member_data(
     birth_month: int,
     birth_day: int,
     role_value: str,
+    *,
+    team_id: Optional[int] = None,
+    member_id_to_exclude: Optional[int] = None,
 ) -> List[str]:
     "Validate new member data and return a list of error messages if any"
     errors = []
@@ -276,20 +296,21 @@ def validate_new_member_data(
     if not utils.is_valid_national_id(national_id):
         errors.append("کد ملی وارد شده معتبر نیست.")
 
-    elif role_value == models.MemberRole.MEMBER.value:
-        existing_member = (
+    elif team_id:
+        duplicate_query = (
             db.query(models.Member.member_id)
             .filter(
+                models.Member.team_id == team_id,
                 models.Member.national_id == national_id,
-                models.Member.role == models.MemberRole.MEMBER,
                 models.Member.status == models.EntityStatus.ACTIVE,
             )
-            .first()
         )
-        if existing_member:
-            errors.append(
-                "این کد ملی قبلاً برای (عضو) دیگری در یک تیم فعال ثبت شده است."
+        if member_id_to_exclude:
+            duplicate_query = duplicate_query.filter(
+                models.Member.member_id != member_id_to_exclude
             )
+        if duplicate_query.first():
+            errors.append("این کد ملی قبلاً برای این تیم ثبت شده است.")
 
     if not (
         db.query(models.City.city_id)
@@ -335,6 +356,7 @@ def save_chat_message(db: Session, client_id: int, message_text: str, sender: st
             timestamp=datetime.datetime.now(datetime.timezone.utc),
         )
     )
+    db.commit()
 
 
 def get_chat_history_by_client_id(
@@ -370,7 +392,10 @@ def check_if_team_is_paid(db: Session, team_id: int) -> bool:
 
 
 def is_member_league_conflict(
-    db: Session, national_id: str, target_team_id: int
+    db: Session,
+    national_id: str,
+    target_team_id: int,
+    member_id_to_exclude: Optional[int] = None,
 ) -> Tuple[bool, str]:
     "Check if adding a member to the target team would create league conflict"
     target_team = (
@@ -390,7 +415,7 @@ def is_member_league_conflict(
     if not target_league_ids:
         return False, ""
 
-    conflicting_team = (
+    query = (
         db.query(models.Team)
         .join(models.Member)
         .filter(
@@ -406,8 +431,11 @@ def is_member_league_conflict(
                 | models.Team.league_two_id.in_(target_league_ids)
             ),
         )
-        .first()
     )
+    if member_id_to_exclude:
+        query = query.filter(models.Member.member_id != member_id_to_exclude)
+
+    conflicting_team = query.first()
 
     if conflicting_team:
         conflicting_team_league_ids = {
