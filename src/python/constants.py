@@ -1024,12 +1024,12 @@ leagues_list = [
 ]
 
 
-education_levels: Dict[str, Dict[str, Optional[Tuple[int, int]]]] = {
+education_levels: Dict[str, Dict[str, Optional[Tuple[Optional[int], Optional[int]]]]] = {
     "ابتدایی": {"grades": (1, 6), "ages": (6, 12)},
-    "متوسطه اول": {"grades": (7, 9), "ages": (13, 16)},
-    "متوسطه دوم": {"grades": (10, 12), "ages": (16, 18)},
-    "دانشجویی": {"grades": None, "ages": (19, 60)},
-    "آزاد": {"grades": None, "ages": (18, 65)},
+    "متوسطه اول": {"grades": (7, 9), "ages": (6, 15)},
+    "متوسطه دوم": {"grades": (10, 12), "ages": (6, 18)},
+    "دانشجویی": {"grades": None, "ages": (6, 65)},
+    "آزاد": {"grades": None, "ages": (19, None)},
 }
 
 allowed_education = set(education_levels.keys())
@@ -1205,26 +1205,13 @@ class AppConfig:
     max_team_per_client = 20
     max_members_per_team = 10
     max_image_size = 50 * 1024 * 1024
-    max_document_size = 100 * 1024 * 1024
-    max_video_size = 300 * 1024 * 1024
-    allowed_extensions = [
-        "png",
-        "jpg",
-        "jpeg",
-        "gif",
-        "pdf",
-        "doc",
-        "docx",
-        "xls",
-        "xlsx",
-        "ppt",
-        "pptx",
-        "mp4",
-        "mov",
-        "avi",
-        "mkv",
-        "webm",
-    ]
+    max_office_size = 50 * 1024 * 1024
+    max_document_size = 200 * 1024 * 1024  # Upper bound used for Flask uploads
+    max_video_size = 200 * 1024 * 1024
+    image_extensions = {"png", "jpg", "jpeg", "gif"}
+    office_extensions = {"pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx"}
+    video_extensions = {"mp4", "mov", "avi", "mkv", "webm"}
+    allowed_extensions = sorted(image_extensions | office_extensions | video_extensions)
     allowed_mime_types = [
         "image/jpeg",
         "image/png",

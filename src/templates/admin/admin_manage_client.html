@@ -270,6 +270,31 @@
           </div>
 
           <div class="form-group">
+            <label for="AddEducationLevel">مقطع تحصیلی تیم</label>
+            <select id="AddEducationLevel" name="EducationLevel" required>
+              <option value="">-- انتخاب مقطع --</option>
+              {% for level_name, level_info in education_levels.items() %}
+              {% set ages = level_info.get('ages') %}
+              {% set age_label = '' %}
+              {% if ages %}
+                {% set age_min = ages[0] %}
+                {% set age_max = ages[1] %}
+                {% if age_min is not none and age_max is not none %}
+                  {% set age_label = age_min | persian_digits ~ ' تا ' ~ age_max | persian_digits ~ ' سال' %}
+                {% elif age_min is not none %}
+                  {% set age_label = 'از ' ~ (age_min | persian_digits) ~ ' سال به بالا' %}
+                {% elif age_max is not none %}
+                  {% set age_label = 'تا ' ~ (age_max | persian_digits) ~ ' سال' %}
+                {% endif %}
+              {% endif %}
+              <option value="{{ level_name }}">
+                {{ level_name }}{% if age_label %} ({{ age_label }}){% endif %}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group">
             <label for="AddLeagueOne">انتخاب لیگ اصلی</label>
             <select id="AddLeagueOne" name="LeagueOne" required>
               <option value="">-- انتخاب لیگ اول --</option>
