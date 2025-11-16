@@ -544,7 +544,7 @@ def admin_manage_client(client_id):
                 models.Team.client_id == client_id,
                 models.Team.status == models.EntityStatus.ACTIVE,
             )
-            .group_by(models.Team.team_id, models.Client.email)
+            .group_by(models.Team.team_id)
             .order_by(models.Team.team_registration_date.desc())
             .all()
         )
