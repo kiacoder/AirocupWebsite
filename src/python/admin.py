@@ -4,6 +4,7 @@ import os
 import math
 import uuid
 import datetime
+from types import SimpleNamespace
 from flask import (
     Blueprint,
     abort,
@@ -33,6 +34,21 @@ import persiantools.digits
 from .auth import admin_required, admin_action_required
 
 admin_blueprint = Blueprint("admin", __name__, template_folder="admin")
+
+
+def _coerce_payment_status(raw_status):
+    """Return a ``PaymentStatus`` enum when ``raw_status`` is truthy."""
+
+    if raw_status is None:
+        return None
+
+    if isinstance(raw_status, models.PaymentStatus):
+        return raw_status
+
+    try:
+        return models.PaymentStatus(raw_status)
+    except ValueError:
+        return None
 
 
 @admin_blueprint.route("/UploadsGallery/<filename>")
@@ -536,7 +552,7 @@ def admin_manage_client(client_id):
         teams_with_status = []
         for team, member_count, last_payment_status in teams_query:
             setattr(team, "total_members", member_count)
-            setattr(team, "last_payment_status", last_payment_status)
+            setattr(team, "last_payment_status", _coerce_payment_status(last_payment_status))
             teams_with_status.append(team)
 
     return render_template(
@@ -560,7 +576,7 @@ def admin_manage_teams():
             .scalar_subquery()
         )
 
-        all_teams = (
+        team_rows = (
             db.query(
                 models.Team.team_id,
                 models.Team.team_name,
@@ -579,6 +595,17 @@ def admin_manage_teams():
             .order_by(models.Team.team_registration_date.desc())
             .all()
         )
+
+        all_teams = [
+            SimpleNamespace(
+                team_id=row.team_id,
+                team_name=row.team_name,
+                client_email=row.client_email,
+                member_count=row.member_count,
+                last_payment_status=_coerce_payment_status(row.last_payment_status),
+            )
+            for row in team_rows
+        ]
 
     return render_template(
         constants.admin_html_names_data["admin_manage_teams"], teams=all_teams
@@ -636,7 +663,11 @@ def admin_edit_team(team_id):
     with database.get_db_session() as db:
         team = (
             db.query(models.Team)
-            .options(subqueryload(models.Team.members))
+            .options(
+                subqueryload(models.Team.members),
+                joinedload(models.Team.league_one),
+                joinedload(models.Team.league_two),
+            )
             .filter(models.Team.team_id == team_id)
             .first()
         )
@@ -738,7 +769,14 @@ def admin_edit_team(team_id):
 
             return redirect(url_for("admin.admin_edit_team", team_id=team_id))
 
-        members = db.query(models.Member).filter(models.Member.team_id == team_id).all()
+        members = (
+            db.query(models.Member)
+            .options(
+                joinedload(models.Member.city).joinedload(models.City.province)
+            )
+            .filter(models.Member.team_id == team_id)
+            .all()
+        )
         form_context = utils.get_form_context()
 
     return render_template(
