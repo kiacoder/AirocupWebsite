@@ -1244,7 +1244,6 @@ class Contact:
     "Contact information for airocup"
     phone = "09352117339"
     email_primary = "airocupiran@gmail.com"
-    email_secondary = "ai90maharat@gmail.com"
     website = "https://airocup.org"
     instagram = "@airo.cup"
     bale = "https://ble.ir/join/8VwzjR1U3f"
@@ -1268,13 +1267,6 @@ contact_points_data = [
         "icon": "fas fa-envelope",
         "label": "ایمیل اصلی (سازمانی)",
         "display": Contact.email_primary,
-        "target": None,
-    },
-    {
-        "href": f"mailto:{Contact.email_secondary}",
-        "icon": "fas fa-envelope-open-text",
-        "label": "ایمیل دوم (پشتیبانی)",
-        "display": Contact.email_secondary,
         "target": None,
     },
     {
