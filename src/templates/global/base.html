@@ -283,52 +283,54 @@
         </nav>
 
         <!-- Primary actions (visible on desktop) -->
-        <div class="header-cta" id="header-cta">
-          <div class="header-cta__avatar" aria-hidden="true">
-            <img
-              src="{{ url_for('static', filename=path.solid_logos['solid_white'], v=static_version) }}"
-              alt=""
-              role="presentation"
-            />
+        <div class="header-cta-stack">
+          <div class="header-cta" id="header-cta">
+            <div class="header-cta__avatar" aria-hidden="true">
+              <img
+                src="{{ url_for('static', filename=path.solid_logos['solid_white'], v=static_version) }}"
+                alt=""
+                role="presentation"
+              />
+            </div>
+            <div class="header-cta__copy">
+              <span class="header-cta__eyebrow">AIROCUP 2025</span>
+              <span class="header-cta__title">پشتیبانی لحظه‌ای</span>
+              <span class="header-cta__subtitle">تنها یک کلیک با ما فاصله دارید</span>
+            </div>
+            <div class="header-actions header-cta__actions" id="header-actions">
+              {% if 'client_id' in session %}
+              <a href="{{ url_for('client.dashboard') }}" class="btn btn-secondary"
+                >داشبورد</a
+              >
+              <a href="{{ url_for('client.support_chat') }}" class="btn btn-primary"
+                >پشتیبانی</a
+              >
+              {% else %}
+              <a
+                href="{{ url_for('client.login_client') }}"
+                class="btn btn-secondary"
+                >ورود</a
+              >
+              <a href="{{ url_for('client.signup') }}" class="btn btn-primary"
+                >ثبت‌نام</a
+              >
+              {% endif %}
+            </div>
           </div>
-          <div class="header-cta__copy">
-            <span class="header-cta__eyebrow">AIROCUP 2025</span>
-            <span class="header-cta__title">پشتیبانی لحظه‌ای</span>
-            <span class="header-cta__subtitle">تنها یک کلیک با ما فاصله دارید</span>
-          </div>
-          <div class="header-actions header-cta__actions" id="header-actions">
-            {% if 'client_id' in session %}
-            <a href="{{ url_for('client.dashboard') }}" class="btn btn-secondary"
-              >داشبورد</a
-            >
-            <a href="{{ url_for('client.support_chat') }}" class="btn btn-primary"
-              >پشتیبانی</a
-            >
-            {% else %}
-            <a
-              href="{{ url_for('client.login_client') }}"
-              class="btn btn-secondary"
-              >ورود</a
-            >
-            <a href="{{ url_for('client.signup') }}" class="btn btn-primary"
-              >ثبت‌نام</a
-            >
-            {% endif %}
-          </div>
-        </div>
 
-        <!-- Hamburger (visible on mobile) -->
-        <button
-          class="mobile-menu-btn"
-          id="mobile-menu-btn"
-          aria-label="منوی موبایل"
-          aria-expanded="false"
-          aria-controls="mobile-menu"
-        >
-          <span class="hamburger">
-            <span></span><span></span><span></span>
-          </span>
-        </button>
+          <!-- Hamburger (visible on mobile) -->
+          <button
+            class="mobile-menu-btn"
+            id="mobile-menu-btn"
+            aria-label="منوی موبایل"
+            aria-expanded="false"
+            aria-controls="mobile-menu"
+          >
+            <span class="hamburger">
+              <span></span><span></span><span></span>
+            </span>
+          </button>
+        </div>
       </div>
 
       <!-- Mobile Menu (hidden by default) -->
