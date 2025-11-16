@@ -1034,7 +1034,7 @@ def admin_dashboard():
                 models.Team.team_name,
                 models.Team.team_id,
                 models.Client.email,
-                models.Client.phone_number,
+                models.Client.phone,
             )
             .join(models.Team, models.Payment.team_id == models.Team.team_id)
             .join(models.Client, models.Payment.client_id == models.Client.client_id)
@@ -1049,7 +1049,7 @@ def admin_dashboard():
                 "team_id": team_id,
                 "team_name": team_name,
                 "client_email": client_email,
-                "client_phone": client_phone_number,
+                "client_phone": client_phone,
                 "amount": payment.amount,
                 "members_paid_for": payment.members_paid_for,
                 "upload_date": payment.upload_date,
@@ -1060,7 +1060,7 @@ def admin_dashboard():
                 team_name,
                 team_id,
                 client_email,
-                client_phone_number,
+                client_phone,
             ) in pending_payments_rows
         ]
 
