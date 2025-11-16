@@ -100,7 +100,7 @@
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
-      xintegrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg=="
+      integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg=="
       crossorigin="anonymous"
       referrerpolicy="no-referrer"
     />
@@ -283,24 +283,38 @@
         </nav>
 
         <!-- Primary actions (visible on desktop) -->
-        <div class="header-actions" id="header-actions">
-          {% if 'client_id' in session %}
-          <a href="{{ url_for('client.dashboard') }}" class="btn btn-secondary"
-            >داشبورد</a
-          >
-          <a href="{{ url_for('client.support_chat') }}" class="btn btn-primary"
-            >پشتیبانی</a
-          >
-          {% else %}
-          <a
-            href="{{ url_for('client.login_client') }}"
-            class="btn btn-secondary"
-            >ورود</a
-          >
-          <a href="{{ url_for('client.signup') }}" class="btn btn-primary"
-            >ثبت‌نام</a
-          >
-          {% endif %}
+        <div class="header-cta" id="header-cta">
+          <div class="header-cta__avatar" aria-hidden="true">
+            <img
+              src="{{ url_for('static', filename=path.solid_logos['solid_white'], v=static_version) }}"
+              alt=""
+              role="presentation"
+            />
+          </div>
+          <div class="header-cta__copy">
+            <span class="header-cta__eyebrow">AIROCUP 2025</span>
+            <span class="header-cta__title">پشتیبانی لحظه‌ای</span>
+            <span class="header-cta__subtitle">تنها یک کلیک با ما فاصله دارید</span>
+          </div>
+          <div class="header-actions header-cta__actions" id="header-actions">
+            {% if 'client_id' in session %}
+            <a href="{{ url_for('client.dashboard') }}" class="btn btn-secondary"
+              >داشبورد</a
+            >
+            <a href="{{ url_for('client.support_chat') }}" class="btn btn-primary"
+              >پشتیبانی</a
+            >
+            {% else %}
+            <a
+              href="{{ url_for('client.login_client') }}"
+              class="btn btn-secondary"
+              >ورود</a
+            >
+            <a href="{{ url_for('client.signup') }}" class="btn btn-primary"
+              >ثبت‌نام</a
+            >
+            {% endif %}
+          </div>
         </div>
 
         <!-- Hamburger (visible on mobile) -->
