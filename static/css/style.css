@@ -6395,6 +6395,12 @@ FOOTER
     gap: 1.75rem;
   }
 
+  .admin-body .admin-dashboard__hero-panels {
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+  }
+
   .admin-body .admin-dashboard__welcome {
     display: flex;
     flex-direction: column;
