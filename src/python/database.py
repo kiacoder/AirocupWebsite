@@ -3,6 +3,7 @@
 import datetime
 import os
 from contextlib import contextmanager
+from pathlib import Path
 from typing import Any, Iterator, List, Optional, Tuple
 import bcrypt
 from sqlalchemy import create_engine, func, text
@@ -39,8 +40,10 @@ from . import constants
 from . import models
 from . import utils
 
+_normalized_sqlite_path = Path(constants.Path.database).as_posix()
+
 db_engine = create_engine(
-    f"sqlite:///{constants.Path.database.replace('\\', '/')}",
+    f"sqlite:///{_normalized_sqlite_path}",
     connect_args={"check_same_thread": False},
 )
 
@@ -353,6 +356,7 @@ def save_chat_message(db: Session, client_id: int, message_text: str, sender: st
             timestamp=datetime.datetime.now(datetime.timezone.utc),
         )
     )
+    db.commit()
 
 
 def get_chat_history_by_client_id(

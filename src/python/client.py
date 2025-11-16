@@ -487,6 +487,9 @@ def manage_members(team_id):
 
         members = (
             db.query(models.Member)
+            .options(
+                joinedload(models.Member.city).joinedload(models.City.province)
+            )
             .filter(
                 models.Member.team_id == team_id,
                 models.Member.status == models.EntityStatus.ACTIVE,
@@ -1178,6 +1181,10 @@ def payment(team_id):
     with database.get_db_session() as db:
         team = (
             db.query(models.Team)
+            .options(
+                joinedload(models.Team.league_one),
+                joinedload(models.Team.league_two),
+            )
             .filter(
                 models.Team.team_id == team_id,
                 models.Team.client_id == session["client_id"],
