@@ -1034,7 +1034,7 @@ def admin_dashboard():
                 models.Team.team_name,
                 models.Team.team_id,
                 models.Client.email,
-                models.Client.phone,
+                models.Client.phone_number,
             )
             .join(models.Team, models.Payment.team_id == models.Team.team_id)
             .join(models.Client, models.Payment.client_id == models.Client.client_id)
