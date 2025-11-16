@@ -6464,7 +6464,7 @@ FOOTER
     justify-content: center;
     align-items: center;
     gap: 1.5rem;
-    padding: 2rem;
+    padding: clamp(1.5rem, 1.4vw, 2.2rem);
     border-radius: 28px;
     background: rgba(255, 255, 255, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.35);
@@ -6541,7 +6541,7 @@ FOOTER
     text-align: center;
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: 0.4rem;
   }
 
   .admin-body .admin-dashboard__hero-metrics dt {
@@ -6564,9 +6564,9 @@ FOOTER
   }
 
   .admin-body .admin-dashboard__actions h2 {
-    font-size: 1.4rem;
+    font-size: 1.35rem;
     font-weight: 800;
-    color: var(--color-text-gray);
+    color: #432560;
   }
 
   .admin-body .admin-dashboard__actions-grid {
