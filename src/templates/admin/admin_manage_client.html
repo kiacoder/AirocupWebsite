@@ -23,6 +23,18 @@
         <i class="fas fa-comments"></i>
         گفتگو با کاربر
       </a>
+      {% if client.status != enums.EntityStatus.ACTIVE %}
+      <form
+        method="POST"
+        action="{{ url_for('admin.admin_restore_client', client_id=client.client_id) }}"
+      >
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <button type="submit" class="btn btn-success">
+          <i class="fas fa-undo"></i>
+          فعال‌سازی مجدد کاربر
+        </button>
+      </form>
+      {% endif %}
     </div>
   </header>
 
@@ -198,7 +210,7 @@
                 <th>تعداد اعضای ثبت شده</th>
                 <th>آخرین وضعیت پرداخت</th>
                 <th>جزئیات</th>
-                <th>مشاهده</th>
+                <th>عملیات</th>
               </tr>
             </thead>
             <tbody>
@@ -227,12 +239,24 @@
                   </div>
                 </td>
                 <td>
-                  <a
-                    href="{{ url_for('admin.admin_edit_team', team_id=team.team_id) }}"
-                    class="btn btn-secondary btn-small"
-                  >
-                    مشاهده جزئیات
-                  </a>
+                  <div class="admin-table__actions">
+                    <a
+                      href="{{ url_for('admin.admin_edit_team', team_id=team.team_id) }}"
+                      class="btn btn-secondary btn-small"
+                    >
+                      مشاهده جزئیات
+                    </a>
+                    <form
+                      method="POST"
+                      action="{{ url_for('admin.admin_restore_team', team_id=team.team_id) }}"
+                    >
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                      <button type="submit" class="btn btn-success btn-small">
+                        <i class="fas fa-undo"></i>
+                        بازگردانی تیم
+                      </button>
+                    </form>
+                  </div>
                 </td>
               </tr>
               {% else %}
