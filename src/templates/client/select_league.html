@@ -1,78 +1,104 @@
 {% extends "global/base.html" %}
 
-{% block title %}انتخاب لیگ{% endblock %}
+{% block title %}انتخاب مقطع و لیگ{% endblock %}
 
 {% block body %}
-<main class="app-container">
-  <div class="container">
-    <header class="page-header">
-      <h1 class="page-title">انتخاب لیگ برای تیم: {{ team.team_name }}</h1>
-      <p class="page-subtitle">
+<div class="container" style="margin: 2rem auto">
+  <div class="form-container form-container--large">
+    <div class="section-header" style="margin-bottom: 1.5rem">
+      <h1 class="form-title" style="margin-bottom: 0.75rem">
+        انتخاب مقطع و لیگ برای تیم: {{ team.team_name }}
+      </h1>
+      <p class="form-subtitle" style="margin-bottom: 0">
         تیم شما می‌تواند در یک لیگ (اجباری) یا دو لیگ (یک لیگ اجباری و یک لیگ اختیاری با تخفیف) شرکت کند.
       </p>
-    </header>
+    </div>
 
-    <div class="form-container form-container--large">
-      <div class="alert alert--warning" role="alert">
-        <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+    <div class="alert alert--warning" style="margin-bottom: 1.5rem">
+      <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+      <p>
+        <strong>توجه:</strong>
+        پس از انتخاب مقطع و لیگ‌ها و رفتن به مرحله پرداخت، امکان تغییر آن‌ها دیگر وجود نخواهد داشت. لطفاً در انتخاب خود دقت کنید.
+      </p>
+    </div>
+
+    <form method="POST" id="selectLeagueForm" action="{{ url_for('client.select_league', team_id=team.team_id) }}" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+      <h2 class="form-title" style="font-size: 1.4rem">انتخاب مقطع تحصیلی</h2>
+
+      <div class="alert alert--info" style="margin-bottom: 1.25rem">
+        <i class="fas fa-graduation-cap" aria-hidden="true"></i>
         <p>
-          <strong>توجه:</strong>
-          پس از انتخاب لیگ‌ها و رفتن به مرحله پرداخت، امکان تغییر آن‌ها وجود نخواهد داشت. لطفاً در انتخاب خود دقت کنید.
+          مقطع تحصیلی تیم تعیین‌کننده بازه سنی مجاز برای اعضای دانش‌آموز است.
+          سرپرست و مربی از این محدودیت مستثنا هستند.
         </p>
       </div>
 
-      <form
-        method="POST"
-        id="selectLeagueForm"
-        action="{{ url_for('client.select_league', team_id=team.team_id) }}"
-        novalidate
-      >
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-
-        <h2 class="form-title">لیگ‌های موجود</h2>
-
-        <div class="form-group">
-          <label for="league_one"
-            >لیگ اول (اجباری) <span class="required-star">*</span></label
+      <div class="form-group">
+        <label for="education_level">مقطع تحصیلی تیم:<span class="required-star">*</span></label>
+        <select id="education_level" name="education_level" class="form-control" required>
+          <option value="">انتخاب کنید</option>
+          {% for level_name, level_info in education_levels.items() %}
+          {% set ages = level_info.get('ages') %}
+          {% set age_label = '' %}
+          {% if ages %}
+            {% set age_min = ages[0] %}
+            {% set age_max = ages[1] %}
+            {% if age_min is not none and age_max is not none %}
+              {% set age_label = age_min | persian_digits ~ ' تا ' ~ age_max | persian_digits ~ ' سال' %}
+            {% elif age_min is not none %}
+              {% set age_label = 'از ' ~ (age_min | persian_digits) ~ ' سال به بالا' %}
+            {% elif age_max is not none %}
+              {% set age_label = 'تا ' ~ (age_max | persian_digits) ~ ' سال' %}
+            {% endif %}
+          {% endif %}
+          <option
+            value="{{ level_name }}"
+            {% if team.education_level == level_name %}selected{% endif %}
           >
-          <select id="league_one" name="league_one" class="form-control" required>
-            <option value="">انتخاب کنید</option>
-            {% for league in leagues_list %}
-            <option value="{{ league.id }}" {% if team.league_one_id == league.id %}selected{% endif %}>
-              {{ league.name }}
-            </option>
-            {% endfor %}
-          </select>
-        </div>
+            {{ level_name }}{% if age_label %} ({{ age_label }}){% endif %}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
 
-        <div class="form-group">
-          <label for="league_two">لیگ دوم (اختیاری):</label>
-          <select id="league_two" name="league_two" class="form-control">
-            <option value="">انتخاب نمی‌کنم</option>
-            {% for league in leagues_list %}
-            <option value="{{ league.id }}" {% if team.league_two_id == league.id %}selected{% endif %}>
-              {{ league.name }}
-            </option>
-            {% endfor %}
-          </select>
-        </div>
+      <h2 class="form-title" style="font-size: 1.4rem; margin-top: 2rem">لیگ‌های موجود</h2>
 
-        <div class="form-group">
-          <button type="submit" class="btn btn-primary btn--full-width">
-            تایید و ذخیره لیگ‌ها
-          </button>
-        </div>
-      </form>
-    </div>
+      <div class="form-group">
+        <label for="league_one">لیگ اول (اجباری):<span class="required-star">*</span></label>
+        <select id="league_one" name="league_one" class="form-control" required>
+          <option value="">انتخاب کنید</option>
+          {% for league in leagues_list %}
+          <option value="{{ league.id }}" {% if team.league_one_id == league.id %}selected{% endif %}>
+            {{ league.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
 
-    <div class="section-cta">
-      <a href="{{ url_for('client.dashboard') }}" class="btn btn-secondary">
-        <i class="fas fa-arrow-left" aria-hidden="true"></i>
-        بازگشت به داشبورد
-      </a>
+      <div class="form-group">
+        <label for="league_two">لیگ دوم (اختیاری):</label>
+        <select id="league_two" name="league_two" class="form-control">
+          <option value="">انتخاب نمی‌کنم</option>
+          {% for league in leagues_list %}
+          <option value="{{ league.id }}" {% if team.league_two_id == league.id %}selected{% endif %}>
+            {{ league.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <button type="submit" class="btn btn-primary btn--full-width">تایید و ذخیره لیگ‌ها</button>
+      </div>
+    </form>
+
+    <div style="text-align: center; margin-top: 1.5rem">
+      <a href="{{ url_for('client.dashboard') }}" class="btn btn-secondary">بازگشت به داشبورد</a>
     </div>
   </div>
-</main>
+</div>
 {% endblock %}
 
 {% block scripts %}

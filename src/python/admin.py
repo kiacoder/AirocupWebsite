@@ -4,6 +4,7 @@ import os
 import math
 import uuid
 import datetime
+from types import SimpleNamespace
 from flask import (
     Blueprint,
     abort,
@@ -19,7 +20,7 @@ from flask import (
 )
 from sqlalchemy import exc, func, select
 from sqlalchemy.sql.functions import count
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, subqueryload
 import bleach
 import bcrypt
 from werkzeug.utils import secure_filename
@@ -33,6 +34,21 @@ import persiantools.digits
 from .auth import admin_required, admin_action_required
 
 admin_blueprint = Blueprint("admin", __name__, template_folder="admin")
+
+
+def _coerce_payment_status(raw_status):
+    """Return a ``PaymentStatus`` enum when ``raw_status`` is truthy."""
+
+    if raw_status is None:
+        return None
+
+    if isinstance(raw_status, models.PaymentStatus):
+        return raw_status
+
+    try:
+        return models.PaymentStatus(raw_status)
+    except ValueError:
+        return None
 
 
 @admin_blueprint.route("/UploadsGallery/<filename>")
@@ -123,18 +139,43 @@ def admin_chat(client_id):
 def admin_add_team(client_id):
     "Add a new team for a specific client"
     team_name = bleach.clean(request.form.get("team_name", "").strip())
+    league_one_raw = request.form.get("LeagueOne", "").strip()
+    league_two_raw = request.form.get("LeagueTwo", "").strip()
+    education_level = request.form.get("EducationLevel", "").strip()
 
     if not team_name:
         flash("نام تیم نمی‌تواند خالی باشد.", "error")
         return redirect(url_for("admin.admin_manage_client", client_id=client_id))
 
+    if education_level not in constants.allowed_education:
+        flash("لطفاً مقطع تحصیلی معتبری انتخاب کنید.", "error")
+        return redirect(url_for("admin.admin_manage_client", client_id=client_id))
+
+    if not league_one_raw:
+        flash("لطفاً لیگ اصلی تیم را مشخص کنید.", "error")
+        return redirect(url_for("admin.admin_manage_client", client_id=client_id))
+
+    if league_two_raw and league_two_raw == league_one_raw:
+        flash("نمی‌توانید یک لیگ را به عنوان لیگ اول و دوم انتخاب کنید.", "error")
+        return redirect(url_for("admin.admin_manage_client", client_id=client_id))
+
+    league_one_id = int(league_one_raw) if league_one_raw else None
+    league_two_id = int(league_two_raw) if league_two_raw else None
+
     with database.get_db_session() as db:
         try:
-            db.add(models.Team(
-                client_id=client_id,
-                team_name=team_name,
-                team_registration_date=datetime.datetime.now(datetime.timezone.utc),
-            ))
+            db.add(
+                models.Team(
+                    client_id=client_id,
+                    team_name=team_name,
+                    team_registration_date=datetime.datetime.now(
+                        datetime.timezone.utc
+                    ),
+                    league_one_id=league_one_id,
+                    league_two_id=league_two_id,
+                    education_level=education_level,
+                )
+            )
             db.commit()
             flash(f"تیم «{team_name}» با موفقیت برای این کاربر ساخته شد.", "success")
         except exc.IntegrityError:
@@ -205,7 +246,19 @@ def admin_update_payment_status(team_id):
             return redirect(url_for("admin.admin_manage_teams"))
 
         try:
+            team = latest_payment.team
+            previous_status = latest_payment.status
             latest_payment.status = new_status
+
+            if (
+                team
+                and new_status == models.PaymentStatus.APPROVED
+                and previous_status != models.PaymentStatus.APPROVED
+            ):
+                paid_members = latest_payment.members_paid_for or 0
+                current_unpaid = team.unpaid_members_count or 0
+                team.unpaid_members_count = max(0, current_unpaid - paid_members)
+
             db.commit()
             flash(
                 f"وضعیت آخرین پرداخت تیم به '{new_status.value}' تغییر یافت.", "success"
@@ -499,13 +552,14 @@ def admin_manage_client(client_id):
         teams_with_status = []
         for team, member_count, last_payment_status in teams_query:
             setattr(team, "total_members", member_count)
-            setattr(team, "last_payment_status", last_payment_status)
+            setattr(team, "last_payment_status", _coerce_payment_status(last_payment_status))
             teams_with_status.append(team)
 
     return render_template(
         constants.admin_html_names_data["admin_manage_client"],
         client=client,
         teams=teams_with_status,
+        education_levels=constants.education_levels,
     )
 
 
@@ -522,10 +576,11 @@ def admin_manage_teams():
             .scalar_subquery()
         )
 
-        all_teams = (
+        team_rows = (
             db.query(
                 models.Team.team_id,
                 models.Team.team_name,
+                models.Client.email.label("client_email"),
                 count(models.Member.member_id).label("member_count"),
                 subquery.label("last_payment_status"),
             )
@@ -536,10 +591,21 @@ def admin_manage_teams():
                 & (models.Member.status == models.EntityStatus.ACTIVE),
             )
             .filter(models.Team.status == models.EntityStatus.ACTIVE)
-            .group_by(models.Team.team_id)
+            .group_by(models.Team.team_id, models.Client.email)
             .order_by(models.Team.team_registration_date.desc())
             .all()
         )
+
+        all_teams = [
+            SimpleNamespace(
+                team_id=row.team_id,
+                team_name=row.team_name,
+                client_email=row.client_email,
+                member_count=row.member_count,
+                last_payment_status=_coerce_payment_status(row.last_payment_status),
+            )
+            for row in team_rows
+        ]
 
     return render_template(
         constants.admin_html_names_data["admin_manage_teams"], teams=all_teams
@@ -564,10 +630,14 @@ def admin_add_member(team_id):
                 flash(error_message, "error")
             else:
 
-                if database.check_if_team_is_paid(db, team_id):
+                has_any_payment = database.has_team_made_any_payment(db, team_id)
+
+                if has_any_payment:
                     team.unpaid_members_count = (team.unpaid_members_count or 0) + 1
                     flash(
-                        f"عضو «{new_member.name}» اضافه شد. لطفاً هزینه عضو جدید را برای فعال‌سازی پرداخت نمایید.",
+                        "عضو «{name}» اضافه شد. چون این تیم قبلاً رسید پرداختی ارسال کرده است، باید هزینه ۹,۵۰۰,۰۰۰ ریال به ازای هر لیگ برای عضو جدید پرداخت و رسید آن بارگذاری شود تا ثبت‌نام کامل گردد.".format(
+                            name=new_member.name
+                        ),
                         "warning",
                     )
                 else:
@@ -591,7 +661,16 @@ def admin_add_member(team_id):
 def admin_edit_team(team_id):
     """Edit a team's details."""
     with database.get_db_session() as db:
-        team = db.query(models.Team).filter(models.Team.team_id == team_id).first()
+        team = (
+            db.query(models.Team)
+            .options(
+                subqueryload(models.Team.members),
+                joinedload(models.Team.league_one),
+                joinedload(models.Team.league_two),
+            )
+            .filter(models.Team.team_id == team_id)
+            .first()
+        )
         if not team:
             abort(404)
 
@@ -600,6 +679,7 @@ def admin_edit_team(team_id):
                 new_team_name = bleach.clean(request.form.get("team_name", "").strip())
                 league_one_id = request.form.get("league_one_id")
                 league_two_id = request.form.get("league_two_id")
+                education_level = request.form.get("education_level", "").strip()
 
                 is_valid, error_message = utils.is_valid_team_name(new_team_name)
                 if not is_valid:
@@ -617,20 +697,68 @@ def admin_edit_team(team_id):
                     if existing_team:
                         flash("تیمی با این نام از قبل وجود دارد.", "error")
                     else:
-                        setattr(team, "team_name", new_team_name)
-                        setattr(
-                            team,
-                            "league_one_id",
-                            int(league_one_id) if league_one_id else None,
-                        )
-                        setattr(
-                            team,
-                            "league_two_id",
-                            int(league_two_id) if league_two_id else None,
-                        )
-                        db.commit()
-                        utils.update_team_stats(db, team_id)
-                        flash("جزئیات تیم با موفقیت ذخیره شد", "success")
+                            if education_level and education_level not in constants.allowed_education:
+                                flash("مقطع تحصیلی انتخاب شده معتبر نیست.", "error")
+                                return redirect(
+                                    url_for("admin.admin_edit_team", team_id=team_id)
+                                )
+
+                            if education_level and education_level != (
+                                team.education_level or ""
+                            ):
+                                level_info = constants.education_levels.get(
+                                    education_level
+                                )
+                                age_range = (
+                                    level_info.get("ages") if level_info else None
+                                )
+                                if age_range:
+                                    min_age, max_age = age_range
+                                    violating_member = next(
+                                        (
+                                            member
+                                            for member in team.members
+                                            if member.status
+                                            == models.EntityStatus.ACTIVE
+                                            and member.role
+                                            == models.MemberRole.MEMBER
+                                            and not (
+                                                min_age
+                                                <= utils.calculate_age(
+                                                    member.birth_date
+                                                )
+                                                <= max_age
+                                            )
+                                        ),
+                                        None,
+                                    )
+                                    if violating_member:
+                                        flash(
+                                            f"عضو «{violating_member.name}» با مقطع «{education_level}» سازگار نیست.",
+                                            "error",
+                                        )
+                                        return redirect(
+                                            url_for(
+                                                "admin.admin_edit_team",
+                                                team_id=team_id,
+                                            )
+                                        )
+
+                            setattr(team, "team_name", new_team_name)
+                            setattr(
+                                team,
+                                "league_one_id",
+                                int(league_one_id) if league_one_id else None,
+                            )
+                            setattr(
+                                team,
+                                "league_two_id",
+                                int(league_two_id) if league_two_id else None,
+                            )
+                            team.education_level = education_level or None
+                            db.commit()
+                            utils.update_team_stats(db, team_id)
+                            flash("جزئیات تیم با موفقیت ذخیره شد", "success")
 
             except (exc.SQLAlchemyError, ValueError) as error:
                 db.rollback()
@@ -641,13 +769,21 @@ def admin_edit_team(team_id):
 
             return redirect(url_for("admin.admin_edit_team", team_id=team_id))
 
-        members = db.query(models.Member).filter(models.Member.team_id == team_id).all()
+        members = (
+            db.query(models.Member)
+            .options(
+                joinedload(models.Member.city).joinedload(models.City.province)
+            )
+            .filter(models.Member.team_id == team_id)
+            .all()
+        )
         form_context = utils.get_form_context()
 
     return render_template(
         constants.admin_html_names_data["admin_edit_team"],
         team=team,
         members=members,
+        education_levels=constants.education_levels,
         **form_context,
     )
 
@@ -660,7 +796,7 @@ def admin_edit_member(team_id, member_id):
     """Edit a team member's details."""
     with database.get_db_session() as db:
         updated_member_data, error = utils.create_member_from_form_data(
-            db, request.form
+            db, request.form, team_id=team_id, member_id=member_id
         )
         if error:
             flash(error, "error")
@@ -672,6 +808,22 @@ def admin_edit_member(team_id, member_id):
                 if database.has_existing_leader(db, team_id, member_id):
                     flash("خطا: این تیم از قبل یک سرپرست دارد.", "error")
                     return redirect(url_for("admin.admin_edit_team", team_id=team_id))
+
+            team = (
+                db.query(models.Team)
+                .filter(models.Team.team_id == team_id)
+                .first()
+            )
+            education_level = getattr(team, "education_level", None) if team else None
+
+            is_valid_age, age_error = utils.validate_member_age(
+                updated_member_data["birth_date"],
+                updated_member_data["role"],
+                education_level,
+            )
+            if not is_valid_age:
+                flash(age_error or "سن عضو با مقطع تحصیلی انتخاب شده سازگار نیست.", "error")
+                return redirect(url_for("admin.admin_edit_team", team_id=team_id))
 
             member_to_update = (
                 db.query(models.Member)
@@ -715,10 +867,13 @@ def admin_clients_list():
             .scalar()
         ) or 0
 
+    total_pages = math.ceil(total_active / per_page) if total_active else 0
+
     return render_template(
         constants.admin_html_names_data["admin_clients_list"],
-        clients=clients,
-        total_pages_count=math.ceil(total_active / per_page),
+        Clients=clients,
+        CurrentPage=page,
+        TotalPagesCount=total_pages,
     )
 
 
@@ -726,9 +881,17 @@ def admin_clients_list():
 @admin_required
 def admin_add_client():
     "Add a new client to the database"
-    email = (request.form.get("email") or "").strip().lower()
-    phone = (request.form.get("phone_number") or "").strip()
-    password = request.form.get("password") or ""
+    email = (
+        request.form.get("email")
+        or request.form.get("Email")
+        or ""
+    ).strip().lower()
+    phone = (
+        request.form.get("phone_number")
+        or request.form.get("PhoneNumber")
+        or ""
+    ).strip()
+    password = request.form.get("password") or request.form.get("Password") or ""
 
     if not all(
         [
@@ -882,6 +1045,17 @@ def admin_dashboard():
             .count()
         )
 
+        new_clients_this_week = (
+            db.query(models.Client)
+            .filter(
+                models.Client.status == models.EntityStatus.ACTIVE,
+                models.Client.registration_date
+                >= datetime.datetime.now(datetime.timezone.utc)
+                - datetime.timedelta(days=7),
+            )
+            .count()
+        )
+
         stats = {
             "total_clients": total_clients,
             "total_teams": total_teams,
@@ -889,10 +1063,17 @@ def admin_dashboard():
             "total_members": total_members,
             "total_leaders": total_leaders,
             "total_coaches": total_coaches,
+            "new_clients_this_week": new_clients_this_week,
         }
 
-        pending_payments = (
-            db.query(models.Payment, models.Team.team_name, models.Client.email)
+        pending_payments_rows = (
+            db.query(
+                models.Payment,
+                models.Team.team_name,
+                models.Team.team_id,
+                models.Client.email,
+                models.Client.phone_number.label("client_phone_number"),
+            )
             .join(models.Team, models.Payment.team_id == models.Team.team_id)
             .join(models.Client, models.Payment.client_id == models.Client.client_id)
             .filter(models.Payment.status == models.PaymentStatus.PENDING)
@@ -900,10 +1081,33 @@ def admin_dashboard():
             .all()
         )
 
+        pending_payments = [
+            {
+                "payment_id": payment.payment_id,
+                "team_id": team_id,
+                "team_name": team_name,
+                "client_email": client_email,
+                "client_phone": client_phone_number,
+                "amount": payment.amount,
+                "members_paid_for": payment.members_paid_for,
+                "upload_date": payment.upload_date,
+                "receipt_filename": payment.receipt_filename,
+            }
+            for (
+                payment,
+                team_name,
+                team_id,
+                client_email,
+                client_phone_number,
+            ) in pending_payments_rows
+        ]
+
     return render_template(
         constants.admin_html_names_data["admin_dashboard"],
         stats=stats,
         pending_payments=pending_payments,
+        pending_payments_count=len(pending_payments),
+        admin_greeting_name=session.get("admin_display_name", "مدیر محترم"),
     )
 
 
@@ -939,16 +1143,12 @@ def admin_manage_payment(payment_id, action):
                 ).update(
                     {"status": models.EntityStatus.ACTIVE}, synchronize_session=False
                 )
+                team = db_session.query(models.Team).get(payment.team_id)
+                if team:
+                    members_paid = payment.members_paid_for or 0
+                    current_unpaid = team.unpaid_members_count or 0
+                    team.unpaid_members_count = max(0, current_unpaid - members_paid)
 
-                members_just_paid_for = payment.members_paid_for or 0
-                db_session.query(models.Team).filter(
-                    models.Team.team_id == payment.team_id
-                ).update(
-                    {
-                        "unpaid_members_count": models.Team.unpaid_members_count - members_just_paid_for
-                    },
-                    synchronize_session=False,
-                )
                 database.log_action(
                     db_session,
                     payment.client_id,

@@ -1,4 +1,5 @@
 "Global routes and views"
+
 import os
 from flask import (
     abort,
@@ -28,55 +29,55 @@ gallery_images = sorted(
 
 @global_blueprint.route("/")
 def index():
-    """Index page"""
+    "Index page"
     return render_template(constants.global_html_names_data["index"])
 
 
 @global_blueprint.route("/About")
 def about():
-    """About page"""
+    "About page"
     return render_template(constants.global_html_names_data["about"])
 
 
 @global_blueprint.route("/Cooperate")
 def cooperate():
-    """Cooperate page"""
+    "Cooperate page"
     return render_template(constants.global_html_names_data["cooperate"])
 
 
 @global_blueprint.route("/Leagues")
 def leagues():
-    """Leagues page"""
+    "Leagues page"
     return render_template(constants.global_html_names_data["leagues"])
 
 
 @global_blueprint.route("/Sponsors")
 def sponsors():
-    """Sponsors page"""
+    "Sponsors page"
     return render_template(constants.global_html_names_data["sponsors"])
 
 
 @global_blueprint.route("/Contact")
 def contact():
-    """Contact page"""
+    "Contact page"
     return render_template(constants.global_html_names_data["contact"])
 
 
 @global_blueprint.route("/Committee")
 def committee():
-    """Committee page"""
+    "Committee page"
     return render_template(constants.global_html_names_data["committee"])
 
 
 @global_blueprint.route("/TechnicalCommittee")
 def technical_committee():
-    """Technical Committee page"""
+    "Technical Committee page"
     return render_template(constants.global_html_names_data["technical_committee"])
 
 
 @global_blueprint.route("/News")
 def news():
-    """News page"""
+    "News page"
     with database.get_db_session() as db:
         articles = database.get_all_articles(db)
     return render_template(constants.global_html_names_data["news"], articles=articles)
@@ -84,7 +85,7 @@ def news():
 
 @global_blueprint.route("/News/<int:article_id>")
 def view_article(article_id):
-    """View a specific news article"""
+    "View a specific news article"
     with database.get_db_session() as db:
         article = database.get_article_by_id(db, article_id)
     if not article:
@@ -105,7 +106,7 @@ def view_article(article_id):
 
 @global_blueprint.route("/Gallery")
 def gallery():
-    """Gallery page"""
+    "Gallery page"
     return render_template(
         constants.global_html_names_data["gallery"],
         gallery_images=gallery_images,
@@ -115,23 +116,37 @@ def gallery():
 
 @global_blueprint.route("/uploads/news/<filename>")
 def uploaded_news_image(filename):
-    """Serve uploaded news images securely"""
+    "Serve uploaded news images securely"
     return send_from_directory(current_app.config["UPLOAD_FOLDER_NEWS"], filename)
 
 
 @global_blueprint.route("/Download/Rules")
 def download_pdf():
-    """Download the guideline PDF file"""
+    "Download the guideline PDF file"
+    guideline_file = constants.Path.guideline_file
+
+    if not os.path.exists(guideline_file):
+        current_app.logger.warning(
+            "Requested guideline PDF is missing at %s", guideline_file
+        )
+        flash(
+            "فایل راهنمای لیگ‌ها در حال حاضر در دسترس نیست. لطفاً بعداً دوباره تلاش کنید.",
+            "warning",
+        )
+        return redirect(url_for("global.leagues"))
+
     return send_from_directory(
         constants.Path.guideline_dir,
-        os.path.basename(constants.Path.guideline_file),
+        os.path.basename(guideline_file),
         as_attachment=True,
+        download_name="Airocup-Leagues-Guideline.pdf",
+        mimetype="application/pdf",
     )
 
 
 @global_blueprint.route("/Logout")
 def logout():
-    """Log out the current user"""
+    "Log out the current user"
     session.clear()
     flash("شما از حساب کاربری خود خارج شدید.", "info")
     return redirect(url_for("global.index"))

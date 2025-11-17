@@ -46,14 +46,26 @@ limiter.init_app(flask_app)
 
 flask_app.config.update(
     PERMANENT_SESSION_LIFETIME=config.permanent_session_lifetime,
-    SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_HTTPONLY=config.session_cookie_httponly,
+    SESSION_COOKIE_SECURE=config.session_cookie_secure,
+    SESSION_COOKIE_SAMESITE=config.session_cookie_samesite,
     UPLOAD_FOLDER_RECEIPTS=constants.Path.receipts_dir,
     UPLOAD_FOLDER_DOCUMENTS=os.path.join(constants.Path.uploads_dir, "documents"),
     UPLOAD_FOLDER_NEWS=constants.Path.news_dir,
     MAX_CONTENT_LENGTH=constants.AppConfig.max_document_size,
     ALLOWED_EXTENSIONS=list(constants.AppConfig.allowed_extensions),
 )
+
+# Ensure the database schema exists before serving any requests. The call to
+# ``create_all`` is idempotent, so running it on every startup keeps new
+# deployments from failing with missing-table errors (e.g. ``clients`` during
+# login) while leaving existing data untouched. Populate required lookup tables
+# only when they are empty.
+database.create_database()
+database.ensure_schema_upgrades()
+with database.get_db_session() as _db_bootstrap_session:
+    database.populate_geography_data(_db_bootstrap_session)
+    database.populate_leagues(_db_bootstrap_session)
 
 flask_app.register_blueprint(admin.admin_blueprint)
 flask_app.register_blueprint(client.client_blueprint)
@@ -63,17 +75,50 @@ for path in [
     flask_app.config["UPLOAD_FOLDER_RECEIPTS"],
     flask_app.config["UPLOAD_FOLDER_DOCUMENTS"],
     flask_app.config["UPLOAD_FOLDER_NEWS"],
+    constants.Path.guideline_dir,
     os.path.dirname(constants.Path.database_dir),
 ]:
     os.makedirs(path, exist_ok=True)
 
 
+def _compute_static_version_token() -> str:
+    """Return a cache-busting token derived from core static asset mtimes."""
+
+    tracked_assets = [
+        constants.Path.css_style,
+        constants.Path.js_main,
+        "js/socket.io.min.js",
+        "js/chart.umd.min.js",
+    ]
+
+    mtimes = []
+    for rel_path in tracked_assets:
+        absolute_path = os.path.join(constants.Path.static_dir, rel_path)
+        try:
+            mtimes.append(int(os.path.getmtime(absolute_path)))
+        except OSError:
+            continue
+
+    if mtimes:
+        return str(max(mtimes))
+
+    return str(int(datetime.datetime.now().timestamp()))
+
+
+STATIC_VERSION_TOKEN = _compute_static_version_token()
+
+
 @flask_app.template_filter("formatdate")
 def format_date_filter(date_object):
-    """Formats a datetime object to a Persian date string (YYYY-MM-DD)."""
-    if not isinstance(date_object, datetime.datetime):
+    """Formats a datetime/date object to a Jalali date string (YYYY-MM-DD)."""
+    if isinstance(date_object, datetime.datetime):
+        jalali_value = jdatetime.datetime.fromgregorian(datetime=date_object)
+    elif isinstance(date_object, datetime.date):
+        jalali_value = jdatetime.date.fromgregorian(date=date_object)
+    else:
         return ""
-    return jdatetime.datetime.fromgregorian(datetime=date_object).strftime("%Y-%m-%d")
+
+    return jalali_value.strftime("%Y-%m-%d")
 
 
 @flask_app.template_filter("humanize_number")
@@ -102,9 +147,13 @@ def inject_global_variables():
         "app_config": {
             "max_team_per_client": constants.AppConfig.max_team_per_client,
             "max_members_per_team": constants.AppConfig.max_members_per_team,
+            "new_member_fee_per_league": config.payment_config.get(
+                "new_member_fee_per_league"
+            ),
         },
         "contact": constants.Contact,
         "leagues_list": constants.leagues_list,
+        "education_levels": constants.education_levels,
         "event_details": constants.Details,
         "html_names": constants.global_html_names_data,
         "location": constants.Details.address,
@@ -117,6 +166,7 @@ def inject_global_variables():
         "technical_committee_members": constants.technical_committee_members,
         "homepage_sponsors": constants.homepage_sponsors_data,
         "app_version": config.app_version,
+        "static_version": STATIC_VERSION_TOKEN,
     }
 
 
@@ -188,7 +238,7 @@ def handle_server_error(error):
 def on_join_message(data_dictionary):
     """Handles a user joining a chat room."""
     room_name = data_dictionary.get("room")
-    client_id = session.get("client_id")
+    client_id = session.get("client_id") or session.get("client_id_for_resolution")
 
     if session.get("admin_logged_in", False):
         join_room(room_name)
@@ -220,17 +270,19 @@ def handle_send_message(json_data):
 
         if session.get("admin_logged_in", False):
             sender_type = "admin"
-        elif session.get("client_id") and str(session.get("client_id")) == str(
-            target_room
-        ):
-            sender_type = "client"
         else:
-            flask_app.logger.warning(
-                "Unauthorized chat message attempt by session %s in room %s",
-                session.get("client_id"),
-                target_room,
+            client_id = session.get("client_id") or session.get(
+                "client_id_for_resolution"
             )
-            return
+            if client_id and str(client_id) == str(target_room):
+                sender_type = "client"
+            else:
+                flask_app.logger.warning(
+                    "Unauthorized chat message attempt by session %s in room %s",
+                    client_id,
+                    target_room,
+                )
+                return
 
         sanitized_message = bleach.clean(message)
         if len(sanitized_message) > 1000:
@@ -250,6 +302,7 @@ def handle_send_message(json_data):
                 "sender": sender_type,
             },
             to=str(target_room),
+            include_self=False,
         )
 
     except (ValueError, TypeError, exc.SQLAlchemyError) as error:
@@ -273,17 +326,22 @@ def to_iso_format_filter(date_object):
 
 def get_distribution_query(db, entity, join_chain, label="count", limit=10):
     """Generic helper to build distribution queries for City/Province/etc."""
+
+    query = db.query(
+        entity.name.label("name"),
+        func.count(models.Member.member_id).label(label),
+    ).select_from(entity)
+
+    for join_target, on_clause in join_chain:
+        query = query.join(join_target, on_clause)
+
     query = (
-        db.query(
-            entity.name.label("name"),
-            func.count(models.Member.member_id).label(label),
-        )
-        .join(*join_chain)
-        .filter(models.Member.status == models.EntityStatus.ACTIVE)
+        query.filter(models.Member.status == models.EntityStatus.ACTIVE)
         .group_by(entity.name)
         .order_by(func.count(models.Member.member_id).desc())
         .limit(limit)
     )
+
     return query.all()
 
 
@@ -295,7 +353,9 @@ def api_city_distribution():
         city_data = get_distribution_query(
             db,
             models.City,
-            [models.City, models.Member.city_id == models.City.city_id],
+            [
+                (models.Member, models.Member.city_id == models.City.city_id),
+            ],
         )
 
     return jsonify(
@@ -315,11 +375,8 @@ def api_province_distribution():
             db,
             models.Province,
             [
-                (models.City, models.Member.city_id == models.City.city_id),
-                (
-                    models.Province,
-                    models.City.province_id == models.Province.province_id,
-                ),
+                (models.City, models.City.province_id == models.Province.province_id),
+                (models.Member, models.Member.city_id == models.City.city_id),
             ],
         )
 
@@ -362,11 +419,7 @@ def initialize_database_command() -> None:
         database.populate_leagues(db)
 
     logger.info("Database initialized successfully.")
-
-
 wsgi_app = flask_app
-
-
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "generate_hash":
         try:

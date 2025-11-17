@@ -1,76 +1,122 @@
-{% extends "global/base.html" %}
-
-{% block title %}ایجاد تیم جدید{% endblock %}
-
+{% extends "global/base.html" %} {% block title %}ایجاد تیم جدید{% endblock %}
 {% block body %}
-<main class="app-container">
-  <div class="container">
-    <header class="page-header">
-      <h1 class="page-title">ایجاد تیم جدید</h1>
-      <p class="page-subtitle">
-        برای شروع، اطلاعات تیم و مشخصات سرپرست (اولین عضو) را تکمیل کنید.
+<div class="container" style="margin: 2rem auto">
+  <div class="form-container form-container--medium">
+    <form
+      method="POST"
+      id="create-team-form"
+      action="{{ url_for('client.create_team') }}"
+      novalidate
+    >
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+      <h1 class="form-title">ایجاد تیم جدید</h1>
+      <p class="form-subtitle">
+        برای شروع، اطلاعات تیم و مشخصات سرپرست (اولین عضو) را وارد کنید.
       </p>
-    </header>
 
-    <div class="form-container form-container--medium">
-      <form
-        method="POST"
-        id="createTeamForm"
-        action="{{ url_for('client.create_team') }}"
-        novalidate
+      <fieldset
+        style="
+          border: 1px solid var(--color-border);
+          padding: 1.5rem;
+          border-radius: var(--border-radius);
+          margin-bottom: 2rem;
+        "
       >
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-
-        <section class="card" aria-labelledby="team-info-heading">
-          <h2 id="team-info-heading" class="section-title">۱. اطلاعات تیم</h2>
-          <div class="form-group">
-            <label for="team_name"
-              >نام تیم <span class="required-star">*</span></label
-            >
-            <input
-              type="text"
-              id="team_name"
-              name="team_name"
-              class="form-control"
-              required
-              autofocus
-              maxlength="30"
-              placeholder="مثال: قهرمانان آینده"
-            />
-          </div>
-        </section>
-
-        <section class="card" aria-labelledby="leader-info-heading">
-          <h2 id="leader-info-heading" class="section-title">
-            ۲. اطلاعات سرپرست تیم
-          </h2>
-          <p class="section-subtitle">
-            اولین عضوی که ثبت می‌کنید به عنوان سرپرست تیم شناخته می‌شود.
-          </p>
-          {% with id_prefix='add-', member_data=None, form_data=request.form %}
-            {% include 'client/member_form_fields.html' %}
-          {% endwith %}
-        </section>
-
+        <legend
+          style="
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--color-primary);
+            padding: 0 10px;
+          "
+        >
+          ۱. اطلاعات تیم
+        </legend>
         <div class="form-group">
-          <button type="submit" class="btn btn-primary btn--full-width">
-            <i class="fas fa-check" aria-hidden="true"></i>
-            ایجاد تیم و ادامه
-          </button>
+          <label for="team_name"
+            >نام تیم<span class="required-star">*</span></label
+          >
+          <input
+            type="text"
+            id="team_name"
+            name="team_name"
+            class="form-control"
+            placeholder="مثال: نخبگان آینده"
+            required
+            minlength="3"
+            maxlength="30"
+            autofocus
+            value="{{ form_data.get('team_name', '') }}"
+          />
+          <small
+            >نام تیم باید بین ۳ تا ۳۰ کاراکتر و به زبان فارسی یا انگلیسی
+            باشد.</small
+          >
         </div>
-      </form>
-    </div>
+      </fieldset>
 
-    <div class="section-cta">
-      <a href="{{ url_for('client.dashboard') }}" class="btn btn-secondary">
-        <i class="fas fa-arrow-left" aria-hidden="true"></i>
-        انصراف و بازگشت به داشبورد
+      <fieldset
+        style="
+          border: 1px solid var(--color-border);
+          padding: 1.5rem;
+          border-radius: var(--border-radius);
+        "
+      >
+        <legend
+          style="
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--color-primary);
+            padding: 0 10px;
+          "
+        >
+          ۲. اطلاعات سرپرست
+        </legend>
+        {% with id_prefix='create-', member_data=None, form_data=form_data %} {%
+        include 'client/member_form_fields.html' %} {% endwith %}
+      </fieldset>
+
+      <div class="form-group" style="margin-top: 2rem">
+        <button type="submit" class="btn btn-primary btn--full-width">
+          <i class="fas fa-check" style="margin-left: 8px"></i> ایجاد تیم و
+          ادامه
+        </button>
+      </div>
+    </form>
+
+    <div
+      style="
+        text-align: center;
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--color-border);
+      "
+    >
+      <p style="margin-bottom: 1rem; color: var(--color-text-muted)">
+        پس از ایجاد تیم، به داشبورد خود منتقل می‌شوید تا سایر اعضا را اضافه
+        کنید.
+      </p>
+      <a
+        href="{{ url_for('client.dashboard') }}"
+        class="btn btn-secondary"
+        style="margin-top: 0"
+      >
+        <i class="fas fa-arrow-right" style="margin-left: 8px"></i> انصراف و
+        بازگشت به داشبورد
       </a>
     </div>
   </div>
-</main>
-{% endblock %}
-
-{% block scripts %}
-  {{ super() }}
+</div>
+{% endblock %} {% block scripts %} {{ super() }}
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    // Initialize provincial dropdowns for the included form
+    const form = document.getElementById("create-team-form");
+    if (form) {
+      airocupApp.formHelpers.initializeDynamicSelects(form);
+      airocupApp.formHelpers.setupDatePicker(form);
+    }
+  });
+</script>
 {% endblock %}

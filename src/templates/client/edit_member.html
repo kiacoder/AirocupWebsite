@@ -3,49 +3,46 @@
 {% block title %}ویرایش عضو: {{ member.name or 'عضو' }}{% endblock %}
 
 {% block body %}
-<main class="app-container">
-  <div class="container">
-    <header class="page-header">
-      <h1 class="page-title">ویرایش عضو: {{ member.name or 'عضو' }}</h1>
-      <p class="page-subtitle">
-        اطلاعات عضو تیم {{ team.team_name }} را ویرایش کنید.
-      </p>
-    </header>
+<div class="container" style="margin: 2rem auto">
+  <div class="form-container">
+    <form
+      method="POST"
+      action="{{ url_for('client.edit_member', team_id=team.team_id, member_id=member.member_id) }}"
+      id="edit-member-form"
+      novalidate
+    >
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
-    <div class="form-container form-container--medium">
-      <form
-        method="POST"
-        action="{{ url_for('client.edit_member', team_id=team.team_id, member_id=member.member_id) }}"
-        id="editMemberForm"
-        novalidate
+      <h1 class="form-title">ویرایش عضو: {{ member.name or 'عضو' }}</h1>
+      <p class="form-subtitle">اطلاعات عضو تیم {{ team.team_name }} را ویرایش کنید.</p>
+
+      <fieldset
+        style="
+          border: 1px solid var(--color-border);
+          padding: 1.5rem;
+          border-radius: var(--border-radius);
+        "
       >
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <legend style="font-weight: 700; color: var(--color-primary)">اطلاعات عضو</legend>
+        {% with id_prefix='edit-', member_data=member, form_data=request.form %}
+          {% include 'client/member_form_fields.html' %}
+        {% endwith %}
+      </fieldset>
 
-        <section class="card" aria-labelledby="member-info-heading">
-          <h2 id="member-info-heading" class="section-title">اطلاعات عضو</h2>
-          {% with id_prefix='edit-', member_data=member, form_data=request.form %}
-            {% include 'client/member_form_fields.html' %}
-          {% endwith %}
-        </section>
+      <div class="form-group">
+        <button type="submit" id="submitBtn" class="btn btn-primary btn--full-width">
+          ذخیره تغییرات
+        </button>
+      </div>
+    </form>
 
-        <div class="form-group">
-          <button type="submit" class="btn btn-primary btn--full-width">
-            ذخیره تغییرات
-          </button>
-        </div>
-      </form>
-    </div>
-
-    <div class="section-cta">
-      <a
-        href="{{ url_for('client.manage_members', team_id=team.team_id) }}"
-        class="btn btn-secondary"
-      >
+    <div style="text-align: center; margin-top: 1.5rem">
+      <a href="{{ url_for('client.manage_members', team_id=team.team_id) }}" class="btn btn-secondary">
         انصراف و بازگشت به لیست اعضا
       </a>
     </div>
   </div>
-</main>
+</div>
 {% endblock %}
 
 {% block scripts %}

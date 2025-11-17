@@ -1,8 +1,5 @@
-{% extends "global/base.html" %}
-
-{% block title %}پشتیبانی و گفتگوی زنده{% endblock %}
-
-{% block body %}
+{% extends "global/base.html" %} {% block title %}پشتیبانی و گفتگوی زنده |
+آیروکاپ{% endblock %} {% block body %}
 <div
   class="client-chat-container"
   data-client-id="{{ user.client_id }}"
@@ -12,7 +9,8 @@
     <div class="page-header">
       <h1 class="section-title">پشتیبانی و گفتگوی زنده</h1>
       <p class="section-subtitle">
-        هرگونه سوال، مشکل یا نیاز به راهنمایی دارید؟ تیم پشتیبانی آیروکاپ آماده پاسخگویی است.
+        هرگونه سوال، مشکل یا نیاز به راهنمایی دارید؟ تیم پشتیبانی آیروکاپ آماده
+        پاسخگویی است.
       </p>
     </div>
 
@@ -37,15 +35,16 @@
       </div>
     </div>
 
-    <div class="section-cta" style="text-align: center; margin-top: 2rem; margin-bottom: 20px">
+    <div
+      class="section-cta"
+      style="text-align: center; margin-top: 2rem; margin-bottom: 20px"
+    >
       <a href="{{ url_for('client.dashboard') }}" class="btn btn-secondary">
         <i class="fas fa-arrow-left"></i> بازگشت به داشبورد
       </a>
     </div>
   </div>
 </div>
-{% endblock %}
-
-{% block scripts %}
-  {{ super() }}
-{% endblock %}
+{% endblock %} {% block scripts %} {{ super() }} {# All JS removed. The main.js
+init function detects the .client-chat-container and initializes the chat
+automatically. #} {% endblock %}

@@ -1,4 +1,5 @@
-"""Loads environment variables and applies type-safe parsing"""
+"Loads environment variables and applies type-safe parsing"
+
 import os
 from datetime import timedelta
 from typing import Callable, Any
@@ -7,7 +8,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-def get_env(key: str, default: Any = None, cast: Callable[[str], Any] = str, strip_quotes: bool = True,) -> Any:
+def get_env(
+    key: str,
+    default: Any = None,
+    cast: Callable[[str], Any] = str,
+    strip_quotes: bool = True,
+) -> Any:
     """Helper to safely fetch and cast environment variables."""
     val = os.getenv(key, default)
     if val is None:
@@ -21,10 +27,34 @@ def get_env(key: str, default: Any = None, cast: Callable[[str], Any] = str, str
 
 
 def get_bool(key: str, default: bool = False) -> bool:
-    """Helper to parse booleans consistently"""
+    """Helper to parse booleans consistently."""
     val = os.getenv(key, str(default))
     val = val.strip('"').strip("'").lower()
     return val in ("true", "1", "t", "yes", "y")
+
+
+def _normalize_samesite(value: Any) -> str | None:
+    """Normalize SameSite strings to Flask-compatible values."""
+
+    if value is None:
+        return None
+
+    normalized = str(value).strip().strip('"').strip("'").lower()
+
+    if not normalized:
+        return None
+
+    if normalized == "none":
+        return "None"
+
+    if normalized == "lax":
+        return "Lax"
+
+    if normalized == "strict":
+        return "Strict"
+
+    # Fall back to Flask's default when an unsupported value is provided
+    return "Lax"
 
 
 admin_password_hash = get_env("admin_password_hash")
@@ -64,6 +94,9 @@ payment_config = {
     "fee_per_person": get_env("payment_fee_per_person", 0, cast=int),
     "fee_team": get_env("payment_fee_team", 0, cast=int),
     "league_two_discount": get_env("payment_league_two_discount", 0, cast=int),
+    "new_member_fee_per_league": get_env(
+        "payment_new_member_fee_per_league", 9_500_000, cast=int
+    ),
     "bank_name": get_env("payment_bank_name"),
     "owner_name": get_env("payment_owner_name"),
     "card_number": get_env("payment_card_number"),
@@ -71,3 +104,24 @@ payment_config = {
 }
 
 host = get_env("host", "0.0.0.0")
+port = get_env("port", 5000, cast=int)
+session_cookie_secure = get_bool("session_cookie_secure", False)
+session_cookie_httponly = get_bool("session_cookie_httponly", True)
+session_cookie_samesite = _normalize_samesite(
+    get_env("session_cookie_samesite", "Lax"),
+)
+
+# Development ergonomics: running the debug server over HTTP should not lose
+# session data simply because production cookies are still enabled in the .env.
+if debug:
+    session_cookie_secure = False
+    if session_cookie_samesite == "None":
+        session_cookie_samesite = "Lax"
+
+# ``SameSite=None`` requires Secure cookies in modern browsers. If the
+# configuration requests "None" but Secure is disabled (for example on a local
+# HTTP setup), gracefully fall back to the safer ``Lax`` value so logins,
+# flashes, and chat sessions continue to work instead of silently dropping the
+# cookie.
+if session_cookie_samesite == "None" and not session_cookie_secure:
+    session_cookie_samesite = "Lax"

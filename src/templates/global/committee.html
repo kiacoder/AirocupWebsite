@@ -1,61 +1,57 @@
-{% extends "global/Base.html" %} {% block Title %}کمیته برگزاری | آیروکاپ{%
-endblock %} {% block SEO_Description %}
+{% extends "global/base.html" %}
+
+{% block title %}کمیته برگزاری | آیروکاپ{% endblock %}
+
+{% block seo_description %}
 <meta
   name="description"
   content="آشنایی با کمیته برگزاری آیروکاپ؛ تیمی از اساتید برجسته و متخصصان صنعت که مسئولیت برگزاری مسابقات ملی هوش مصنوعی و رباتیک ایران را بر عهده دارند."
 />
-{% endblock %} {% block Body %}
+{% endblock %}
+
+{% block body %}
 <main class="app-container committee-page">
   <div class="container">
-    <header class="page-header text-center">
-      <h1 class="page-title">کمیته برگزاری آیروکاپ</h1>
 
+    <header class="page-header text-center">
+      <h1 class="section-title">کمیته برگزاری آیروکاپ</h1>
       <p class="page-subtitle">
         آشنایی با تیم متخصص و برجسته‌ای که با هدف ارتقای سطح علمی کشور و شناسایی
-        استعدادهای برتر، مسئولیت برگزاری شفاف و موفقیت‌آمیز مسابقات ملی هوش
-        مصنوعی و رباتیک را بر عهده دارند.
+        استعدادهای برتر، مسئولیت برگزاری شفاف و موفقیت‌آمیز مسابقات ملی هوش مصنوعی و رباتیک را بر عهده دارند.
       </p>
     </header>
 
     <section class="committee-grid" aria-labelledby="committee-members-title">
-      <h2 id="committee-members-title" class="visually-hidden">
-        اعضای کمیته برگزاری
-      </h2>
+      <h2 id="committee-members-title" class="visually-hidden">اعضای کمیته برگزاری</h2>
 
       {% for member in committee_members %}
-      <div
-        class="card committee-member"
-        itemscope
-        itemtype="https://schema.org/Person"
-      >
-        <div class="committee-photo">
+      <article class="card committee-member" itemscope itemtype="https://schema.org/Person">
+        <div
+          class="committee-photo"
+          data-initial="{{ member.name[0] }}"
+          role="img"
+          aria-label="تصویر {{ member.name }}"
+        >
           <img
             src="{{ url_for('static', filename=member.image) }}"
             alt="تصویر پرسنلی {{ member.name }}"
             loading="lazy"
             itemprop="image"
-            onerror="this.onerror=null; this.src='{{ url_for('static', filename='Images/placeholder-avatar.png') }}';"
+            onerror="this.closest('.committee-photo').classList.add('photo-fallback'); this.remove();"
           />
         </div>
 
         <div class="committee-info">
           <h3 itemprop="name">{{ member.name }}</h3>
-
           <p class="committee-role" itemprop="jobTitle">{{ member.role }}</p>
-
-          <p class="committee-description" itemprop="description">
-            {{ member.description }}
-          </p>
+          <p class="committee-description" itemprop="description">{{ member.description }}</p>
         </div>
-      </div>
+      </article>
       {% endfor %}
     </section>
 
     <section class="cta-section text-center">
-      <a
-        href="{{ url_for('global.technical_committee') }}"
-        class="btn btn-primary btn-large"
-      >
+      <a href="{{ url_for('global.technical_committee') }}" class="btn btn-primary btn-large">
         <i class="fas fa-users-cog" aria-hidden="true"></i>
         مشاهده کمیته‌های فنی
       </a>

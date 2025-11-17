@@ -1,12 +1,13 @@
 "containing various constants used throughout the airocup application"
-import os
-import datetime
-from typing import Dict, Optional, Tuple
-from better_profanity import profanity  # type: ignore
 
+import os
+from typing import Dict, Optional, Tuple
+from better_profanity import profanity
+import jdatetime
 
 class Path:
-    """Define All Paths Of Files"""
+    "Define All Paths Of Files"
+
     base_dir = os.path.dirname(os.path.abspath(__file__))
     root_dir = os.path.abspath(os.path.join(base_dir, "..", ".."))
     static_dir = os.path.join(root_dir, "static")
@@ -1023,12 +1024,12 @@ leagues_list = [
 ]
 
 
-education_levels: Dict[str, Dict[str, Optional[Tuple[int, int]]]] = {
+education_levels: Dict[str, Dict[str, Optional[Tuple[Optional[int], Optional[int]]]]] = {
     "ابتدایی": {"grades": (1, 6), "ages": (6, 12)},
-    "متوسطه اول": {"grades": (7, 9), "ages": (13, 16)},
-    "متوسطه دوم": {"grades": (10, 12), "ages": (16, 18)},
-    "دانشجویی": {"grades": None, "ages": (19, 60)},
-    "آزاد": {"grades": None, "ages": (18, 65)},
+    "متوسطه اول": {"grades": (7, 9), "ages": (6, 15)},
+    "متوسطه دوم": {"grades": (10, 12), "ages": (6, 18)},
+    "دانشجویی": {"grades": None, "ages": (6, 65)},
+    "آزاد": {"grades": None, "ages": (19, None)},
 }
 
 allowed_education = set(education_levels.keys())
@@ -1066,7 +1067,8 @@ technical_committee_members = [
 
 
 class ForbiddenContent:
-    """Manages the application's profanity filter and custom word list"""
+    "Manages the application's profanity filter and custom word list"
+
     custom_words = {
         "admin",
         "administrator",
@@ -1149,7 +1151,7 @@ class ForbiddenContent:
 
     @staticmethod
     def _initialize_filter():
-        """Loads the default library list and adds our custom list"""
+        "Loads the default library list and adds our custom list"
         if not ForbiddenContent.filter_loaded:
             profanity.load_censor_words()
             profanity.add_censor_words(
@@ -1159,19 +1161,19 @@ class ForbiddenContent:
 
     @staticmethod
     def censor(text: str) -> str:
-        """Censors any profane text"""
+        "Censors any profane text"
         ForbiddenContent._initialize_filter()
         return profanity.censor(text)
 
     @staticmethod
     def contains_profanity(text: str) -> bool:
-        """Checks if text contains any profane word"""
+        "Checks if text contains any profane word"
         ForbiddenContent._initialize_filter()
         return profanity.contains_profanity(text)
 
 
 class Date:
-    """Date-related constants and methods for the application"""
+    "Date-related constants and methods for the application"
     persian_months = {
         1: "فروردین",
         2: "اردیبهشت",
@@ -1189,38 +1191,27 @@ class Date:
 
     @staticmethod
     def get_allowed_years():
-        """Returns a list of allowed Gregorian birth years for participants based on age limits (5-80)"""
-        current_year = datetime.datetime.now(datetime.timezone.utc).year
+        "Returns a list of allowed Jalali birth years for participants based on age limits (5-80)."
+        today_jalali = jdatetime.date.today()
         min_age = 5
         max_age = 80
-        return list(range(current_year - max_age, current_year - min_age + 1))
+        start_year = today_jalali.year - max_age
+        end_year = today_jalali.year - min_age
+        return list(range(start_year, end_year + 1))
 
 
 class AppConfig:
-    """Configuration constants for the application"""
+    "Configuration constants for the application."
     max_team_per_client = 20
     max_members_per_team = 10
     max_image_size = 50 * 1024 * 1024
-    max_document_size = 100 * 1024 * 1024
-    max_video_size = 300 * 1024 * 1024
-    allowed_extensions = [
-        "png",
-        "jpg",
-        "jpeg",
-        "gif",
-        "pdf",
-        "doc",
-        "docx",
-        "xls",
-        "xlsx",
-        "ppt",
-        "pptx",
-        "mp4",
-        "mov",
-        "avi",
-        "mkv",
-        "webm",
-    ]
+    max_office_size = 50 * 1024 * 1024
+    max_document_size = 200 * 1024 * 1024  # Upper bound used for Flask uploads
+    max_video_size = 200 * 1024 * 1024
+    image_extensions = {"png", "jpg", "jpeg", "gif"}
+    office_extensions = {"pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx"}
+    video_extensions = {"mp4", "mov", "avi", "mkv", "webm"}
+    allowed_extensions = sorted(image_extensions | office_extensions | video_extensions)
     allowed_mime_types = [
         "image/jpeg",
         "image/png",
@@ -1239,29 +1230,23 @@ class AppConfig:
         "video/webm",
     ]
 
-
 class Details:
-    """Details for airocup event"""
+    "Details for airocup event"
     address = "دانشگاه علم و صنعت ایران، تهران، ایران"
     google_map_url = "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3238.3671459295647!2d51.50422711222071!3d35.74177972652958!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3f8e032fd49e3809%3A0x470e49fef97ae303!2sIran%20University%20of%20Science%20and%20Technology%20(IUST)!5e0!3m2!1sen!2snl!4v1762083993443!5m2!1sen!2snl"
     stage_one = "مجازی"
     stage_two = "حضوری، ۲۳ تا ۲۵ بهمن ۱۴۰۴"
     registration_deadline = "مهلت تا ۳۰ آذر"
 
-
 class Contact:
-    """Contact information for airocup"""
+    "Contact information for airocup"
     phone = "09352117339"
     email_primary = "airocupiran@gmail.com"
     website = "https://airocup.org"
     instagram = "@airo.cup"
-    linked_in = "linkedin.com/in/airo-cup-آیروکاپ-5b4818231"
     bale = "https://ble.ir/join/8VwzjR1U3f"
     aparat_channel = "https://www.aparat.com/Kia_coder"
     aparat_playlist = "https://www.aparat.com/playlist/22114839"
-    whatsapp = "https://whatsapp.com/channel/0029VbBMkHsDeON3NxBhgA1t"
-    telegram = "https://t.me/airocup"
-    eitaa = "https://eitaa.com/airocup2025"
     aparat_embed_url = (
         "https://www.aparat.com/video/video/embed/videohash/wtw75xo/vt/frame"
     )
@@ -1269,9 +1254,16 @@ class Contact:
 
 contact_points_data = [
     {
+        "href": f"tel:{Contact.phone}",
+        "icon": "fas fa-phone-alt",
+        "label": "پشتیبانی (تلفنی)",
+        "display": Contact.phone,
+        "target": None,
+    },
+    {
         "href": f"mailto:{Contact.email_primary}",
         "icon": "fas fa-envelope",
-        "label": "ایمیل",
+        "label": "ایمیل اصلی (سازمانی)",
         "display": Contact.email_primary,
         "target": None,
     },
@@ -1290,46 +1282,11 @@ contact_points_data = [
         "target": "_blank",
     },
     {
-        "href": f"https://{Contact.linked_in}",
-        "icon": "fab fa-linkedin",
-        "label": "لینکدین",
-        "display": "airocup LinkedIn",
-        "target": "_blank",
-    },
-    {
         "href": Contact.aparat_playlist,
         "icon": "fas fa-play-circle",
         "label": "آپارات",
         "display": "کانال آپارات آیروکاپ",
         "target": "_blank",
-    },
-    {
-        "href": f"tel:{Contact.phone}",
-        "icon": "fas fa-phone-alt",
-        "label": "پشتیبانی (تلفنی)",
-        "display": Contact.phone,
-        "target": None,
-    },
-    {
-        "href": f"Whatsapp:{Contact.whatsapp}",
-        "icon": "fa-brands fa-whatsapp",
-        "label": "کانال واتساپ",
-        "display": Contact.whatsapp,
-        "target": None,
-    },
-    {
-        "href": f"telegram:{Contact.telegram}",
-        "icon": "fa-brands fa-telegram",
-        "label": "کانال تلگرام",
-        "display": Contact.telegram,
-        "target": None,
-    },
-    {
-        "href": f"eitaa:{Contact.eitaa}",
-        "icon": "fa-regular fa-comment",
-        "label": "کانال ایتا",
-        "display": Contact.eitaa,
-        "target": None,
     },
 ]
 
