@@ -393,8 +393,7 @@ def update_team(team_id):
                     existing_team = (
                         db.query(models.Team)
                         .filter(
-                            func.lower(models.Team.team_name)
-                            == func.lower(new_team_name),
+                            func.lower(models.Team.team_name) == func.lower(new_team_name),
                             models.Team.team_id != team_id,
                         )
                         .first()
@@ -787,11 +786,7 @@ def verify_code():
                     client_ts = _ensure_aware(client.verification_code_timestamp)
 
                     if (
-                        client_ts
-                        and (
-                            datetime.datetime.now(datetime.timezone.utc) - client_ts
-                        ).total_seconds()
-                        > 900
+                        client_ts and (datetime.datetime.now(datetime.timezone.utc) - client_ts).total_seconds() > 900
                     ):
                         flash_message = (
                             "کد تایید منقضی شده است. لطفا دوباره درخواست دهید."
@@ -837,11 +832,7 @@ def verify_code():
                     reset_ts = _ensure_aware(reset_record.timestamp)
 
                     if (
-                        reset_ts
-                        and (
-                            datetime.datetime.now(datetime.timezone.utc) - reset_ts
-                        ).total_seconds()
-                        > 900
+                        reset_ts and (datetime.datetime.now(datetime.timezone.utc) - reset_ts).total_seconds() > 900
                     ):
                         db.delete(reset_record)
                         db.commit()
@@ -1073,11 +1064,7 @@ def reset_password():
                     timestamp = _ensure_aware(reset_record.timestamp)
 
                     if (
-                        timestamp
-                        and (
-                            datetime.datetime.now(datetime.timezone.utc) - timestamp
-                        ).total_seconds()
-                        > 900
+                        timestamp and (datetime.datetime.now(datetime.timezone.utc) - timestamp).total_seconds() > 900
                     ):
                         db.delete(reset_record)
                         db.commit()
@@ -1217,6 +1204,7 @@ def payment(team_id):
 @client_blueprint.route("/ResendCode", methods=["POST"])
 @limiter.limit("5 per 15 minutes")
 def resend_code():
+    """resend code route"""
     request_data = request.get_json() or {}
     action = request_data.get("action")
 
@@ -2030,7 +2018,6 @@ def add_member(team_id):
                         f"این عضو ({national_id}) هم‌اکنون در لیگ '{conflict_league_name}' در تیم دیگری عضو است."
                     )
 
-            # 6. SUCCESS: All checks passed. Add the member.
             new_member = models.Member(**new_member_data_safe, team_id=team_id)
             db_session.add(new_member)
 
