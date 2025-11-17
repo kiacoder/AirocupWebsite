@@ -901,8 +901,7 @@ def admin_add_client():
             if (
                 db.query(models.Client)
                 .filter(
-                    (models.Client.email == email)
-                    | (models.Client.phone_number == phone)
+                    (models.Client.email == email) | (models.Client.phone_number == phone)
                 )
                 .first()
             ):
