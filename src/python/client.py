@@ -1721,6 +1721,7 @@ def get_my_chat_history():
             {
                 "message_text": message.message_text,
                 "timestamp": message.timestamp.isoformat(),
+                "message_id": message.message_id,
                 "sender": message.sender,
             }
             for message in database.get_chat_history_by_client_id(db, client_id)

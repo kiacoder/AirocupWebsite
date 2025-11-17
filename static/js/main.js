@@ -993,19 +993,25 @@ const airocupApp = {
 
       bubble.classList.add(isClientMessage ? "is-client" : "is-admin");
 
-      const senderLabel = isLocal
-        ? state.isClientView
-          ? "شما"
-          : (message?.sender || "ادمین")
-        : state.isClientView
-        ? isClientMessage
-        ? "شما"
-        : "پشتیبانی"
-        : isClientMessage
-        ? "کاربر"
-        : (message?.sender && message.sender.toLowerCase() !== "admin"
-            ? message.sender
-            : "ادمین");
+      const senderLabel = (() => {
+        const senderName = (message?.sender || "").trim();
+        if (state.isClientView) {
+          if (isClientMessage) return "شما";
+          return senderName || "پشتیبانی";
+        }
+        if (isClientMessage) return senderName || "کاربر";
+        if (senderName && senderName.toLowerCase() !== "admin") return senderName;
+        return "ادمین";
+      })();
+
+      const { iso, display } = resolveTimestamp(message?.timestamp);
+      const senderKey = (message?.sender || (isClientMessage ? "client" : "admin")).toLowerCase();
+      const signature = message?.message_id
+        ? `msg-${message.message_id}`
+        : `${rawText}|${senderKey}|${iso}`;
+
+      if (state.renderedMessages.has(signature)) return;
+      state.renderedMessages.add(signature);
 
       const { iso, display } = resolveTimestamp(message?.timestamp);
       const senderKey = (message?.sender || (isClientMessage ? "client" : "admin")).toLowerCase();

@@ -18,7 +18,7 @@ from flask import (
     current_app,
 )
 import persiantools.digits  # type:ignore
-from sqlalchemy import exc, func, select
+from sqlalchemy import exc, func, select, or_
 from sqlalchemy.sql.functions import count
 from sqlalchemy.orm import joinedload, subqueryload
 import bleach
@@ -94,6 +94,7 @@ def get_chat_history(client_id):
                     {
                         "message_text": message.message_text,
                         "timestamp": message.timestamp.isoformat(),
+                        "message_id": message.message_id,
                         "sender": message.sender,
                     }
                     for message in msgs
@@ -656,6 +657,7 @@ def admin_manage_client(client_id):
         archived_teams=archived_teams_with_status,
         payments_history=payments_history,
         education_levels=constants.education_levels,
+        enums=models,
     )
 
 
