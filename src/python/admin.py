@@ -878,9 +878,7 @@ def admin_add_client():
         request.form.get("email") or request.form.get("Email") or ""
     ).strip().lower()
     phone = (
-        request.form.get("phone_number")
-        or request.form.get("PhoneNumber")
-        or ""
+        request.form.get("phone_number") or request.form.get("PhoneNumber") or ""
     ).strip()
     password = request.form.get("password") or request.form.get("Password") or ""
 
