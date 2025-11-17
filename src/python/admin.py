@@ -247,9 +247,7 @@ def admin_update_payment_status(team_id):
             latest_payment.status = new_status
 
             if (
-                team
-                and new_status == models.PaymentStatus.APPROVED
-                and previous_status != models.PaymentStatus.APPROVED
+                team and new_status == models.PaymentStatus.APPROVED and previous_status != models.PaymentStatus.APPROVED
             ):
                 paid_members = latest_payment.members_paid_for or 0
                 current_unpaid = team.unpaid_members_count or 0
