@@ -1013,13 +1013,6 @@ const airocupApp = {
       if (state.renderedMessages.has(signature)) return;
       state.renderedMessages.add(signature);
 
-      const { iso, display } = resolveTimestamp(message?.timestamp);
-      const senderKey = (message?.sender || (isClientMessage ? "client" : "admin")).toLowerCase();
-      const signature = `${rawText}|${senderKey}|${iso}`;
-
-      if (state.renderedMessages.has(signature)) return;
-      state.renderedMessages.add(signature);
-
       const senderElement = document.createElement("span");
       senderElement.className = "chat-message--sender";
       senderElement.textContent = senderLabel;
