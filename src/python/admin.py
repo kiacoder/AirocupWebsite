@@ -681,8 +681,7 @@ def admin_edit_team(team_id):
                     existing_team = (
                         db.query(models.Team)
                         .filter(
-                            func.lower(models.Team.team_name)
-                            == func.lower(new_team_name),
+                            func.lower(models.Team.team_name) == func.lower(new_team_name),
                             models.Team.team_id != team_id,
                         )
                         .first()
