@@ -8,7 +8,7 @@
     <div class="admin-page__title">
       <h1>ویرایش مقاله</h1>
       <p class="admin-page__subtitle">
-        تغییرات موردنظر را روی مقاله «{{ article.Title }}» اعمال و ذخیره کنید.
+        تغییرات موردنظر را روی مقاله «{{ article.title }}» اعمال و ذخیره کنید.
       </p>
     </div>
     <div class="admin-page__actions">
@@ -30,7 +30,7 @@
       <div class="admin-surface__body">
         <form
           method="POST"
-          action="{{ url_for('admin.admin_edit_news', article_id=article.NewsID) }}"
+          action="{{ url_for('admin.admin_edit_news', article_id=article.news_id) }}"
           enctype="multipart/form-data"
           class="admin-form"
         >
@@ -38,24 +38,29 @@
 
           <div class="form-group">
             <label for="Title">عنوان مقاله</label>
-            <input type="text" id="Title" name="Title" required value="{{ article.Title }}" />
+            <input type="text" id="Title" name="title" required value="{{ article.title }}" />
           </div>
 
           <div class="form-group">
             <label for="Content">محتوای مقاله</label>
-            <textarea id="Content" name="Content" rows="6" required>{{ article.Content }}</textarea>
+            <textarea id="Content" name="content" rows="6" required>{{ article.content }}</textarea>
           </div>
 
           <div class="form-group">
             <label for="TemplatePath">مسیر قالب اختصاصی (اختیاری)</label>
-            <input type="text" id="TemplatePath" name="TemplatePath" value="{{ article.TemplatePath }}" placeholder="مثال: custom_article.html" />
+            <input type="text" id="TemplatePath" name="template_path" value="{{ article.template_path }}" placeholder="مثال: custom_article.html" />
+          </div>
+
+          <div class="form-group">
+            <label for="HtmlUpload">آپلود فایل HTML سفارشی</label>
+            <input type="file" id="HtmlUpload" name="html_file" accept=".html" class="upload-input" />
           </div>
 
           <div class="form-group">
             <label for="Image">تصویر مقاله (اختیاری)</label>
-            <input type="file" id="Image" name="Image" accept="image/png, image/jpeg, image/gif" class="upload-input" />
-            {% if article.ImagePath %}
-            <p class="form-helper-text">تصویر فعلی: {{ article.ImagePath }}</p>
+            <input type="file" id="Image" name="image" accept="image/png, image/jpeg, image/gif" class="upload-input" />
+            {% if article.image_path %}
+            <p class="form-helper-text">تصویر فعلی: {{ article.image_path }}</p>
             {% endif %}
           </div>
 

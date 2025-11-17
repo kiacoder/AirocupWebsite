@@ -340,17 +340,20 @@ def log_action(
     )
 
 
-def save_chat_message(db: Session, client_id: int, message_text: str, sender: str):
-    "Save a chat message to the database"
-    db.add(
-        models.ChatMessage(
-            client_id=client_id,
-            message_text=message_text,
-            sender=sender,
-            timestamp=datetime.datetime.now(datetime.timezone.utc),
-        )
+def save_chat_message(
+    db: Session, client_id: int, message_text: str, sender: str
+) -> models.ChatMessage:
+    "Save a chat message to the database and return it."
+    message = models.ChatMessage(
+        client_id=client_id,
+        message_text=message_text,
+        sender=sender,
+        timestamp=datetime.datetime.now(datetime.timezone.utc),
     )
+    db.add(message)
     db.commit()
+    db.refresh(message)
+    return message
 
 
 def get_chat_history_by_client_id(

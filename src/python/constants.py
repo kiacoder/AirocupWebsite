@@ -21,6 +21,7 @@ class Path:
     images_dir = os.path.join(static_dir, "images")
     receipts_dir = os.path.join(uploads_dir, "receipts")
     news_dir = os.path.join(uploads_dir, "news")
+    news_html_dir = os.path.join(static_dir, "news", "htmls")
     gallery_dir = os.path.join(images_dir, "gallery")
     committee_dir = os.path.join(images_dir, "committee")
     technical_committee_dir = os.path.join(images_dir, "technical_committee")
@@ -1499,4 +1500,7 @@ admin_html_names_data = {
     "admin_manage_news": "admin/admin_manage_news.html",
     "admin_manage_teams": "admin/admin_manage_teams.html",
     "admin_add_member": "admin/admin_add_member.html",
+    "admin_select_chat": "admin/admin_chat_list.html",
+    "admin_search": "admin/admin_search.html",
+    "admin_logs": "admin/admin_logs.html",
 }

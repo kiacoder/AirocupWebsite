@@ -110,6 +110,11 @@
               <span>مدیریت اخبار</span>
               <small>انتشار اطلاعیه‌های جدید</small>
             </a>
+            <a href="{{ url_for('admin.admin_search') }}" class="admin-action-card">
+              <i class="fas fa-search" aria-hidden="true"></i>
+              <span>جستجوی پیشرفته</span>
+              <small>یافتن سریع کاربران، تیم‌ها و پرداخت‌ها</small>
+            </a>
             <a href="{{ url_for('admin.admin_select_chat') }}" class="admin-action-card">
               <i class="fas fa-envelope" aria-hidden="true"></i>
               <span>پیام‌ها</span>
@@ -259,7 +264,7 @@
                 <td>{{ payment.upload_date | formatdate | persian_digits }}</td>
                 <td>
                   <a
-                    href="{{ url_for('uploaded_receipt_file', filename=payment.receipt_filename) }}"
+                    href="{{ url_for('uploaded_receipt_file', client_id=payment.client_id, filename=payment.receipt_filename) }}"
                     class="btn btn-secondary btn-small"
                     target="_blank"
                     rel="noopener"

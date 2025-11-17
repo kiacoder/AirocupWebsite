@@ -23,6 +23,18 @@
         <i class="fas fa-comments"></i>
         گفتگو با کاربر
       </a>
+      {% if client.status != enums.EntityStatus.ACTIVE %}
+      <form
+        method="POST"
+        action="{{ url_for('admin.admin_restore_client', client_id=client.client_id) }}"
+      >
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <button type="submit" class="btn btn-success">
+          <i class="fas fa-undo"></i>
+          فعال‌سازی مجدد کاربر
+        </button>
+      </form>
+      {% endif %}
     </div>
   </header>
 
@@ -49,12 +61,38 @@
             <dd dir="ltr">{{ client.phone_number | persian_digits }}</dd>
           </div>
           <div>
+            <dt>شناسه کاربر</dt>
+            <dd>#{{ client.client_id | persian_digits }}</dd>
+          </div>
+          <div>
+            <dt>وضعیت حساب</dt>
+            <dd>
+              <span class="admin-status admin-status--idle">
+                {{ client.status.label if client.status else 'نامشخص' }}
+              </span>
+            </dd>
+          </div>
+          <div>
+            <dt>تایید شماره همراه</dt>
+            <dd>
+              {% if client.is_phone_verified %}
+              <span class="admin-badge admin-badge--success">تایید شده</span>
+              {% else %}
+              <span class="admin-badge admin-badge--muted">در انتظار تایید</span>
+              {% endif %}
+            </dd>
+          </div>
+          <div>
             <dt>تعداد تیم‌ها</dt>
             <dd>{{ teams|length | persian_digits }} تیم</dd>
           </div>
           <div>
             <dt>سطح تحصیلات</dt>
             <dd>{{ client.education_level or 'ثبت نشده' }}</dd>
+          </div>
+          <div>
+            <dt>تاریخ ثبت‌نام</dt>
+            <dd>{{ client.registration_date | formatdate | persian_digits }}</dd>
           </div>
         </dl>
       </div>
@@ -83,6 +121,7 @@
                 <th>نام تیم</th>
                 <th>تعداد اعضا</th>
                 <th>وضعیت پرداخت</th>
+                <th>جزئیات</th>
                 <th>عملیات</th>
               </tr>
             </thead>
@@ -101,6 +140,14 @@
                     <i class="fas fa-circle"></i>
                     {{ status_enum.label if status_enum else 'منتظر اقدام' }}
                   </span>
+                </td>
+                <td>
+                  <div class="admin-meta-grid">
+                    <span>تاریخ ایجاد: {{ team.team_registration_date | formatdate | persian_digits }}</span>
+                    <span>مقطع: {{ team.education_level or '—' }}</span>
+                    <span>لیگ اول: {{ team.league_one.name if team.league_one else '—' }}</span>
+                    <span>لیگ دوم: {{ team.league_two.name if team.league_two else '—' }}</span>
+                  </div>
                 </td>
                 <td class="admin-table__actions">
                   <a
@@ -135,6 +182,154 @@
                   <div class="admin-empty-state">
                     <i class="fas fa-layer-group"></i>
                     این کاربر هنوز تیمی ایجاد نکرده است.
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </article>
+
+    <article class="admin-surface">
+      <header class="admin-surface__header">
+        <div class="admin-surface__title">
+          <h2><i class="fas fa-archive"></i> تیم‌های آرشیو شده/غیرفعال</h2>
+          <p>نمایش تیم‌هایی که به وضعیت غیرفعال یا منصرف شده منتقل شده‌اند.</p>
+        </div>
+      </header>
+
+      <div class="admin-surface__body">
+        <div class="admin-table-wrapper">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>شناسه</th>
+                <th>نام تیم</th>
+                <th>تعداد اعضای ثبت شده</th>
+                <th>آخرین وضعیت پرداخت</th>
+                <th>جزئیات</th>
+                <th>عملیات</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for team in archived_teams %}
+              {% set status_enum = team.last_payment_status %}
+              {% set status_value = status_enum.value if status_enum else None %}
+              <tr>
+                <td>#{{ team.team_id | persian_digits }}</td>
+                <td>{{ team.team_name }}</td>
+                <td>{{ team.total_members | persian_digits }} نفر</td>
+                <td>
+                  <span
+                    class="admin-status {% if status_value == 'approved' %}admin-status--approved{% elif status_value == 'pending' %}admin-status--pending{% elif status_value == 'rejected' %}admin-status--rejected{% else %}admin-status--idle{% endif %}"
+                  >
+                    <i class="fas fa-circle"></i>
+                    {{ status_enum.label if status_enum else 'بدون پرداخت' }}
+                  </span>
+                </td>
+                <td>
+                  <div class="admin-meta-grid">
+                    <span>تاریخ ایجاد: {{ team.team_registration_date | formatdate | persian_digits }}</span>
+                    <span>مقطع: {{ team.education_level or '—' }}</span>
+                    <span>لیگ اول: {{ team.league_one.name if team.league_one else '—' }}</span>
+                    <span>لیگ دوم: {{ team.league_two.name if team.league_two else '—' }}</span>
+                    <span>وضعیت: {{ team.status.label if team.status else '—' }}</span>
+                  </div>
+                </td>
+                <td>
+                  <div class="admin-table__actions">
+                    <a
+                      href="{{ url_for('admin.admin_edit_team', team_id=team.team_id) }}"
+                      class="btn btn-secondary btn-small"
+                    >
+                      مشاهده جزئیات
+                    </a>
+                    <form
+                      method="POST"
+                      action="{{ url_for('admin.admin_restore_team', team_id=team.team_id) }}"
+                    >
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                      <button type="submit" class="btn btn-success btn-small">
+                        <i class="fas fa-undo"></i>
+                        بازگردانی تیم
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+              {% else %}
+              <tr class="admin-table__empty">
+                <td colspan="6">
+                  <div class="admin-empty-state">
+                    <i class="fas fa-info-circle"></i>
+                    تیم آرشیو شده‌ای برای این کاربر ثبت نشده است.
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </article>
+
+    <article class="admin-surface">
+      <header class="admin-surface__header">
+        <div class="admin-surface__title">
+          <h2><i class="fas fa-receipt"></i> سوابق پرداخت</h2>
+          <p>بررسی همه رسیدهای ارسال‌شده توسط کاربر، حتی پس از تایید یا رد.</p>
+        </div>
+      </header>
+      <div class="admin-surface__body">
+        <div class="admin-table-wrapper">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>شناسه پرداخت</th>
+                <th>تیم</th>
+                <th>مبلغ</th>
+                <th>تعداد اعضای پرداخت شده</th>
+                <th>تاریخ بارگذاری</th>
+                <th>وضعیت</th>
+                <th>رسید</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for payment in payments_history %}
+              <tr>
+                <td>#{{ payment.payment_id | persian_digits }}</td>
+                <td>{{ payment.team_name }}</td>
+                <td>{{ payment.amount | humanize_number | persian_digits }} ریال</td>
+                <td>{{ payment.members_paid_for | persian_digits }} نفر</td>
+                <td>{{ payment.upload_date | formatdate | persian_digits }}</td>
+                <td>
+                  <span
+                    class="admin-status {% if payment.status.value == 'approved' %}admin-status--approved{% elif payment.status.value == 'pending' %}admin-status--pending{% else %}admin-status--rejected{% endif %}"
+                  >
+                    {{ payment.status.label if payment.status else 'نامشخص' }}
+                  </span>
+                </td>
+                <td>
+                  {% if payment.receipt_filename %}
+                  <a
+                    href="{{ url_for('uploaded_receipt_file', client_id=payment.client_id, filename=payment.receipt_filename) }}"
+                    class="btn btn-secondary btn-small"
+                    target="_blank"
+                    rel="noopener"
+                  >
+                    مشاهده رسید
+                  </a>
+                  {% else %}-{% endif %}
+                </td>
+              </tr>
+              {% else %}
+              <tr class="admin-table__empty">
+                <td colspan="7">
+                  <div class="admin-empty-state">
+                    <i class="fas fa-receipt"></i>
+                    پرداختی برای این کاربر ثبت نشده است.
                   </div>
                 </td>
               </tr>
