@@ -40,14 +40,13 @@ class Path:
     guideline = "database/guideline/guideline.pdf"
     site_web_manifest = "site.webmanifest"
     solid_logos = {
-        "main_fest_192": "images/logo/solid/airocup_logo_mainfest_192.png",
-        "main_fest_512": "images/logo/solid/airocup_logo_mainfest_512.png",
-        "solid_purple_glow_crop": "images/logo/solid/BWT.png",
-        "solid_purple_glow": "images/logo/solid/BWT.png",
-        "solid_white": "images/logo/solid/BWT.png",
-        "solid_white_favicon": "images/logo/solid/swf_airocup_logo.ico",
+        "main_fest_192": "images/logo/solid/png/192-BWT.png",
+        "main_fest_512": "images/logo/solid/png/512-BWT.png",
+        "solid_purple_glow_crop": "images/logo/solid/png/BWT.png",
+        "solid_purple_glow": "images/logo/solid/png/BWT.png",
+        "solid_white": "images/logo/solid/png/BWT.png",
+        "solid_white_favicon": "images/logo/solid/ico/BWT.ico",
     }
-
     transparent_logos = {
         "transparent_black": "images/logo/transparent/tb_airocup_logo.png",
         "transparent_purple": "images/logo/transparent/tp_airocup_logo.png",
