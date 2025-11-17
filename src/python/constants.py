@@ -1259,19 +1259,15 @@ class Contact:
     bale = "https://ble.ir/join/8VwzjR1U3f"
     aparat_channel = "https://www.aparat.com/Kia_coder"
     aparat_playlist = "https://www.aparat.com/playlist/22114839"
+    whatsapp = "https://whatsapp.com/channel/0029VbBMkHsDeON3NxBhgA1t"
+    telegram = "https://t.me/airocup"
+    eitaa = "https://eitaa.com/airocup2025"
     aparat_embed_url = (
         "https://www.aparat.com/video/video/embed/videohash/wtw75xo/vt/frame"
     )
 
 
 contact_points_data = [
-    {
-        "href": f"tel:{Contact.phone}",
-        "icon": "fas fa-phone-alt",
-        "label": "پشتیبانی (تلفنی)",
-        "display": Contact.phone,
-        "target": None,
-    },
     {
         "href": f"mailto:{Contact.email_primary}",
         "icon": "fas fa-envelope",
@@ -1306,6 +1302,34 @@ contact_points_data = [
         "label": "آپارات",
         "display": "کانال آپارات آیروکاپ",
         "target": "_blank",
+    },
+    {
+        "href": f"tel:{Contact.phone}",
+        "icon": "fas fa-phone-alt",
+        "label": "پشتیبانی (تلفنی)",
+        "display": Contact.phone,
+        "target": None,
+    },
+    {
+        "href": f"Whatsapp:{Contact.whatsapp}",
+        "icon": "fa-brands fa-whatsapp",
+        "label": "کانال واتساپ",
+        "display": Contact.whatsapp,
+        "target": None,
+    },
+    {
+        "href": f"telegram:{Contact.telegram}",
+        "icon": "fa-brands fa-telegram",
+        "label": "کانال تلگرام",
+        "display": Contact.telegram,
+        "target": None,
+    },
+    {
+        "href": f"eitaa:{Contact.eitaa}",
+        "icon": "fa-regular fa-comment",
+        "label": "کانال ایتا",
+        "display": Contact.eitaa,
+        "target": None,
     },
 ]
 

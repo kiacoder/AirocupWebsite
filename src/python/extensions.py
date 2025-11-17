@@ -1,4 +1,5 @@
-from flask_wtf.csrf import CSRFProtect
+"""Extentions for web app"""
+from flask_wtf.csrf import CSRFProtect  # type: ignore
 from flask_limiter import Limiter
 from flask_socketio import SocketIO
 from flask_limiter.util import get_remote_address

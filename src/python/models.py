@@ -23,13 +23,12 @@ from sqlalchemy import (
 
 
 class Base(DeclarativeBase):
-    """Base class for all ORM models."""
-
+    """Base class for all ORM models"""
     pass
 
 
 class LabeledEnum(enum.Enum):
-    """Enum base class with an additional label attribute for display."""
+    """Enum base class with an additional label attribute for display"""
 
     label: str
 
@@ -41,7 +40,7 @@ class LabeledEnum(enum.Enum):
 
 
 class EntityStatus(LabeledEnum):
-    """Enumeration for the status of entities (e.g., Client, Team)."""
+    """Enumeration for the status of entities (e.g., Client, Team)"""
 
     ACTIVE = ("active", "فعال")
     INACTIVE = ("inactive", "غیرفعال")
@@ -49,7 +48,7 @@ class EntityStatus(LabeledEnum):
 
 
 class MemberRole(LabeledEnum):
-    """Enumeration for the role of a team member."""
+    """Enumeration for the role of a team member"""
 
     LEADER = ("leader", "سرپرست")
     COACH = ("coach", "مربی")
@@ -57,7 +56,7 @@ class MemberRole(LabeledEnum):
 
 
 class PaymentStatus(LabeledEnum):
-    """Enumeration for the status of a payment."""
+    """Enumeration for the status of a payment"""
 
     PENDING = ("pending", "در حال بررسی")
     APPROVED = ("approved", "تایید شده")
@@ -65,7 +64,7 @@ class PaymentStatus(LabeledEnum):
 
 
 class Client(Base):
-    """Represents a registered user account (client)."""
+    """Represents a registered user account (client)"""
 
     __tablename__ = "clients"
     client_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
@@ -118,7 +117,7 @@ class Client(Base):
 
 
 class League(Base):
-    """Represents a competition league that a team can join."""
+    """Represents a competition league that a team can join"""
 
     __tablename__ = "leagues"
     league_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
@@ -128,7 +127,7 @@ class League(Base):
 
 
 class Team(Base):
-    """Represents a team of members, owned by a client."""
+    """Represents a team of members, owned by a client"""
 
     __tablename__ = "teams"
     team_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
@@ -184,7 +183,7 @@ class Team(Base):
 
 
 class Payment(Base):
-    """Represents a payment transaction for a team."""
+    """Represents a payment transaction for a team"""
 
     __tablename__ = "payments"
 
@@ -210,7 +209,7 @@ class Payment(Base):
 
 
 class Member(Base):
-    """Represents an individual member belonging to a team."""
+    """Represents an individual member belonging to a team"""
 
     __tablename__ = "members"
 
@@ -248,7 +247,7 @@ class Member(Base):
 
 
 class Province(Base):
-    """Represents a province in Iran."""
+    """Represents a province in Iran"""
 
     __tablename__ = "provinces"
     province_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
@@ -261,7 +260,7 @@ class Province(Base):
 
 
 class City(Base):
-    """Represents a city within a province."""
+    """Represents a city within a province"""
 
     __tablename__ = "cities"
     city_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
@@ -274,7 +273,7 @@ class City(Base):
 
 
 class LoginAttempt(Base):
-    """Logs a single login attempt for security monitoring."""
+    """Logs a single login attempt for security monitoring"""
 
     __tablename__ = "login_attempts"
     attempt_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
@@ -287,7 +286,7 @@ class LoginAttempt(Base):
 
 
 class News(Base):
-    """Represents a news article to be displayed on the site."""
+    """Represents a news article to be displayed on the site"""
 
     __tablename__ = "news"
     news_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
@@ -301,7 +300,7 @@ class News(Base):
 
 
 class HistoryLog(Base):
-    """Logs significant actions performed by clients or admins."""
+    """Logs significant actions performed by clients or admins"""
 
     __tablename__ = "history_logs"
     log_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
@@ -317,7 +316,7 @@ class HistoryLog(Base):
 
 
 class PasswordReset(Base):
-    """Stores tokens for password reset requests."""
+    """Stores tokens for password reset requests"""
 
     __tablename__ = "password_resets"
     reset_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
@@ -330,7 +329,7 @@ class PasswordReset(Base):
 
 
 class ChatMessage(Base):
-    """Represents a single message in the admin-client chat."""
+    """Represents a single message in the admin-client chat"""
 
     __tablename__ = "chat_messages"
     message_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
@@ -346,7 +345,7 @@ class ChatMessage(Base):
 
 
 class TeamDocument(Base):
-    """Stores metadata about documents uploaded for a team."""
+    """Stores metadata about documents uploaded for a team"""
 
     __tablename__ = "team_documents"
 

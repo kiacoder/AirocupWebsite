@@ -12,19 +12,20 @@ from . import models
 from . import utils
 
 db_engine = create_engine(
-    f"sqlite:///{constants.Path.database.replace('\\', '/')}", connect_args={"check_same_thread": False}
+    f"sqlite:///{constants.Path.database.replace('\\', '/')}",
+    connect_args={"check_same_thread": False},
 )
 
 
 def create_database():
-    "Create the database and its tables if they do not exist"
+    """Create the database and its tables if they do not exist"""
     os.makedirs(os.path.dirname(constants.Path.database), exist_ok=True)
     models.Base.metadata.create_all(bind=db_engine)
 
 
 @contextmanager
 def get_db_session() -> Iterator[Session]:
-    "Get a database session"
+    """Get a database session"""
     session_local = sessionmaker(autocommit=False, autoflush=False, bind=db_engine)
     db = session_local()
     try:
@@ -36,7 +37,7 @@ def get_db_session() -> Iterator[Session]:
 def has_existing_leader(
     db: Session, team_id: int, member_id_to_exclude: Optional[int] = None
 ) -> bool:
-    "Check if team already has leader, optionally excluding specific member ID"
+    """Check if team already has leader, optionally excluding specific member ID"""
     query = db.query(models.Member).filter(
         models.Member.team_id == team_id, models.Member.role == models.MemberRole.LEADER
     )
@@ -46,7 +47,7 @@ def has_existing_leader(
 
 
 def get_all_active_clients(db: Session) -> list[models.Client]:
-    "Retrieve all active clients ordered by email address"
+    """Retrieve all active clients ordered by email address"""
     return (
         db.query(models.Client)
         .filter(models.Client.status == models.EntityStatus.ACTIVE)
@@ -56,7 +57,7 @@ def get_all_active_clients(db: Session) -> list[models.Client]:
 
 
 def get_team_by_id(db: Session, team_id: int) -> Optional[models.Team]:
-    "Retrieve a team by its ID"
+    """Retrieve a team by its ID"""
     return db.query(models.Team).filter(models.Team.team_id == team_id).first()
 
 
@@ -69,7 +70,7 @@ def validate_client_update(
     is_valid_iranian_phone,
     fa_to_en,
 ) -> Tuple[Optional[dict], list[str]]:
-    "Validate client update data and return cleaned data or errors"
+    """Validate client update data and return cleaned data or errors"""
     clean_data = {}
     errors = []
 
@@ -129,7 +130,7 @@ def validate_client_update(
 
 
 def update_client_details(db: Session, client_id: int, clean_data: dict):
-    "Update client details in the database"
+    """Update client details in the database"""
     client_to_update = (
         db.query(models.Client).filter(models.Client.client_id == client_id).first()
     )
@@ -148,7 +149,7 @@ def update_client_details(db: Session, client_id: int, clean_data: dict):
 
 
 def get_client_by(db: Session, identifier: str, value: Any) -> Optional[models.Client]:
-    "Retrieve a Client by specified identifier"
+    """Retrieve a Client by specified identifier"""
     if identifier == "client_id":
         return db.query(models.Client).filter(models.Client.client_id == value).first()
     elif identifier == "email":
@@ -165,17 +166,17 @@ def get_client_by(db: Session, identifier: str, value: Any) -> Optional[models.C
 
 
 def get_all_articles(db: Session):
-    "Retrieve all news articles ordered by publish date descending"
+    """Retrieve all news articles ordered by publish date descending"""
     return db.query(models.News).order_by(models.News.publish_date.desc()).all()
 
 
 def get_article_by_id(db: Session, article_id: int):
-    "Retrieve a news article by its ID"
+    """Retrieve a news article by its ID"""
     return db.query(models.News).filter(models.News.news_id == article_id).first()
 
 
 def log_login_attempt(db: Session, identifier: str, ip_address: str, is_success: bool):
-    "Log a login attempt to the database"
+    """Log a login attempt to the database"""
     db.add(
         models.LoginAttempt(
             identifier=identifier,
@@ -187,7 +188,7 @@ def log_login_attempt(db: Session, identifier: str, ip_address: str, is_success:
 
 
 def populate_leagues(db: Session):
-    "Populate Leagues table from constants if it is empty"
+    """Populate Leagues table from constants if it is empty"""
     if db.query(models.League).first():
         return
     print("Populating Leagues table...")
@@ -214,7 +215,7 @@ def populate_leagues(db: Session):
 
 
 def populate_geography_data(db: Session):
-    "Populate Provinces and Cities tables from constants if they are empty"
+    """Populate Provinces and Cities tables from constants if they are empty"""
     if db.query(models.Province).first():
         return
     print("Populating Provinces and Cities tables...")
@@ -239,7 +240,7 @@ def validate_new_member_data(
     birth_day: int,
     role_value: str,
 ) -> List[str]:
-    "Validate new member data and return a list of error messages if any"
+    """Validate new member data and return a list of error messages if any"""
     errors = []
 
     if not utils.is_valid_name(name):
@@ -286,7 +287,7 @@ def validate_new_member_data(
 def log_action(
     db: Session, client_id: int, action_description: str, is_admin_action: bool = False
 ):
-    "Log an action to the database"
+    """Log an action to the database"""
     db.add(
         models.HistoryLog(
             client_id=client_id,
@@ -298,7 +299,7 @@ def log_action(
 
 
 def save_chat_message(db: Session, client_id: int, message_text: str, sender: str):
-    "Save a chat message to the database"
+    """Save a chat message to the database"""
     db.add(
         models.ChatMessage(
             client_id=client_id,
@@ -312,7 +313,7 @@ def save_chat_message(db: Session, client_id: int, message_text: str, sender: st
 def get_chat_history_by_client_id(
     db: Session, client_id: int
 ) -> list[models.ChatMessage]:
-    "Retrieve chat history for a specific client"
+    """Retrieve chat history for a specific client"""
     return (
         db.query(models.ChatMessage)
         .filter(models.ChatMessage.client_id == client_id)
@@ -322,7 +323,7 @@ def get_chat_history_by_client_id(
 
 
 def has_team_made_any_payment(db: Session, team_id: int) -> bool:
-    "Check if the team has made any payments"
+    """Check if the team has made any payments"""
     return (
         db.query(models.Payment).filter(models.Payment.team_id == team_id).first()
         is not None
@@ -330,7 +331,7 @@ def has_team_made_any_payment(db: Session, team_id: int) -> bool:
 
 
 def check_if_team_is_paid(db: Session, team_id: int) -> bool:
-    "Check if the team has any approved payments"
+    """Check if the team has any approved payments"""
     return (
         db.query(models.Payment)
         .filter(
@@ -344,7 +345,7 @@ def check_if_team_is_paid(db: Session, team_id: int) -> bool:
 def is_member_league_conflict(
     db: Session, national_id: str, target_team_id: int
 ) -> Tuple[bool, str]:
-    "Check if adding a member to the target team would create league conflict"
+    """Check if adding a member to the target team would create league conflict"""
     target_team = (
         db.query(models.Team.league_one_id, models.Team.league_two_id)
         .filter(
@@ -374,8 +375,7 @@ def is_member_league_conflict(
                 [models.MemberRole.LEADER, models.MemberRole.COACH]
             ),
             (
-                models.Team.league_one_id.in_(target_league_ids)
-                | models.Team.league_two_id.in_(target_league_ids)
+                models.Team.league_one_id.in_(target_league_ids) | models.Team.league_two_id.in_(target_league_ids)
             ),
         )
         .first()
