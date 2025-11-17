@@ -76,7 +76,6 @@
       href="{{ url_for('static', filename=path.css_style, v=static_version) }}"
     />
 
-    {% if not _is_admin %}
     <link
       rel="icon"
       href="{{ url_for('static', filename=path.solid_logos['solid_white_favicon'], v=static_version) }}"
@@ -91,7 +90,6 @@
       rel="apple-touch-icon"
       href="{{ url_for('static', filename=path.solid_logos['main_fest_192'], v=static_version) }}"
     />
-    {% endif %}
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
