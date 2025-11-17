@@ -21,6 +21,8 @@ passlib
 Authlib
 email-validator
 libpass
+gunicorn
+waitress
 Flask-Migrate
 alembic
 Mako
