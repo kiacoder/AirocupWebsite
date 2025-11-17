@@ -1177,6 +1177,31 @@ def payment(team_id):
                 return redirect(request.url)
             receipt_file.stream.seek(0)
 
+            payer_name = (request.form.get("payer_name", "") or "").strip()
+            payer_phone = fa_to_en((request.form.get("payer_phone", "") or "").strip())
+            tracking_number = fa_to_en(
+                (request.form.get("tracking_number", "") or "").strip()
+            )
+            paid_date = (request.form.get("paid_date", "") or "").strip()
+            paid_time = (request.form.get("paid_time", "") or "").strip()
+
+            if not payer_name:
+                flash("لطفاً نام پرداخت‌کننده را وارد کنید.", "error")
+                return redirect(request.url)
+
+            if payer_phone and not payer_phone.isdigit():
+                flash("شماره تماس باید فقط شامل ارقام باشد.", "error")
+                return redirect(request.url)
+
+            if not tracking_number:
+                flash("شماره پیگیری پرداخت الزامی است.", "error")
+                return redirect(request.url)
+
+            paid_at = _parse_paid_datetime(paid_date, paid_time)
+            if paid_at is None:
+                flash("لطفاً تاریخ و ساعت پرداخت را به‌درستی وارد کنید.", "error")
+                return redirect(request.url)
+
             (
                 payment_context,
                 flash_msg,
@@ -1191,7 +1216,15 @@ def payment(team_id):
             members_to_pay_for = payment_context.get("members_to_pay_for", 0)
 
             success, message = _process_payment_submission(
-                db, team, receipt_file, total_cost, members_to_pay_for
+                db,
+                team,
+                receipt_file,
+                total_cost,
+                members_to_pay_for,
+                payer_name=payer_name,
+                payer_phone=payer_phone,
+                tracking_number=tracking_number,
+                paid_at=paid_at,
             )
 
             if success:
@@ -2278,6 +2311,22 @@ def _calculate_payment_details(db, team):
     return context, None, None, False
 
 
+def _parse_paid_datetime(date_str, time_str):
+    """Parse separate date and time strings into a timezone-aware datetime."""
+    if not date_str or not time_str:
+        return None
+
+    try:
+        parsed_date = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
+        parsed_time = datetime.datetime.strptime(time_str, "%H:%M").time()
+    except (ValueError, TypeError):
+        return None
+
+    return datetime.datetime.combine(parsed_date, parsed_time).replace(
+        tzinfo=datetime.timezone.utc
+    )
+
+
 def _determine_upload_size(file_storage):
     """Best-effort helper to determine the size of an uploaded file."""
     size = getattr(file_storage, "content_length", None)
@@ -2310,7 +2359,16 @@ def _determine_upload_size(file_storage):
 
 
 def _process_payment_submission(
-    db, team, receipt_file, total_cost, members_to_pay_for
+    db,
+    team,
+    receipt_file,
+    total_cost,
+    members_to_pay_for,
+    *,
+    payer_name=None,
+    payer_phone=None,
+    tracking_number=None,
+    paid_at=None,
 ):
     """Handles saving the receipt file and creating a payment record."""
     original_filename = secure_filename(receipt_file.filename)
@@ -2325,6 +2383,10 @@ def _process_payment_submission(
         amount=total_cost,
         members_paid_for=members_to_pay_for,
         receipt_filename=secure_name,
+        tracking_number=tracking_number,
+        payer_name=payer_name,
+        payer_phone=payer_phone,
+        paid_at=paid_at,
         upload_date=datetime.datetime.now(datetime.timezone.utc),
         status=models.PaymentStatus.PENDING,
     )

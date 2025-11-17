@@ -47,6 +47,85 @@ def _coerce_payment_status(raw_status):
         return None
 
 
+def _summarize_expected_payment(team, payment, active_members_count, has_approved_payment):
+    """Return calculated payment expectations for admin review."""
+
+    if active_members_count <= 0:
+        return {
+            "expected_amount": None,
+            "members_count": 0,
+            "per_member_fee": 0,
+            "selected_leagues_count": 0,
+            "discount_amount": 0,
+            "league_two_cost": 0,
+            "is_new_member_payment": False,
+            "status_note": "هیچ عضو فعالی برای محاسبه وجود ندارد.",
+        }
+
+    if not team.league_one_id or not team.education_level:
+        return {
+            "expected_amount": None,
+            "members_count": active_members_count,
+            "per_member_fee": 0,
+            "selected_leagues_count": 0,
+            "discount_amount": 0,
+            "league_two_cost": 0,
+            "is_new_member_payment": False,
+            "status_note": "لیگ یا مقطع تیم نامشخص است.",
+        }
+
+    selected_leagues_count = 1 + (1 if team.league_two_id is not None else 0)
+    selected_leagues_count = max(1, selected_leagues_count)
+
+    fee_per_person = config.payment_config.get("fee_per_person") or 0
+    fee_team = config.payment_config.get("fee_team") or 0
+    league_two_discount_percent = config.payment_config.get("league_two_discount") or 0
+    new_member_fee_per_league = config.payment_config.get("new_member_fee_per_league") or 0
+
+    members_basis = payment.members_paid_for or (
+        team.unpaid_members_count if has_approved_payment else active_members_count
+    )
+    members_basis = max(0, members_basis)
+
+    if has_approved_payment:
+        per_member_fee = new_member_fee_per_league * selected_leagues_count
+        expected_amount = members_basis * per_member_fee
+        return {
+            "expected_amount": int(expected_amount),
+            "members_count": members_basis,
+            "per_member_fee": int(per_member_fee),
+            "selected_leagues_count": selected_leagues_count,
+            "discount_amount": 0,
+            "league_two_cost": 0,
+            "is_new_member_payment": True,
+            "status_note": None,
+        }
+
+    members_fee = members_basis * fee_per_person
+    base_league_cost = fee_team + members_fee
+    league_two_cost = 0
+    discount_amount = 0
+
+    if team.league_two_id is not None:
+        league_two_cost = int(
+            round(base_league_cost * (1 - league_two_discount_percent / 100))
+        )
+        discount_amount = max(0, base_league_cost - league_two_cost)
+
+    expected_amount = base_league_cost + (league_two_cost or 0)
+
+    return {
+        "expected_amount": int(expected_amount),
+        "members_count": members_basis,
+        "per_member_fee": int(fee_per_person),
+        "selected_leagues_count": selected_leagues_count,
+        "discount_amount": int(discount_amount),
+        "league_two_cost": int(league_two_cost),
+        "is_new_member_payment": False,
+        "status_note": None,
+    }
+
+
 @admin_blueprint.route("/UploadsGallery/<filename>")
 def uploaded_gallery_image(filename):
     """Serve uploaded gallery images securely"""
@@ -1191,42 +1270,68 @@ def admin_dashboard():
             "new_clients_this_week": new_clients_this_week,
         }
 
+        active_member_counts = (
+            db.query(
+                models.Member.team_id, func.count(models.Member.member_id).label("count")
+            )
+            .filter(models.Member.status == models.EntityStatus.ACTIVE)
+            .group_by(models.Member.team_id)
+            .all()
+        )
+        active_member_map = {row.team_id: row.count for row in active_member_counts}
+
         pending_payments_rows = (
             db.query(
                 models.Payment,
-                models.Team.team_name,
-                models.Team.team_id,
+                models.Team,
                 models.Client.email,
                 models.Client.phone_number.label("client_phone_number"),
             )
             .join(models.Team, models.Payment.team_id == models.Team.team_id)
             .join(models.Client, models.Payment.client_id == models.Client.client_id)
+            .options(
+                joinedload(models.Team.league_one), joinedload(models.Team.league_two)
+            )
             .filter(models.Payment.status == models.PaymentStatus.PENDING)
             .order_by(models.Payment.upload_date.asc())
             .all()
         )
 
-        pending_payments = [
-            {
-                "payment_id": payment.payment_id,
-                "client_id": payment.client_id,
-                "team_id": team_id,
-                "team_name": team_name,
-                "client_email": client_email,
-                "client_phone": client_phone_number,
-                "amount": payment.amount,
-                "members_paid_for": payment.members_paid_for,
-                "upload_date": payment.upload_date,
-                "receipt_filename": payment.receipt_filename,
-            }
-            for (
+        pending_payments = []
+        for payment, team, client_email, client_phone_number in pending_payments_rows:
+            active_members = active_member_map.get(team.team_id, 0)
+            has_approved_payment = database.check_if_team_is_paid(db, team.team_id)
+            expected_payment = _summarize_expected_payment(
+                team,
                 payment,
-                team_name,
-                team_id,
-                client_email,
-                client_phone_number,
-            ) in pending_payments_rows
-        ]
+                active_members,
+                has_approved_payment,
+            )
+
+            pending_payments.append(
+                {
+                    "payment_id": payment.payment_id,
+                    "client_id": payment.client_id,
+                    "team_id": team.team_id,
+                    "team_name": team.team_name or "نام تیم نامشخص",
+                    "league_one_name": getattr(team.league_one, "name", None),
+                    "league_two_name": getattr(team.league_two, "name", None),
+                    "education_level": team.education_level or "—",
+                    "client_email": client_email or "ایمیل نامشخص",
+                    "client_phone": client_phone_number,
+                    "amount": payment.amount,
+                    "members_paid_for": payment.members_paid_for,
+                    "upload_date": payment.upload_date,
+                    "paid_at": payment.paid_at,
+                    "tracking_number": payment.tracking_number,
+                    "payer_name": payment.payer_name,
+                    "payer_phone": payment.payer_phone,
+                    "receipt_filename": payment.receipt_filename,
+                    "expected_payment": expected_payment,
+                    "active_members": active_members,
+                    "unpaid_members": team.unpaid_members_count,
+                }
+            )
 
     return render_template(
         constants.admin_html_names_data["admin_dashboard"],

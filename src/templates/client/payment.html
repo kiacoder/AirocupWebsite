@@ -153,6 +153,12 @@
             <span>مبلغ پرداختی</span>
             <strong>{{ latest_payment.amount | humanize_number | persian_digits }} ریال</strong>
           </div>
+          {% if latest_payment.tracking_number %}
+          <div class="payment-status-card__row">
+            <span>شماره پیگیری</span>
+            <strong dir="ltr">{{ latest_payment.tracking_number | persian_digits }}</strong>
+          </div>
+          {% endif %}
           {% if latest_payment.members_paid_for %}
           <div class="payment-status-card__row">
             <span>تعداد اعضای پوشش داده شده</span>
@@ -199,6 +205,60 @@
             </span>
             {% endif %}
           </p>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="payer_name">نام پرداخت‌کننده</label>
+              <input
+                id="payer_name"
+                name="payer_name"
+                type="text"
+                maxlength="100"
+                required
+                placeholder="مثلاً علی رضایی"
+                class="form-control"
+              />
+            </div>
+            <div class="form-group">
+              <label for="payer_phone">شماره تماس</label>
+              <input
+                id="payer_phone"
+                name="payer_phone"
+                type="tel"
+                maxlength="20"
+                inputmode="numeric"
+                pattern="[0-9]+"
+                placeholder="0912xxxxxxx"
+                class="form-control"
+              />
+            </div>
+            <div class="form-group">
+              <label for="tracking_number">شماره پیگیری</label>
+              <input
+                id="tracking_number"
+                name="tracking_number"
+                type="text"
+                maxlength="64"
+                required
+                class="form-control"
+                placeholder="شماره یا کد رهگیری درج‌شده روی رسید"
+              />
+            </div>
+            <div class="form-group">
+              <label for="paid_date">تاریخ پرداخت</label>
+              <input id="paid_date" name="paid_date" type="date" required class="form-control" />
+            </div>
+            <div class="form-group">
+              <label for="paid_time">ساعت پرداخت</label>
+              <input
+                id="paid_time"
+                name="paid_time"
+                type="time"
+                step="60"
+                required
+                class="form-control"
+              />
+            </div>
+          </div>
           <div class="form-group">
             <label for="receipt" class="btn btn-secondary file-upload-btn">
               <i class="fas fa-paperclip"></i> انتخاب فایل رسید
