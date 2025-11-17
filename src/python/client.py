@@ -713,6 +713,17 @@ def create_team():
                     form_data=request.form,
                     **form_context,
                 )
+
+            new_member_data, member_error = utils.create_member_from_form_data(
+                db, request.form
+            )
+            if member_error:
+                flash(member_error, "error")
+                return render_template(
+                    constants.client_html_names_data["create_team"],
+                    form_data=request.form,
+                    **form_context,
+                )
             try:
                 reg_date = datetime.datetime.now(datetime.timezone.utc)
                 new_team = models.Team(
@@ -722,6 +733,13 @@ def create_team():
                 )
                 db.add(new_team)
                 db.flush()
+
+                if not new_member_data:
+                    raise ValueError("member data missing during team creation")
+
+                new_member = models.Member(**new_member_data, team_id=new_team.team_id)
+                db.add(new_member)
+
                 db.commit()
                 flash(f"تیم «{team_name}» با موفقیت ساخته شد!", "success")
                 flash("اکنون مقطع تحصیلی (لیگ) تیم خود را انتخاب کنید.", "info")
