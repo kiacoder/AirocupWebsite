@@ -924,6 +924,7 @@ const airocupApp = {
       historyUrl: (container.dataset.historyUrl || "").trim(),
       isClientView: container.matches(SELECTORS.CLIENT_CHAT_CONTAINER),
       socket: app.helpers.safeSocket(),
+      renderedMessages: new Set(),
     };
 
     if (!state.roomId) {
@@ -998,13 +999,20 @@ const airocupApp = {
           : (message?.sender || "ادمین")
         : state.isClientView
         ? isClientMessage
-          ? "شما"
-          : "پشتیبانی"
+        ? "شما"
+        : "پشتیبانی"
         : isClientMessage
         ? "کاربر"
         : (message?.sender && message.sender.toLowerCase() !== "admin"
             ? message.sender
             : "ادمین");
+
+      const { iso, display } = resolveTimestamp(message?.timestamp);
+      const senderKey = (message?.sender || (isClientMessage ? "client" : "admin")).toLowerCase();
+      const signature = `${rawText}|${senderKey}|${iso}`;
+
+      if (state.renderedMessages.has(signature)) return;
+      state.renderedMessages.add(signature);
 
       const senderElement = document.createElement("span");
       senderElement.className = "chat-message--sender";
@@ -1017,7 +1025,6 @@ const airocupApp = {
 
       const metaElement = document.createElement("span");
       metaElement.className = "chat-message--meta";
-      const { iso, display } = resolveTimestamp(message?.timestamp);
       metaElement.dataset.timestamp = iso;
       metaElement.textContent = display;
 
