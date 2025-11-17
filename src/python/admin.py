@@ -580,8 +580,7 @@ def admin_manage_teams():
             .join(models.Client, models.Team.client_id == models.Client.client_id)
             .outerjoin(
                 models.Member,
-                (models.Team.team_id == models.Member.team_id)
-                & (models.Member.status == models.EntityStatus.ACTIVE),
+                (models.Team.team_id == models.Member.team_id) & (models.Member.status == models.EntityStatus.ACTIVE),
             )
             .filter(models.Team.status == models.EntityStatus.ACTIVE)
             .group_by(models.Team.team_id, models.Client.email)
