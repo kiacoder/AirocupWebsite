@@ -1045,16 +1045,6 @@ const airocupApp = {
         message: messageText,
         sender,
       });
-
-      appendMessage(
-        {
-          message_text: messageText,
-          timestamp: new Date().toISOString(),
-          sender,
-        },
-        { isLocal: true }
-      );
-
       elements.messageInput.value = "";
       elements.messageInput.focus();
       scrollToBottom();

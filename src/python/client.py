@@ -2313,8 +2313,18 @@ def _calculate_payment_details(db, team):
                 True,
             )
 
-        per_member_total = new_member_fee_per_league * selected_leagues_count
-        total_cost = members_to_pay_for * per_member_total
+        league_one_cost = members_to_pay_for * new_member_fee_per_league
+        total_cost = league_one_cost
+
+        if team.league_two_id is not None:
+            discount_amount = int(
+                round(league_one_cost * (league_two_discount_percent / 100))
+            )
+            league_two_cost = max(0, league_one_cost - discount_amount)
+            total_cost += league_two_cost
+
+        if members_to_pay_for:
+            per_member_total = int(total_cost / members_to_pay_for)
     else:
         members_to_pay_for = active_members_count
         members_fee = members_to_pay_for * fee_per_person
@@ -2322,10 +2332,11 @@ def _calculate_payment_details(db, team):
         total_cost = league_one_cost
 
         if team.league_two_id is not None:
+            league_two_full_cost = fee_team + members_fee
             discount_amount = int(
-                round(members_fee * (league_two_discount_percent / 100))
+                round(league_two_full_cost * (league_two_discount_percent / 100))
             )
-            league_two_cost = max(0, members_fee - discount_amount)
+            league_two_cost = max(0, league_two_full_cost - discount_amount)
             total_cost += league_two_cost
 
     context = {

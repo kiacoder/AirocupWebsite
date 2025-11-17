@@ -509,6 +509,40 @@ def admin_edit_news(article_id):
         )
 
 
+@admin_blueprint.route("/Admin/DeleteNews/<int:article_id>", methods=["POST"])
+@admin_required
+def admin_delete_news(article_id):
+    """Delete a news article and its associated image if present."""
+    with database.get_db_session() as db:
+        article = (
+            db.query(models.News).filter(models.News.news_id == article_id).first()
+        )
+
+        if not article:
+            abort(404)
+
+        image_path = article.image_path
+
+        try:
+            db.delete(article)
+            db.commit()
+
+            if image_path:
+                stored_image = os.path.join(
+                    current_app.config["UPLOAD_FOLDER_NEWS"], image_path
+                )
+                if os.path.exists(stored_image):
+                    os.remove(stored_image)
+
+            flash("مقاله با موفقیت حذف شد.", "success")
+        except (exc.SQLAlchemyError, OSError) as error:
+            db.rollback()
+            current_app.logger.error("error deleting news %s: %s", article_id, error)
+            flash("خطا در حذف مقاله.", "error")
+
+    return redirect(url_for("admin.admin_manage_news"))
+
+
 @admin_blueprint.route("/Admin/ManageClient/<int:client_id>")
 @admin_required
 def admin_manage_client(client_id):

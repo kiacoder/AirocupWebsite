@@ -302,7 +302,7 @@ def handle_send_message(json_data):
                 "sender": sender_type,
             },
             to=str(target_room),
-            include_self=False,
+            include_self=True,
         )
 
     except (ValueError, TypeError, exc.SQLAlchemyError) as error:
