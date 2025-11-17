@@ -12,7 +12,6 @@ from flask import (
     Blueprint,
     current_app,
 )
-from jinja2 import TemplateNotFound
 from . import constants
 from . import database
 
@@ -92,15 +91,18 @@ def view_article(article_id):
         abort(404)
 
     if article.template_path:
-        try:
-            return render_template(f"News/{article.template_path}")
-        except TemplateNotFound:
-            current_app.logger.error(
-                "Template %s not found for Article %s",
-                article.template_path,
-                article_id,
+        file_name = os.path.basename(article.template_path)
+        html_path = os.path.join(constants.Path.news_html_dir, file_name)
+        if os.path.exists(html_path):
+            return send_from_directory(
+                constants.Path.news_html_dir, file_name, mimetype="text/html"
             )
-            abort(500, "Template file for this article could not be found.")
+        current_app.logger.error(
+            "Template %s not found for Article %s",
+            article.template_path,
+            article_id,
+        )
+        abort(500, "Template file for this article could not be found.")
     return render_template(constants.global_html_names_data["article"], article=article)
 
 

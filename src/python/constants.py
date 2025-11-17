@@ -1290,8 +1290,8 @@ contact_points_data = [
     {
         "href": Contact.linkedin,
         "icon": "fa-brands fa-linkedin",
-        "label": "اینکداین",
-        "display": "کانال اینکدین",
+        "label": "لینکدین",
+        "display": "کانال لینکدین",
         "target": "_blank",
     },
     {
