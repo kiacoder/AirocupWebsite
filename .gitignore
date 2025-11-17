@@ -81,13 +81,3 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 .github\instructions\codacy.instructions.md
-*.jpg
-*.jpeg
-*.png
-*.gif
-*.bmp
-*.svg
-*.ico
-*.webp
-*.tiff
-*.tif
