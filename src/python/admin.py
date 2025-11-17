@@ -652,7 +652,7 @@ def admin_add_member(team_id):
 @admin_blueprint.route("/Admin/EditTeam/<int:team_id>", methods=["GET", "POST"])
 @admin_required
 def admin_edit_team(team_id):
-    """Edit a team's details."""
+    """Edit a team's details"""
     with database.get_db_session() as db:
         team = (
             db.query(models.Team)
