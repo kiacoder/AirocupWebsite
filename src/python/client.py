@@ -317,7 +317,6 @@ def login_client():
 
             if team_count == 0 and not next_url_from_form:
                 flash("برای ادامه، لطفا اولین تیم خود را ایجاد کنید.", "info")
-                return redirect(url_for("client.create_team"))
 
             return redirect(next_url_from_form or url_for("client.dashboard"))
 
@@ -1567,7 +1566,6 @@ def submit_data_resolution():
 
                     if team_count == 0:
                         flash("برای ادامه، لطفا اولین تیم خود را ایجاد کنید.", "info")
-                        return redirect(url_for("client.create_team"))
                     return redirect(url_for("client.dashboard"))
                 else:
                     current_app.logger.error(

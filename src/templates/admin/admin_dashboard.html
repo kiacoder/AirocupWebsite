@@ -259,7 +259,7 @@
                 <td>{{ payment.upload_date | formatdate | persian_digits }}</td>
                 <td>
                   <a
-                    href="{{ url_for('uploaded_receipt_file', filename=payment.receipt_filename) }}"
+                    href="{{ url_for('uploaded_receipt_file', client_id=payment.client_id, filename=payment.receipt_filename) }}"
                     class="btn btn-secondary btn-small"
                     target="_blank"
                     rel="noopener"
