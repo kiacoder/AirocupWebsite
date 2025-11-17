@@ -42,9 +42,9 @@ class Path:
     solid_logos = {
         "main_fest_192": "images/logo/solid/airocup_logo_mainfest_192.png",
         "main_fest_512": "images/logo/solid/airocup_logo_mainfest_512.png",
-        "solid_purple_glow_crop": "images/logo/solid/spg_airocup_logo_crop.png",
-        "solid_purple_glow": "images/logo/solid/spg_airocup_logo.png",
-        "solid_white": "images/logo/solid/sw_airocup_logo.png",
+        "solid_purple_glow_crop": "images/logo/solid/BWT.png",
+        "solid_purple_glow": "images/logo/solid/BWT.png",
+        "solid_white": "images/logo/solid/BWT.png",
         "solid_white_favicon": "images/logo/solid/swf_airocup_logo.ico",
     }
 
