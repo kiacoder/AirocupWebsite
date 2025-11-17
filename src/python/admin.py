@@ -1,5 +1,4 @@
 """Admin panel routes and functionalities for managing clients, teams, members, news, and chat"""
-
 import os
 import math
 import uuid
@@ -18,6 +17,7 @@ from flask import (
     jsonify,
     current_app,
 )
+import persiantools.digits  # type:ignore
 from sqlalchemy import exc, func, select
 from sqlalchemy.sql.functions import count
 from sqlalchemy.orm import joinedload, subqueryload
@@ -30,21 +30,17 @@ from . import database
 from . import constants
 from . import models
 from . import utils
-import persiantools.digits
 from .auth import admin_required, admin_action_required
 
 admin_blueprint = Blueprint("admin", __name__, template_folder="admin")
 
 
 def _coerce_payment_status(raw_status):
-    """Return a ``PaymentStatus`` enum when ``raw_status`` is truthy."""
-
+    """Return a ``PaymentStatus`` enum when ``raw_status`` is truthy"""
     if raw_status is None:
         return None
-
     if isinstance(raw_status, models.PaymentStatus):
         return raw_status
-
     try:
         return models.PaymentStatus(raw_status)
     except ValueError:
@@ -58,7 +54,7 @@ def uploaded_gallery_image(filename):
 
 
 def get_admin_personas():
-    """Get list of admin personas for chat."""
+    """Get list of admin personas for chat"""
     personas = []
     for member in getattr(constants, "committee_members_data", []):
         if isinstance(member, dict):
@@ -70,7 +66,7 @@ def get_admin_personas():
 
 @admin_blueprint.route("/AdminLogin", methods=["GET", "POST"])
 def admin_login():
-    """Admin login page and authentication."""
+    """Admin login page and authentication"""
     if request.method == "POST":
         admin_pass = request.form.get("password", "")
         if config.admin_password_hash and bcrypt.checkpw(
@@ -89,7 +85,7 @@ def admin_login():
 @admin_blueprint.route("/Admin/GetChatHistory/<int:client_id>")
 @admin_required
 def get_chat_history(client_id):
-    "Retrieve chat history for a specific client"
+    """Retrieve chat history for a specific client"""
     with database.get_db_session() as db:
         msgs = database.get_chat_history_by_client_id(db, client_id)
         return jsonify(
