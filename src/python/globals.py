@@ -92,15 +92,31 @@ def view_article(article_id):
         abort(404)
 
     if article.template_path:
-        try:
-            return render_template(f"News/{article.template_path}")
-        except TemplateNotFound:
-            current_app.logger.error(
-                "Template %s not found for Article %s",
-                article.template_path,
-                article_id,
-            )
-            abort(500, "Template file for this article could not be found.")
+        template_path = article.template_path.strip()
+        if template_path.lower().startswith("news/htmls"):
+            file_name = os.path.basename(template_path)
+            html_path = os.path.join(constants.Path.news_html_dir, file_name)
+            if os.path.exists(html_path):
+                return send_from_directory(
+                    constants.Path.news_html_dir, file_name, mimetype="text/html"
+                )
+        else:
+            try:
+                return render_template(f"News/{template_path}")
+            except TemplateNotFound:
+                current_app.logger.error(
+                    "Template %s not found for Article %s",
+                    template_path,
+                    article_id,
+                )
+                abort(500, "Template file for this article could not be found.")
+
+        current_app.logger.error(
+            "Template %s not found for Article %s",
+            template_path,
+            article_id,
+        )
+        abort(500, "Template file for this article could not be found.")
     return render_template(constants.global_html_names_data["article"], article=article)
 
 

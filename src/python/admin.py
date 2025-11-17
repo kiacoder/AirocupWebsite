@@ -873,7 +873,10 @@ def admin_edit_team(team_id):
             .options(
                 joinedload(models.Member.city).joinedload(models.City.province)
             )
-            .filter(models.Member.team_id == team_id)
+            .filter(
+                models.Member.team_id == team_id,
+                models.Member.status == models.EntityStatus.ACTIVE,
+            )
             .all()
         )
         form_context = utils.get_form_context()
