@@ -198,6 +198,7 @@ def admin_select_chat():
         clients_query = (
             db.query(
                 models.Client.client_id,
+                models.Client.email,
                 count(models.ChatMessage.message_id).label("unread_count"),
                 func.max(models.ChatMessage.timestamp).label("last_message_timestamp"),
             )
@@ -208,7 +209,7 @@ def admin_select_chat():
             .filter(models.ChatMessage.sender.notin_(get_admin_personas()))
             .group_by(models.Client.client_id)
             .order_by(func.max(models.ChatMessage.timestamp).desc())
-        ).all()
+        )
 
     return render_template(
         constants.admin_html_names_data["admin_select_chat"],
@@ -308,6 +309,26 @@ def admin_delete_team(team_id):
     return redirect(url_for("admin.admin_manage_teams"))
 
 
+@admin_blueprint.route("/Admin/RestoreTeam/<int:team_id>", methods=["POST"])
+@admin_required
+def admin_restore_team(team_id):
+    """Restore an archived or inactive team and its members."""
+    with database.get_db_session() as db:
+        team = db.query(models.Team).filter(models.Team.team_id == team_id).first()
+        if not team:
+            flash("تیم یافت نشد.", "error")
+            return redirect(url_for("admin.admin_manage_teams"))
+
+        team.status = models.EntityStatus.ACTIVE
+        db.query(models.Member).filter(models.Member.team_id == team_id).update(
+            {"status": models.EntityStatus.ACTIVE}, synchronize_session=False
+        )
+        db.commit()
+        flash("تیم از آرشیو خارج شد و دوباره فعال است.", "success")
+
+    return redirect(url_for("admin.admin_manage_client", client_id=team.client_id))
+
+
 @admin_blueprint.route(
     "/Admin/Team/<int:team_id>/DeleteMember/<int:member_id>", methods=["POST"]
 )
@@ -355,6 +376,7 @@ def admin_manage_news():
             title_string = bleach.clean(request.form.get("title", "")).strip()
             content_string = bleach.clean(request.form.get("content", "")).strip()
             image_file = request.files.get("image")
+            html_file = request.files.get("html_file")
 
             if not title_string or not content_string:
                 flash("عنوان و محتوای خبر نمی‌توانند خالی باشند.", "error")
@@ -375,6 +397,17 @@ def admin_manage_news():
                 publish_date=datetime.datetime.now(datetime.timezone.utc),
                 template_path=template_path,
             )
+
+            if html_file and html_file.filename:
+                html_file.stream.seek(0)
+                if not html_file.filename.lower().endswith(".html"):
+                    flash("فقط فایل HTML مجاز است.", "error")
+                    return redirect(url_for("admin.admin_manage_news"))
+                safe_name = f"{uuid.uuid4()}.html"
+                os.makedirs(constants.Path.news_html_dir, exist_ok=True)
+                html_path = os.path.join(constants.Path.news_html_dir, safe_name)
+                html_file.save(html_path)
+                new_article.template_path = f"news/htmls/{safe_name}"
 
             if image_file and image_file.filename:
                 image_file.stream.seek(0)
@@ -455,6 +488,7 @@ def admin_edit_news(article_id):
                     article.title = new_title
 
                 image_file = request.files.get("image")
+                html_file = request.files.get("html_file")
                 if image_file and image_file.filename:
                     image_file.stream.seek(0)
                     if not utils.is_file_allowed(image_file.stream):
@@ -489,6 +523,19 @@ def admin_edit_news(article_id):
                             )
 
                     article.image_path = secure_name
+
+                if html_file and html_file.filename:
+                    html_file.stream.seek(0)
+                    if not html_file.filename.lower().endswith(".html"):
+                        flash("فقط فایل HTML مجاز است.", "error")
+                        return redirect(
+                            url_for("admin.admin_edit_news", article_id=article_id)
+                        )
+                    safe_name = f"{uuid.uuid4()}.html"
+                    os.makedirs(constants.Path.news_html_dir, exist_ok=True)
+                    html_path = os.path.join(constants.Path.news_html_dir, safe_name)
+                    html_file.save(html_path)
+                    article.template_path = f"news/htmls/{safe_name}"
 
                 db.commit()
                 flash("خبر با موفقیت ویرایش شد.", "success")
@@ -691,6 +738,19 @@ def admin_add_member(team_id):
                         f"عضو «{new_member.name}» با موفقیت توسط ادمین اضافه شد.",
                         "success",
                     )
+
+                if html_file and html_file.filename:
+                    html_file.stream.seek(0)
+                    if not html_file.filename.lower().endswith(".html"):
+                        flash("فقط فایل HTML مجاز است.", "error")
+                        return redirect(
+                            url_for("admin.admin_edit_news", article_id=article_id)
+                        )
+                    safe_name = f"{uuid.uuid4()}.html"
+                    os.makedirs(constants.Path.news_html_dir, exist_ok=True)
+                    html_path = os.path.join(constants.Path.news_html_dir, safe_name)
+                    html_file.save(html_path)
+                    article.template_path = f"news/htmls/{safe_name}"
 
                 db.commit()
                 utils.update_team_stats(db, team_id)
@@ -1042,6 +1102,28 @@ def admin_delete_client(client_id):
     return redirect(url_for("admin.admin_clients_list"))
 
 
+@admin_blueprint.route("/Admin/RestoreClient/<int:client_id>", methods=["POST"])
+@admin_required
+def admin_restore_client(client_id):
+    """Restore a previously archived client and their teams."""
+    with database.get_db_session() as db:
+        client = (
+            db.query(models.Client).filter(models.Client.client_id == client_id).first()
+        )
+        if not client:
+            flash("کاربر یافت نشد.", "error")
+            return redirect(url_for("admin.admin_clients_list"))
+
+        client.status = models.EntityStatus.ACTIVE
+        db.query(models.Team).filter(models.Team.client_id == client_id).update(
+            {"status": models.EntityStatus.ACTIVE}, synchronize_session=False
+        )
+        db.commit()
+        flash("کاربر و تیم‌های او دوباره فعال شدند.", "success")
+
+    return redirect(url_for("admin.admin_manage_client", client_id=client_id))
+
+
 @admin_blueprint.route("/AdminDashboard")
 @admin_required
 def admin_dashboard():
@@ -1150,6 +1232,62 @@ def admin_dashboard():
     )
 
 
+@admin_blueprint.route("/Admin/Search")
+@admin_required
+def admin_search():
+    """Unified search page for clients, teams, and payments."""
+    query = (request.args.get("q", "") or "").strip()
+    payment_status = (request.args.get("payment_status", "") or "").strip()
+
+    with database.get_db_session() as db:
+        clients = []
+        teams = []
+        payments = []
+
+        if query:
+            clients = (
+                db.query(models.Client)
+                .filter(
+                    or_(
+                        models.Client.email.ilike(f"%{query}%"),
+                        models.Client.phone_number.ilike(f"%{query}%"),
+                    )
+                )
+                .order_by(models.Client.registration_date.desc())
+                .all()
+            )
+
+            teams = (
+                db.query(models.Team)
+                .options(joinedload(models.Team.client))
+                .filter(models.Team.team_name.ilike(f"%{query}%"))
+                .order_by(models.Team.team_registration_date.desc())
+                .all()
+            )
+
+        if payment_status:
+            try:
+                status_enum = getattr(models.PaymentStatus, payment_status)
+                payments = (
+                    db.query(models.Payment)
+                    .filter(models.Payment.status == status_enum)
+                    .order_by(models.Payment.upload_date.desc())
+                    .all()
+                )
+            except AttributeError:
+                payments = []
+
+        return render_template(
+            constants.admin_html_names_data["admin_search"],
+            query=query,
+            payment_status=payment_status,
+            clients=clients,
+            teams=teams,
+            payments=payments,
+            enums=models,
+        )
+
+
 @admin_blueprint.route(
     "/Admin/ManagePayment/<int:payment_id>/<action>", methods=["POST"]
 )
@@ -1215,3 +1353,21 @@ def admin_manage_payment(payment_id, action):
             flash("خطایی در پردازش پرداخت رخ داد. عملیات لغو شد.", "error")
 
     return redirect(url_for("admin.admin_dashboard"))
+
+
+@admin_blueprint.route("/Admin/Logs")
+@admin_required
+def admin_logs():
+    """Display recent action logs for visibility and auditing."""
+    with database.get_db_session() as db:
+        logs = (
+            db.query(models.HistoryLog)
+            .order_by(models.HistoryLog.timestamp.desc())
+            .limit(200)
+            .all()
+        )
+
+        return render_template(
+            constants.admin_html_names_data["admin_logs"],
+            logs=logs,
+        )
