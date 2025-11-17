@@ -1042,9 +1042,7 @@ def admin_dashboard():
             db.query(models.Client)
             .filter(
                 models.Client.status == models.EntityStatus.ACTIVE,
-                models.Client.registration_date
-                >= datetime.datetime.now(datetime.timezone.utc)
-                - datetime.timedelta(days=7),
+                models.Client.registration_date >= datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=7),
             )
             .count()
         )
