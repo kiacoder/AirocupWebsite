@@ -27,23 +27,23 @@
 
           <div class="form-group">
             <label for="Title">عنوان مقاله</label>
-            <input type="text" id="Title" name="Title" required />
+            <input type="text" id="Title" name="title" required />
           </div>
 
           <div class="form-group">
             <label for="Content">محتوای مقاله</label>
-            <textarea id="Content" name="Content" rows="6" required></textarea>
+            <textarea id="Content" name="content" rows="6" required></textarea>
           </div>
 
           <div class="form-group">
             <label for="TemplatePath">مسیر قالب اختصاصی (اختیاری)</label>
-            <input type="text" id="TemplatePath" name="TemplatePath" placeholder="مثال: custom_article.html" />
+            <input type="text" id="TemplatePath" name="template_path" placeholder="مثال: custom_article.html" />
             <p class="form-helper-text">در صورت نیاز می‌توانید فایل قالب مجزایی برای نمایش خبر معرفی کنید.</p>
           </div>
 
           <div class="form-group">
             <label for="Image">تصویر مقاله (اختیاری)</label>
-            <input type="file" id="Image" name="Image" accept="image/png, image/jpeg, image/gif" class="upload-input" />
+            <input type="file" id="Image" name="image" accept="image/png, image/jpeg, image/gif" class="upload-input" />
           </div>
 
           <div class="form-actions">
@@ -74,25 +74,25 @@
               </tr>
             </thead>
             <tbody>
-              {% for ArticleData in Articles %}
+              {% for article in articles %}
               <tr>
-                <td>{{ ArticleData.Title }}</td>
-                <td dir="ltr">{{ ArticleData.PublishDate | formatdate | persian_digits }}</td>
+                <td>{{ article.title }}</td>
+                <td dir="ltr">{{ article.publish_date | formatdate | persian_digits }}</td>
                 <td class="admin-table__actions">
-                  <a href="{{ url_for('admin.admin_edit_news', article_id=ArticleData.NewsID) }}" class="btn btn-secondary btn-small">
+                  <a href="{{ url_for('admin.admin_edit_news', article_id=article.news_id) }}" class="btn btn-secondary btn-small">
                     <i class="fas fa-edit"></i>
                     ویرایش
                   </a>
                   <form
                     method="POST"
-                    action="{{ url_for('admin.admin_delete_news', article_id=ArticleData.NewsID) }}"
+                    action="{{ url_for('admin.admin_delete_news', article_id=article.news_id) }}"
                   >
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                     <button
                       type="submit"
                       class="btn btn-danger btn-small delete-btn"
                       data-modal-title="حذف مقاله"
-                      data-modal-body="آیا از حذف مقاله «{{ ArticleData.Title }}» اطمینان دارید؟"
+                        data-modal-body="آیا از حذف مقاله «{{ article.title }}» اطمینان دارید؟"
                       data-modal-confirm-text="بله، حذف کن"
                       data-modal-confirm-class="btn-danger"
                     >
