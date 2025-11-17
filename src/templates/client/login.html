@@ -1,5 +1,4 @@
 {% extends "global/base.html" %}
-
 {% block title %}ورود به حساب کاربری{% endblock %}
 
 {% block body %}
@@ -58,15 +57,23 @@
         </button>
       </div>
 
-      <div class="form-links text-center">
+      <div class="form-links text-center" style="color: black">
         <p>
-          <a href="{{ url_for('client.forgot_password') }}"
-            >رمز عبور خود را فراموش کرده‌اید؟</a
+          <a
+            href="{{ url_for('client.forgot_password') }}"
+            style="color:#000; font-weight:600;"
           >
+            رمز عبور خود را فراموش کرده‌اید؟
+          </a>
         </p>
         <p>
           هنوز حساب کاربری ندارید؟
-          <a href="{{ url_for('client.signup') }}">اینجا ثبت‌نام کنید.</a>
+          <a
+            href="{{ url_for('client.signup') }}"
+            style="color:#000; font-weight:600;"
+          >
+            اینجا ثبت‌نام کنید.
+          </a>
         </p>
       </div>
     </form>

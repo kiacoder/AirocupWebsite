@@ -362,8 +362,7 @@ def initialize_database_command() -> None:
         database.populate_leagues(db)
 
     logger.info("Database initialized successfully.")
-
-
+wsgi_app = flask_app
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "generate_hash":
         try:
@@ -393,4 +392,5 @@ if __name__ == "__main__":
     if config.debug:
         socket_io.run(flask_app, host=host, port=port, debug=config.debug)
     else:
-        serve(socket_io.wsgi_app, host=host, port=port)  # type: ignore
+        # Run the plain Flask app behind a WSGI server (waitress, gunicorn, etc.)
+        serve(flask_app, host=host, port=port)
