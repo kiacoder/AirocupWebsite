@@ -686,52 +686,44 @@ def admin_edit_team(team_id):
                     if existing_team:
                         flash("تیمی با این نام از قبل وجود دارد.", "error")
                     else:
-                            if education_level and education_level not in constants.allowed_education:
-                                flash("مقطع تحصیلی انتخاب شده معتبر نیست.", "error")
-                                return redirect(
-                                    url_for("admin.admin_edit_team", team_id=team_id)
-                                )
+                        if education_level and education_level not in constants.allowed_education:
+                            flash("مقطع تحصیلی انتخاب شده معتبر نیست.", "error")
+                            return redirect(
+                                url_for("admin.admin_edit_team", team_id=team_id)
+                            )
 
-                            if education_level and education_level != (
-                                team.education_level or ""
-                            ):
-                                level_info = constants.education_levels.get(
-                                    education_level
+                        if education_level and education_level != (
+                            team.education_level or ""
+                        ):
+                            level_info = constants.education_levels.get(
+                                education_level
+                            )
+                            age_range = (
+                                level_info.get("ages") if level_info else None
+                            )
+                            if age_range:
+                                min_age, max_age = age_range
+                                violating_member = next(
+                                    (
+                                        member
+                                        for member in team.members
+                                        if member.status == models.EntityStatus.ACTIVE and member.role == models.MemberRole.MEMBER and not (
+                                            min_age <= utils.calculate_age(member.birth_date) <= max_age
+                                        )
+                                    ),
+                                    None,
                                 )
-                                age_range = (
-                                    level_info.get("ages") if level_info else None
-                                )
-                                if age_range:
-                                    min_age, max_age = age_range
-                                    violating_member = next(
-                                        (
-                                            member
-                                            for member in team.members
-                                            if member.status
-                                            == models.EntityStatus.ACTIVE
-                                            and member.role
-                                            == models.MemberRole.MEMBER
-                                            and not (
-                                                min_age
-                                                <= utils.calculate_age(
-                                                    member.birth_date
-                                                )
-                                                <= max_age
-                                            )
-                                        ),
-                                        None,
+                                if violating_member:
+                                    flash(
+                                        f"عضو «{violating_member.name}» با مقطع «{education_level}» سازگار نیست.",
+                                        "error",
                                     )
-                                    if violating_member:
-                                        flash(
-                                            f"عضو «{violating_member.name}» با مقطع «{education_level}» سازگار نیست.",
-                                            "error",
+                                    return redirect(
+                                        url_for(
+                                            "admin.admin_edit_team",
+                                            team_id=team_id,
                                         )
-                                        return redirect(
-                                            url_for(
-                                                "admin.admin_edit_team",
-                                                team_id=team_id,
-                                            )
-                                        )
+                                    )
 
                             setattr(team, "team_name", new_team_name)
                             setattr(
