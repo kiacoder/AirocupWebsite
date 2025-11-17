@@ -1231,6 +1231,7 @@ class AppConfig:
         "video/webm",
     ]
 
+
 class Details:
     "Details for airocup event"
     address = "دانشگاه علم و صنعت ایران، تهران، ایران"
@@ -1238,6 +1239,7 @@ class Details:
     stage_one = "مجازی"
     stage_two = "حضوری، ۲۳ تا ۲۵ بهمن ۱۴۰۴"
     registration_deadline = "مهلت تا ۳۰ آذر"
+
 
 class Contact:
     "Contact information for airocup"
@@ -1248,19 +1250,15 @@ class Contact:
     bale = "https://ble.ir/join/8VwzjR1U3f"
     aparat_channel = "https://www.aparat.com/Kia_coder"
     aparat_playlist = "https://www.aparat.com/playlist/22114839"
+    linkedin = "https://www.linkedin.com/company/airocup"
     aparat_embed_url = (
         "https://www.aparat.com/video/video/embed/videohash/wtw75xo/vt/frame"
     )
+    eitaa = "https://eitaa.com/airocup2025"
+    telegram = "https://t.me/airocup"
 
 
 contact_points_data = [
-    {
-        "href": f"tel:{Contact.phone}",
-        "icon": "fas fa-phone-alt",
-        "label": "پشتیبانی (تلفنی)",
-        "display": Contact.phone,
-        "target": None,
-    },
     {
         "href": f"mailto:{Contact.email_primary}",
         "icon": "fas fa-envelope",
@@ -1288,6 +1286,34 @@ contact_points_data = [
         "label": "آپارات",
         "display": "کانال آپارات آیروکاپ",
         "target": "_blank",
+    },
+    {
+        "href": Contact.linkedin,
+        "icon": "fa-brands fa-linkedin",
+        "label": "اینکداین",
+        "display": "کانال اینکدین",
+        "target": "_blank",
+    },
+    {
+        "href": Contact.eitaa,
+        "icon": "fa-solid fa-users",
+        "label": "ایتا",
+        "display": "کانال ایتا",
+        "target": "_blank",
+    },
+    {
+        "href": Contact.telegram,
+        "icon": "fa-brands fa-telegram",
+        "label": "تلگرام",
+        "display": "کانال تلگرام",
+        "target": "_blank",
+    },
+    {
+        "href": f"tel:{Contact.phone}",
+        "icon": "fas fa-phone-alt",
+        "label": "پشتیبانی",
+        "display": Contact.phone,
+        "target": None,
     },
 ]
 
