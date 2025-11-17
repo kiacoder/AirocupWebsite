@@ -350,8 +350,7 @@ def update_team(team_id):
                     existing_team = (
                         db.query(models.Team)
                         .filter(
-                            func.lower(models.Team.team_name)
-                            == func.lower(new_team_name),
+                            func.lower(models.Team.team_name) == func.lower(new_team_name),
                             models.Team.team_id != team_id,
                         )
                         .first()
@@ -497,10 +496,7 @@ def edit_member(team_id, member_id):
             new_role = role_map.get(new_role_value)
 
             if (
-                not new_name
-                or not new_national_id
-                or not new_city_name
-                or not new_province_name
+                not new_name or not new_national_id or not new_city_name or not new_province_name
             ):
                 flash("نام، کد ملی، استان و شهر الزامی هستند.", "error")
                 return render_template(
@@ -676,6 +672,7 @@ def create_team():
 
 @client_blueprint.route("/Verify", methods=["GET", "POST"])
 def verify_code():
+    "Verify Code Route"
     if request.method == "POST":
         csrf_protector.protect()
 
@@ -700,11 +697,9 @@ def verify_code():
                     client_ts = _ensure_aware(client.verification_code_timestamp)
 
                     if (
-                        client_ts
-                        and (
+                        client_ts and (
                             datetime.datetime.now(datetime.timezone.utc) - client_ts
-                        ).total_seconds()
-                        > 900
+                        ).total_seconds() > 900
                     ):
                         flash_message = (
                             "کد تایید منقضی شده است. لطفا دوباره درخواست دهید."
@@ -750,11 +745,9 @@ def verify_code():
                     reset_ts = _ensure_aware(reset_record.timestamp)
 
                     if (
-                        reset_ts
-                        and (
+                        reset_ts and (
                             datetime.datetime.now(datetime.timezone.utc) - reset_ts
-                        ).total_seconds()
-                        > 900
+                        ).total_seconds() > 900
                     ):
                         db.delete(reset_record)
                         db.commit()
@@ -986,11 +979,9 @@ def reset_password():
                     timestamp = _ensure_aware(reset_record.timestamp)
 
                     if (
-                        timestamp
-                        and (
+                        timestamp and (
                             datetime.datetime.now(datetime.timezone.utc) - timestamp
-                        ).total_seconds()
-                        > 900
+                        ).total_seconds() > 900
                     ):
                         db.delete(reset_record)
                         db.commit()
@@ -1106,6 +1097,7 @@ def payment(team_id):
 @client_blueprint.route("/ResendCode", methods=["POST"])
 @limiter.limit("5 per 15 minutes")
 def resend_code():
+    "resend code Route"
     request_data = request.get_json() or {}
     action = request_data.get("action")
 
@@ -1136,11 +1128,9 @@ def resend_code():
             timestamp = _ensure_aware(client.verification_code_timestamp)
 
             if (
-                timestamp
-                and (
+                timestamp and (
                     datetime.datetime.now(datetime.timezone.utc) - timestamp
-                ).total_seconds()
-                < 180
+                ).total_seconds() < 180
             ):
                 response_data["message"] = "لطفا ۳ دقیقه صبر کنید."
                 return jsonify(response_data), 429
@@ -1183,11 +1173,9 @@ def resend_code():
             timestamp = _ensure_aware(reset_record.timestamp) if reset_record else None
 
             if (
-                timestamp
-                and (
+                timestamp and (
                     datetime.datetime.now(datetime.timezone.utc) - timestamp
-                ).total_seconds()
-                < 180
+                ).total_seconds() < 180
             ):
                 return (
                     jsonify({"success": False, "message": "لطفا ۳ دقیقه صبر کنید."}),
@@ -1359,9 +1347,7 @@ def submit_data_resolution():
                     member.city_id = city_id
 
                     if (
-                        request.form.get(f"member_birth_year_{member_id}")
-                        and request.form.get(f"member_birth_month_{member_id}")
-                        and request.form.get(f"member_birth_day_{member_id}")
+                        request.form.get(f"member_birth_year_{member_id}") and request.form.get(f"member_birth_month_{member_id}") and request.form.get(f"member_birth_day_{member_id}")
                     ):
                         try:
                             year = int(
@@ -1669,8 +1655,7 @@ def get_document(team_id, filename):
         )
 
         if not team or (
-            team.client_id != session.get("client_id")
-            and not session.get("admin_logged_in")
+            team.client_id != session.get("client_id") and not session.get("admin_logged_in")
         ):
             abort(403)
 
