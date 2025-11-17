@@ -319,7 +319,7 @@ def to_iso_format_filter(date_object):
 
 
 def get_distribution_query(db, entity, join_chain, label="count", limit=10):
-    """Generic helper to build distribution queries for City/Province/etc."""
+    """Generic helper to build distribution queries for city/province/etc"""
 
     query = db.query(
         entity.name.label("name"),

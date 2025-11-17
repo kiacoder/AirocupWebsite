@@ -253,10 +253,10 @@ def populate_leagues(db: Session):
 
 
 def populate_geography_data(db: Session):
-    "Populate Provinces and Cities tables from constants if they are empty"
+    "Populate provinces and Cities tables from constants if they are empty"
     if db.query(models.Province).first():
         return
-    print("Populating Provinces and Cities tables...")
+    print("Populating provinces and Cities tables...")
     for province_name, cities in constants.provinces_data.items():
         new_province = models.Province(name=province_name)
         db.add(new_province)
