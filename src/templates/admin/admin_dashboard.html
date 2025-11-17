@@ -232,9 +232,9 @@
               <tr>
                 <th>تیم</th>
                 <th>کاربر</th>
-                <th>مبلغ (ریال)</th>
-                <th>برای</th>
-                <th>تاریخ</th>
+                <th>مبلغ ارسالی (ریال)</th>
+                <th>جزئیات محاسبه</th>
+                <th>اطلاعات واریز</th>
                 <th>رسید</th>
                 <th>عملیات</th>
               </tr>
@@ -244,15 +244,37 @@
               <tr>
                 <td>
                   <div class="admin-table__cell-title">
-                    {{ payment.team_name }}
+                    <a
+                      href="{{ url_for('admin.admin_manage_client', client_id=payment.client_id) }}#team-{{ payment.team_id }}"
+                      class="admin-link"
+                    >
+                      {{ payment.team_name }}
+                    </a>
                   </div>
                   <div class="admin-table__cell-subtitle">
                     کد تیم: #{{ payment.team_id | persian_digits }}
+                    {% if payment.league_one_name %}
+                    <span aria-hidden="true">•</span>
+                    لیگ‌ها:
+                    {{ payment.league_one_name }}
+                    {% if payment.league_two_name %}
+                      و {{ payment.league_two_name }}
+                    {% endif %}
+                    {% endif %}
+                    {% if payment.education_level %}
+                    <span aria-hidden="true">•</span>
+                    مقطع: {{ payment.education_level }}
+                    {% endif %}
                   </div>
                 </td>
                 <td>
                   <div class="admin-table__cell-title">
-                    {{ payment.client_email }}
+                    <a
+                      href="{{ url_for('admin.admin_manage_client', client_id=payment.client_id) }}"
+                      class="admin-link"
+                    >
+                      {{ payment.client_email }}
+                    </a>
                   </div>
                   <div class="admin-table__cell-subtitle">
                     {{ payment.client_phone | default('—', true) |
@@ -260,8 +282,70 @@
                   </div>
                 </td>
                 <td>{{ payment.amount | humanize_number | persian_digits }}</td>
-                <td>{{ payment.members_paid_for | persian_digits }} عضو</td>
-                <td>{{ payment.upload_date | formatdate | persian_digits }}</td>
+                <td>
+                  {% set expected = payment.expected_payment %}
+                  {% if expected.expected_amount is not none %}
+                  <div class="admin-table__cell-title">
+                    {{ expected.expected_amount | humanize_number | persian_digits }} ریال
+                  </div>
+                  <div class="admin-table__cell-subtitle">
+                    {% if expected.is_new_member_payment %}
+                    اعضای جدید: {{ expected.members_count | persian_digits }} نفر ×
+                    {{ expected.per_member_fee | humanize_number | persian_digits }}
+                    {% else %}
+                    ثبت‌نام اولیه {{ expected.members_count | persian_digits }} عضو
+                    {% if expected.selected_leagues_count > 1 %}
+                    ({{ expected.selected_leagues_count | persian_digits }} لیگ)
+                    {% endif %}
+                    {% if expected.league_two_cost %}
+                    <span class="admin-badge">تخفیف لیگ ۲:
+                      {{ expected.discount_amount | humanize_number | persian_digits }}</span>
+                    {% endif %}
+                    {% endif %}
+                  </div>
+                  {% else %}
+                  <div class="admin-table__cell-subtitle text-error">
+                    {{ expected.status_note or 'اطلاعات محاسبه کامل نیست.' }}
+                  </div>
+                  {% endif %}
+                  <div class="admin-table__cell-subtitle">
+                    ارسال شده برای {{ payment.members_paid_for | persian_digits }} عضو
+                    {% if payment.unpaid_members %}
+                    <span class="admin-badge admin-badge--muted">
+                      اعضای ثبت‌نشده: {{ payment.unpaid_members | persian_digits }}
+                    </span>
+                    {% endif %}
+                  </div>
+                </td>
+                <td>
+                  <div class="admin-table__cell-title">
+                    {% if payment.paid_at %}
+                    تاریخ و ساعت واریز:
+                    <strong>{{ payment.paid_at.strftime('%Y-%m-%d %H:%M') | persian_digits }}</strong>
+                    {% else %}
+                    تاریخ واریز نامشخص
+                    {% endif %}
+                  </div>
+                  <div class="admin-table__cell-subtitle">
+                    {% if payment.tracking_number %}
+                    شماره پیگیری: <span dir="ltr">{{ payment.tracking_number | persian_digits }}</span>
+                    {% else %}
+                    شماره پیگیری ثبت نشده است.
+                    {% endif %}
+                  </div>
+                  <div class="admin-table__cell-subtitle">
+                    {% if payment.payer_name %}
+                    پرداخت‌کننده: {{ payment.payer_name }}
+                    {% endif %}
+                    {% if payment.payer_phone %}
+                    <span aria-hidden="true">•</span>
+                    تماس: <span dir="ltr">{{ payment.payer_phone | persian_digits }}</span>
+                    {% endif %}
+                  </div>
+                  <div class="admin-table__cell-subtitle admin-badge admin-badge--muted">
+                    ارسال رسید در سایت: {{ payment.upload_date | formatdate | persian_digits }}
+                  </div>
+                </td>
                 <td>
                   <a
                     href="{{ url_for('uploaded_receipt_file', client_id=payment.client_id, filename=payment.receipt_filename) }}"
