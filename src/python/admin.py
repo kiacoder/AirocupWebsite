@@ -875,9 +875,7 @@ def admin_clients_list():
 def admin_add_client():
     "Add a new client to the database"
     email = (
-        request.form.get("email")
-        or request.form.get("Email")
-        or ""
+        request.form.get("email") or request.form.get("Email") or ""
     ).strip().lower()
     phone = (
         request.form.get("phone_number")
