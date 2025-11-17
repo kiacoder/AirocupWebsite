@@ -1,7 +1,7 @@
 "Decorators for route authentication and authorization"
 from functools import wraps
 from flask import request, session, flash, redirect, url_for, abort
-from flask_wtf.csrf import CSRFError
+from flask_wtf.csrf import CSRFError  # type:ignore
 from .extensions import csrf_protector
 
 

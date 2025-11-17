@@ -1,5 +1,4 @@
 "Client-side routes and logic for the web application"
-
 import io
 import os
 import random
@@ -9,8 +8,8 @@ import datetime
 import secrets
 from threading import Thread
 import bcrypt
-import jdatetime
-from persiantools.digits import fa_to_en
+import jdatetime  # type:ignore
+from persiantools.digits import fa_to_en  # type:ignore
 from sqlalchemy import exc, func, select
 from sqlalchemy.orm import subqueryload, joinedload
 import bleach
@@ -286,10 +285,6 @@ def login_client():
                     )
                 )
 
-            # --- FIX for "Educational Level" rule ---
-            # This logic checks if the user has any teams.
-            # If not, it redirects them to create one, as per your new rule.
-
             team_count = (
                 db.query(models.Team)
                 .filter(
@@ -321,12 +316,10 @@ def login_client():
             flash("شما با موفقیت وارد شدید.", "success")
 
             if team_count == 0 and not next_url_from_form:
-                # User has no teams, force them to create one
                 flash("برای ادامه، لطفا اولین تیم خود را ایجاد کنید.", "info")
                 return redirect(url_for("client.create_team"))
 
             return redirect(next_url_from_form or url_for("client.dashboard"))
-            # --- END OF FIX ---
 
     return render_template(
         constants.client_html_names_data["login"], next_url=next_url or ""
@@ -389,7 +382,6 @@ def update_team(team_id):
                 flash(error_message, "error")
             else:
                 try:
-                    # REQ #9: Lock team name change after payment
                     if database.has_team_made_any_payment(db, team_id):
                         if team.team_name != new_team_name:
                             flash(
@@ -398,8 +390,6 @@ def update_team(team_id):
                             return redirect(
                                 url_for("client.update_team", team_id=team_id)
                             )
-
-                    # REQ #9: Check for unique team name
                     existing_team = (
                         db.query(models.Team)
                         .filter(
@@ -434,7 +424,6 @@ def update_team(team_id):
 
         has_any_payment = database.has_team_made_any_payment(db, team_id)
         is_paid = database.check_if_team_is_paid(db, team_id)
-        # --- FIX: Added 'is_payment_approved' for Document tab (Req #6) ---
         is_payment_approved = (
             db.query(models.Payment)
             .filter(
@@ -445,7 +434,7 @@ def update_team(team_id):
             is not None
         )
         documents = []
-        if is_paid:  # Use is_paid (any payment) to show document list
+        if is_paid:
             documents = (
                 db.query(models.TeamDocument)
                 .filter(models.TeamDocument.team_id == team_id)
@@ -458,7 +447,7 @@ def update_team(team_id):
         team=team,
         is_paid=is_paid,
         has_any_payment=has_any_payment,
-        is_payment_approved=is_payment_approved,  # Pass new variable
+        is_payment_approved=is_payment_approved,
         documents=documents,
     )
 
@@ -470,7 +459,6 @@ def manage_members(team_id):
     with database.get_db_session() as db:
         team = (
             db.query(models.Team)
-            # --- FIX: Eager-load league relationships to prevent DetachedInstanceError ---
             .options(
                 joinedload(models.Team.league_one), joinedload(models.Team.league_two)
             )
@@ -506,7 +494,7 @@ def manage_members(team_id):
         is_paid=is_paid,
         has_any_payment=has_any_payment,
         education_levels=constants.education_levels,
-        form_data=None,  # Pass None on GET request
+        form_data=None,
         **utils.get_form_context(),
     )
 
@@ -587,8 +575,6 @@ def edit_member(team_id, member_id):
 
         if request.method == "POST":
             csrf_protector.protect()
-
-            # --- FIX: Re-validating all data on POST (Req #8) ---
             new_member_data, error_message = utils.create_member_from_form_data(
                 db,
                 request.form,
@@ -609,9 +595,6 @@ def edit_member(team_id, member_id):
             role_value = new_member_data_safe.get("role")
             birth_date = new_member_data_safe.get("birth_date")
             national_id = new_member_data_safe.get("national_id", "")
-            # --- END FIX ---
-
-            # Leader check
             if role_value == models.MemberRole.LEADER:
                 if database.has_existing_leader(
                     db, team_id, member_id_to_exclude=member_id
@@ -622,8 +605,6 @@ def edit_member(team_id, member_id):
                             "client.edit_member", team_id=team_id, member_id=member_id
                         )
                     )
-
-            # --- AGE VALIDATION BASED ON EDUCATION LEVEL ---
             if birth_date and role_value:
                 is_valid, age_error = utils.validate_member_age(
                     birth_date,
@@ -639,10 +620,7 @@ def edit_member(team_id, member_id):
                         form_data=request.form,
                         **utils.get_form_context(),
                     )
-
-            # --- LEAGUE CONFLICT CHECK (Req #7) ---
             if national_id and role_value == models.MemberRole.MEMBER:
-                # This function must be added/updated in database.py
                 has_conflict, conflict_error = database.is_member_league_conflict(
                     db, national_id, team_id, member_id_to_exclude=member_id
                 )
@@ -655,11 +633,7 @@ def edit_member(team_id, member_id):
                         form_data=request.form,
                         **utils.get_form_context(),
                     )
-
-            # --- END CHECKS ---
-
             try:
-                # All checks passed, update the member
                 member.name = new_member_data_safe.get("name")
                 member.national_id = national_id
                 member.role = role_value
@@ -691,8 +665,6 @@ def edit_member(team_id, member_id):
                 form_data=request.form,
                 **utils.get_form_context(),
             )
-
-    # GET request: render with member data, no form data
     return render_template(
         template_name,
         team=team,
@@ -744,22 +716,7 @@ def create_team():
                     form_data=request.form,
                     **form_context,
                 )
-
-            # --- FIX: Removed logic that forces user to be first member (Req #2) ---
-            # first_member_data, error = utils.create_member_from_form_data(
-            #     db, request.form
-            # )
-            # if error:
-            #     flash(error, "error")
-            #     return render_template(
-            #         constants.client_html_names_data["create_team"],
-            #         form_data=request.form,
-            #         **form_context,
-            #     )
-            # --- END FIX ---
-
             try:
-                # assert first_member_data is not None # No longer needed
                 reg_date = datetime.datetime.now(datetime.timezone.utc)
                 new_team = models.Team(
                     client_id=session["client_id"],
@@ -767,26 +724,13 @@ def create_team():
                     team_registration_date=reg_date,
                 )
                 db.add(new_team)
-                db.flush()  # Flush to get new_team.team_id
-
-                # --- FIX: Do not add member, just log and commit team ---
-                # new_member = models.Member(
-                #     team_id=new_team.team_id, **first_member_data
-                # )
-                # db.add(new_member)
-
+                db.flush()
                 db.commit()
-
-                # utils.update_team_stats(db, new_team.team_id) # No members to update stats for
-
                 flash(f"تیم «{team_name}» با موفقیت ساخته شد!", "success")
-
-                # --- FIX: Redirect to select_league, not dashboard (Req from Sketch) ---
                 flash("اکنون مقطع تحصیلی (لیگ) تیم خود را انتخاب کنید.", "info")
                 return redirect(
                     url_for("client.select_league", team_id=new_team.team_id)
                 )
-                # --- END FIX ---
 
             except exc.IntegrityError:
                 db.rollback()
@@ -800,7 +744,6 @@ def create_team():
                     **form_context,
                 )
 
-            # --- FIX: Added missing try/except block for other errors ---
             except (exc.SQLAlchemyError, ValueError, TypeError) as error:
                 db.rollback()
                 current_app.logger.error("error creating team: %s", error)
@@ -810,7 +753,6 @@ def create_team():
                     form_data=request.form,
                     **form_context,
                 )
-            # --- END FIX ---
 
     form_context = utils.get_form_context()
     return render_template(
@@ -820,6 +762,7 @@ def create_team():
 
 @client_blueprint.route("/Verify", methods=["GET", "POST"])
 def verify_code():
+    """verify code route"""
     if request.method == "POST":
         csrf_protector.protect()
 
@@ -1974,14 +1917,11 @@ def add_member(team_id):
                 abort(404)
 
             has_any_payment = database.has_team_made_any_payment(db_session, team_id)
-
-            # Helper to return error to template, passing back the submitted form data
             def _render_error(error_msg, error_type="error"):
                 flash(error_msg, error_type)
                 return render_template(
                     constants.client_html_names_data["members"],
                     team=team,
-                    # Re-fetch active members for display
                     members=db_session.query(models.Member)
                     .filter(
                         models.Member.team_id == team_id,
@@ -1991,7 +1931,7 @@ def add_member(team_id):
                     is_paid=database.check_if_team_is_paid(db_session, team_id),
                     has_any_payment=has_any_payment,
                     education_levels=constants.education_levels,
-                    form_data=request.form,  # CRITICAL: Passes data back for pre-filling (Req #8 fix)
+                    form_data=request.form,
                     **utils.get_form_context(),
                 )
 
@@ -1999,8 +1939,6 @@ def add_member(team_id):
                 return _render_error(
                     "برای افزودن عضو، ابتدا باید مقطع تحصیلی تیم را انتخاب کنید."
                 )
-
-            # 1. CHECK IF LEAGUE IS SET
             if not team.league_one_id:
                 return _render_error(
                     "برای افزودن عضو، ابتدا باید حداقل یک لیگ (مقطع تحصیلی) برای تیم خود انتخاب کنید."
@@ -2028,7 +1966,6 @@ def add_member(team_id):
                 if receipt_error:
                     return _render_error(receipt_error)
 
-            # 2. MAX MEMBER CHECK
             current_member_count = (
                 db_session.query(models.Member)
                 .filter(
@@ -2041,20 +1978,16 @@ def add_member(team_id):
             if current_member_count >= constants.AppConfig.max_members_per_team:
                 return _render_error("خطا: شما به حداکثر تعداد اعضای تیم رسیده‌اید.")
 
-            # 3. CORE DATA VALIDATION (Checks required fields, national ID format, etc.)
             new_member_data, error_message = utils.create_member_from_form_data(
                 db_session, request.form, team_id=team_id
             )
             if error_message:
                 return _render_error(error_message)
 
-            # Data is valid, now we proceed to business rule checks
             new_member_data_safe = new_member_data or {}
             national_id = new_member_data_safe.get("national_id", "")
             role_value = new_member_data_safe.get("role")
             birth_date = new_member_data_safe.get("birth_date")
-
-            # 4. AGE VALIDATION (based on selected education level)
             if birth_date and role_value:
                 is_age_valid, age_error = utils.validate_member_age(
                     birth_date,
@@ -2064,10 +1997,9 @@ def add_member(team_id):
                 if not is_age_valid:
                     return _render_error(age_error)
 
-            # 5. LEAGUE CONFLICT CHECK (Req #7)
             if (
                 national_id and role_value == models.MemberRole.MEMBER
-            ):  # Only check for 'member' role
+            ):
                 existing_leagues_query = (
                     db_session.query(models.Team.league_one_id, models.Team.league_two_id)
                     .join(models.Member, models.Team.team_id == models.Member.team_id)
@@ -2075,7 +2007,7 @@ def add_member(team_id):
                         models.Member.national_id == national_id,
                         models.Member.status == models.EntityStatus.ACTIVE,
                         models.Team.status == models.EntityStatus.ACTIVE,
-                        models.Team.team_id != team_id,  # Don't check against the same team
+                        models.Team.team_id != team_id,
                     )
                     .all()
                 )
