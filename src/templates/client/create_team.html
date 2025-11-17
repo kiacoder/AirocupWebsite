@@ -12,7 +12,7 @@
 
       <h1 class="form-title">ایجاد تیم جدید</h1>
       <p class="form-subtitle">
-        برای شروع، اطلاعات تیم و مشخصات سرپرست (اولین عضو) را وارد کنید.
+        برای شروع، اطلاعات تیم و مشخصات اولین عضو را وارد کنید و نقش او را آزادانه انتخاب نمایید.
       </p>
 
       <fieldset
@@ -71,7 +71,7 @@
             padding: 0 10px;
           "
         >
-          ۲. اطلاعات سرپرست
+          ۲. اطلاعات اولین عضو
         </legend>
         {% with id_prefix='create-', member_data=None, form_data=form_data %} {%
         include 'client/member_form_fields.html' %} {% endwith %}

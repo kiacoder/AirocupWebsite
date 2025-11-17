@@ -303,11 +303,12 @@ def handle_send_message(json_data):
         flask_app.logger.error("Chat message error: %s", error)
 
 
-@flask_app.route("/uploads/receipts/<filename>")
+@flask_app.route("/uploads/receipts/<int:client_id>/<filename>")
 @admin_required
-def uploaded_receipt_file(filename):
-    "Serves uploaded receipt files to admin users"
-    return send_from_directory(constants.Path.receipts_dir, filename)
+def uploaded_receipt_file(client_id, filename):
+    "Serves uploaded receipt files to admin users with client scoping"
+    client_receipts_dir = os.path.join(constants.Path.receipts_dir, str(client_id))
+    return send_from_directory(client_receipts_dir, filename)
 
 
 @flask_app.template_filter("to_iso_format")

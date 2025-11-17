@@ -28,6 +28,14 @@
         <span>اعضای ثبت‌شده</span>
         <strong>{{ members|length | persian_digits }} نفر</strong>
       </div>
+      <div class="admin-page__meta-item">
+        <span>وضعیت تیم</span>
+        <strong>{{ team.status.label if team.status else 'نامشخص' }}</strong>
+      </div>
+      <div class="admin-page__meta-item">
+        <span>اعضای پرداخت‌نشده</span>
+        <strong>{{ team.unpaid_members_count | default(0, true) | persian_digits }} نفر</strong>
+      </div>
     </div>
   </header>
 
@@ -152,6 +160,9 @@
               <tr>
                 <th>نام عضو</th>
                 <th>نقش</th>
+                <th>کد ملی</th>
+                <th>محل سکونت</th>
+                <th>تاریخ تولد</th>
                 <th>عملیات</th>
               </tr>
             </thead>
@@ -165,6 +176,12 @@
                     {{ member.role.label if member.role else 'نامشخص' }}
                   </span>
                 </td>
+                <td dir="ltr">{{ member.national_id }}</td>
+                <td>
+                  {{ member.city.province.name if member.city and member.city.province else '—' }}
+                  {% if member.city and member.city.name %} | {{ member.city.name }}{% endif %}
+                </td>
+                <td>{{ member.birth_date | formatdate | persian_digits }}</td>
                 <td class="admin-table__actions">
                   <button
                     type="button"
@@ -202,10 +219,73 @@
               </tr>
               {% else %}
               <tr class="admin-table__empty">
-                <td colspan="3">
+                <td colspan="6">
                   <div class="admin-empty-state">
                     <i class="fas fa-users"></i>
                     هنوز عضوی برای این تیم ثبت نشده است.
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </article>
+
+    <article class="admin-surface">
+      <header class="admin-surface__header">
+        <div class="admin-surface__title">
+          <h2><i class="fas fa-wallet"></i> سوابق پرداخت تیم</h2>
+          <p>همه رسیدها و وضعیت‌های مربوط به این تیم.</p>
+        </div>
+      </header>
+      <div class="admin-surface__body">
+        <div class="admin-table-wrapper">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>شناسه پرداخت</th>
+                <th>مبلغ</th>
+                <th>اعضای پرداخت شده</th>
+                <th>تاریخ بارگذاری</th>
+                <th>وضعیت</th>
+                <th>رسید</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for payment in payments %}
+              <tr>
+                <td>#{{ payment.payment_id | persian_digits }}</td>
+                <td>{{ payment.amount | humanize_number | persian_digits }} ریال</td>
+                <td>{{ payment.members_paid_for | persian_digits }} نفر</td>
+                <td>{{ payment.upload_date | formatdate | persian_digits }}</td>
+                <td>
+                  <span
+                    class="admin-status {% if payment.status.value == 'approved' %}admin-status--approved{% elif payment.status.value == 'pending' %}admin-status--pending{% else %}admin-status--rejected{% endif %}"
+                  >
+                    {{ payment.status.label if payment.status else 'نامشخص' }}
+                  </span>
+                </td>
+                <td>
+                  {% if payment.receipt_filename %}
+                  <a
+                    href="{{ url_for('uploaded_receipt_file', client_id=payment.client_id, filename=payment.receipt_filename) }}"
+                    class="btn btn-secondary btn-small"
+                    target="_blank"
+                    rel="noopener"
+                  >
+                    مشاهده رسید
+                  </a>
+                  {% else %}-{% endif %}
+                </td>
+              </tr>
+              {% else %}
+              <tr class="admin-table__empty">
+                <td colspan="6">
+                  <div class="admin-empty-state">
+                    <i class="fas fa-receipt"></i>
+                    پرداختی برای این تیم ثبت نشده است.
                   </div>
                 </td>
               </tr>

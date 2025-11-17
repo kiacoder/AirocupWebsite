@@ -529,6 +529,10 @@ def admin_manage_client(client_id):
                 count(models.Member.member_id).label("total_members"),
                 latest_payment_subquery,
             )
+            .options(
+                joinedload(models.Team.league_one),
+                joinedload(models.Team.league_two),
+            )
             .outerjoin(
                 models.Member,
                 (models.Team.team_id == models.Member.team_id) & (models.Member.status == models.EntityStatus.ACTIVE),
@@ -548,10 +552,62 @@ def admin_manage_client(client_id):
             setattr(team, "last_payment_status", _coerce_payment_status(last_payment_status))
             teams_with_status.append(team)
 
+        archived_teams = (
+            db.query(
+                models.Team,
+                count(models.Member.member_id).label("total_members"),
+                latest_payment_subquery,
+            )
+            .options(
+                joinedload(models.Team.league_one),
+                joinedload(models.Team.league_two),
+            )
+            .outerjoin(
+                models.Member,
+                (models.Team.team_id == models.Member.team_id)
+                & (models.Member.status == models.EntityStatus.ACTIVE),
+            )
+            .filter(
+                models.Team.client_id == client_id,
+                models.Team.status != models.EntityStatus.ACTIVE,
+            )
+            .group_by(models.Team.team_id)
+            .order_by(models.Team.team_registration_date.desc())
+            .all()
+        )
+
+        archived_teams_with_status = []
+        for team, member_count, last_payment_status in archived_teams:
+            setattr(team, "total_members", member_count)
+            setattr(team, "last_payment_status", _coerce_payment_status(last_payment_status))
+            archived_teams_with_status.append(team)
+
+        payments_history = [
+            SimpleNamespace(
+                payment_id=row.payment_id,
+                amount=row.amount,
+                status=row.status,
+                members_paid_for=row.members_paid_for,
+                upload_date=row.upload_date,
+                receipt_filename=row.receipt_filename,
+                team_name=team_name,
+                client_id=row.client_id,
+            )
+            for row, team_name in (
+                db.query(models.Payment, models.Team.team_name)
+                .join(models.Team, models.Payment.team_id == models.Team.team_id)
+                .filter(models.Payment.client_id == client_id)
+                .order_by(models.Payment.upload_date.desc())
+                .all()
+            )
+        ]
+
     return render_template(
         constants.admin_html_names_data["admin_manage_client"],
         client=client,
         teams=teams_with_status,
+        archived_teams=archived_teams_with_status,
+        payments_history=payments_history,
         education_levels=constants.education_levels,
     )
 
@@ -760,10 +816,18 @@ def admin_edit_team(team_id):
         )
         form_context = utils.get_form_context()
 
+        payments = (
+            db.query(models.Payment)
+            .filter(models.Payment.team_id == team_id)
+            .order_by(models.Payment.upload_date.desc())
+            .all()
+        )
+
     return render_template(
         constants.admin_html_names_data["admin_edit_team"],
         team=team,
         members=members,
+        payments=payments,
         education_levels=constants.education_levels,
         **form_context,
     )
@@ -1058,6 +1122,7 @@ def admin_dashboard():
         pending_payments = [
             {
                 "payment_id": payment.payment_id,
+                "client_id": payment.client_id,
                 "team_id": team_id,
                 "team_name": team_name,
                 "client_email": client_email,

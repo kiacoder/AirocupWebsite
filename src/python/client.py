@@ -317,7 +317,6 @@ def login_client():
 
             if team_count == 0 and not next_url_from_form:
                 flash("برای ادامه، لطفا اولین تیم خود را ایجاد کنید.", "info")
-                return redirect(url_for("client.create_team"))
 
             return redirect(next_url_from_form or url_for("client.dashboard"))
 
@@ -1567,7 +1566,6 @@ def submit_data_resolution():
 
                     if team_count == 0:
                         flash("برای ادامه، لطفا اولین تیم خود را ایجاد کنید.", "info")
-                        return redirect(url_for("client.create_team"))
                     return redirect(url_for("client.dashboard"))
                 else:
                     current_app.logger.error(
@@ -2230,15 +2228,16 @@ def _calculate_payment_details(db, team):
     else:
         members_to_pay_for = active_members_count
         members_fee = members_to_pay_for * fee_per_person
-        league_one_cost = fee_team + members_fee
+        base_league_cost = fee_team + members_fee
+        league_one_cost = base_league_cost
         total_cost = league_one_cost
 
         if team.league_two_id is not None:
-            discount_amount = int(
-                round(members_fee * (league_two_discount_percent / 100))
+            league_two_cost = int(
+                round(base_league_cost * (1 - league_two_discount_percent / 100))
             )
-            league_two_cost = max(0, members_fee - discount_amount)
-            total_cost += league_two_cost
+            discount_amount = max(0, base_league_cost - league_two_cost)
+            total_cost += max(league_two_cost, 0)
 
     context = {
         "is_new_member_payment": is_new_member_payment,
