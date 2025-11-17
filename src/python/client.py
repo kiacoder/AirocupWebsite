@@ -1,5 +1,4 @@
-"Client-side routes and logic for the web application"
-
+"Client routes and logic for application"
 import os
 import random
 import string
@@ -8,8 +7,8 @@ import datetime
 import secrets
 from threading import Thread
 import bcrypt
-import jdatetime
-from persiantools.digits import fa_to_en
+import jdatetime  # type: ignore
+from persiantools.digits import fa_to_en  # type: ignore
 from sqlalchemy import exc, func, select
 from sqlalchemy.orm import subqueryload, joinedload
 import bleach
@@ -42,8 +41,7 @@ client_blueprint = Blueprint("client", __name__)
 
 
 def _ensure_aware(dt):
-    """Return timezone-aware datetime (UTC). If dt is None return None.
-    If dt.tzinfo is None assume UTC (replace tzinfo)."""
+    """Return timezone-aware datetime (UTC). If dt is None return None"""
     if dt is None:
         return None
     if dt.tzinfo is None:
@@ -295,7 +293,7 @@ def login_client():
 @client_blueprint.route("/MyHistory")
 @auth.login_required
 def my_history():
-    "Render the payment history page for the logged-in client"
+    """Render the payment history page for the logged-in client"""
     with database.get_db_session() as db:
 
         return render_template(
@@ -436,7 +434,7 @@ def manage_members(team_id):
 @client_blueprint.route("/SupportChat")
 @auth.login_required
 def support_chat():
-    "Render the support chat page for the logged-in client"
+    """Render the support chat page for the logged-in client"""
     client_user = utils.get_current_client()
     if not client_user:
         flash("خطا در بارگیری اطلاعات کاربری. لطفا دوباره وارد شوید.", "error")
@@ -580,7 +578,7 @@ def edit_member(team_id, member_id):
 @client_blueprint.route("/ReceiptUploads/<int:client_id>/<filename>")
 @auth.login_required
 def get_receipt(client_id, filename):
-    "Return the requested receipt for a specific client"
+    """Return the requested receipt for a specific client"""
     if client_id != session.get("client_id") and not session.get("admin_logged_in"):
         abort(403)
     return send_from_directory(
@@ -672,7 +670,7 @@ def create_team():
 
 @client_blueprint.route("/Verify", methods=["GET", "POST"])
 def verify_code():
-    "Verify Code Route"
+    """Verify Code Route"""
     if request.method == "POST":
         csrf_protector.protect()
 
@@ -835,9 +833,7 @@ def verify_code():
                     redirect_to_login = True
                 elif reset_record.timestamp:
                     ts = _ensure_aware(reset_record.timestamp)
-                    seconds_passed = (
-                        datetime.datetime.now(datetime.timezone.utc) - ts
-                    ).total_seconds()
+                    seconds_passed = (datetime.datetime.now(datetime.timezone.utc) - ts).total_seconds()
 
                     if seconds_passed < 180:
                         context["cooldown"] = 180 - int(seconds_passed)
@@ -943,7 +939,7 @@ def forgot_password():
 
 @client_blueprint.route("/ResetPassword", methods=["GET", "POST"])
 def reset_password():
-    "Render and handle the reset password page"
+    """Render and handle the reset password page"""
     token = request.args.get("token")
     if not token:
         flash("توکن بازیابی نامعتبر است یا وجود ندارد.", "error")
@@ -1024,7 +1020,7 @@ def reset_password():
 @client_blueprint.route("/Team/<int:team_id>/Payment", methods=["GET", "POST"])
 @auth.login_required
 def payment(team_id):
-    """Render and handle the payment page for a team."""
+    """Render and handle the payment page for a team"""
     with database.get_db_session() as db:
         team = (
             db.query(models.Team)
@@ -1048,7 +1044,7 @@ def payment(team_id):
 
             if request.content_length is None or request.content_length > max_size:
                 flash(
-                    f"حجم فایل رسید نباید بیشتر از { max_size / 1024 / 1024:.1f} مگابایت باشد.",
+                    f"حجم فایل رسید نباید بیشتر از {max_size / 1024 / 1024:.1f} مگابایت باشد.",
                     "error",
                 )
                 return redirect(request.url)
@@ -1097,7 +1093,7 @@ def payment(team_id):
 @client_blueprint.route("/ResendCode", methods=["POST"])
 @limiter.limit("5 per 15 minutes")
 def resend_code():
-    "resend code Route"
+    """resend code Route"""
     request_data = request.get_json() or {}
     action = request_data.get("action")
 
@@ -1237,7 +1233,7 @@ def resend_code():
 @client_blueprint.route("/Dashboard")
 @auth.login_required
 def dashboard():
-    "Render the client dashboard page"
+    """Render the client dashboard page"""
     with database.get_db_session() as db:
         teams = (
             db.query(models.Team)
@@ -1296,7 +1292,7 @@ def dashboard():
 @client_blueprint.route("/SubmitResolution", methods=["POST"])
 @auth.resolution_required
 def submit_data_resolution():
-    """Handle submission of the data resolution form."""
+    """Handle submission of the data resolution form"""
     csrf_protector.protect()
     with database.get_db_session() as db:
         try:
@@ -1313,8 +1309,7 @@ def submit_data_resolution():
                     .join(models.Team)
                     .filter(
                         models.Member.member_id == member_id,
-                        models.Team.client_id
-                        == session.get("client_id_for_resolution"),
+                        models.Team.client_id == session.get("client_id_for_resolution"),
                     )
                     .first()
                 )
@@ -1335,12 +1330,10 @@ def submit_data_resolution():
                         db.query(models.City.city_id)
                         .join(models.Province)
                         .filter(
-                            models.Province.name
-                            == request.form.get(
+                            models.Province.name == request.form.get(
                                 f"member_province_{member_id}", ""
                             ).strip(),
-                            models.City.name
-                            == request.form.get(f"member_city_{member_id}", "").strip(),
+                            models.City.name == request.form.get(f"member_city_{member_id}", "").strip(),
                         )
                         .scalar()
                     )
@@ -1435,7 +1428,7 @@ def submit_data_resolution():
 @client_blueprint.route("/Team/<int:team_id>/Delete", methods=["POST"])
 @auth.login_required
 def delete_team(team_id):
-    "Archive a team and its members"
+    """Archive a team and its members"""
     csrf_protector.protect()
     with database.get_db_session() as db:
         try:
@@ -1480,7 +1473,7 @@ def delete_team(team_id):
 )
 @auth.login_required
 def delete_member(team_id, member_id):
-    "Archive a member from a specific team."
+    """Archive a member from a specific team"""
     csrf_protector.protect()
     try:
         with database.get_db_session() as db:
@@ -1540,7 +1533,7 @@ def delete_member(team_id, member_id):
 @client_blueprint.route("/get_my_chat_history")
 @auth.login_required
 def get_my_chat_history():
-    "Return the chat history for the logged-in client as JSON"
+    """Return the chat history for the logged-in client as JSON"""
     client_id = session.get("client_id")
     if not isinstance(client_id, int):
         return jsonify({"messages": []})
@@ -1562,7 +1555,7 @@ def get_my_chat_history():
 @client_blueprint.route("/Team/<int:team_id>/UploadDocument", methods=["POST"])
 @login_required
 def upload_document(team_id):
-    """Handle document upload for a specific team."""
+    """Handle document upload for a specific team"""
     csrf_protector.protect()
 
     with database.get_db_session() as db:
@@ -1646,7 +1639,7 @@ def upload_document(team_id):
 @client_blueprint.route("/UploadDocuments/<int:team_id>/<filename>")
 @auth.login_required
 def get_document(team_id, filename):
-    "Return the requested document for a specific team"
+    """Return the requested document for a specific team"""
     with database.get_db_session() as db:
         team = (
             db.query(models.Team.client_id)
@@ -1675,7 +1668,7 @@ def get_document(team_id, filename):
 @client_blueprint.route("/Team/<int:team_id>/AddMember", methods=["POST"])
 @auth.login_required
 def add_member(team_id):
-    "Handle adding a new member to a specific team"
+    """Handle adding a new member to a specific team"""
     csrf_protector.protect()
     try:
         with database.get_db_session() as db:
@@ -1739,7 +1732,7 @@ def add_member(team_id):
 @client_blueprint.route("/Team/<int:team_id>/SelectLeague", methods=["GET", "POST"])
 @auth.login_required
 def select_league(team_id):
-    "Render and handle the league selection page for a specific team"
+    """Render and handle the league selection page for a specific team"""
     with database.get_db_session() as db:
         team = (
             db.query(models.Team)
@@ -1788,7 +1781,7 @@ def select_league(team_id):
 
 
 def _calculate_payment_details(db, team):
-    """Calculates payment details for a team based on its status and members."""
+    """Calculates payment details for a team based on its status and members"""
     is_new_member_payment = database.check_if_team_is_paid(db, team.team_id)
     total_cost = 0
     members_to_pay_for = 0
@@ -1837,7 +1830,7 @@ def _calculate_payment_details(db, team):
 
 
 def _process_payment_submission(db, team, receipt_file, total_cost, members_to_pay_for):
-    """Handles saving the receipt file and creating a payment record."""
+    """Handles saving the receipt file and creating a payment record"""
     original_filename = secure_filename(receipt_file.filename)
     extension = (
         original_filename.rsplit(".", 1)[1].lower() if "." in original_filename else ""

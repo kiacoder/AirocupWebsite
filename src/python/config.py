@@ -1,5 +1,4 @@
-"Loads environment variables and applies type-safe parsing"
-
+"""Loads environment variables and applies type-safe parsing"""
 import os
 from datetime import timedelta
 from typing import Callable, Any
@@ -8,12 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-def get_env(
-    key: str,
-    default: Any = None,
-    cast: Callable[[str], Any] = str,
-    strip_quotes: bool = True,
-) -> Any:
+def get_env(key: str, default: Any = None, cast: Callable[[str], Any] = str, strip_quotes: bool = True,) -> Any:
     """Helper to safely fetch and cast environment variables."""
     val = os.getenv(key, default)
     if val is None:
@@ -27,7 +21,7 @@ def get_env(
 
 
 def get_bool(key: str, default: bool = False) -> bool:
-    """Helper to parse booleans consistently."""
+    """Helper to parse booleans consistently"""
     val = os.getenv(key, str(default))
     val = val.strip('"').strip("'").lower()
     return val in ("true", "1", "t", "yes", "y")

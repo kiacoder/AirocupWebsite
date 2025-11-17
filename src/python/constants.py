@@ -1,14 +1,12 @@
 "containing various constants used throughout the airocup application"
-
 import os
 import datetime
 from typing import Dict, Optional, Tuple
-from better_profanity import profanity
-import jdatetime 
+from better_profanity import profanity  # type: ignore
+
 
 class Path:
-    "Define All Paths Of Files"
-
+    """Define All Paths Of Files"""
     base_dir = os.path.dirname(os.path.abspath(__file__))
     root_dir = os.path.abspath(os.path.join(base_dir, "..", ".."))
     static_dir = os.path.join(root_dir, "static")
@@ -1068,8 +1066,7 @@ technical_committee_members = [
 
 
 class ForbiddenContent:
-    "Manages the application's profanity filter and custom word list"
-
+    """Manages the application's profanity filter and custom word list"""
     custom_words = {
         "admin",
         "administrator",
@@ -1152,7 +1149,7 @@ class ForbiddenContent:
 
     @staticmethod
     def _initialize_filter():
-        "Loads the default library list and adds our custom list"
+        """Loads the default library list and adds our custom list"""
         if not ForbiddenContent.filter_loaded:
             profanity.load_censor_words()
             profanity.add_censor_words(
@@ -1162,19 +1159,19 @@ class ForbiddenContent:
 
     @staticmethod
     def censor(text: str) -> str:
-        "Censors any profane text"
+        """Censors any profane text"""
         ForbiddenContent._initialize_filter()
         return profanity.censor(text)
 
     @staticmethod
     def contains_profanity(text: str) -> bool:
-        "Checks if text contains any profane word"
+        """Checks if text contains any profane word"""
         ForbiddenContent._initialize_filter()
         return profanity.contains_profanity(text)
 
 
 class Date:
-    "Date-related constants and methods for the application"
+    """Date-related constants and methods for the application"""
     persian_months = {
         1: "فروردین",
         2: "اردیبهشت",
@@ -1192,7 +1189,7 @@ class Date:
 
     @staticmethod
     def get_allowed_years():
-        "Returns a list of allowed Gregorian birth years for participants based on age limits (5-80)."
+        """Returns a list of allowed Gregorian birth years for participants based on age limits (5-80)"""
         current_year = datetime.datetime.now(datetime.timezone.utc).year
         min_age = 5
         max_age = 80
@@ -1200,7 +1197,7 @@ class Date:
 
 
 class AppConfig:
-    "Configuration constants for the application."
+    """Configuration constants for the application"""
     max_team_per_client = 20
     max_members_per_team = 10
     max_image_size = 50 * 1024 * 1024
@@ -1244,7 +1241,7 @@ class AppConfig:
 
 
 class Details:
-    "Details for airocup event"
+    """Details for airocup event"""
     address = "دانشگاه علم و صنعت ایران، تهران، ایران"
     google_map_url = "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3238.3671459295647!2d51.50422711222071!3d35.74177972652958!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3f8e032fd49e3809%3A0x470e49fef97ae303!2sIran%20University%20of%20Science%20and%20Technology%20(IUST)!5e0!3m2!1sen!2snl!4v1762083993443!5m2!1sen!2snl"
     stage_one = "مجازی"
@@ -1253,11 +1250,9 @@ class Details:
 
 
 class Contact:
-    "Contact information for airocup"
-
+    """Contact information for airocup"""
     phone = "09352117339"
     email_primary = "airocupiran@gmail.com"
-    email_secondary = "ai90maharat@gmail.com"
     website = "https://airocup.org"
     instagram = "@airo.cup"
     linked_in = "linkedin.com/in/airo-cup-آیروکاپ-5b4818231"
@@ -1280,15 +1275,8 @@ contact_points_data = [
     {
         "href": f"mailto:{Contact.email_primary}",
         "icon": "fas fa-envelope",
-        "label": "ایمیل اصلی (سازمانی)",
+        "label": "ایمیل",
         "display": Contact.email_primary,
-        "target": None,
-    },
-    {
-        "href": f"mailto:{Contact.email_secondary}",
-        "icon": "fas fa-envelope-open-text",
-        "label": "ایمیل دوم (پشتیبانی)",
-        "display": Contact.email_secondary,
         "target": None,
     },
     {
