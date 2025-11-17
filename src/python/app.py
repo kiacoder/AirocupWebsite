@@ -7,8 +7,8 @@ import traceback
 import datetime
 import logging
 import bcrypt
-import jdatetime
-from persiantools.digits import en_to_fa
+import jdatetime  # type:ignore
+from persiantools.digits import en_to_fa  # type:ignore
 from sqlalchemy import exc, func
 import bleach
 from waitress import serve
@@ -132,8 +132,7 @@ def humanize_number_filter(num):
 
 @flask_app.context_processor
 def inject_global_variables():
-    """Injects global variables into the template context."""
-    
+    """Injects global variables into the template context"""
     airocup_data = {
         "allowed_years": constants.Date.get_allowed_years(),
         "persian_months": constants.Date.persian_months,
@@ -419,7 +418,11 @@ def initialize_database_command() -> None:
         database.populate_leagues(db)
 
     logger.info("Database initialized successfully.")
+
+
 wsgi_app = flask_app
+
+
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "generate_hash":
         try:
