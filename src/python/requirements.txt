@@ -1,4 +1,3 @@
-# --- Core web stack ---
 Flask
 Werkzeug
 Jinja2
@@ -8,15 +7,11 @@ loguru
 python-dotenv
 jdatetime
 requests
-
-# --- Database / ORM ---
 SQLAlchemy
 Flask-SQLAlchemy
-psycopg2-binary      # PostgreSQL
-PyMySQL              # MySQL / MariaDB
-aiosqlite            # Async SQLite (if you use it)
-
-# --- Auth / Security ---
+psycopg2-binary
+PyMySQL
+aiosqlite
 Flask-Login
 Flask-Security-Too
 Flask-WTF
@@ -26,19 +21,13 @@ passlib
 Authlib
 email-validator
 libpass
-
-# --- Migrations ---
 Flask-Migrate
 alembic
 Mako
-
-# --- Rate limiting ---
 Flask-Limiter
 limits
 ordered-set
-rich                # needed by Flask-Limiter
-
-# --- Realtime / WebSockets ---
+rich
 Flask-SocketIO
 python-socketio
 python-engineio
@@ -46,10 +35,6 @@ simple-websocket
 wsproto
 h11
 bidict
-
-# --- Redis (cache / broker / sessions) ---
 redis
-
-# --- 3D Viewer feature (keep if you actually use the 3D viewer) ---
 3DViewer-Flask
 accessible-pygments

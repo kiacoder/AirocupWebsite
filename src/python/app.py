@@ -1,4 +1,4 @@
-"Backend application for the Airocup website using Flask framework"
+"Backend application for the airocup website using Flask framework"
 
 import os
 import sys
@@ -56,11 +56,6 @@ flask_app.config.update(
     ALLOWED_EXTENSIONS=list(constants.AppConfig.allowed_extensions),
 )
 
-# Ensure the database schema exists before serving any requests. The call to
-# ``create_all`` is idempotent, so running it on every startup keeps new
-# deployments from failing with missing-table errors (e.g. ``clients`` during
-# login) while leaving existing data untouched. Populate required lookup tables
-# only when they are empty.
 database.create_database()
 database.ensure_schema_upgrades()
 with database.get_db_session() as _db_bootstrap_session:
@@ -241,7 +236,7 @@ def on_join_message(data_dictionary):
 
     if session.get("admin_logged_in", False):
         join_room(room_name)
-        flask_app.logger.info("Admin joined room %s", room_name)
+        flask_app.logger.info("admin joined room %s", room_name)
     elif client_id and str(client_id) == str(room_name):
         join_room(str(client_id))
         flask_app.logger.info("Client %s joined their room", client_id)
@@ -400,7 +395,7 @@ def print_startup_message(host: str, port: int, mode: str) -> None:
     """Logs the startup message for the server."""
     border = "=" * 60
     logger.info(border)
-    logger.info("🚀 Airocup Backend Server is launching...")
+    logger.info("🚀 airocup backend Server is launching...")
     logger.info("   - Version: %s", config.app_version)
     logger.info("   - Mode: %s", mode)
     logger.info("   - Database: Verified and connected successfully.")
@@ -452,5 +447,4 @@ if __name__ == "__main__":
     if config.debug:
         socket_io.run(flask_app, host=host, port=port, debug=config.debug)
     else:
-        # Run the plain Flask app behind a WSGI server (waitress, gunicorn, etc.)
         serve(flask_app, host=host, port=port)

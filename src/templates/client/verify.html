@@ -8,8 +8,6 @@
       action="{{ url_for('client.verify_code') }}"
     >
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-
-      {# These hidden fields carry the context for the server #}
       <input type="hidden" name="action" value="{{ action }}" />
       <input type="hidden" name="client_id" value="{{ client_id or '' }}" />
       <input type="hidden" name="identifier" value="{{ identifier or '' }}" />
@@ -20,8 +18,6 @@
       />
 
       <h1 class="form-title">تایید کد</h1>
-
-      {# Dynamic subtitle based on the action #}
       <p class="form-subtitle">
         {% if action == 'phone_signup' %} یک کد ۶ رقمی به شماره موبایل شما ارسال
         شد. لطفا آن را وارد کنید. {% elif action == 'password_reset' %} یک کد ۶

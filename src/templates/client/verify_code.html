@@ -4,8 +4,6 @@
   <div class="form-container form-container--small">
     <form method="POST" action="{{ url_for('client.verify_code') }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-
-      <!-- Correct naming (snake_case) -->
       <input type="hidden" name="action" value="{{ action }}" />
       <input type="hidden" name="client_id" value="{{ client_id or '' }}" />
       <input type="hidden" name="identifier" value="{{ identifier or '' }}" />

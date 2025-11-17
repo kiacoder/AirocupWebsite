@@ -117,8 +117,6 @@ class Client(Base):
         back_populates="client",
         cascade="all, delete-orphan",
     )
-
-    # Compatibility aliases for legacy template attribute names
     @property
     def ClientID(self) -> int:
         return self.client_id

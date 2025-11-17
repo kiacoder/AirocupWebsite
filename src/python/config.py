@@ -52,8 +52,6 @@ def _normalize_samesite(value: Any) -> str | None:
 
     if normalized == "strict":
         return "Strict"
-
-    # Fall back to Flask's default when an unsupported value is provided
     return "Lax"
 
 
@@ -110,18 +108,10 @@ session_cookie_httponly = get_bool("session_cookie_httponly", True)
 session_cookie_samesite = _normalize_samesite(
     get_env("session_cookie_samesite", "Lax"),
 )
-
-# Development ergonomics: running the debug server over HTTP should not lose
-# session data simply because production cookies are still enabled in the .env.
 if debug:
     session_cookie_secure = False
     if session_cookie_samesite == "None":
         session_cookie_samesite = "Lax"
 
-# ``SameSite=None`` requires Secure cookies in modern browsers. If the
-# configuration requests "None" but Secure is disabled (for example on a local
-# HTTP setup), gracefully fall back to the safer ``Lax`` value so logins,
-# flashes, and chat sessions continue to work instead of silently dropping the
-# cookie.
 if session_cookie_samesite == "None" and not session_cookie_secure:
     session_cookie_samesite = "Lax"

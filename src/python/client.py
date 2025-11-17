@@ -535,7 +535,6 @@ def edit_member(team_id, member_id):
     with database.get_db_session() as db:
         team = (
             db.query(models.Team)
-            # --- FIX: Eager-load leagues for age validation ---
             .options(
                 joinedload(models.Team.league_one), joinedload(models.Team.league_two)
             )
@@ -1602,7 +1601,7 @@ def submit_data_resolution():
 @client_blueprint.route("/Team/<int:team_id>/Delete", methods=["POST"])
 @auth.login_required
 def delete_team(team_id):
-    "Archive a team and its members"
+    "archive a team and its members"
     csrf_protector.protect()
     with database.get_db_session() as db:
         try:
@@ -1647,7 +1646,7 @@ def delete_team(team_id):
 )
 @auth.login_required
 def delete_member(team_id, member_id):
-    "Archive a member from a specific team."
+    "archive a member from a specific team."
     csrf_protector.protect()
     try:
         with database.get_db_session() as db:
@@ -1905,6 +1904,7 @@ def add_member(team_id):
                 abort(404)
 
             has_any_payment = database.has_team_made_any_payment(db_session, team_id)
+
             def _render_error(error_msg, error_type="error"):
                 flash(error_msg, error_type)
                 return render_template(
@@ -2024,7 +2024,7 @@ def add_member(team_id):
             database.log_action(
                 db_session,
                 session["client_id"],
-                f"Added new member '{new_member.name}' to Team ID {team_id}.",
+                f"added new member '{new_member.name}' to Team ID {team_id}.",
             )
 
             db_session.flush()
@@ -2117,13 +2117,7 @@ def select_league(team_id):
                         (
                             member
                             for member in team.members
-                            if member.status == models.EntityStatus.ACTIVE
-                            and member.role == models.MemberRole.MEMBER
-                            and not (
-                                min_age
-                                <= utils.calculate_age(member.birth_date)
-                                <= max_age
-                            )
+                            if member.status == models.EntityStatus.ACTIVE and member.role == models.MemberRole.MEMBER and not (min_age <= utils.calculate_age(member.birth_date) <= max_age)
                         ),
                         None,
                     )
@@ -2174,8 +2168,7 @@ def _calculate_payment_details(db, team):
             models.Member.team_id == team.team_id,
             models.Member.status == models.EntityStatus.ACTIVE,
         )
-        .scalar()
-        or 0
+        .scalar() or 0
     )
 
     if active_members_count == 0:

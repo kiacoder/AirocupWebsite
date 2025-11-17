@@ -1,4 +1,4 @@
-"""Admin panel routes and functionalities for managing clients, teams, members, news, and chat"""
+"""admin panel routes and functionalities for managing clients, teams, members, news, and chat"""
 import os
 import math
 import uuid
@@ -60,13 +60,13 @@ def get_admin_personas():
         if isinstance(member, dict):
             personas.append(member.get("name"))
     personas = [p for p in personas if p]
-    personas.extend(["Website Dev", "Admin"])
+    personas.extend(["Website Dev", "admin"])
     return personas
 
 
 @admin_blueprint.route("/AdminLogin", methods=["GET", "POST"])
 def admin_login():
-    """Admin login page and authentication"""
+    """admin login page and authentication"""
     if request.method == "POST":
         admin_pass = request.form.get("password", "")
         if config.admin_password_hash and bcrypt.checkpw(
@@ -105,7 +105,7 @@ def get_chat_history(client_id):
 @admin_blueprint.route("/API/GetChatClients")
 @admin_required
 def api_get_chat_clients():
-    "API endpoint to get list of ACTIVE chat clients"
+    "api endpoint to get list of active chat clients"
     with database.get_db_session() as db:
         client_list = [
             {"id": c.client_id, "email": c.email}
@@ -117,7 +117,7 @@ def api_get_chat_clients():
 @admin_blueprint.route("/Admin/Chat/<int:client_id>")
 @admin_required
 def admin_chat(client_id):
-    "Admin chat interface for a specific client"
+    "admin chat interface for a specific client"
     with database.get_db_session() as db_session:
         client = database.get_client_by(db_session, "client_id", client_id)
     if not client or client.status != models.EntityStatus.ACTIVE:
@@ -133,7 +133,7 @@ def admin_chat(client_id):
 @admin_blueprint.route("/Admin/AddTeam/<int:client_id>", methods=["POST"])
 @admin_required
 def admin_add_team(client_id):
-    "Add a new team for a specific client"
+    "add a new team for a specific client"
     team_name = bleach.clean(request.form.get("team_name", "").strip())
     league_one_raw = request.form.get("LeagueOne", "").strip()
     league_two_raw = request.form.get("LeagueTwo", "").strip()
@@ -286,7 +286,7 @@ def admin_delete_team(team_id):
             database.log_action(
                 db,
                 team.client_id,
-                f"Admin archived Team '{team.team_name}' (ID: {team_id}) as withdrawn.",
+                f"admin archived Team '{team.team_name}' (ID: {team_id}) as withdrawn.",
                 is_admin_action=True,
             )
 
@@ -333,7 +333,7 @@ def admin_delete_member(team_id, member_id):
         database.log_action(
             db,
             getattr(member.team, "client_id"),
-            f"Admin marked member '{member.name}' as resigned from Team ID {team_id}.",
+            f"admin marked member '{member.name}' as resigned from Team ID {team_id}.",
             is_admin_action=True,
         )
 
@@ -607,7 +607,7 @@ def admin_manage_teams():
 @admin_blueprint.route("/Admin/Team/<int:team_id>/AddMember", methods=["GET", "POST"])
 @admin_action_required
 def admin_add_member(team_id):
-    "Add a new member to a specific team from the admin panel"
+    "add a new member to a specific team from the admin panel"
     with database.get_db_session() as db:
         team = database.get_team_by_id(db, team_id)
         if not team:
@@ -861,7 +861,7 @@ def admin_clients_list():
 @admin_blueprint.route("/Admin/AddClient", methods=["POST"])
 @admin_required
 def admin_add_client():
-    "Add a new client to the database"
+    "add a new client to the database"
     email = (
         request.form.get("email") or request.form.get("Email") or ""
     ).strip().lower()
@@ -981,7 +981,7 @@ def admin_delete_client(client_id):
 @admin_blueprint.route("/AdminDashboard")
 @admin_required
 def admin_dashboard():
-    """Admin dashboard with statistics and pending payments"""
+    """admin dashboard with statistics and pending payments"""
     with database.get_db_session() as db:
         total_clients = (
             db.query(models.Client)
@@ -1126,7 +1126,7 @@ def admin_manage_payment(payment_id, action):
                 database.log_action(
                     db_session,
                     payment.client_id,
-                    f"Admin Approved Payment ID {payment_id} for Team ID {payment.team_id}.",
+                    f"admin approved payment ID {payment_id} for Team ID {payment.team_id}.",
                     is_admin_action=True,
                 )
                 flash("پرداخت با موفقیت تایید شد و اعضای تیم فعال شدند.", "success")
@@ -1136,7 +1136,7 @@ def admin_manage_payment(payment_id, action):
                 database.log_action(
                     db_session,
                     payment.client_id,
-                    f"Admin Rejected Payment ID {payment_id} for Team ID {payment.team_id}.",
+                    f"admin rejected payment ID {payment_id} for Team ID {payment.team_id}.",
                     is_admin_action=True,
                 )
                 flash("پرداخت رد شد.", "warning")

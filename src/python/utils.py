@@ -5,17 +5,17 @@ import smtplib
 from email.mime.text import MIMEText
 import datetime
 from typing import Any, IO, Tuple, Optional
-from . import constants
 from sqlalchemy.orm import Session, subqueryload
 from sqlalchemy.exc import SQLAlchemyError
-from . import database
-from . import models
 import jdatetime  # type: ignore
 import filetype  # type: ignore
 from flask import Flask, session, current_app
 from persiantools.digits import fa_to_en  # type: ignore
 import requests  # type: ignore
 import bleach  # type: ignore
+from . import database
+from . import models
+from . import constants
 
 
 def is_valid_name(name: str) -> bool:
@@ -163,7 +163,6 @@ def normalize_persian_text(value: Optional[str]) -> str:
         return ""
 
     normalized = value.translate(_PERSIAN_NORMALIZATION_TABLE).strip()
-    # Collapse consecutive whitespace (including zero-width non-joiners)
     normalized = normalized.replace("\u200c", " ")
     return " ".join(normalized.split())
 

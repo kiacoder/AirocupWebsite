@@ -1,4 +1,4 @@
-"""DataBase Code For Adding Editing And Deleting Members, Teams and Clients"""
+"""DataBase Code For adding Editing and Deleting Members, Teams and Clients"""
 
 import datetime
 import os
@@ -10,12 +10,6 @@ from sqlalchemy import create_engine, func, text
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.util import typing as sa_typing
 
-# SQLAlchemy 2.0.x expects ``typing.Union.__getitem__`` to accept either
-# positional arguments or a tuple. Python 3.14 tightened the descriptor
-# semantics which causes SQLAlchemy to occasionally pass a single tuple
-# argument and trigger ``TypeError: descriptor '__getitem__' requires a
-# 'typing.Union' object but received a 'tuple'`` during model import. Expand
-# the tuple transparently so SQLAlchemy keeps working on newer interpreters.
 if hasattr(sa_typing, "make_union_type"):
     _sa_make_union_type = sa_typing.make_union_type
 
@@ -28,13 +22,13 @@ if hasattr(sa_typing, "make_union_type"):
             iterator = iter(types)
             try:
                 union_type = next(iterator)
-            except StopIteration as stop_error:  # pragma: no cover
+            except StopIteration as stop_error:
                 raise stop_error
             for typ in iterator:
                 union_type = union_type | typ
             return union_type
 
-    sa_typing.make_union_type = _patched_make_union_type  # type: ignore[attr-defined]
+    sa_typing.make_union_type = _patched_make_union_type
 
 from . import constants
 from . import models
@@ -55,7 +49,7 @@ def create_database():
 
 
 def ensure_schema_upgrades():
-    """Apply lightweight schema adjustments that older databases may lack."""
+    """apply lightweight schema adjustments that older databases may lack."""
 
     with db_engine.connect() as connection:
         existing_columns = {

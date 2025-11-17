@@ -92,11 +92,6 @@
       href="{{ url_for('static', filename=path.solid_logos['main_fest_192'], v=static_version) }}"
     />
     {% endif %}
-
-    <!-- 
-      FIX #1: Corrected 'xintegrity' typo to 'integrity'.
-      This was the cause of the [GLOBAL] SyntaxError and stopped JS from loading.
-    -->
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
@@ -121,9 +116,6 @@
     %}
   >
     {% if _is_admin and not _is_admin_auth %}
-    <!-- ================== -->
-    <!--     ADMIN HEADER   -->
-    <!-- ================== -->
     <header class="admin-header" data-header="admin">
       <div class="admin-header-container container">
         <a
@@ -184,12 +176,8 @@
     </header>
 
     {% elif not _is_admin %}
-    <!-- ================== -->
-    <!--    CLIENT HEADER   -->
-    <!-- ================== -->
     <header class="site-header">
       <div class="container header-inner">
-        <!-- Logo (left) -->
         <div class="logo" aria-hidden="false">
           <a href="{{ url_for('global.index') }}">
             <img
@@ -198,8 +186,6 @@
             />
           </a>
         </div>
-
-        <!-- Main navigation (visible on desktop) -->
         <nav
           class="main-nav"
           id="main-nav"
@@ -281,8 +267,6 @@
             </li>
           </ul>
         </nav>
-
-        <!-- Primary actions (visible on desktop) -->
         <div class="header-cta-stack">
           <div class="header-cta" id="header-cta">
             <div class="header-actions header-cta__actions" id="header-actions">
@@ -305,8 +289,6 @@
               {% endif %}
             </div>
           </div>
-
-          <!-- Hamburger (visible on mobile) -->
           <button
             class="mobile-menu-btn"
             id="mobile-menu-btn"
@@ -320,8 +302,6 @@
           </button>
         </div>
       </div>
-
-      <!-- Mobile Menu (hidden by default) -->
       <div
         id="mobile-menu"
         class="mobile-menu"
@@ -330,8 +310,6 @@
         aria-modal="true"
       >
         <div class="mobile-menu-inner">
-          
-          <!-- Server-rendered fallback list; JS keeps it in sync when available -->
           <ul class="mobile-nav-list" id="mobile-nav-list" role="menu">
             <li role="none">
               <a
@@ -397,8 +375,6 @@
               >
             </li>
           </ul>
-
-          <!-- Mobile-only CTAs -->
           <div class="mobile-cta">
             {% if 'client_id' in session %}
             <a
@@ -424,8 +400,6 @@
           </div>
         </div>
       </div>
-
-      <!-- Backdrop for mobile menu -->
       <div
         id="mobile-menu-backdrop"
         class="mobile-menu-backdrop"
@@ -434,16 +408,6 @@
     </header>
 
     {% endif %} 
-    
-    <!-- ================== -->
-    <!--  FLASH MESSAGES    -->
-    <!-- ================== -->
-
-    <!-- 
-      FIX #2: Moved the <div id="flash-container"> *OUTSIDE* the 'if' block.
-      This ensures the container always exists for JavaScript to add messages to,
-      fixing the "silent reload" bug on the signup page.
-    -->
     <div id="flash-container" aria-live="polite" aria-atomic="true">
       {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
@@ -470,16 +434,10 @@
       {% endif %}
       {% endwith %}
     </div>
-
-    <!-- ================== -->
-    <!--   MAIN CONTENT     -->
-    <!-- ================== -->
     <main class="main-content">
       {% block breadcrumbs %}{% endblock %}
       {% block body %}{% endblock %}
     </main>
-
-    <!-- Global confirmation modal available to every page -->
     <div
       class="modal"
       id="confirmationModal"
@@ -504,23 +462,12 @@
         </div>
       </div>
     </div>
-
-    <!-- ================== -->
-    <!--       FOOTER       -->
-    <!-- ================== -->
     {% if not _is_admin %}
     <footer class="site-footer">
-      <!-- Top Blue Line -->
       <div class="footer-top-line"></div>
 
       <div class="container footer-content">
-        <!-- Footer Cards -->
         <div class="footer-cards">
-          <!-- Quick Access -->
-          <!-- 
-            FIX #4: Changed class 'fade-up' to 'fade-in-element'
-            to match the selector in main.js (ui.initializeLazyLoad)
-          -->
           <div class="footer-card fade-in-element">
             <h3 style="color: var(--color-header)">دسترسی سریع</h3>
             <ul>
@@ -536,8 +483,6 @@
               </li>
             </ul>
           </div>
-
-          <!-- Logo and Description -->
           <div class="footer-card fade-in-element delay-1">
             <img
               src="{{ url_for('static', filename=path.transparent_logos['transparent_white'], v=static_version) }}"
@@ -549,8 +494,6 @@
               مصنوعی و رباتیک کشور.
             </p>
           </div>
-
-          <!-- Contact Info -->
           <div class="footer-card fade-in-element delay-2">
             <h3 style="color: var(--color-header)">اطلاعات تماس</h3>
             <p>
@@ -583,8 +526,6 @@
             </div>
           </div>
         </div>
-
-        <!-- Footer Bottom -->
         <div class="footer-bottom">
           <p>
             &copy; {{ jdatetime.datetime.now().year }} تمامی حقوق برای
@@ -596,10 +537,6 @@
     </footer>
 
     {% endif %}
-
-    <!-- ================== -->
-    <!-- GLOBAL SCRIPT TAGS -->
-    <!-- ================== -->
     <script
       src="{{ url_for('static', filename='js/socket.io.min.js', v=static_version) }}"
       defer
@@ -621,13 +558,6 @@
     ></script>
     
     {% block scripts %}
-    <!-- Page-specific scripts can be inserted here -->
-
-    <!-- 
-      FIX #4: Removed the redundant inline IntersectionObserver script.
-      main.js (ui.initializeLazyLoad) now handles this.
-    -->
-    
     {% endblock %}
   </body>
 </html>

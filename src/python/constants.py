@@ -2,12 +2,12 @@
 
 import os
 from typing import Dict, Optional, Tuple
-from better_profanity import profanity
-import jdatetime
+from better_profanity import profanity  # type:ignore
+import jdatetime  # type:ignore
+
 
 class Path:
-    "Define All Paths Of Files"
-
+    "Define all Paths Of Files"
     base_dir = os.path.dirname(os.path.abspath(__file__))
     root_dir = os.path.abspath(os.path.join(base_dir, "..", ".."))
     static_dir = os.path.join(root_dir, "static")
@@ -1206,7 +1206,7 @@ class AppConfig:
     max_members_per_team = 10
     max_image_size = 50 * 1024 * 1024
     max_office_size = 50 * 1024 * 1024
-    max_document_size = 200 * 1024 * 1024  # Upper bound used for Flask uploads
+    max_document_size = 200 * 1024 * 1024
     max_video_size = 200 * 1024 * 1024
     image_extensions = {"png", "jpg", "jpeg", "gif"}
     office_extensions = {"pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx"}

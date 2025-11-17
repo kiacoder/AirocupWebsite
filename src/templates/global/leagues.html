@@ -11,8 +11,6 @@
 {% block body %}
 <main class="app-container leagues-page">
   <div class="container">
-
-    <!-- Page Header -->
     <header class="page-header text-center">
       <h1 class="section-title">لیگ‌های مسابقات آیروکاپ</h1>
 
@@ -27,7 +25,6 @@
       </a>
     </header>
 
-    <!-- Filter -->
     <div class="league-filter-container">
       <div class="input-group">
         <i class="fas fa-search input-icon"></i>
@@ -39,8 +36,6 @@
         />
       </div>
     </div>
-
-    <!-- Accordion -->
     <section class="accordion-container" aria-label="لیست لیگ‌های مسابقات">
       {% for league in leagues_list %}
       <div class="card accordion-item">
@@ -74,8 +69,6 @@
 
       </div>
       {% endfor %}
-
-      <!-- No Results -->
       <div id="noResultsMessage" class="card empty-state-card" style="display: none">
         <i class="fas fa-search empty-state-icon"></i>
         <h3>هیچ لیگی با عبارت جستجو شده مطابقت ندارد.</h3>
@@ -83,8 +76,6 @@
       </div>
 
     </section>
-
-    <!-- Final CTA -->
     <section class="cta-section text-center">
       <h2>آماده رقابت هستید؟</h2>
       <p>
