@@ -283,16 +283,17 @@ def handle_send_message(json_data):
             sanitized_message = sanitized_message[:1000]
 
         with database.get_db_session() as db:
-            database.save_chat_message(
+            saved_message = database.save_chat_message(
                 db, int(target_room), sanitized_message, sender_type
             )
 
-        current_time = datetime.datetime.now(datetime.timezone.utc)
+        current_time = saved_message.timestamp
         emit(
             "new_message",
             {
                 "message": sanitized_message,
                 "timestamp": current_time.isoformat(),
+                "message_id": getattr(saved_message, "message_id", None),
                 "sender": sender_type,
             },
             to=str(target_room),
@@ -303,11 +304,12 @@ def handle_send_message(json_data):
         flask_app.logger.error("Chat message error: %s", error)
 
 
-@flask_app.route("/uploads/receipts/<filename>")
+@flask_app.route("/uploads/receipts/<int:client_id>/<filename>")
 @admin_required
-def uploaded_receipt_file(filename):
-    "Serves uploaded receipt files to admin users"
-    return send_from_directory(constants.Path.receipts_dir, filename)
+def uploaded_receipt_file(client_id, filename):
+    "Serves uploaded receipt files to admin users with client scoping"
+    client_receipts_dir = os.path.join(constants.Path.receipts_dir, str(client_id))
+    return send_from_directory(client_receipts_dir, filename)
 
 
 @flask_app.template_filter("to_iso_format")

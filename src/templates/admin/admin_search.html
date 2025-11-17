@@ -1,0 +1,160 @@
+{% extends "global/base.html" %}
+{% block title %}جستجوی پیشرفته مدیریت | پنل آیروکاپ{% endblock %}
+{% block body %}
+<div class="admin-page">
+  <header class="admin-page__header">
+    <div class="admin-page__title">
+      <h1>جستجوی پیشرفته</h1>
+      <p class="admin-page__subtitle">
+        همه چیز را یکجا بیابید: کاربران، تیم‌ها و پرداخت‌ها با فیلتر و مرتب‌سازی.
+      </p>
+    </div>
+  </header>
+
+  <section class="admin-page__section">
+    <article class="admin-surface">
+      <header class="admin-surface__header">
+        <div class="admin-surface__title">
+          <h2><i class="fas fa-search"></i> فیلترها</h2>
+          <p>بر اساس نام تیم، ایمیل کاربر یا وضعیت پرداخت جستجو کنید.</p>
+        </div>
+      </header>
+      <div class="admin-surface__body">
+        <form class="admin-search-form" method="GET" action="{{ url_for('admin.admin_search') }}">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="q">کلمه کلیدی</label>
+              <input type="search" id="q" name="q" placeholder="نام تیم، ایمیل یا تلفن" value="{{ query }}" />
+            </div>
+            <div class="form-group">
+              <label for="payment_status">وضعیت پرداخت</label>
+              <select id="payment_status" name="payment_status">
+                <option value="">همه</option>
+                {% for status in enums.PaymentStatus %}
+                <option value="{{ status.name }}" {% if payment_status==status.name %}selected{% endif %}>{{ status.label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="admin-search-actions">
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-search"></i>
+              جستجو
+            </button>
+            <a href="{{ url_for('admin.admin_search') }}" class="btn btn-secondary">پاک کردن فیلترها</a>
+          </div>
+        </form>
+      </div>
+    </article>
+
+    <article class="admin-surface">
+      <header class="admin-surface__header">
+        <div class="admin-surface__title">
+          <h2><i class="fas fa-users"></i> نتایج کاربران</h2>
+          <p>کاربران مطابق کلیدواژه وارد شده.</p>
+        </div>
+      </header>
+      <div class="admin-surface__body">
+        <div class="admin-table-wrapper">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>ایمیل</th>
+                <th>شماره</th>
+                <th>وضعیت</th>
+                <th>عملیات</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for c in clients %}
+              <tr>
+                <td dir="ltr">{{ c.email }}</td>
+                <td dir="ltr">{{ c.phone_number | persian_digits }}</td>
+                <td>{{ c.status.label if c.status else '—' }}</td>
+                <td class="admin-table__actions">
+                  <a href="{{ url_for('admin.admin_manage_client', client_id=c.client_id) }}" class="btn btn-primary btn-small">جزئیات</a>
+                </td>
+              </tr>
+              {% else %}
+              <tr class="admin-table__empty"><td colspan="4">نتیجه‌ای یافت نشد.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </article>
+
+    <article class="admin-surface">
+      <header class="admin-surface__header">
+        <div class="admin-surface__title">
+          <h2><i class="fas fa-users-cog"></i> نتایج تیم‌ها</h2>
+          <p>تیم‌های منطبق با نام وارد شده.</p>
+        </div>
+      </header>
+      <div class="admin-surface__body">
+        <div class="admin-table-wrapper">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>نام تیم</th>
+                <th>کاربر</th>
+                <th>وضعیت</th>
+                <th>عملیات</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for t in teams %}
+              <tr>
+                <td>{{ t.team_name }}</td>
+                <td dir="ltr">{{ t.client.email if t.client else '—' }}</td>
+                <td>{{ t.status.label if t.status else '—' }}</td>
+                <td class="admin-table__actions">
+                  <a href="{{ url_for('admin.admin_edit_team', team_id=t.team_id) }}" class="btn btn-primary btn-small">مدیریت</a>
+                </td>
+              </tr>
+              {% else %}
+              <tr class="admin-table__empty"><td colspan="4">نتیجه‌ای برای تیم‌ها یافت نشد.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </article>
+
+    <article class="admin-surface">
+      <header class="admin-surface__header">
+        <div class="admin-surface__title">
+          <h2><i class="fas fa-receipt"></i> نتایج پرداخت</h2>
+          <p>آخرین پرداخت‌های مطابق فیلتر وضعیت.</p>
+        </div>
+      </header>
+      <div class="admin-surface__body">
+        <div class="admin-table-wrapper">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>شناسه</th>
+                <th>تیم</th>
+                <th>مبلغ</th>
+                <th>وضعیت</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in payments %}
+              <tr>
+                <td>#{{ p.payment_id | persian_digits }}</td>
+                <td>#{{ p.team_id | persian_digits }}</td>
+                <td>{{ p.amount | persian_digits }}</td>
+                <td>{{ p.status.label if p.status else '—' }}</td>
+              </tr>
+              {% else %}
+              <tr class="admin-table__empty"><td colspan="4">پرداختی مطابق فیلتر نیست.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </article>
+  </section>
+</div>
+{% endblock %}
