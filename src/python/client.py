@@ -1770,7 +1770,7 @@ def delete_member(team_id, member_id):
 
     except exc.SQLAlchemyError as error:
         current_app.logger.error(
-            "error archiving member %s from Team %s: %s", member_id, team_id, error
+            "error archiving member %s from team %s: %s", member_id, team_id, error
         )
         flash("خطایی در هنگام حذف عضو رخ داد.", "error")
 
@@ -1962,7 +1962,8 @@ def add_member(team_id):
             team = (
                 db_session.query(models.Team)
                 .options(
-                    joinedload(models.Team.league_one), joinedload(models.Team.league_two)
+                    joinedload(models.Team.league_one),
+                    joinedload(models.Team.league_two),
                 )
                 .filter(
                     models.Team.team_id == team_id,
@@ -2004,9 +2005,9 @@ def add_member(team_id):
                     "برای افزودن عضو، ابتدا باید حداقل یک لیگ (مقطع تحصیلی) برای تیم خود انتخاب کنید."
                 )
 
-            selected_leagues_count = 1 + (
                 1 if team.league_two_id is not None else 0
             )
+            selected_leagues_count = 1 + (1 if team.league_two_id is not None else 0)
             selected_leagues_count = max(1, selected_leagues_count)
             new_member_fee_per_league = (
                 config.payment_config.get("new_member_fee_per_league") or 0
@@ -2057,11 +2058,11 @@ def add_member(team_id):
                 if not is_age_valid:
                     return _render_error(age_error)
 
-            if (
-                national_id and role_value == models.MemberRole.MEMBER
-            ):
+            if national_id and role_value == models.MemberRole.MEMBER:
                 existing_leagues_query = (
-                    db_session.query(models.Team.league_one_id, models.Team.league_two_id)
+                    db_session.query(
+                        models.Team.league_one_id, models.Team.league_two_id
+                    )
                     .join(models.Member, models.Team.team_id == models.Member.team_id)
                     .filter(
                         models.Member.national_id == national_id,
@@ -2096,7 +2097,7 @@ def add_member(team_id):
             database.log_action(
                 db_session,
                 session["client_id"],
-                f"added new member '{new_member.name}' to Team ID {team_id}.",
+                f"added new member '{new_member.name}' to team id {team_id}.",
             )
 
             db_session.flush()
@@ -2130,7 +2131,9 @@ def add_member(team_id):
 
         except (exc.SQLAlchemyError, ValueError, TypeError) as error:
             db_session.rollback()
-            current_app.logger.error("error adding member to Team %s: %s", team_id, error)
+            current_app.logger.error(
+                "error adding member to team %s: %s", team_id, error
+            )
             flash("خطایی در هنگام افزودن عضو رخ داد.", "error")
             return redirect(url_for("client.manage_members", team_id=team_id))
 
@@ -2192,7 +2195,9 @@ def select_league(team_id):
                             and member.role == models.MemberRole.MEMBER
                         ):
                             member_age = utils.calculate_age(member.birth_date)
-                            if member_age is None or not (min_age <= member_age <= max_age):
+                            if member_age is None or not (
+                                min_age <= member_age <= max_age
+                            ):
                                 violating_member = member
                                 break
                     if violating_member:
@@ -2242,7 +2247,8 @@ def _calculate_payment_details(db, team) -> tuple[dict[str, Any], str, str, bool
             models.Member.team_id == team.team_id,
             models.Member.status == models.EntityStatus.ACTIVE,
         )
-        .scalar() or 0
+        .scalar()
+        or 0
     )
 
     if active_members_count == 0:
@@ -2273,9 +2279,7 @@ def _calculate_payment_details(db, team) -> tuple[dict[str, Any], str, str, bool
     is_new_member_payment = has_any_payment
     fee_per_person = config.payment_config.get("fee_per_person") or 0
     fee_team = config.payment_config.get("fee_team") or 0
-    league_two_discount_percent = (
-        config.payment_config.get("league_two_discount") or 0
-    )
+    league_two_discount_percent = config.payment_config.get("league_two_discount") or 0
     new_member_fee_per_league = (
         config.payment_config.get("new_member_fee_per_league") or 0
     )
