@@ -1,11 +1,3 @@
-/**
- * Airocup Global JavaScript
- *
- * Handles global UI interactions like mobile navigation,
- * flash messages, and other site-wide behaviors.
- */
-
-// Strict mode helps catch common coding errors
 "use strict";
 
 const Validators = {
@@ -1173,8 +1165,6 @@ const airocupApp = {
         backdrop?.classList.toggle("is-visible", isOpen);
         document.body.classList.toggle("body-no-scroll", isOpen);
         menuBtn.classList.toggle("is-active", isOpen);
-
-        // Footer moves up when menu opens
         if (footer)
           footer.style.marginBottom = isOpen
             ? `${mobileMenu.scrollHeight}px`
@@ -1191,8 +1181,6 @@ const airocupApp = {
         const link = event.target.closest("a");
         if (link) toggleMenu(false);
       });
-
-      // Move overflow items to mobile menu
       function updateMenuOverflow() {
         if (window.innerWidth < 992) {
           mobileNavList.innerHTML = "";
@@ -1726,11 +1714,6 @@ const airocupApp = {
         })
       );
     },
-
-    // This function should be placed inside the main airocupApp object,
-    // alongside helpers, ui, and forms.
-
-
   },
 
   init() {
@@ -1748,8 +1731,6 @@ const airocupApp = {
     }
   },
 };
-
-// Expose the main application object for inline scripts that rely on it.
 window.airocupApp = airocupApp;
 
 document.addEventListener("DOMContentLoaded", () => {

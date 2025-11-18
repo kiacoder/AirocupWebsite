@@ -691,8 +691,7 @@ def admin_manage_client(client_id):
             )
             .outerjoin(
                 models.Member,
-                (models.Team.team_id == models.Member.team_id)
-                & (models.Member.status == models.EntityStatus.ACTIVE),
+                (models.Team.team_id == models.Member.team_id) & (models.Member.status == models.EntityStatus.ACTIVE),
             )
             .filter(
                 models.Team.client_id == client_id,
@@ -771,8 +770,7 @@ def admin_manage_teams():
             .join(models.Client, models.Team.client_id == models.Client.client_id)
             .outerjoin(
                 models.Member,
-                (models.Team.team_id == models.Member.team_id)
-                & (models.Member.status == models.EntityStatus.ACTIVE),
+                (models.Team.team_id == models.Member.team_id) & (models.Member.status == models.EntityStatus.ACTIVE),
             )
             .group_by(models.Team.team_id, models.Client.email)
         )
@@ -1242,7 +1240,6 @@ def admin_delete_client(client_id):
             ):
                 team.status = models.EntityStatus.INACTIVE
 
-            # Archive members to avoid showing orphaned active records in dashboards
             db.query(models.Member).filter(
                 models.Member.team_id.in_(
                     db.query(models.Team.team_id).filter(

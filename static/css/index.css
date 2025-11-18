@@ -719,8 +719,6 @@
     grid-template-columns: 1fr;
   }
 }
-
-/* Chat styles */
 .client-chat-container,
 .admin-chat-container {
   padding: 2rem 0 3rem;
@@ -854,8 +852,6 @@
   background: #f3f4f6;
   cursor: not-allowed;
 }
-
-/* Admin layout refinements */
 .admin-body {
   background: linear-gradient(180deg, #f5f7fb 0%, #ffffff 45%);
   min-height: 100vh;
