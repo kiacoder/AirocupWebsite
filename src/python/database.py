@@ -279,7 +279,7 @@ def get_client_by(db: Session, identifier: str, value: Any) -> Optional[models.C
         return (
             db.query(models.Client).filter(models.Client.phone_number == value).first()
         )
-    raise ValueError(f"Invalid Identifier for searching Clients: {identifier}")
+    raise ValueError(f"Invalid Identifier for searching clients: {identifier}")
 
 
 def get_all_articles(db: Session):
@@ -288,7 +288,7 @@ def get_all_articles(db: Session):
 
 
 def get_article_by_id(db: Session, article_id: int):
-    "Retrieve a news article by its ID"
+    "Retrieve a news article by its id"
     return db.query(models.News).filter(models.News.news_id == article_id).first()
 
 
@@ -370,13 +370,10 @@ def validate_new_member_data(
         errors.append("کد ملی وارد شده معتبر نیست.")
 
     elif team_id:
-        duplicate_query = (
-            db.query(models.Member.member_id)
-            .filter(
-                models.Member.team_id == team_id,
-                models.Member.national_id == national_id,
-                models.Member.status == models.EntityStatus.ACTIVE,
-            )
+        duplicate_query = db.query(models.Member.member_id).filter(
+            models.Member.team_id == team_id,
+            models.Member.national_id == national_id,
+            models.Member.status == models.EntityStatus.ACTIVE,
         )
         if member_id_to_exclude:
             duplicate_query = duplicate_query.filter(
