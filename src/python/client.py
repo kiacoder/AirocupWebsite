@@ -300,6 +300,12 @@ def login_client():
                     )
                 )
 
+            if client_check.registration_date is None:
+                client_check.registration_date = datetime.datetime.now(
+                    datetime.timezone.utc
+                )
+                db.commit()
+
             team_count = (
                 db.query(models.Team)
                 .filter(
