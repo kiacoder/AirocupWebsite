@@ -6,6 +6,7 @@ import string
 import uuid
 import datetime
 import secrets
+from typing import Any, cast
 from threading import Thread
 import bcrypt
 import jdatetime  # type:ignore
@@ -27,6 +28,7 @@ from flask import (
     url_for,
     jsonify,
     current_app,
+    Flask,
 )
 
 from . import config
@@ -41,7 +43,7 @@ from .auth import login_required
 client_blueprint = Blueprint("client", __name__)
 
 
-def _ensure_aware(dt):
+def _ensure_aware(dt: datetime.datetime | None) -> datetime.datetime | None:
     """Return timezone-aware datetime (UTC). If dt is None return None.
     If dt.tzinfo is None assume UTC (replace tzinfo)."""
     if dt is None:
@@ -51,12 +53,19 @@ def _ensure_aware(dt):
     return dt
 
 
-def _seconds_since(dt):
+def _seconds_since(dt: datetime.datetime | None) -> float | None:
     """Return seconds elapsed since dt (dt may be naive or aware)."""
     if dt is None:
         return None
     dt_aware = _ensure_aware(dt)
+    if dt_aware is None:
+        return None
     return (datetime.datetime.now(datetime.timezone.utc) - dt_aware).total_seconds()
+
+
+def _get_current_app() -> Flask:
+    """Return the underlying Flask app instance for type checkers."""
+    return cast(Flask, current_app._get_current_object())
 
 
 @client_blueprint.route("/signup", methods=["GET", "POST"])
@@ -118,7 +127,7 @@ def signup():
                     Thread(
                         target=utils.send_templated_sms_async,
                         args=(
-                            current_app._get_current_object(),
+                            _get_current_app(),
                             new_client.client_id,
                             config.melli_payamak["template_id_verification"],
                             verification_code,
@@ -191,9 +200,12 @@ def resolve_data_issues():
             flash("خطا: اطلاعات کاربری برای اصلاح یافت نشد.", "error")
             return redirect(url_for("client.login_client"))
 
-        province_city_rows = (
-            db.query(models.Province.name, models.City.name).join(models.City).all()
-        )
+        province_city_rows = [
+            (province_name, city_name)
+            for province_name, city_name in db.query(models.Province.name, models.City.name)
+            .join(models.City)
+            .all()
+        ]
 
     session_problems = session.get("resolution_problems", {})
     normalized_problems = {
@@ -609,7 +621,7 @@ def edit_member(team_id, member_id):
                     team.education_level,
                 )
                 if not is_valid:
-                    flash(age_error, "error")
+                    flash(age_error or "سن عضو در بازه مجاز نیست.", "error")
                     return render_template(
                         template_name,
                         team=team,
@@ -622,7 +634,7 @@ def edit_member(team_id, member_id):
                     db, national_id, team_id, member_id_to_exclude=member_id
                 )
                 if has_conflict:
-                    flash(conflict_error, "error")
+                    flash(conflict_error or "این عضو در لیگ دیگری ثبت شده است.", "error")
                     return render_template(
                         template_name,
                         team=team,
@@ -631,11 +643,14 @@ def edit_member(team_id, member_id):
                         **utils.get_form_context(),
                     )
             try:
-                member.name = new_member_data_safe.get("name")
+                name_value = new_member_data_safe.get("name") or member.name
+                city_id_value = new_member_data_safe.get("city_id") or member.city_id
+
+                member.name = name_value
                 member.national_id = national_id
-                member.role = role_value
-                member.city_id = new_member_data_safe.get("city_id")
-                member.birth_date = birth_date
+                member.role = role_value or member.role
+                member.city_id = city_id_value
+                member.birth_date = birth_date or member.birth_date
                 db.commit()
 
                 utils.update_team_stats(db, team_id)
@@ -936,12 +951,13 @@ def verify_code():
                     redirect_to_login = True
                 elif reset_record.timestamp:
                     ts = _ensure_aware(reset_record.timestamp)
-                    seconds_passed = (
-                        datetime.datetime.now(datetime.timezone.utc) - ts
-                    ).total_seconds()
+                    if ts is not None:
+                        seconds_passed = (
+                            datetime.datetime.now(datetime.timezone.utc) - ts
+                        ).total_seconds()
 
-                    if seconds_passed < 180:
-                        context["cooldown"] = 180 - int(seconds_passed)
+                        if seconds_passed < 180:
+                            context["cooldown"] = 180 - int(seconds_passed)
 
             context["identifier"] = identifier
             context["identifier_type"] = identifier_type
@@ -1009,7 +1025,7 @@ def forgot_password():
                     Thread(
                         target=utils.send_async_email,
                         args=(
-                            current_app._get_current_object(),
+                            _get_current_app(),
                             client_check.client_id,
                             subject,
                             body,
@@ -1021,7 +1037,7 @@ def forgot_password():
                     Thread(
                         target=utils.send_templated_sms_async,
                         args=(
-                            current_app._get_current_object(),
+                            _get_current_app(),
                             client_check.client_id,
                             config.melli_payamak["template_id_password_reset"],
                             reset_code,
@@ -1303,7 +1319,7 @@ def resend_code():
         Thread(
             target=utils.send_templated_sms_async,
             args=(
-                current_app._get_current_object(),
+                _get_current_app(),
                 client.client_id,
                 config.melli_payamak["template_id_verification"],
                 new_code,
@@ -1369,7 +1385,7 @@ def resend_code():
             Thread(
                 target=utils.send_async_email,
                 args=(
-                    current_app._get_current_object(),
+                    _get_current_app(),
                     client.client_id,
                     "کد بازیابی رمز عبور آیروکاپ",
                     f"کد بازیابی رمز عبور شما: {new_code}",
@@ -1381,7 +1397,7 @@ def resend_code():
             Thread(
                 target=utils.send_templated_sms_async,
                 args=(
-                    current_app._get_current_object(),
+                    _get_current_app(),
                     client.client_id,
                     config.melli_payamak["template_id_password_reset"],
                     new_code,
@@ -1419,44 +1435,46 @@ def dashboard():
 
         active_member_counts: dict[int, int] = {}
 
-        if team_ids:
-            active_member_counts = dict(
-                db.query(
-                    models.Member.team_id,
-                    func.count(models.Member.member_id),
-                )
-                .filter(
-                    models.Member.team_id.in_(team_ids),
-                    models.Member.status == models.EntityStatus.ACTIVE,
-                )
-                .group_by(models.Member.team_id)
-                .all()
+    if team_ids:
+        member_counts = (
+            db.query(
+                models.Member.team_id,
+                func.count(models.Member.member_id),
             )
+            .filter(
+                models.Member.team_id.in_(team_ids),
+                models.Member.status == models.EntityStatus.ACTIVE,
+            )
+            .group_by(models.Member.team_id)
+            .all()
+        )
+        active_member_counts = {
+            team_id: int(member_count)
+            for team_id, member_count in member_counts
+        }
 
-            subquery = (
-                select(
-                    models.Payment.team_id,
-                    models.Payment.status,
-                    func.row_number()
-                    .over(
-                        partition_by=models.Payment.team_id,
-                        order_by=models.Payment.upload_date.desc(),
-                    )
-                    .label("row_number"),
+        subquery = (
+            select(
+                models.Payment.team_id,
+                models.Payment.status,
+                func.row_number()
+                .over(
+                    partition_by=models.Payment.team_id,
+                    order_by=models.Payment.upload_date.desc(),
                 )
-                .where(models.Payment.team_id.in_(team_ids))
-                .subquery()
+                .label("row_number"),
             )
+            .where(models.Payment.team_id.in_(team_ids))
+            .subquery()
+        )
 
-            latest_payments = (
-                db.query(subquery).filter(subquery.c.row_number == 1).all()
+        latest_payments = db.query(subquery).filter(subquery.c.row_number == 1).all()
+        payment_statuses = {
+            row.team_id: (
+                models.PaymentStatus(row.status) if row.status is not None else None
             )
-            payment_statuses = {
-                row.team_id: (
-                    models.PaymentStatus(row.status) if row.status is not None else None
-                )
-                for row in latest_payments
-            }
+            for row in latest_payments
+        }
 
         for team in teams:
             setattr(team, "last_payment_status", payment_statuses.get(team.team_id))
@@ -2163,14 +2181,16 @@ def select_league(team_id):
                 age_range = level_info.get("ages") if level_info else None
                 if age_range:
                     min_age, max_age = age_range
-                    violating_member = next(
-                        (
-                            member
-                            for member in team.members
-                            if member.status == models.EntityStatus.ACTIVE and member.role == models.MemberRole.MEMBER and not (min_age <= utils.calculate_age(member.birth_date) <= max_age)
-                        ),
-                        None,
-                    )
+                    violating_member = None
+                    for member in team.members:
+                        if (
+                            member.status == models.EntityStatus.ACTIVE
+                            and member.role == models.MemberRole.MEMBER
+                        ):
+                            member_age = utils.calculate_age(member.birth_date)
+                            if member_age is None or not (min_age <= member_age <= max_age):
+                                violating_member = member
+                                break
                     if violating_member:
                         flash(
                             f"عضو «{violating_member.name}» با سن فعلی خود در بازه مجاز مقطع «{education_level}» قرار نمی‌گیرد.",
@@ -2195,7 +2215,7 @@ def select_league(team_id):
     )
 
 
-def _calculate_payment_details(db, team):
+def _calculate_payment_details(db, team) -> tuple[dict[str, Any], str, str, bool]:
     """Calculates payment details for a team based on its status and members."""
     latest_payment = (
         db.query(models.Payment)
