@@ -407,7 +407,8 @@ def update_team(team_id):
                     existing_team = (
                         db.query(models.Team)
                         .filter(
-                            func.lower(models.Team.team_name) == func.lower(new_team_name),
+                            func.lower(models.Team.team_name)
+                            == func.lower(new_team_name),
                             models.Team.team_id != team_id,
                         )
                         .first()
@@ -423,7 +424,7 @@ def update_team(team_id):
                         database.log_action(
                             db,
                             session["client_id"],
-                            f"User updated Team name for Team ID {team_id} to '{new_team_name}'.",
+                            f"User updated team name for team id {team_id} to '{new_team_name}'.",
                         )
                         flash("نام تیم با موفقیت به‌روزرسانی شد!", "success")
                 except exc.IntegrityError:
@@ -488,9 +489,7 @@ def manage_members(team_id):
 
         members = (
             db.query(models.Member)
-            .options(
-                joinedload(models.Member.city).joinedload(models.City.province)
-            )
+            .options(joinedload(models.Member.city).joinedload(models.City.province))
             .filter(
                 models.Member.team_id == team_id,
                 models.Member.status == models.EntityStatus.ACTIVE,
@@ -637,7 +636,9 @@ def edit_member(team_id, member_id):
                     db, national_id, team_id, member_id_to_exclude=member_id
                 )
                 if has_conflict:
-                    flash(conflict_error or "این عضو در لیگ دیگری ثبت شده است.", "error")
+                    flash(
+                        conflict_error or "این عضو در لیگ دیگری ثبت شده است.", "error"
+                    )
                     return render_template(
                         template_name,
                         team=team,
@@ -660,7 +661,7 @@ def edit_member(team_id, member_id):
                 database.log_action(
                     db,
                     session["client_id"],
-                    f"Edited member '{member.name}' (ID: {member_id}) in Team ID {team_id}.",
+                    f"Edited member '{member.name}' (id: {member_id}) in team id {team_id}.",
                 )
 
                 flash("اطلاعات عضو با موفقیت به‌روزرسانی شد.", "success")
