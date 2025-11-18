@@ -197,7 +197,7 @@ const airocupApp = {
       }
     },
 
-    createFlash(type = "info", message = "", duration = 5000) {
+    createFlash(type = "info", message = "", duration = 8000) {
       const container = document.querySelector(
         airocupApp.constants.SELECTORS.FLASH_CONTAINER
       );
@@ -256,7 +256,7 @@ const airocupApp = {
       document
         .querySelectorAll(airocupApp.constants.SELECTORS.FLASH_MESSAGE)
         .forEach((flash, i) => {
-          setTimeout(() => this.dismissFlash(flash), 5000 + i * 150);
+          setTimeout(() => this.dismissFlash(flash), 8000 + i * 200);
         });
     },
 

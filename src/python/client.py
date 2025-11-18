@@ -38,6 +38,7 @@ from . import constants
 from . import models
 from . import utils
 from . import auth
+from flask_limiter.util import get_remote_address
 from .extensions import csrf_protector, limiter
 from .auth import login_required
 
@@ -67,6 +68,24 @@ def _seconds_since(dt: datetime.datetime | None) -> float | None:
 def _get_current_app() -> Flask:
     """Return the underlying Flask app instance for type checkers."""
     return cast(Flask, current_app._get_current_object())
+
+
+def _forgot_password_rate_limit_key() -> str:
+    """Return a stable rate limit key for forgot password attempts.
+
+    Prefer scoping to the identifier (email/phone) when valid so that page views
+    do not exhaust the limit and individual accounts are protected from abuse.
+    Fall back to the remote address for malformed submissions.
+    """
+
+    identifier = fa_to_en(request.form.get("identifier", "").strip())
+    if utils.is_valid_email(identifier):
+        return f"forgot-password:email:{identifier.lower()}"
+    if utils.is_valid_iranian_phone(identifier):
+        return f"forgot-password:phone:{identifier}"
+
+    ip_address = get_remote_address()
+    return f"forgot-password:ip:{ip_address}" if ip_address else "forgot-password:unknown"
 
 
 @client_blueprint.route("/signup", methods=["GET", "POST"])
@@ -992,7 +1011,9 @@ def verify_code():
 
 
 @client_blueprint.route("/ForgotPassword", methods=["GET", "POST"])
-@limiter.limit("5 per 15 minutes")
+@limiter.limit(
+    "10 per 30 minutes", methods=["POST"], key_func=_forgot_password_rate_limit_key
+)
 def forgot_password():
     """Render and handle the forgot password page"""
     if request.method == "POST":
@@ -1005,8 +1026,8 @@ def forgot_password():
         )
 
         success_message = (
-            "اگر کاربری با این مشخصات در سیستم وجود داشته باشد، "
-            "کد بازیابی برایتان ارسال خواهد شد."
+            "اگر حسابی با این مشخصات وجود داشته باشد، کد بازیابی برایتان ارسال"
+            " می‌شود. لطفاً برای دریافت پیام چند دقیقه صبر کنید."
         )
 
         if not identifier_type:
