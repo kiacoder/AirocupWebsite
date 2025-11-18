@@ -673,6 +673,56 @@ def admin_edit_news(article_id):
         )
 
 
+@admin_blueprint.route("/Admin/DeleteNews/<int:article_id>", methods=["POST"])
+@admin_required
+def admin_delete_news(article_id):
+    """Delete a news article and its assets."""
+
+    with database.get_db_session() as db:
+        article = (
+            db.query(models.News).filter(models.News.news_id == article_id).first()
+        )
+
+        if not article:
+            flash("خبر مورد نظر یافت نشد.", "error")
+            return redirect(url_for("admin.admin_manage_news"))
+
+        try:
+            # Remove uploaded image if present
+            if article.image_path:
+                image_path = os.path.join(
+                    current_app.config["UPLOAD_FOLDER_NEWS"], article.image_path
+                )
+                if os.path.exists(image_path):
+                    try:
+                        os.remove(image_path)
+                    except OSError:
+                        current_app.logger.exception(
+                            "failed to remove news image %s", image_path
+                        )
+
+            # Remove uploaded HTML template if it lives under the managed news html dir
+            if article.template_path and article.template_path.startswith("news/htmls/"):
+                html_path = os.path.join(constants.Path.static_dir, article.template_path)
+                if os.path.exists(html_path):
+                    try:
+                        os.remove(html_path)
+                    except OSError:
+                        current_app.logger.exception(
+                            "failed to remove news html template %s", html_path
+                        )
+
+            db.delete(article)
+            db.commit()
+            flash("خبر با موفقیت حذف شد.", "success")
+        except exc.SQLAlchemyError as error:
+            db.rollback()
+            current_app.logger.error("error deleting news %s: %s", article_id, error)
+            flash("خطا در حذف خبر.", "error")
+
+    return redirect(url_for("admin.admin_manage_news"))
+
+
 @admin_blueprint.route("/Admin/ManageClient/<int:client_id>")
 @admin_required
 def admin_manage_client(client_id):
