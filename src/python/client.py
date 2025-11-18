@@ -271,6 +271,17 @@ def login_client():
 
             database.log_login_attempt(db, identifier, ip_address, is_success=True)
 
+            if not client_check.email or not client_check.phone_number:
+                session.clear()
+                session["client_id"] = client_check.client_id
+                session["needs_contact_completion"] = True
+                session.permanent = True
+                flash(
+                    "برای ادامه، لطفا ایمیل و شماره تماس خود را تکمیل کنید.",
+                    "warning",
+                )
+                return redirect(url_for("client.complete_profile"))
+
             if client_check.is_phone_verified is not True:
                 new_code = "".join(random.choices(string.digits, k=6))
                 client_check.phone_verification_code = new_code
@@ -344,6 +355,128 @@ def login_client():
     return render_template(
         constants.client_html_names_data["login"], next_url=next_url or ""
     )
+
+
+@client_blueprint.route("/CompleteProfile", methods=["GET", "POST"])
+@login_required
+def complete_profile():
+    """Prompt the logged-in user to complete missing contact information."""
+
+    with database.get_db_session() as db:
+        client = (
+            db.query(models.Client)
+            .filter(models.Client.client_id == session.get("client_id"))
+            .first()
+        )
+
+        if not client:
+            session.clear()
+            flash("حساب کاربری شما یافت نشد. لطفا دوباره وارد شوید.", "error")
+            return redirect(url_for("client.login_client"))
+
+        if request.method == "POST":
+            csrf_protector.protect()
+
+            email = bleach.clean(request.form.get("email", "").strip())
+            phone_number = fa_to_en(request.form.get("phone_number", "").strip())
+
+            if not utils.is_valid_email(email):
+                flash("لطفا یک ایمیل معتبر وارد کنید.", "error")
+                return render_template(
+                    constants.client_html_names_data["complete_profile"],
+                    client=client,
+                    form_email=email,
+                    form_phone=phone_number,
+                )
+
+            if not utils.is_valid_iranian_phone(phone_number):
+                flash("شماره همراه معتبر نیست (باید با 09 شروع شود و ۱۱ رقم باشد).", "error")
+                return render_template(
+                    constants.client_html_names_data["complete_profile"],
+                    client=client,
+                    form_email=email,
+                    form_phone=phone_number,
+                )
+
+            email_taken = (
+                db.query(models.Client)
+                .filter(
+                    models.Client.email == email, models.Client.client_id != client.client_id
+                )
+                .first()
+            )
+            if email_taken:
+                flash("این ایمیل قبلا ثبت شده است.", "error")
+                return render_template(
+                    constants.client_html_names_data["complete_profile"],
+                    client=client,
+                    form_email=email,
+                    form_phone=phone_number,
+                )
+
+            phone_taken = (
+                db.query(models.Client)
+                .filter(
+                    models.Client.phone_number == phone_number,
+                    models.Client.client_id != client.client_id,
+                )
+                .first()
+            )
+            if phone_taken:
+                flash("این شماره همراه قبلا ثبت شده است.", "error")
+                return render_template(
+                    constants.client_html_names_data["complete_profile"],
+                    client=client,
+                    form_email=email,
+                    form_phone=phone_number,
+                )
+
+            client.email = email
+            if client.phone_number != phone_number:
+                client.phone_number = phone_number
+                client.is_phone_verified = False
+                client.phone_verification_code = None
+                client.verification_code_timestamp = None
+
+            try:
+                db.commit()
+                needs_resolution, problems = utils.check_for_data_completion_issues(
+                    db, client.client_id
+                )
+                session.clear()
+                session["client_id"] = client.client_id
+                session.permanent = True
+                session.pop("needs_contact_completion", None)
+
+                if needs_resolution:
+                    session["resolution_problems"] = {
+                        str(member_id): details
+                        for member_id, details in problems.items()
+                    }
+                    session["client_id_for_resolution"] = client.client_id
+                    flash(
+                        "حساب کاربری شما دارای اطلاعات ناقص یا نامعتبر است. لطفا موارد خواسته‌شده را تکمیل کنید.",
+                        "warning",
+                    )
+                    return redirect(url_for("client.resolve_data_issues"))
+
+                flash("اطلاعات تماس با موفقیت به‌روزرسانی شد.", "success")
+                return redirect(url_for("client.dashboard"))
+            except exc.SQLAlchemyError as error:
+                db.rollback()
+                current_app.logger.error(
+                    "failed to update contact info for client %s: %s",
+                    client.client_id,
+                    error,
+                )
+                flash("خطایی در هنگام ذخیره اطلاعات رخ داد. دوباره تلاش کنید.", "error")
+
+        return render_template(
+            constants.client_html_names_data["complete_profile"],
+            client=client,
+            form_email=client.email,
+            form_phone=client.phone_number,
+        )
 
 
 @client_blueprint.route("/MyHistory")
