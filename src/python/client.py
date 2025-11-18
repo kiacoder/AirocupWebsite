@@ -203,7 +203,9 @@ def resolve_data_issues():
 
         province_city_rows = [
             (province_name, city_name)
-            for province_name, city_name in db.query(models.Province.name, models.City.name)
+            for province_name, city_name in db.query(
+                models.Province.name, models.City.name
+            )
             .join(models.City)
             .all()
         ]
