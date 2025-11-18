@@ -13,7 +13,7 @@ AirocupWebsite is a Flask-based registration and administration portal for manag
 ## Project Structure
 - `src/python/app.py` – Flask application factory, HTTP routes, and CLI helpers.
 - `src/python/admin.py` – Admin blueprint: dashboards, search, archiving, restoration, and payment/news management.
-- `src/python/client.py` – Client-facing routes (team creation, member uploads, chats, etc.).
+- `src/python/client.py` – client-facing routes (team creation, member uploads, chats, etc.).
 - `src/python/models.py` – SQLAlchemy models and enums for all persisted entities.
 - `src/python/database.py` – Database engine setup, schema migration helpers, and validation utilities.
 - `src/templates/` – Jinja templates for admin, client, and global views.
@@ -118,5 +118,5 @@ The application uses SQLite via SQLAlchemy. A quick reference for the core table
 ## Admin Tips
 - Use **جستجوی پیشرفته** (Advanced Search) to filter by client/team status, payment state, and sorting preferences. Restoration actions are available directly from the results when an entity is archived.
 - In **مدیریت جامع تیم‌ها** (Manage Teams), filter by archive status or payment status to quickly find teams to restore or review.
-- The **مدیریت کاربران** (Manage Clients) page now supports searching and filtering archived accounts with one-click restoration.
+- The **مدیریت کاربران** (Manage clients) page now supports searching and filtering archived accounts with one-click restoration.
 
