@@ -571,5 +571,5 @@ def get_current_client(allow_inactive: bool = False) -> Optional[models.Client]:
                 )
             return query.first()
     except SQLAlchemyError as error:
-        current_app.logger.error(f"error fetching current Client: {error}")
+        current_app.logger.error(f"error fetching current client: {error}")
         return None
