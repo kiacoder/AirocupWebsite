@@ -61,9 +61,13 @@ def ensure_schema_upgrades():
         connection.execute(text(f"ALTER TABLE {table} ADD COLUMN {ddl};"))
 
     def _ensure_index(connection, name: str, table: str, columns: str):
-        existing = [row[1] for row in connection.execute(text(f"PRAGMA index_list('{table}');"))]
+        existing = [
+            row[1] for row in connection.execute(text(f"PRAGMA index_list('{table}');"))
+        ]
         if name not in existing:
-            connection.execute(text(f"CREATE INDEX IF NOT EXISTS {name} ON {table}({columns});"))
+            connection.execute(
+                text(f"CREATE INDEX IF NOT EXISTS {name} ON {table}({columns});")
+            )
 
     with db_engine.connect() as connection:
         if not _has_column(connection, "teams", "education_level"):
@@ -110,9 +114,15 @@ def ensure_schema_upgrades():
         connection.execute(
             text("UPDATE payments SET status='pending' WHERE status IS NULL;")
         )
-        _ensure_index(connection, "clients_status_email_idx", "clients", "status, email")
-        _ensure_index(connection, "clients_phone_status_idx", "clients", "phone_number, status")
-        _ensure_index(connection, "teams_client_status_idx", "teams", "client_id, status")
+        _ensure_index(
+            connection, "clients_status_email_idx", "clients", "status, email"
+        )
+        _ensure_index(
+            connection, "clients_phone_status_idx", "clients", "phone_number, status"
+        )
+        _ensure_index(
+            connection, "teams_client_status_idx", "teams", "client_id, status"
+        )
         _ensure_index(
             connection,
             "teams_status_registration_idx",
@@ -122,8 +132,12 @@ def ensure_schema_upgrades():
         _ensure_index(
             connection, "payments_status_upload_idx", "payments", "status, upload_date"
         )
-        _ensure_index(connection, "payments_team_status_idx", "payments", "team_id, status")
-        _ensure_index(connection, "members_team_status_idx", "members", "team_id, status")
+        _ensure_index(
+            connection, "payments_team_status_idx", "payments", "team_id, status"
+        )
+        _ensure_index(
+            connection, "members_team_status_idx", "members", "team_id, status"
+        )
 
 
 @contextmanager
@@ -140,7 +154,7 @@ def get_db_session() -> Iterator[Session]:
 def has_existing_leader(
     db: Session, team_id: int, member_id_to_exclude: Optional[int] = None
 ) -> bool:
-    "Check if team already has leader, optionally excluding specific member ID"
+    "Check if team already has leader, optionally excluding specific member id"
     query = db.query(models.Member).filter(
         models.Member.team_id == team_id, models.Member.role == models.MemberRole.LEADER
     )
@@ -160,7 +174,7 @@ def get_all_active_clients(db: Session) -> list[models.Client]:
 
 
 def get_team_by_id(db: Session, team_id: int) -> Optional[models.Team]:
-    "Retrieve a team by its ID"
+    "Retrieve a team by its id"
     return db.query(models.Team).filter(models.Team.team_id == team_id).first()
 
 
@@ -252,7 +266,7 @@ def update_client_details(db: Session, client_id: int, clean_data: dict):
 
 
 def get_client_by(db: Session, identifier: str, value: Any) -> Optional[models.Client]:
-    "Retrieve a Client by specified identifier"
+    "Retrieve a client by specified identifier"
     if identifier == "client_id":
         return db.query(models.Client).filter(models.Client.client_id == value).first()
     elif identifier == "email":
