@@ -27,12 +27,51 @@
               <input type="search" id="q" name="q" placeholder="نام تیم، ایمیل یا تلفن" value="{{ query }}" />
             </div>
             <div class="form-group">
+              <label for="client_status">وضعیت کاربر</label>
+              <select id="client_status" name="client_status">
+                <option value="all" {% if client_status=='all' %}selected{% endif %}>همه</option>
+                <option value="active" {% if client_status=='active' %}selected{% endif %}>فقط فعال</option>
+                <option value="archived" {% if client_status=='archived' %}selected{% endif %}>فقط آرشیو شده</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="client_sort">مرتب‌سازی کاربران</label>
+              <select id="client_sort" name="client_sort">
+                <option value="recent" {% if client_sort=='recent' %}selected{% endif %}>جدیدترین ثبت‌نام</option>
+                <option value="oldest" {% if client_sort=='oldest' %}selected{% endif %}>قدیمی‌ترین</option>
+                <option value="email" {% if client_sort=='email' %}selected{% endif %}>بر اساس ایمیل</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="team_status">وضعیت تیم</label>
+              <select id="team_status" name="team_status">
+                <option value="all" {% if team_status=='all' %}selected{% endif %}>همه</option>
+                <option value="active" {% if team_status=='active' %}selected{% endif %}>فقط فعال</option>
+                <option value="archived" {% if team_status=='archived' %}selected{% endif %}>فقط آرشیو شده</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="team_sort">مرتب‌سازی تیم‌ها</label>
+              <select id="team_sort" name="team_sort">
+                <option value="recent" {% if team_sort=='recent' %}selected{% endif %}>تازه‌ترین</option>
+                <option value="oldest" {% if team_sort=='oldest' %}selected{% endif %}>قدیمی‌ترین</option>
+                <option value="name" {% if team_sort=='name' %}selected{% endif %}>نام تیم</option>
+              </select>
+            </div>
+            <div class="form-group">
               <label for="payment_status">وضعیت پرداخت</label>
               <select id="payment_status" name="payment_status">
                 <option value="">همه</option>
                 {% for status in enums.PaymentStatus %}
                 <option value="{{ status.name }}" {% if payment_status==status.name %}selected{% endif %}>{{ status.label }}</option>
                 {% endfor %}
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="payment_sort">مرتب‌سازی پرداخت</label>
+              <select id="payment_sort" name="payment_sort">
+                <option value="recent" {% if payment_sort=='recent' %}selected{% endif %}>آخرین بارگذاری</option>
+                <option value="amount" {% if payment_sort=='amount' %}selected{% endif %}>بیشترین مبلغ</option>
               </select>
             </div>
           </div>
@@ -51,7 +90,7 @@
       <header class="admin-surface__header">
         <div class="admin-surface__title">
           <h2><i class="fas fa-users"></i> نتایج کاربران</h2>
-          <p>کاربران مطابق کلیدواژه وارد شده.</p>
+          <p>کاربران مطابق کلیدواژه و فیلتر وضعیت.</p>
         </div>
       </header>
       <div class="admin-surface__body">
@@ -73,6 +112,15 @@
                 <td>{{ c.status.label if c.status else '—' }}</td>
                 <td class="admin-table__actions">
                   <a href="{{ url_for('admin.admin_manage_client', client_id=c.client_id) }}" class="btn btn-primary btn-small">جزئیات</a>
+                  {% if c.status != enums.EntityStatus.ACTIVE %}
+                  <form method="POST" action="{{ url_for('admin.admin_restore_client', client_id=c.client_id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <button type="submit" class="btn btn-success btn-small">
+                      <i class="fas fa-undo"></i>
+                      بازگردانی
+                    </button>
+                  </form>
+                  {% endif %}
                 </td>
               </tr>
               {% else %}
@@ -88,7 +136,7 @@
       <header class="admin-surface__header">
         <div class="admin-surface__title">
           <h2><i class="fas fa-users-cog"></i> نتایج تیم‌ها</h2>
-          <p>تیم‌های منطبق با نام وارد شده.</p>
+          <p>تیم‌های منطبق با نام یا وضعیت انتخاب شده.</p>
         </div>
       </header>
       <div class="admin-surface__body">
@@ -110,6 +158,15 @@
                 <td>{{ t.status.label if t.status else '—' }}</td>
                 <td class="admin-table__actions">
                   <a href="{{ url_for('admin.admin_edit_team', team_id=t.team_id) }}" class="btn btn-primary btn-small">مدیریت</a>
+                  {% if t.status != enums.EntityStatus.ACTIVE %}
+                  <form method="POST" action="{{ url_for('admin.admin_restore_team', team_id=t.team_id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <button type="submit" class="btn btn-success btn-small">
+                      <i class="fas fa-undo"></i>
+                      بازگردانی
+                    </button>
+                  </form>
+                  {% endif %}
                 </td>
               </tr>
               {% else %}
