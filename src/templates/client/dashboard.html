@@ -8,6 +8,61 @@
     </p>
   </div>
 
+  <div
+    class="card"
+    style="
+      background: linear-gradient(135deg, var(--color-primary-light), #fff);
+      border: 1px solid var(--color-primary-light);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+      margin-bottom: 1.5rem;
+    "
+  >
+    <div
+      style="
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+        align-items: stretch;
+      "
+    >
+      <div style="display: flex; flex-direction: column; gap: 0.25rem">
+        <span class="form-subtitle" style="margin-bottom: 0; color: var(--color-text)">
+          <i class="fas fa-hand-holding-usd" style="color: var(--color-primary)"></i>
+          هزینه ورودی هر تیم
+        </span>
+        <strong style="font-size: 1.4rem">
+          {{ (payment.fee_team or 0) | humanize_number | persian_digits }} ریال
+        </strong>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 0.25rem">
+        <span class="form-subtitle" style="margin-bottom: 0; color: var(--color-text)">
+          <i class="fas fa-user-tag" style="color: var(--color-secondary)"></i>
+          هزینه هر عضو فعال
+        </span>
+        <strong style="font-size: 1.4rem">
+          {{ (payment.fee_per_person or 0) | humanize_number | persian_digits }} ریال
+        </strong>
+        <small style="color: var(--color-text-muted)">
+          برای اعضای جدید در هر لیگ: {{ (payment.new_member_fee_per_league or 0) | humanize_number | persian_digits }} ریال
+        </small>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 0.25rem">
+        <span class="form-subtitle" style="margin-bottom: 0; color: var(--color-text)">
+          <i class="fas fa-percent" style="color: var(--color-primary-dark)"></i>
+          تخفیف لیگ دوم
+        </span>
+        <strong style="font-size: 1.4rem">
+          {{ (payment.league_two_discount or 0) | persian_digits }}%
+        </strong>
+        <small style="color: var(--color-text-muted)">
+          هنگام ثبت لیگ دوم برای همان تیم اعمال می‌شود.
+        </small>
+      </div>
+    </div>
+  </div>
+
   <div class="form-grid">
     <div
       class="card"
@@ -256,9 +311,6 @@
         <div class="team-card-meta-item">
           <span class="team-card-meta-label"
             ><i class="fas fa-map-marker-alt"></i> استان‌ها</span
-          >
-          <strong class="team-card-meta-value team-card-meta-value--muted"
-            >{{ team.average_provinces }}</strong
           >
           <strong style="font-size: 0.9rem"
             >{{ team.average_provinces }}</strong
