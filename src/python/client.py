@@ -821,7 +821,11 @@ def verify_code():
                     client_ts = _ensure_aware(client.verification_code_timestamp)
 
                     if (
-                        client_ts and (datetime.datetime.now(datetime.timezone.utc) - client_ts).total_seconds() > 900
+                        client_ts
+                        and (
+                            datetime.datetime.now(datetime.timezone.utc) - client_ts
+                        ).total_seconds()
+                        > 900
                     ):
                         flash_message = (
                             "کد تایید منقضی شده است. لطفا دوباره درخواست دهید."
@@ -867,7 +871,11 @@ def verify_code():
                     reset_ts = _ensure_aware(reset_record.timestamp)
 
                     if (
-                        reset_ts and (datetime.datetime.now(datetime.timezone.utc) - reset_ts).total_seconds() > 900
+                        reset_ts
+                        and (
+                            datetime.datetime.now(datetime.timezone.utc) - reset_ts
+                        ).total_seconds()
+                        > 900
                     ):
                         db.delete(reset_record)
                         db.commit()
@@ -1100,7 +1108,11 @@ def reset_password():
                     timestamp = _ensure_aware(reset_record.timestamp)
 
                     if (
-                        timestamp and (datetime.datetime.now(datetime.timezone.utc) - timestamp).total_seconds() > 900
+                        timestamp
+                        and (
+                            datetime.datetime.now(datetime.timezone.utc) - timestamp
+                        ).total_seconds()
+                        > 900
                     ):
                         db.delete(reset_record)
                         db.commit()
@@ -1453,8 +1465,7 @@ def dashboard():
             .all()
         )
         active_member_counts = {
-            team_id: int(member_count)
-            for team_id, member_count in member_counts
+            team_id: int(member_count) for team_id, member_count in member_counts
         }
 
         subquery = (
@@ -1642,7 +1653,7 @@ def submit_data_resolution():
                     return redirect(url_for("client.dashboard"))
                 else:
                     current_app.logger.error(
-                        "Client not found for ID %s during resolution.",
+                        "client not found for id %s during resolution.",
                         client_id_for_resolution,
                     )
                     flash("خطا: اطلاعات کاربری برای اصلاح یافت نشد.", "error")
@@ -1758,7 +1769,7 @@ def delete_member(team_id, member_id):
                 database.log_action(
                     db,
                     session["client_id"],
-                    f"User marked member '{member_name}' as withdrawn from Team ID {team_id}.",
+                    f"User marked member '{member_name}' as withdrawn from team id {team_id}.",
                 )
 
                 db.commit()
@@ -2005,8 +2016,6 @@ def add_member(team_id):
                     "برای افزودن عضو، ابتدا باید حداقل یک لیگ (مقطع تحصیلی) برای تیم خود انتخاب کنید."
                 )
 
-                1 if team.league_two_id is not None else 0
-            )
             selected_leagues_count = 1 + (1 if team.league_two_id is not None else 0)
             selected_leagues_count = max(1, selected_leagues_count)
             new_member_fee_per_league = (
