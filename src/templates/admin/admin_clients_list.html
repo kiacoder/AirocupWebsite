@@ -74,30 +74,30 @@
             <tbody>
               {% for client_data in clients %}
               <tr>
-                <td>#{{ ClientData.client_id | persian_digits }}</td>
-                <td dir="ltr">{{ ClientData.email }}</td>
-                <td dir="ltr">{{ ClientData.phone_number | persian_digits }}</td>
-                <td>{{ ClientData.registration_date | formatdate | persian_digits }}</td>
-                <td>{{ ClientData.status.label if ClientData.status else '—' }}</td>
+                <td>#{{ client_data.client_id | persian_digits }}</td>
+                <td dir="ltr">{{ client_data.email }}</td>
+                <td dir="ltr">{{ client_data.phone_number | persian_digits }}</td>
+                <td>{{ client_data.registration_date | formatdate | persian_digits }}</td>
+                <td>{{ client_data.status.label if client_data.status else '—' }}</td>
                 <td class="admin-table__actions">
                   <a
-                    href="{{ url_for('admin.admin_manage_client', client_id=ClientData.client_id) }}"
+                    href="{{ url_for('admin.admin_manage_client', client_id=client_data.client_id) }}"
                     class="btn btn-primary btn-small"
                   >
                     <i class="fas fa-tasks"></i>
                     مدیریت
                   </a>
-                  {% if ClientData.status == enums.EntityStatus.ACTIVE %}
+                  {% if client_data.status == enums.EntityStatus.ACTIVE %}
                   <form
                     method="POST"
-                    action="{{ url_for('admin.admin_delete_client', client_id=ClientData.client_id) }}"
+                    action="{{ url_for('admin.admin_delete_client', client_id=client_data.client_id) }}"
                   >
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                     <button
                       type="submit"
                       class="btn btn-danger btn-small delete-btn"
                       data-modal-title="تایید آرشیو کاربر"
-                      data-modal-body="آیا از آرشیو کردن کاربر <strong>{{ ClientData.email }}</strong> اطمینان دارید؟"
+                      data-modal-body="آیا از آرشیو کردن کاربر <strong>{{ client_data.email }}</strong> اطمینان دارید؟"
                       data-modal-confirm-text="بله، آرشیو کن"
                       data-modal-confirm-class="btn-danger"
                     >
@@ -108,7 +108,7 @@
                   {% else %}
                   <form
                     method="POST"
-                    action="{{ url_for('admin.admin_restore_client', client_id=ClientData.client_id) }}"
+                    action="{{ url_for('admin.admin_restore_client', client_id=client_data.client_id) }}"
                   >
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                     <button type="submit" class="btn btn-success btn-small">
