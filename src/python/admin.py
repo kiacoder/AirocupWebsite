@@ -342,7 +342,7 @@ def admin_update_payment_status(team_id):
         except exc.SQLAlchemyError as error:
             db.rollback()
             current_app.logger.error(
-                "error updating payment status for Team %s: %s", team_id, error
+                "error updating payment status for team %s: %s", team_id, error
             )
             flash("خطایی در هنگام به‌روزرسانی وضعیت پرداخت رخ داد.", "error")
 
@@ -367,7 +367,7 @@ def admin_delete_team(team_id):
             database.log_action(
                 db,
                 team.client_id,
-                f"admin archived Team '{team.team_name}' (ID: {team_id}) as withdrawn.",
+                f"admin archived team '{team.team_name}' (id: {team_id}) as withdrawn.",
                 is_admin_action=True,
             )
 
@@ -380,7 +380,7 @@ def admin_delete_team(team_id):
         except exc.SQLAlchemyError as error:
             db.rollback()
             current_app.logger.error(
-                "error in admin_delete_team for Team %s: %s", team_id, error
+                "error in admin_delete_team for team %s: %s", team_id, error
             )
             flash("خطایی در هنگام آرشیو تیم رخ داد.", "error")
 
@@ -434,7 +434,7 @@ def admin_delete_member(team_id, member_id):
         database.log_action(
             db,
             getattr(member.team, "client_id"),
-            f"admin marked member '{member.name}' as resigned from Team ID {team_id}.",
+            f"admin marked member '{member.name}' as resigned from team id {team_id}.",
             is_admin_action=True,
         )
 
@@ -981,7 +981,7 @@ def admin_edit_team(team_id):
             except (exc.SQLAlchemyError, ValueError) as error:
                 db.rollback()
                 current_app.logger.error(
-                    "error in AdminEditTeam for Team %s: %s", team_id, error
+                    "error in admin_edit_team for team %s: %s", team_id, error
                 )
                 flash("خطایی در هنگام ویرایش تیم رخ داد.", "error")
 
@@ -1213,7 +1213,7 @@ def admin_edit_client(client_id):
 
         except (exc.SQLAlchemyError, ValueError) as error:
             db.rollback()
-            current_app.logger.error("error editing Client %s: %s", client_id, error)
+            current_app.logger.error("error editing client %s: %s", client_id, error)
             flash("خطایی در هنگام ویرایش اطلاعات کاربر رخ داد.", "error")
 
     return redirect(url_for("admin.admin_manage_client", client_id=client_id))
@@ -1547,7 +1547,7 @@ def admin_manage_payment(payment_id, action):
                 database.log_action(
                     db_session,
                     payment.client_id,
-                    f"admin approved payment ID {payment_id} for Team ID {payment.team_id}.",
+                    f"admin approved payment id {payment_id} for team id {payment.team_id}.",
                     is_admin_action=True,
                 )
                 flash("پرداخت با موفقیت تایید شد و اعضای تیم فعال شدند.", "success")
@@ -1557,7 +1557,7 @@ def admin_manage_payment(payment_id, action):
                 database.log_action(
                     db_session,
                     payment.client_id,
-                    f"admin rejected payment ID {payment_id} for Team ID {payment.team_id}.",
+                    f"admin rejected payment id {payment_id} for team id {payment.team_id}.",
                     is_admin_action=True,
                 )
                 flash("پرداخت رد شد.", "warning")
