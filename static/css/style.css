@@ -3006,11 +3006,11 @@ select option {
   position: absolute;
   left: 8%;
   right: 8%;
-  bottom: -12px;
-  height: 26px;
-  background: linear-gradient(180deg, rgba(123, 75, 170, 0.35), rgba(248, 249, 250, 0));
-  filter: blur(8px);
-  opacity: 0.8;
+  bottom: -10px;
+  height: 18px;
+  background: linear-gradient(180deg, rgba(123, 75, 170, 0.42), rgba(123, 75, 170, 0));
+  filter: blur(6px);
+  opacity: 0.6;
   pointer-events: none;
 }
 .logo {
@@ -5166,7 +5166,7 @@ body.body-no-scroll {
 }
 
 .app-container {
-  padding: 80px 0;
+  padding: 64px 0 60px;
 }
 
 .page-header {
@@ -5209,16 +5209,18 @@ body.body-no-scroll {
 }
 
 .leagues-page .accordion-item {
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius-small);
+  border: 1px solid rgba(123, 75, 170, 0.12);
+  border-radius: var(--border-radius);
   margin-bottom: 1.25rem;
-  box-shadow: var(--shadow-sm);
-  background: var(--color-surface);
+  box-shadow: 0 10px 35px rgba(17, 24, 39, 0.1);
+  background: linear-gradient(135deg, #ffffff, #f8f4ff);
   overflow: hidden;
+  position: relative;
 }
 
 .leagues-page .accordion-button {
-  font-weight: 700;
+  font-weight: 800;
+  padding: 1.1rem 1.5rem;
 }
 
 .leagues-page .accordion-title {
@@ -5226,18 +5228,48 @@ body.body-no-scroll {
   align-items: center;
   gap: 12px;
   font-size: 1.1rem;
+  color: #221433;
+}
+
+.leagues-page .accordion-title i {
+  background: linear-gradient(135deg, rgba(123, 75, 170, 0.12), rgba(123, 75, 170, 0.28));
+  color: var(--color-primary);
+  padding: 10px;
+  border-radius: 14px;
 }
 
 .leagues-page .accordion-content {
-  border-top: 1px solid var(--color-border);
-  background: var(--color-background);
-  padding: 0 1.75rem 1.5rem;
+  border-top: 1px solid rgba(123, 75, 170, 0.08);
+  background: #fbfbff;
+  padding: 0 1.75rem 1.6rem;
 }
 
 .leagues-page .accordion-content p {
   margin: 0;
   line-height: 1.9;
   color: var(--color-text);
+}
+
+.sponsors-page.app-container {
+  padding-bottom: 28px;
+}
+
+.sponsors-page .final-cta {
+  margin-top: 32px;
+  padding: 48px 0 56px;
+  background: linear-gradient(135deg, rgba(123, 75, 170, 0.08), rgba(10, 28, 58, 0.08));
+  border-radius: var(--border-radius);
+  box-shadow: 0 14px 40px rgba(17, 24, 39, 0.12);
+}
+
+.sponsors-page .final-cta .container {
+  display: grid;
+  gap: 12px;
+}
+
+.gallery-page .gallery-grid {
+  margin-top: 2rem;
+  gap: 24px;
 }
 
 .gallery-page .gallery-grid {
@@ -5263,6 +5295,14 @@ body.body-no-scroll {
   height: 100%;
   object-fit: cover;
   min-height: 220px;
+}
+
+.gallery-page .gallery-item {
+  aspect-ratio: 4 / 3;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 #image-modal .modal-content {

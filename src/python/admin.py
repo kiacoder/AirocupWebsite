@@ -19,7 +19,7 @@ from flask import (
     current_app,
 )
 import persiantools.digits  # type:ignore
-from sqlalchemy import exc, func, select, or_
+from sqlalchemy import exc, func, select, or_, case
 from sqlalchemy.sql.functions import count
 from sqlalchemy.orm import joinedload, subqueryload
 import bleach
@@ -862,6 +862,9 @@ def admin_manage_teams():
         )
 
         member_count_label = count(models.Member.member_id).label("member_count")
+        leader_count_label = func.sum(
+            case((models.Member.role == models.MemberRole.LEADER, 1), else_=0)
+        ).label("leader_count")
 
         teams_query = (
             db.query(
@@ -869,6 +872,7 @@ def admin_manage_teams():
                 models.Client.email.label("client_email"),
                 member_count_label,
                 last_payment_subquery.label("last_payment_status"),
+                leader_count_label,
             )
             .join(models.Client, models.Team.client_id == models.Client.client_id)
             .outerjoin(
@@ -881,6 +885,8 @@ def admin_manage_teams():
             )
             .group_by(models.Team.team_id, models.Client.email)
         )
+
+        incomplete_only = request.args.get("incomplete") == "1"
 
         if status_filter == "archived":
             teams_query = teams_query.filter(
@@ -915,6 +921,11 @@ def admin_manage_teams():
                 models.Team.education_level == education_filter
             )
 
+        if incomplete_only:
+            teams_query = teams_query.having(
+                or_(leader_count_label == 0, models.Team.team_name == None)
+            )
+
         if payment_status:
             try:
                 status_enum = getattr(models.PaymentStatus, payment_status)
@@ -938,7 +949,13 @@ def admin_manage_teams():
         team_rows = teams_query.all()
 
         all_teams = []
-        for team, client_email, member_count, last_payment_status in team_rows:
+        for (
+            team,
+            client_email,
+            member_count,
+            last_payment_status,
+            leader_count,
+        ) in team_rows:
             setattr(
                 team, "last_payment_status", _coerce_payment_status(last_payment_status)
             )
@@ -954,6 +971,8 @@ def admin_manage_teams():
                     league_two=team.league_two,
                     education_level=team.education_level,
                     team_registration_date=team.team_registration_date,
+                    has_leader=bool(leader_count),
+                    is_name_missing=not bool(team.team_name),
                 )
             )
 
@@ -966,6 +985,7 @@ def admin_manage_teams():
         league_filter=league_id,
         education_filter=education_filter,
         keyword=keyword,
+        incomplete_filter=incomplete_only,
         enums=models,
     )
 
@@ -1265,11 +1285,11 @@ def admin_clients_list():
 @admin_required
 def admin_add_client():
     "add a new client to the database"
-    email = (
+    email = bleach.clean(
         (request.form.get("email") or request.form.get("Email") or "").strip().lower()
     )
-    phone = (
-        request.form.get("phone_number") or request.form.get("PhoneNumber") or ""
+    phone = persiantools.digits.fa_to_en(
+        (request.form.get("phone_number") or request.form.get("PhoneNumber") or "")
     ).strip()
     password = request.form.get("password") or request.form.get("Password") or ""
     registration_raw = request.form.get("registration_date")
@@ -1283,14 +1303,21 @@ def admin_add_client():
             flash(date_error, "error")
             return redirect(url_for("admin.admin_clients_list"))
 
-    if not all(
-        [
-            utils.is_valid_email(email),
-            utils.is_valid_iranian_phone(phone),
-            password,
-        ]
-    ):
-        flash("لطفا تمام فیلدها را با مقادیر معتبر پر کنید.", "error")
+    validation_errors = []
+
+    if not utils.is_valid_email(email):
+        validation_errors.append("ایمیل وارد شده معتبر نیست.")
+
+    if not utils.is_valid_iranian_phone(phone):
+        validation_errors.append(
+            "شماره همراه معتبر نیست (لطفا با ارقام انگلیسی و فرمت 09XXXXXXXXX وارد کنید)."
+        )
+
+    if not password:
+        validation_errors.append("رمز عبور موقت را وارد کنید.")
+
+    if validation_errors:
+        flash(" ".join(validation_errors), "error")
         return redirect(url_for("admin.admin_clients_list"))
 
     with database.get_db_session() as db:
