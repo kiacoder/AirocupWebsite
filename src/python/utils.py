@@ -13,7 +13,6 @@ from flask import Flask, session, current_app
 from persiantools.digits import fa_to_en  # type: ignore
 import requests  # type: ignore
 import bleach  # type: ignore
-from . import database
 from . import models
 from . import constants
 
@@ -388,12 +387,8 @@ def create_member_from_form_data(
     team_id: Optional[int] = None,
     member_id: Optional[int] = None,
 ) -> Tuple[Optional[dict], Optional[str]]:
-    """Create a member dictionary from form data after validation.
-
-    ``team_id`` and ``member_id`` are optional and let the validator ignore the
-    current record when editing as well as block duplicates within the same
-    team without preventing members from joining different teams/leagues.
-    """
+    """Create a member dictionary from form data after validation"""
+    from . import database
     try:
         name = bleach.clean(form_data.get("name", "").strip())
         national_id = fa_to_en(form_data.get("national_id", "").strip())
@@ -475,6 +470,7 @@ def validate_member_for_resolution(
 
 def check_for_data_completion_issues(db: Session, client_id: int) -> Tuple[bool, dict]:
     "Check all teams and members for data completion issues"
+    from . import database
     client = (
         db.query(models.Client).filter(models.Client.client_id == client_id).first()
     )
@@ -511,6 +507,7 @@ def internal_add_member(
     db: Session, team_id: int, form_data: dict
 ) -> Tuple[Optional[models.Member], Optional[str]]:
     "Add a new member to a team after validating the data"
+    from . import database
     new_member_data, error = create_member_from_form_data(
         db, form_data, team_id=team_id
     )
@@ -557,6 +554,7 @@ def internal_add_member(
 
 def get_current_client(allow_inactive: bool = False) -> Optional[models.Client]:
     """Retrieve the currently logged-in client based on session data."""
+    from . import database
     client_id = session.get("client_id")
     if not client_id:
         return None

@@ -181,7 +181,7 @@ def signup():
 @client_blueprint.route("/ResolveIssues", methods=["GET"])
 @auth.resolution_required
 def resolve_data_issues():
-    """Render the data resolution form for clients with incomplete/invalid data."""
+    """Render the data resolution form for clients with incomplete/invalid data"""
     province_city_rows: list[tuple[str, str]] = []
     with database.get_db_session() as db:
         client = (
@@ -210,30 +210,30 @@ def resolve_data_issues():
             .all()
         ]
 
-    session_problems = session.get("resolution_problems", {})
-    normalized_problems = {
-        int(member_id): details
-        for member_id, details in session_problems.items()
-        if str(member_id).isdigit()
-    }
+        session_problems = session.get("resolution_problems", {})
+        normalized_problems = {
+            int(member_id): details
+            for member_id, details in session_problems.items()
+            if str(member_id).isdigit()
+        }
 
-    province_city_map: dict[str, list[str]] = {}
-    for province_name, city_name in province_city_rows:
-        province_city_map.setdefault(province_name, []).append(city_name)
+        province_city_map: dict[str, list[str]] = {}
+        for province_name, city_name in province_city_rows:
+            province_city_map.setdefault(province_name, []).append(city_name)
 
-    for cities in province_city_map.values():
-        cities.sort()
+        for cities in province_city_map.values():
+            cities.sort()
 
-    form_context = utils.get_form_context()
-    if province_city_map:
-        form_context = {**form_context, "Provinces": province_city_map}
+        form_context = utils.get_form_context()
+        if province_city_map:
+            form_context = {**form_context, "Provinces": province_city_map}
 
-    return render_template(
-        constants.client_html_names_data["resolve_issues"],
-        client=client,
-        problems=normalized_problems,
-        **form_context,
-    )
+        return render_template(
+            constants.client_html_names_data["resolve_issues"],
+            client=client,
+            problems=normalized_problems,
+            **form_context,
+        )
 
 
 @client_blueprint.route("/Login", methods=["GET", "POST"])
@@ -462,14 +462,14 @@ def update_team(team_id):
                 .all()
             )
 
-    return render_template(
-        constants.client_html_names_data["update_team"],
-        team=team,
-        is_paid=is_paid,
-        has_any_payment=has_any_payment,
-        is_payment_approved=is_payment_approved,
-        documents=documents,
-    )
+        return render_template(
+            constants.client_html_names_data["update_team"],
+            team=team,
+            is_paid=is_paid,
+            has_any_payment=has_any_payment,
+            is_payment_approved=is_payment_approved,
+            documents=documents,
+        )
 
 
 @client_blueprint.route("/Team/<int:team_id>/members")
@@ -505,42 +505,43 @@ def manage_members(team_id):
         is_paid = database.check_if_team_is_paid(db, team_id)
         has_any_payment = database.has_team_made_any_payment(db, team_id)
 
-    return render_template(
-        constants.client_html_names_data["members"],
-        team=team,
-        members=members,
-        is_paid=is_paid,
-        has_any_payment=has_any_payment,
-        education_levels=constants.education_levels,
-        form_data=None,
-        **utils.get_form_context(),
-    )
+        return render_template(
+            constants.client_html_names_data["members"],
+            team=team,
+            members=members,
+            is_paid=is_paid,
+            has_any_payment=has_any_payment,
+            education_levels=constants.education_levels,
+            form_data=None,
+            **utils.get_form_context(),
+        )
 
 
 @client_blueprint.route("/SupportChat")
 def support_chat():
     "Render the support chat page for the logged-in or resolving client"
+    with database.get_db_session() as db:
+        client_id = session.get("client_id")
+        if not client_id:
+            resolution_id = session.get("client_id_for_resolution")
+            if isinstance(resolution_id, int):
+                client_id = resolution_id
+        client_user = None
+        if client_id:
+            client_user = (
+                db.query(models.Client)
+                .filter(models.Client.client_id == client_id)
+                .first()
+            )
 
-    client_user = utils.get_current_client(allow_inactive=True)
+        if not client_user:
+            flash("برای دسترسی به پشتیبانی ابتدا وارد حساب کاربری شوید.", "warning")
+            return redirect(url_for("client.login_client", next=request.url))
 
-    if not client_user:
-        resolution_id = session.get("client_id_for_resolution")
-        if isinstance(resolution_id, int):
-            with database.get_db_session() as db:
-                client_user = (
-                    db.query(models.Client)
-                    .filter(models.Client.client_id == resolution_id)
-                    .first()
-                )
-
-    if not client_user:
-        flash("برای دسترسی به پشتیبانی ابتدا وارد حساب کاربری شوید.", "warning")
-        return redirect(url_for("client.login_client", next=request.url))
-
-    return render_template(
-        constants.client_html_names_data["support_chat"],
-        user=client_user,
-    )
+        return render_template(
+            constants.client_html_names_data["support_chat"],
+            user=client_user,
+        )
 
 
 @client_blueprint.route(
@@ -548,7 +549,7 @@ def support_chat():
 )
 @auth.login_required
 def edit_member(team_id, member_id):
-    """Render and handle editing a member's information in a specific team."""
+    """Render and handle editing a member's information in a specific team"""
     template_name = constants.client_html_names_data["edit_member"]
 
     with database.get_db_session() as db:
@@ -687,13 +688,13 @@ def edit_member(team_id, member_id):
                 form_data=request.form,
                 **utils.get_form_context(),
             )
-    return render_template(
-        template_name,
-        team=team,
-        member=member,
-        form_data=None,
-        **utils.get_form_context(),
-    )
+        return render_template(
+            template_name,
+            team=team,
+            member=member,
+            form_data=None,
+            **utils.get_form_context(),
+        )
 
 
 @client_blueprint.route("/ReceiptUploads/<int:client_id>/<filename>")
