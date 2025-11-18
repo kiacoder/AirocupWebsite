@@ -1285,11 +1285,11 @@ def admin_clients_list():
 @admin_required
 def admin_add_client():
     "add a new client to the database"
-    email = (
+    email = bleach.clean(
         (request.form.get("email") or request.form.get("Email") or "").strip().lower()
     )
-    phone = (
-        request.form.get("phone_number") or request.form.get("PhoneNumber") or ""
+    phone = persiantools.digits.fa_to_en(
+        (request.form.get("phone_number") or request.form.get("PhoneNumber") or "")
     ).strip()
     password = request.form.get("password") or request.form.get("Password") or ""
     registration_raw = request.form.get("registration_date")
@@ -1303,14 +1303,21 @@ def admin_add_client():
             flash(date_error, "error")
             return redirect(url_for("admin.admin_clients_list"))
 
-    if not all(
-        [
-            utils.is_valid_email(email),
-            utils.is_valid_iranian_phone(phone),
-            password,
-        ]
-    ):
-        flash("لطفا تمام فیلدها را با مقادیر معتبر پر کنید.", "error")
+    validation_errors = []
+
+    if not utils.is_valid_email(email):
+        validation_errors.append("ایمیل وارد شده معتبر نیست.")
+
+    if not utils.is_valid_iranian_phone(phone):
+        validation_errors.append(
+            "شماره همراه معتبر نیست (لطفا با ارقام انگلیسی و فرمت 09XXXXXXXXX وارد کنید)."
+        )
+
+    if not password:
+        validation_errors.append("رمز عبور موقت را وارد کنید.")
+
+    if validation_errors:
+        flash(" ".join(validation_errors), "error")
         return redirect(url_for("admin.admin_clients_list"))
 
     with database.get_db_session() as db:
