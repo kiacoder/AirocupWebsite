@@ -289,6 +289,13 @@
           <div class="header-cta" id="header-cta">
             <div class="header-actions header-cta__actions" id="header-actions">
               {% if 'client_id' in session %}
+              {% if session.get('needs_contact_completion') %}
+              <a
+                href="{{ url_for('client.complete_profile') }}"
+                class="btn btn-warning"
+                >تکمیل اطلاعات تماس</a
+              >
+              {% endif %}
               <a href="{{ url_for('client.dashboard') }}" class="btn btn-secondary"
                 >داشبورد</a
               >
@@ -395,6 +402,13 @@
           </ul>
           <div class="mobile-cta">
             {% if 'client_id' in session %}
+            {% if session.get('needs_contact_completion') %}
+            <a
+              href="{{ url_for('client.complete_profile') }}"
+              class="btn btn-warning"
+              >تکمیل اطلاعات تماس</a
+            >
+            {% endif %}
             <a
               href="{{ url_for('client.dashboard') }}"
               class="btn btn-secondary"

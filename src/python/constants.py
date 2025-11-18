@@ -1513,6 +1513,7 @@ client_html_names_data = {
     "select_league": "client/select_league.html",
     "sign_up": "client/sign_up.html",
     "resolve_issues": "client/resolve_issues.html",
+    "complete_profile": "client/complete_profile.html",
     "support_chat": "client/support_chat.html",
     "update_team": "client/update_team.html",
     "verify": "client/verify.html",

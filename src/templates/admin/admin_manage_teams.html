@@ -85,6 +85,18 @@
                 {% endfor %}
               </select>
             </div>
+            <div class="form-group form-group--checkbox">
+              <label for="incomplete">
+                <input
+                  type="checkbox"
+                  id="incomplete"
+                  name="incomplete"
+                  value="1"
+                  {% if incomplete_filter %}checked{% endif %}
+                />
+                فقط تیم‌های ناقص (بدون نام یا سرپرست)
+              </label>
+            </div>
           </div>
           <div class="admin-search-actions">
             <button type="submit" class="btn btn-primary">
@@ -112,10 +124,19 @@
               {% for team in teams %}
               {% set status_enum = team.last_payment_status %}
               {% set status_value = status_enum.value if status_enum else None %}
-              <tr>
+              {% set needs_attention = (not team.has_leader) or team.is_name_missing %}
+              <tr class="{% if needs_attention %}admin-table__row--warning{% endif %}" {% if needs_attention %}style="background-color: #fff4e5;"{% endif %}>
                 <td>
-                  <strong>{{ team.team_name }}</strong><br />
+                  <strong>{{ team.team_name or '—' }}</strong><br />
                   <small class="admin-page__lead">کد تیم: #{{ team.team_id | persian_digits }}</small>
+                  {% if needs_attention %}
+                  <div class="admin-badge admin-badge--warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    {% if team.is_name_missing %}نام تیم ثبت نشده{% endif %}
+                    {% if team.is_name_missing and (not team.has_leader) %} | {% endif %}
+                    {% if not team.has_leader %}سرپرست تعیین نشده{% endif %}
+                  </div>
+                  {% endif %}
                 </td>
                 <td>{{ team.client_email }}</td>
                 <td>
