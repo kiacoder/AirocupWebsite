@@ -121,8 +121,10 @@ class Client(Base):
         back_populates="client",
         cascade="all, delete-orphan",
     )
+
     @property
     def ClientID(self) -> int:
+        """Get the client id"""
         return self.client_id
 
     @property
