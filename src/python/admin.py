@@ -797,6 +797,10 @@ def admin_manage_teams():
     sort = request.args.get("sort", "recent")
     payment_status = (request.args.get("payment_status", "") or "").strip()
     keyword = (request.args.get("q", "") or "").strip()
+    league_id = _parse_nullable_int(request.args.get("league_id"))
+    education_filter = _normalize_nullable_text(
+        request.args.get("education_level")
+    )
 
     with database.get_db_session() as db:
         last_payment_subquery = (
@@ -822,6 +826,9 @@ def admin_manage_teams():
                 (models.Team.team_id == models.Member.team_id)
                 & (models.Member.status == models.EntityStatus.ACTIVE),
             )
+            .options(
+                joinedload(models.Team.league_one), joinedload(models.Team.league_two)
+            )
             .group_by(models.Team.team_id, models.Client.email)
         )
 
@@ -835,8 +842,27 @@ def admin_manage_teams():
             )
 
         if keyword:
+            keyword_like = f"%{keyword}%"
             teams_query = teams_query.filter(
-                models.Team.team_name.ilike(f"%{keyword}%")
+                or_(
+                    models.Team.team_name.ilike(keyword_like),
+                    models.Client.email.ilike(keyword_like),
+                    models.Client.phone_number.ilike(keyword_like),
+                    func.cast(models.Team.team_id, String).ilike(keyword_like),
+                )
+            )
+
+        if league_id:
+            teams_query = teams_query.filter(
+                or_(
+                    models.Team.league_one_id == league_id,
+                    models.Team.league_two_id == league_id,
+                )
+            )
+
+        if education_filter:
+            teams_query = teams_query.filter(
+                models.Team.education_level == education_filter
             )
 
         if payment_status:
@@ -874,6 +900,10 @@ def admin_manage_teams():
                     member_count=member_count,
                     status=team.status,
                     last_payment_status=team.last_payment_status,
+                    league_one=team.league_one,
+                    league_two=team.league_two,
+                    education_level=team.education_level,
+                    team_registration_date=team.team_registration_date,
                 )
             )
 
@@ -883,6 +913,8 @@ def admin_manage_teams():
         status_filter=status_filter,
         payment_filter=payment_status,
         sort_option=sort,
+        league_filter=league_id,
+        education_filter=education_filter,
         keyword=keyword,
         enums=models,
     )
@@ -1057,12 +1089,15 @@ def admin_edit_team(team_id):
             .all()
         )
 
+        last_payment = payments[0] if payments else None
+
     return render_template(
         constants.admin_html_names_data["admin_edit_team"],
         team=team,
         members=members,
         payments=payments,
         education_levels=constants.education_levels,
+        last_payment=last_payment,
         **form_context,
     )
 
@@ -1492,6 +1527,10 @@ def admin_search():
     client_sort = request.args.get("client_sort", "recent")
     team_sort = request.args.get("team_sort", "recent")
     payment_sort = request.args.get("payment_sort", "recent")
+    league_id = _parse_nullable_int(request.args.get("league_id"))
+    education_filter = _normalize_nullable_text(
+        request.args.get("education_level")
+    )
 
     with database.get_db_session() as db:
         clients = []
@@ -1499,13 +1538,13 @@ def admin_search():
         payments = []
 
         client_query = db.query(models.Client)
-        if query:
-            client_query = client_query.filter(
-                or_(
-                    models.Client.email.ilike(f"%{query}%"),
-                    models.Client.phone_number.ilike(f"%{query}%"),
-                )
+        client_keyword = f"%{query}%" if query else "%"
+        client_query = client_query.filter(
+            or_(
+                models.Client.email.ilike(client_keyword),
+                models.Client.phone_number.ilike(client_keyword),
             )
+        )
         if client_status == "archived":
             client_query = client_query.filter(
                 models.Client.status != models.EntityStatus.ACTIVE
@@ -1515,22 +1554,33 @@ def admin_search():
                 models.Client.status == models.EntityStatus.ACTIVE
             )
 
-        if query or client_status != "active":
-            if client_sort == "email":
-                client_query = client_query.order_by(func.lower(models.Client.email))
-            elif client_sort == "oldest":
-                client_query = client_query.order_by(
-                    models.Client.registration_date.asc()
-                )
-            else:
-                client_query = client_query.order_by(
-                    models.Client.registration_date.desc()
-                )
-            clients = client_query.all()
+        if client_sort == "email":
+            client_query = client_query.order_by(func.lower(models.Client.email))
+        elif client_sort == "oldest":
+            client_query = client_query.order_by(
+                models.Client.registration_date.asc()
+            )
+        else:
+            client_query = client_query.order_by(
+                models.Client.registration_date.desc()
+            )
+        clients = client_query.limit(150).all()
 
-        team_query = db.query(models.Team).options(joinedload(models.Team.client))
+        team_query = db.query(models.Team).options(
+            joinedload(models.Team.client),
+            joinedload(models.Team.league_one),
+            joinedload(models.Team.league_two),
+        )
         if query:
-            team_query = team_query.filter(models.Team.team_name.ilike(f"%{query}%"))
+            keyword_like = f"%{query}%"
+            team_query = team_query.filter(
+                or_(
+                    models.Team.team_name.ilike(keyword_like),
+                    models.Client.email.ilike(keyword_like),
+                    models.Client.phone_number.ilike(keyword_like),
+                    func.cast(models.Team.team_id, String).ilike(keyword_like),
+                )
+            )
         if team_status == "archived":
             team_query = team_query.filter(
                 models.Team.status != models.EntityStatus.ACTIVE
@@ -1540,18 +1590,30 @@ def admin_search():
                 models.Team.status == models.EntityStatus.ACTIVE
             )
 
-        if query or team_status != "active":
-            if team_sort == "name":
-                team_query = team_query.order_by(func.lower(models.Team.team_name))
-            elif team_sort == "oldest":
-                team_query = team_query.order_by(
-                    models.Team.team_registration_date.asc()
+        if league_id:
+            team_query = team_query.filter(
+                or_(
+                    models.Team.league_one_id == league_id,
+                    models.Team.league_two_id == league_id,
                 )
-            else:
-                team_query = team_query.order_by(
-                    models.Team.team_registration_date.desc()
-                )
-            teams = team_query.all()
+            )
+
+        if education_filter:
+            team_query = team_query.filter(
+                models.Team.education_level == education_filter
+            )
+
+        if team_sort == "name":
+            team_query = team_query.order_by(func.lower(models.Team.team_name))
+        elif team_sort == "oldest":
+            team_query = team_query.order_by(
+                models.Team.team_registration_date.asc()
+            )
+        else:
+            team_query = team_query.order_by(
+                models.Team.team_registration_date.desc()
+            )
+        teams = team_query.limit(300).all()
 
         payment_query = db.query(models.Payment)
         if payment_status:
@@ -1562,6 +1624,18 @@ def admin_search():
                 )
             except AttributeError:
                 payment_query = payment_query.filter(False)
+
+        if query:
+            keyword_like = f"%{query}%"
+            payment_query = payment_query.filter(
+                or_(
+                    func.cast(models.Payment.payment_id, String).ilike(keyword_like),
+                    func.cast(models.Payment.team_id, String).ilike(keyword_like),
+                    models.Payment.payer_name.ilike(keyword_like),
+                    models.Payment.payer_phone.ilike(keyword_like),
+                    models.Payment.tracking_number.ilike(keyword_like),
+                )
+            )
 
         if payment_sort == "amount":
             payment_query = payment_query.order_by(models.Payment.amount.desc())
@@ -1578,6 +1652,8 @@ def admin_search():
             client_sort=client_sort,
             team_sort=team_sort,
             payment_sort=payment_sort,
+            league_filter=league_id,
+            education_filter=education_filter,
             clients=clients,
             teams=teams,
             payments=payments,

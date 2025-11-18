@@ -40,6 +40,30 @@
   </header>
 
   <section class="admin-page__section">
+    <div class="admin-page__stats">
+      <div class="admin-badge admin-badge--muted">
+        <i class="fas fa-calendar-day"></i>
+        ثبت: {{ team.team_registration_date | formatdate | persian_digits }}
+      </div>
+      <div class="admin-badge admin-badge--info">
+        <i class="fas fa-user-clock"></i>
+        میانگین سن: {{ team.average_age | default(0, true) | persian_digits }} سال
+      </div>
+      <div class="admin-badge admin-badge--info">
+        <i class="fas fa-map"></i>
+        استان/شهر: {{ team.average_provinces or '—' }}
+      </div>
+      <div class="admin-badge">
+        <i class="fas fa-receipt"></i>
+        آخرین پرداخت:
+        {% if last_payment %}
+        {{ last_payment.status.label if last_payment.status else 'نامشخص' }} — {{ last_payment.upload_date | formatdate | persian_digits }}
+        {% else %}
+        ثبت نشده
+        {% endif %}
+      </div>
+    </div>
+
     <article class="admin-surface">
       <header class="admin-surface__header">
         <div class="admin-surface__title">

@@ -147,6 +147,7 @@
 .detail-card {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.9rem;
   background: rgba(6, 16, 52, 0.55);
   border: 1px solid rgba(255, 255, 255, 0.18);
@@ -158,6 +159,10 @@
 .detail-card i {
   font-size: 1.6rem;
   color: #ffe59d;
+}
+
+.detail-card div {
+  text-align: center;
 }
 
 .detail-label {
