@@ -743,9 +743,15 @@ def admin_manage_client(client_id):
 @admin_blueprint.route("/Admin/ManageTeams")
 @admin_required
 def admin_manage_teams():
-    "List and manage all teams"
+    "List and manage all teams with archive and sort controls"
+
+    status_filter = request.args.get("status", "active")
+    sort = request.args.get("sort", "recent")
+    payment_status = (request.args.get("payment_status", "") or "").strip()
+    keyword = (request.args.get("q", "") or "").strip()
+
     with database.get_db_session() as db:
-        subquery = (
+        last_payment_subquery = (
             select(models.Payment.status)
             .where(models.Payment.team_id == models.Team.team_id)
             .order_by(models.Payment.upload_date.desc())
@@ -753,38 +759,74 @@ def admin_manage_teams():
             .scalar_subquery()
         )
 
-        team_rows = (
+        member_count_label = count(models.Member.member_id).label("member_count")
+
+        teams_query = (
             db.query(
-                models.Team.team_id,
-                models.Team.team_name,
+                models.Team,
                 models.Client.email.label("client_email"),
-                count(models.Member.member_id).label("member_count"),
-                subquery.label("last_payment_status"),
+                member_count_label,
+                last_payment_subquery.label("last_payment_status"),
             )
             .join(models.Client, models.Team.client_id == models.Client.client_id)
             .outerjoin(
                 models.Member,
-                (models.Team.team_id == models.Member.team_id) & (models.Member.status == models.EntityStatus.ACTIVE),
+                (models.Team.team_id == models.Member.team_id)
+                & (models.Member.status == models.EntityStatus.ACTIVE),
             )
-            .filter(models.Team.status == models.EntityStatus.ACTIVE)
             .group_by(models.Team.team_id, models.Client.email)
-            .order_by(models.Team.team_registration_date.desc())
-            .all()
         )
 
-        all_teams = [
-            SimpleNamespace(
-                team_id=row.team_id,
-                team_name=row.team_name,
-                client_email=row.client_email,
-                member_count=row.member_count,
-                last_payment_status=_coerce_payment_status(row.last_payment_status),
+        if status_filter == "archived":
+            teams_query = teams_query.filter(models.Team.status != models.EntityStatus.ACTIVE)
+        elif status_filter != "all":
+            teams_query = teams_query.filter(models.Team.status == models.EntityStatus.ACTIVE)
+
+        if keyword:
+            teams_query = teams_query.filter(models.Team.team_name.ilike(f"%{keyword}%"))
+
+        if payment_status:
+            try:
+                status_enum = getattr(models.PaymentStatus, payment_status)
+                teams_query = teams_query.having(last_payment_subquery == status_enum)
+            except AttributeError:
+                pass
+
+        if sort == "name_asc":
+            teams_query = teams_query.order_by(func.lower(models.Team.team_name))
+        elif sort == "name_desc":
+            teams_query = teams_query.order_by(func.lower(models.Team.team_name).desc())
+        elif sort == "members_desc":
+            teams_query = teams_query.order_by(member_count_label.desc())
+        elif sort == "oldest":
+            teams_query = teams_query.order_by(models.Team.team_registration_date.asc())
+        else:
+            teams_query = teams_query.order_by(models.Team.team_registration_date.desc())
+
+        team_rows = teams_query.all()
+
+        all_teams = []
+        for team, client_email, member_count, last_payment_status in team_rows:
+            setattr(team, "last_payment_status", _coerce_payment_status(last_payment_status))
+            all_teams.append(
+                SimpleNamespace(
+                    team_id=team.team_id,
+                    team_name=team.team_name,
+                    client_email=client_email,
+                    member_count=member_count,
+                    status=team.status,
+                    last_payment_status=team.last_payment_status,
+                )
             )
-            for row in team_rows
-        ]
 
     return render_template(
-        constants.admin_html_names_data["admin_manage_teams"], teams=all_teams
+        constants.admin_html_names_data["admin_manage_teams"],
+        teams=all_teams,
+        status_filter=status_filter,
+        payment_filter=payment_status,
+        sort_option=sort,
+        keyword=keyword,
+        enums=models,
     )
 
 
@@ -1038,31 +1080,52 @@ def admin_edit_member(team_id, member_id):
 @admin_blueprint.route("/Admin/ManageClients")
 @admin_required
 def admin_clients_list():
-    "List and manage clients with pagination"
+    "List and manage clients with pagination and archiving controls"
+
     page = request.args.get("page", 1, type=int)
     per_page = 10
+    status_filter = request.args.get("status", "active")
+    keyword = (request.args.get("q", "") or "").strip()
+
     with database.get_db_session() as db:
+        clients_query = db.query(models.Client)
+
+        if status_filter == "archived":
+            clients_query = clients_query.filter(
+                models.Client.status != models.EntityStatus.ACTIVE
+            )
+        elif status_filter != "all":
+            clients_query = clients_query.filter(
+                models.Client.status == models.EntityStatus.ACTIVE
+            )
+
+        if keyword:
+            clients_query = clients_query.filter(
+                or_(
+                    models.Client.email.ilike(f"%{keyword}%"),
+                    models.Client.phone_number.ilike(f"%{keyword}%"),
+                )
+            )
+
+        total_filtered = (clients_query.count()) or 0
+
         clients = (
-            db.query(models.Client)
-            .filter(models.Client.status == models.EntityStatus.ACTIVE)
-            .order_by(models.Client.registration_date.desc())
+            clients_query.order_by(models.Client.registration_date.desc())
             .limit(per_page)
             .offset((page - 1) * per_page)
             .all()
         )
-        total_active = (
-            db.query(count(models.Client.client_id))
-            .filter(models.Client.status == models.EntityStatus.ACTIVE)
-            .scalar()
-        ) or 0
 
-    total_pages = math.ceil(total_active / per_page) if total_active else 0
+    total_pages = math.ceil(total_filtered / per_page) if total_filtered else 0
 
     return render_template(
         constants.admin_html_names_data["admin_clients_list"],
         Clients=clients,
         CurrentPage=page,
         TotalPagesCount=total_pages,
+        FilterStatus=status_filter,
+        Keyword=keyword,
+        enums=models,
     )
 
 
@@ -1179,6 +1242,15 @@ def admin_delete_client(client_id):
             ):
                 team.status = models.EntityStatus.INACTIVE
 
+            # Archive members to avoid showing orphaned active records in dashboards
+            db.query(models.Member).filter(
+                models.Member.team_id.in_(
+                    db.query(models.Team.team_id).filter(
+                        models.Team.client_id == client_id
+                    )
+                )
+            ).update({"status": models.EntityStatus.INACTIVE}, synchronize_session=False)
+
             db.commit()
             flash("کاربر و تمام تیم‌های مرتبط با او با موفقیت غیرفعال شدند.", "success")
         else:
@@ -1202,6 +1274,11 @@ def admin_restore_client(client_id):
         db.query(models.Team).filter(models.Team.client_id == client_id).update(
             {"status": models.EntityStatus.ACTIVE}, synchronize_session=False
         )
+        db.query(models.Member).filter(
+            models.Member.team_id.in_(
+                db.query(models.Team.team_id).filter(models.Team.client_id == client_id)
+            )
+        ).update({"status": models.EntityStatus.ACTIVE}, synchronize_session=False)
         db.commit()
         flash("کاربر و تیم‌های او دوباره فعال شدند.", "success")
 
@@ -1348,49 +1425,83 @@ def admin_search():
     """Unified search page for clients, teams, and payments."""
     query = (request.args.get("q", "") or "").strip()
     payment_status = (request.args.get("payment_status", "") or "").strip()
+    client_status = request.args.get("client_status", "all")
+    team_status = request.args.get("team_status", "all")
+    client_sort = request.args.get("client_sort", "recent")
+    team_sort = request.args.get("team_sort", "recent")
+    payment_sort = request.args.get("payment_sort", "recent")
 
     with database.get_db_session() as db:
         clients = []
         teams = []
         payments = []
 
+        client_query = db.query(models.Client)
         if query:
-            clients = (
-                db.query(models.Client)
-                .filter(
-                    or_(
-                        models.Client.email.ilike(f"%{query}%"),
-                        models.Client.phone_number.ilike(f"%{query}%"),
-                    )
+            client_query = client_query.filter(
+                or_(
+                    models.Client.email.ilike(f"%{query}%"),
+                    models.Client.phone_number.ilike(f"%{query}%"),
                 )
-                .order_by(models.Client.registration_date.desc())
-                .all()
+            )
+        if client_status == "archived":
+            client_query = client_query.filter(
+                models.Client.status != models.EntityStatus.ACTIVE
+            )
+        elif client_status != "all":
+            client_query = client_query.filter(
+                models.Client.status == models.EntityStatus.ACTIVE
             )
 
-            teams = (
-                db.query(models.Team)
-                .options(joinedload(models.Team.client))
-                .filter(models.Team.team_name.ilike(f"%{query}%"))
-                .order_by(models.Team.team_registration_date.desc())
-                .all()
-            )
+        if query or client_status != "active":
+            if client_sort == "email":
+                client_query = client_query.order_by(func.lower(models.Client.email))
+            elif client_sort == "oldest":
+                client_query = client_query.order_by(models.Client.registration_date.asc())
+            else:
+                client_query = client_query.order_by(models.Client.registration_date.desc())
+            clients = client_query.all()
 
+        team_query = db.query(models.Team).options(joinedload(models.Team.client))
+        if query:
+            team_query = team_query.filter(models.Team.team_name.ilike(f"%{query}%"))
+        if team_status == "archived":
+            team_query = team_query.filter(models.Team.status != models.EntityStatus.ACTIVE)
+        elif team_status != "all":
+            team_query = team_query.filter(models.Team.status == models.EntityStatus.ACTIVE)
+
+        if query or team_status != "active":
+            if team_sort == "name":
+                team_query = team_query.order_by(func.lower(models.Team.team_name))
+            elif team_sort == "oldest":
+                team_query = team_query.order_by(models.Team.team_registration_date.asc())
+            else:
+                team_query = team_query.order_by(models.Team.team_registration_date.desc())
+            teams = team_query.all()
+
+        payment_query = db.query(models.Payment)
         if payment_status:
             try:
                 status_enum = getattr(models.PaymentStatus, payment_status)
-                payments = (
-                    db.query(models.Payment)
-                    .filter(models.Payment.status == status_enum)
-                    .order_by(models.Payment.upload_date.desc())
-                    .all()
-                )
+                payment_query = payment_query.filter(models.Payment.status == status_enum)
             except AttributeError:
-                payments = []
+                payment_query = payment_query.filter(False)
+
+        if payment_sort == "amount":
+            payment_query = payment_query.order_by(models.Payment.amount.desc())
+        else:
+            payment_query = payment_query.order_by(models.Payment.upload_date.desc())
+        payments = payment_query.limit(100).all()
 
         return render_template(
             constants.admin_html_names_data["admin_search"],
             query=query,
             payment_status=payment_status,
+            client_status=client_status,
+            team_status=team_status,
+            client_sort=client_sort,
+            team_sort=team_sort,
+            payment_sort=payment_sort,
             clients=clients,
             teams=teams,
             payments=payments,

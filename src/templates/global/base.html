@@ -32,6 +32,26 @@
     <meta name="author" content="Airocup" />
     <meta name="theme-color" content="#7b4baa" />
 
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "آیروکاپ | Airocup",
+        "url": "{{ request.url_root }}",
+        "logo": "{{ url_for('static', filename=path.solid_logos['solid_purple_glow'], _external=True) }}",
+        "sameAs": [
+          "{{ contact.instagram }}",
+          "{{ contact.telegram }}"
+        ],
+        "description": "{{ seo_description if seo_description is defined else 'آیروکاپ، رویداد ملی هوش مصنوعی و رباتیک ایران به میزبانی دانشگاه علم و صنعت.' }}",
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "contactType": "customer support",
+          "telephone": "{{ contact.phone }}"
+        }
+      }
+    </script>
+
     <meta
       property="og:title"
       content="{% block og_title %}{{ page_title|striptags|trim if page_title is defined else 'آیروکاپ' }}{% endblock %}"

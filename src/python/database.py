@@ -51,14 +51,90 @@ def create_database():
 def ensure_schema_upgrades():
     """apply lightweight schema adjustments that older databases may lack."""
 
+    def _has_column(connection, table: str, column: str) -> bool:
+        return any(
+            row[1] == column
+            for row in connection.execute(text(f"PRAGMA table_info({table});"))
+        )
+
+    def _add_column(connection, table: str, ddl: str):
+        connection.execute(text(f"ALTER TABLE {table} ADD COLUMN {ddl};"))
+
+    def _ensure_index(connection, name: str, table: str, columns: str):
+        existing = [row[1] for row in connection.execute(text(f"PRAGMA index_list('{table}');"))]
+        if name not in existing:
+            connection.execute(text(f"CREATE INDEX IF NOT EXISTS {name} ON {table}({columns});"))
+
     with db_engine.connect() as connection:
-        existing_columns = {
-            row[1] for row in connection.execute(text("PRAGMA table_info(teams);"))
-        }
-        if "education_level" not in existing_columns:
-            connection.execute(
-                text("ALTER TABLE teams ADD COLUMN education_level VARCHAR(50);")
-            )
+        # Team table upgrades
+        if not _has_column(connection, "teams", "education_level"):
+            _add_column(connection, "teams", "education_level VARCHAR(50)")
+
+        if not _has_column(connection, "teams", "average_age"):
+            _add_column(connection, "teams", "average_age INTEGER DEFAULT 0")
+
+        if not _has_column(connection, "teams", "average_provinces"):
+            _add_column(connection, "teams", "average_provinces VARCHAR(255)")
+
+        if not _has_column(connection, "teams", "unpaid_members_count"):
+            _add_column(connection, "teams", "unpaid_members_count INTEGER DEFAULT 0")
+
+        if not _has_column(connection, "teams", "status"):
+            _add_column(connection, "teams", "status VARCHAR(50) DEFAULT 'active'")
+
+        # Member table upgrades
+        if not _has_column(connection, "members", "status"):
+            _add_column(connection, "members", "status VARCHAR(50) DEFAULT 'active'")
+
+        # Client table upgrades
+        if not _has_column(connection, "clients", "status"):
+            _add_column(connection, "clients", "status VARCHAR(50) DEFAULT 'active'")
+        if not _has_column(connection, "clients", "is_phone_verified"):
+            _add_column(connection, "clients", "is_phone_verified BOOLEAN DEFAULT 0")
+        if not _has_column(connection, "clients", "phone_verification_code"):
+            _add_column(connection, "clients", "phone_verification_code VARCHAR(10)")
+        if not _has_column(connection, "clients", "verification_code_timestamp"):
+            _add_column(connection, "clients", "verification_code_timestamp DATETIME")
+
+        # Payment table upgrades
+        if not _has_column(connection, "payments", "tracking_number"):
+            _add_column(connection, "payments", "tracking_number VARCHAR(64)")
+        if not _has_column(connection, "payments", "payer_name"):
+            _add_column(connection, "payments", "payer_name VARCHAR(100)")
+        if not _has_column(connection, "payments", "payer_phone"):
+            _add_column(connection, "payments", "payer_phone VARCHAR(20)")
+        if not _has_column(connection, "payments", "paid_at"):
+            _add_column(connection, "payments", "paid_at DATETIME")
+
+        # Normalize nullable status values to keep logic consistent across upgrades
+        connection.execute(
+            text("UPDATE teams SET status='active' WHERE status IS NULL;")
+        )
+        connection.execute(
+            text("UPDATE members SET status='active' WHERE status IS NULL;")
+        )
+        connection.execute(
+            text("UPDATE clients SET status='active' WHERE status IS NULL;")
+        )
+        connection.execute(
+            text("UPDATE payments SET status='pending' WHERE status IS NULL;")
+        )
+
+        # Indexes for faster search and archive filtering
+        _ensure_index(connection, "clients_status_email_idx", "clients", "status, email")
+        _ensure_index(connection, "clients_phone_status_idx", "clients", "phone_number, status")
+        _ensure_index(connection, "teams_client_status_idx", "teams", "client_id, status")
+        _ensure_index(
+            connection,
+            "teams_status_registration_idx",
+            "teams",
+            "status, team_registration_date",
+        )
+        _ensure_index(
+            connection, "payments_status_upload_idx", "payments", "status, upload_date"
+        )
+        _ensure_index(connection, "payments_team_status_idx", "payments", "team_id, status")
+        _ensure_index(connection, "members_team_status_idx", "members", "team_id, status")
 
 
 @contextmanager

@@ -71,6 +71,10 @@ class Client(Base):
     """Represents a registered user account (client)."""
 
     __tablename__ = "clients"
+    __table_args__ = (
+        Index("clients_status_email_idx", "status", "email"),
+        Index("clients_phone_status_idx", "phone_number", "status"),
+    )
     client_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     phone_number: Mapped[str] = mapped_column(String(11), nullable=False, unique=True)
     email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
@@ -148,6 +152,10 @@ class Team(Base):
     """Represents a team of members, owned by a client."""
 
     __tablename__ = "teams"
+    __table_args__ = (
+        Index("teams_client_status_idx", "client_id", "status"),
+        Index("teams_status_registration_idx", "status", "team_registration_date"),
+    )
     team_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     client_id: Mapped[int] = mapped_column(
         ForeignKey("clients.client_id"),
@@ -207,6 +215,10 @@ class Payment(Base):
     """Represents a payment transaction for a team."""
 
     __tablename__ = "payments"
+    __table_args__ = (
+        Index("payments_status_upload_idx", "status", "upload_date"),
+        Index("payments_team_status_idx", "team_id", "status"),
+    )
 
     payment_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     team_id: Mapped[int] = mapped_column(
@@ -268,6 +280,7 @@ class Member(Base):
             unique=True,
             sqlite_where=text(f"role = '{MemberRole.LEADER.value}'"),
         ),
+        Index("members_team_status_idx", "team_id", "status"),
     )
 
 
