@@ -1,4 +1,5 @@
 """admin panel routes and functionalities for managing clients, teams, members, news, and chat"""
+
 import os
 import math
 import uuid
@@ -47,7 +48,9 @@ def _coerce_payment_status(raw_status):
         return None
 
 
-def _summarize_expected_payment(team, payment, active_members_count, has_approved_payment):
+def _summarize_expected_payment(
+    team, payment, active_members_count, has_approved_payment
+):
     """Return calculated payment expectations for admin review."""
 
     if active_members_count <= 0:
@@ -80,7 +83,9 @@ def _summarize_expected_payment(team, payment, active_members_count, has_approve
     fee_per_person = config.payment_config.get("fee_per_person") or 0
     fee_team = config.payment_config.get("fee_team") or 0
     league_two_discount_percent = config.payment_config.get("league_two_discount") or 0
-    new_member_fee_per_league = config.payment_config.get("new_member_fee_per_league") or 0
+    new_member_fee_per_league = (
+        config.payment_config.get("new_member_fee_per_league") or 0
+    )
 
     members_basis = payment.members_paid_for or (
         team.unpaid_members_count if has_approved_payment else active_members_count
@@ -244,9 +249,7 @@ def admin_add_team(client_id):
                 models.Team(
                     client_id=client_id,
                     team_name=team_name,
-                    team_registration_date=datetime.datetime.now(
-                        datetime.timezone.utc
-                    ),
+                    team_registration_date=datetime.datetime.now(datetime.timezone.utc),
                     league_one_id=league_one_id,
                     league_two_id=league_two_id,
                     education_level=education_level,
@@ -328,7 +331,9 @@ def admin_update_payment_status(team_id):
             latest_payment.status = new_status
 
             if (
-                team and new_status == models.PaymentStatus.APPROVED and previous_status != models.PaymentStatus.APPROVED
+                team
+                and new_status == models.PaymentStatus.APPROVED
+                and previous_status != models.PaymentStatus.APPROVED
             ):
                 paid_members = latest_payment.members_paid_for or 0
                 current_unpaid = team.unpaid_members_count or 0
@@ -662,7 +667,8 @@ def admin_manage_client(client_id):
             )
             .outerjoin(
                 models.Member,
-                (models.Team.team_id == models.Member.team_id) & (models.Member.status == models.EntityStatus.ACTIVE),
+                (models.Team.team_id == models.Member.team_id)
+                & (models.Member.status == models.EntityStatus.ACTIVE),
             )
             .filter(
                 models.Team.client_id == client_id,
@@ -676,7 +682,9 @@ def admin_manage_client(client_id):
         teams_with_status = []
         for team, member_count, last_payment_status in teams_query:
             setattr(team, "total_members", member_count)
-            setattr(team, "last_payment_status", _coerce_payment_status(last_payment_status))
+            setattr(
+                team, "last_payment_status", _coerce_payment_status(last_payment_status)
+            )
             teams_with_status.append(team)
 
         archived_teams = (
@@ -691,7 +699,8 @@ def admin_manage_client(client_id):
             )
             .outerjoin(
                 models.Member,
-                (models.Team.team_id == models.Member.team_id) & (models.Member.status == models.EntityStatus.ACTIVE),
+                (models.Team.team_id == models.Member.team_id)
+                & (models.Member.status == models.EntityStatus.ACTIVE),
             )
             .filter(
                 models.Team.client_id == client_id,
@@ -705,7 +714,9 @@ def admin_manage_client(client_id):
         archived_teams_with_status = []
         for team, member_count, last_payment_status in archived_teams:
             setattr(team, "total_members", member_count)
-            setattr(team, "last_payment_status", _coerce_payment_status(last_payment_status))
+            setattr(
+                team, "last_payment_status", _coerce_payment_status(last_payment_status)
+            )
             archived_teams_with_status.append(team)
 
         payments_history = [
@@ -770,18 +781,25 @@ def admin_manage_teams():
             .join(models.Client, models.Team.client_id == models.Client.client_id)
             .outerjoin(
                 models.Member,
-                (models.Team.team_id == models.Member.team_id) & (models.Member.status == models.EntityStatus.ACTIVE),
+                (models.Team.team_id == models.Member.team_id)
+                & (models.Member.status == models.EntityStatus.ACTIVE),
             )
             .group_by(models.Team.team_id, models.Client.email)
         )
 
         if status_filter == "archived":
-            teams_query = teams_query.filter(models.Team.status != models.EntityStatus.ACTIVE)
+            teams_query = teams_query.filter(
+                models.Team.status != models.EntityStatus.ACTIVE
+            )
         elif status_filter != "all":
-            teams_query = teams_query.filter(models.Team.status == models.EntityStatus.ACTIVE)
+            teams_query = teams_query.filter(
+                models.Team.status == models.EntityStatus.ACTIVE
+            )
 
         if keyword:
-            teams_query = teams_query.filter(models.Team.team_name.ilike(f"%{keyword}%"))
+            teams_query = teams_query.filter(
+                models.Team.team_name.ilike(f"%{keyword}%")
+            )
 
         if payment_status:
             try:
@@ -799,13 +817,17 @@ def admin_manage_teams():
         elif sort == "oldest":
             teams_query = teams_query.order_by(models.Team.team_registration_date.asc())
         else:
-            teams_query = teams_query.order_by(models.Team.team_registration_date.desc())
+            teams_query = teams_query.order_by(
+                models.Team.team_registration_date.desc()
+            )
 
         team_rows = teams_query.all()
 
         all_teams = []
         for team, client_email, member_count, last_payment_status in team_rows:
-            setattr(team, "last_payment_status", _coerce_payment_status(last_payment_status))
+            setattr(
+                team, "last_payment_status", _coerce_payment_status(last_payment_status)
+            )
             all_teams.append(
                 SimpleNamespace(
                     team_id=team.team_id,
@@ -915,7 +937,8 @@ def admin_edit_team(team_id):
                     existing_team = (
                         db.query(models.Team)
                         .filter(
-                            func.lower(models.Team.team_name) == func.lower(new_team_name),
+                            func.lower(models.Team.team_name)
+                            == func.lower(new_team_name),
                             models.Team.team_id != team_id,
                         )
                         .first()
@@ -923,7 +946,10 @@ def admin_edit_team(team_id):
                     if existing_team:
                         flash("تیمی با این نام از قبل وجود دارد.", "error")
                     else:
-                        if education_level and education_level not in constants.allowed_education:
+                        if (
+                            education_level
+                            and education_level not in constants.allowed_education
+                        ):
                             flash("مقطع تحصیلی انتخاب شده معتبر نیست.", "error")
                             return redirect(
                                 url_for("admin.admin_edit_team", team_id=team_id)
@@ -932,20 +958,20 @@ def admin_edit_team(team_id):
                         if education_level and education_level != (
                             team.education_level or ""
                         ):
-                            level_info = constants.education_levels.get(
-                                education_level
-                            )
-                            age_range = (
-                                level_info.get("ages") if level_info else None
-                            )
+                            level_info = constants.education_levels.get(education_level)
+                            age_range = level_info.get("ages") if level_info else None
                             if age_range:
                                 min_age, max_age = age_range
                                 violating_member = next(
                                     (
                                         member
                                         for member in team.members
-                                        if member.status == models.EntityStatus.ACTIVE and member.role == models.MemberRole.MEMBER and not (
-                                            min_age <= utils.calculate_age(member.birth_date) <= max_age
+                                        if member.status == models.EntityStatus.ACTIVE
+                                        and member.role == models.MemberRole.MEMBER
+                                        and not (
+                                            min_age
+                                            <= utils.calculate_age(member.birth_date)
+                                            <= max_age
                                         )
                                     ),
                                     None,
@@ -989,9 +1015,7 @@ def admin_edit_team(team_id):
 
         members = (
             db.query(models.Member)
-            .options(
-                joinedload(models.Member.city).joinedload(models.City.province)
-            )
+            .options(joinedload(models.Member.city).joinedload(models.City.province))
             .filter(
                 models.Member.team_id == team_id,
                 models.Member.status == models.EntityStatus.ACTIVE,
@@ -1038,11 +1062,7 @@ def admin_edit_member(team_id, member_id):
                     flash("خطا: این تیم از قبل یک سرپرست دارد.", "error")
                     return redirect(url_for("admin.admin_edit_team", team_id=team_id))
 
-            team = (
-                db.query(models.Team)
-                .filter(models.Team.team_id == team_id)
-                .first()
-            )
+            team = db.query(models.Team).filter(models.Team.team_id == team_id).first()
             education_level = getattr(team, "education_level", None) if team else None
 
             is_valid_age, age_error = utils.validate_member_age(
@@ -1051,7 +1071,10 @@ def admin_edit_member(team_id, member_id):
                 education_level,
             )
             if not is_valid_age:
-                flash(age_error or "سن عضو با مقطع تحصیلی انتخاب شده سازگار نیست.", "error")
+                flash(
+                    age_error or "سن عضو با مقطع تحصیلی انتخاب شده سازگار نیست.",
+                    "error",
+                )
                 return redirect(url_for("admin.admin_edit_team", team_id=team_id))
 
             member_to_update = (
@@ -1132,8 +1155,8 @@ def admin_clients_list():
 def admin_add_client():
     "add a new client to the database"
     email = (
-        request.form.get("email") or request.form.get("Email") or ""
-    ).strip().lower()
+        (request.form.get("email") or request.form.get("Email") or "").strip().lower()
+    )
     phone = (
         request.form.get("phone_number") or request.form.get("PhoneNumber") or ""
     ).strip()
@@ -1154,7 +1177,8 @@ def admin_add_client():
             if (
                 db.query(models.Client)
                 .filter(
-                    (models.Client.email == email) | (models.Client.phone_number == phone)
+                    (models.Client.email == email)
+                    | (models.Client.phone_number == phone)
                 )
                 .first()
             ):
@@ -1246,7 +1270,9 @@ def admin_delete_client(client_id):
                         models.Team.client_id == client_id
                     )
                 )
-            ).update({"status": models.EntityStatus.INACTIVE}, synchronize_session=False)
+            ).update(
+                {"status": models.EntityStatus.INACTIVE}, synchronize_session=False
+            )
 
             db.commit()
             flash("کاربر و تمام تیم‌های مرتبط با او با موفقیت غیرفعال شدند.", "success")
@@ -1329,7 +1355,9 @@ def admin_dashboard():
             db.query(models.Client)
             .filter(
                 models.Client.status == models.EntityStatus.ACTIVE,
-                models.Client.registration_date >= datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=7),
+                models.Client.registration_date
+                >= datetime.datetime.now(datetime.timezone.utc)
+                - datetime.timedelta(days=7),
             )
             .count()
         )
@@ -1346,7 +1374,8 @@ def admin_dashboard():
 
         active_member_counts = (
             db.query(
-                models.Member.team_id, func.count(models.Member.member_id).label("count")
+                models.Member.team_id,
+                func.count(models.Member.member_id).label("count"),
             )
             .filter(models.Member.status == models.EntityStatus.ACTIVE)
             .group_by(models.Member.team_id)
@@ -1454,33 +1483,47 @@ def admin_search():
             if client_sort == "email":
                 client_query = client_query.order_by(func.lower(models.Client.email))
             elif client_sort == "oldest":
-                client_query = client_query.order_by(models.Client.registration_date.asc())
+                client_query = client_query.order_by(
+                    models.Client.registration_date.asc()
+                )
             else:
-                client_query = client_query.order_by(models.Client.registration_date.desc())
+                client_query = client_query.order_by(
+                    models.Client.registration_date.desc()
+                )
             clients = client_query.all()
 
         team_query = db.query(models.Team).options(joinedload(models.Team.client))
         if query:
             team_query = team_query.filter(models.Team.team_name.ilike(f"%{query}%"))
         if team_status == "archived":
-            team_query = team_query.filter(models.Team.status != models.EntityStatus.ACTIVE)
+            team_query = team_query.filter(
+                models.Team.status != models.EntityStatus.ACTIVE
+            )
         elif team_status != "all":
-            team_query = team_query.filter(models.Team.status == models.EntityStatus.ACTIVE)
+            team_query = team_query.filter(
+                models.Team.status == models.EntityStatus.ACTIVE
+            )
 
         if query or team_status != "active":
             if team_sort == "name":
                 team_query = team_query.order_by(func.lower(models.Team.team_name))
             elif team_sort == "oldest":
-                team_query = team_query.order_by(models.Team.team_registration_date.asc())
+                team_query = team_query.order_by(
+                    models.Team.team_registration_date.asc()
+                )
             else:
-                team_query = team_query.order_by(models.Team.team_registration_date.desc())
+                team_query = team_query.order_by(
+                    models.Team.team_registration_date.desc()
+                )
             teams = team_query.all()
 
         payment_query = db.query(models.Payment)
         if payment_status:
             try:
                 status_enum = getattr(models.PaymentStatus, payment_status)
-                payment_query = payment_query.filter(models.Payment.status == status_enum)
+                payment_query = payment_query.filter(
+                    models.Payment.status == status_enum
+                )
             except AttributeError:
                 payment_query = payment_query.filter(False)
 

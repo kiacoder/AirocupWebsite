@@ -201,7 +201,7 @@ def send_templated_sms_async(
                 )
                 if not client:
                     current_app.logger.error(
-                        f"SMS error: client with ID {client_id} not found."
+                        f"SMS error: client with id {client_id} not found."
                     )
                     return
                 recipient = client.phone_number
@@ -307,7 +307,7 @@ def is_valid_team_name(team_name: str) -> Tuple[bool, str]:
 
 
 def is_valid_national_id(national_id: str) -> bool:
-    "Validate Iranian national ID"
+    "Validate Iranian national id"
     if not re.fullmatch(r"^\d{10}$", national_id) or len(set(national_id)) == 1:
         return False
     s = sum(int(national_id[i]) * (10 - i) for i in range(9))
@@ -329,7 +329,7 @@ def send_async_email(
                 )
                 if not client:
                     current_app.logger.error(
-                        f"email error: client with ID {client_id} not found."
+                        f"email error: client with id {client_id} not found."
                     )
                     return
                 recipient_email = client.email
@@ -562,13 +562,9 @@ def get_current_client(allow_inactive: bool = False) -> Optional[models.Client]:
         return None
     try:
         with database.get_db_session() as db:
-            query = db.query(models.Client).filter(
-                models.Client.client_id == client_id
-            )
+            query = db.query(models.Client).filter(models.Client.client_id == client_id)
             if not allow_inactive:
-                query = query.filter(
-                    models.Client.status == models.EntityStatus.ACTIVE
-                )
+                query = query.filter(models.Client.status == models.EntityStatus.ACTIVE)
             return query.first()
     except SQLAlchemyError as error:
         current_app.logger.error(f"error fetching current client: {error}")

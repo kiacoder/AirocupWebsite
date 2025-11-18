@@ -8,6 +8,7 @@ import jdatetime  # type:ignore
 
 class Path:
     "Define all Paths Of Files"
+
     base_dir = os.path.dirname(os.path.abspath(__file__))
     root_dir = os.path.abspath(os.path.join(base_dir, "..", ".."))
     static_dir = os.path.join(root_dir, "static")
@@ -1024,7 +1025,9 @@ leagues_list = [
 ]
 
 
-education_levels: Dict[str, Dict[str, Optional[Tuple[Optional[int], Optional[int]]]]] = {
+education_levels: Dict[
+    str, Dict[str, Optional[Tuple[Optional[int], Optional[int]]]]
+] = {
     "ابتدایی": {"grades": (1, 6), "ages": (6, 12)},
     "متوسطه اول": {"grades": (7, 9), "ages": (6, 15)},
     "متوسطه دوم": {"grades": (10, 12), "ages": (6, 18)},
@@ -1174,6 +1177,7 @@ class ForbiddenContent:
 
 class Date:
     "Date-related constants and methods for the application"
+
     persian_months = {
         1: "فروردین",
         2: "اردیبهشت",
@@ -1202,6 +1206,7 @@ class Date:
 
 class AppConfig:
     "Configuration constants for the application."
+
     max_team_per_client = 20
     max_members_per_team = 10
     max_image_size = 50 * 1024 * 1024
@@ -1233,6 +1238,7 @@ class AppConfig:
 
 class Details:
     "Details for airocup event"
+
     address = "دانشگاه علم و صنعت ایران، تهران، ایران"
     google_map_url = "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3238.3671459295647!2d51.50422711222071!3d35.74177972652958!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3f8e032fd49e3809%3A0x470e49fef97ae303!2sIran%20University%20of%20Science%20and%20Technology%20(IUST)!5e0!3m2!1sen!2snl!4v1762083993443!5m2!1sen!2snl"
     stage_one = "مجازی"
@@ -1242,6 +1248,7 @@ class Details:
 
 class Contact:
     "Contact information for airocup"
+
     phone = "09352117339"
     email_primary = "airocupiran@gmail.com"
     website = "https://airocup.org"

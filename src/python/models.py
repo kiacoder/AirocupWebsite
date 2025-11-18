@@ -174,9 +174,7 @@ class Team(Base):
     league_two_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("leagues.league_id"), nullable=True
     )
-    education_level: Mapped[Optional[str]] = mapped_column(
-        String(50), nullable=True
-    )
+    education_level: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     team_registration_date: Mapped[datetime.datetime] = mapped_column(
         DateTime,
         default=lambda: datetime.datetime.now(datetime.timezone.utc),
@@ -238,7 +236,9 @@ class Payment(Base):
     tracking_number: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     payer_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     payer_phone: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
-    paid_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, nullable=True)
+    paid_at: Mapped[Optional[datetime.datetime]] = mapped_column(
+        DateTime, nullable=True
+    )
     upload_date: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=False)
     status: Mapped[PaymentStatus] = mapped_column(
         sql_alchemy_enum(PaymentStatus),
