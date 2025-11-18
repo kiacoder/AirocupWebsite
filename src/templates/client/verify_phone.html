@@ -10,14 +10,14 @@
       action="{{ url_for('client.verify_code') }}"
       id="verificationForm"
       data-cooldown="{{ Cooldown or 0 }}"
-      data-client-id="{{ ClientID or '' }}"
+      data-client-id="{{ client_id or '' }}"
       data-action="phone_signup"
       data-resend-url="{{ url_for('client.resend_code') }}"
       data-csrf-token="{{ csrf_token() }}"
     >
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
       <input type="hidden" name="Action" value="phone_signup" />
-      <input type="hidden" name="ClientID" value="{{ ClientID or '' }}" />
+      <input type="hidden" name="client_id" value="{{ client_id or '' }}" />
 
       <h1 class="form-title">تایید شماره موبایل</h1>
       <p class="form-subtitle">
@@ -94,7 +94,7 @@
               "Content-Type": "application/json",
               "X-CSRFToken": csrfToken,
             },
-            body: JSON.stringify({ ClientID: clientID, Action: action }),
+            body: JSON.stringify({ client_id: clientID, Action: action }),
           });
 
           const data = await response.json();
