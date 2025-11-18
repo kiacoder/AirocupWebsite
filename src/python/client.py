@@ -1,4 +1,5 @@
-"Client-side routes and logic for the web application"
+"client-side routes and logic for the web application"
+
 import io
 import os
 import random
