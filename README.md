@@ -58,27 +58,62 @@ AirocupWebsite is a Flask-based registration and administration portal for manag
 No automated test suite is bundled. Run `python -m compileall src/python` to sanity-check syntax if desired.
 
 ## Database Overview
-The application uses SQLite via SQLAlchemy. Core tables and relationships:
+The application uses SQLite via SQLAlchemy. A quick reference for the core tables, important columns, and performance-related indexes is below.
 
-- **clients**: Registered accounts with `phone_number`, `email`, `password`, verification fields, and `status` (`active`/`inactive`/`withdrawn`). One-to-many with teams, payments, history logs, chat messages, and uploaded documents.
-- **teams**: Owned by a client; track `team_name`, optional `league_one_id`/`league_two_id`, `education_level`, `average_age`, `average_provinces`, `unpaid_members_count`, and `status` (active or inactive/withdrawn). Related to members, payments, and team documents.
-- **members**: Individual participants with `role` (`leader`, `coach`, `member`), `birth_date`, `national_id`, `city_id`, and `status`. Enforces a unique leader per team.
-- **payments**: Receipt uploads with `amount`, `members_paid_for`, `receipt_filename`, optional `tracking_number`, `payer_name`, `payer_phone`, `paid_at`, and `status` (`pending`, `approved`, `rejected`). Linked to both a team and client.
-- **provinces / cities**: Seed data for regional selection; members reference `cities` which reference `provinces`.
-- **leagues**: Configurable competition leagues (id, name, icon, description) populated at startup.
-- **news**: Articles with content, image, template path, and publish date.
-- **history_logs**: Audit trail of client/admin actions with timestamps.
-- **login_attempts**: Recorded login successes/failures with IP address metadata.
-- **password_resets**: Password reset codes and timestamps.
-- **chat_messages**: Admin-client chat history.
-- **team_documents**: Uploaded documents per team/client with filenames and types.
+- **clients**
+  - Columns: `phone_number` (unique), `email` (unique), `password`, `registration_date`, `status` (`active`/`inactive`/`withdrawn`), phone verification fields.
+  - Relationships: one-to-many with `teams`, `payments`, `history_logs`, `chat_messages`, `team_documents`.
+  - Indexes: `(status, email)` and `(phone_number, status)` accelerate filtered admin searches.
+
+- **teams**
+  - Columns: `team_name` (unique), `client_id`, `league_one_id`, `league_two_id`, `education_level`, `team_registration_date`, `average_age`, `average_provinces`, `unpaid_members_count`, `status` (`active`/`inactive`/`withdrawn`).
+  - Relationships: belongs to one `client` and two optional `league` rows; has many `members`, `payments`, and `team_documents`.
+  - Indexes: `(client_id, status)` for archive filters; `(status, team_registration_date)` for chronological sorting.
+
+- **members**
+  - Columns: `name`, `birth_date`, `national_id`, `role` (`leader`, `coach`, `member`), `status`, `city_id`, `team_id`.
+  - Constraints: `one_leader_per_team_idx` enforces a single leader per team.
+  - Indexes: `(team_id, status)` keeps archived/active member lookups fast when toggling client/team visibility.
+
+- **payments**
+  - Columns: `team_id`, `client_id`, `amount`, `members_paid_for`, `receipt_filename`, optional `tracking_number`, `payer_name`, `payer_phone`, `paid_at`, `upload_date`, `status` (`pending`, `approved`, `rejected`).
+  - Indexes: `(status, upload_date)` accelerates dashboard queues; `(team_id, status)` keeps per-team payment history queries quick.
+
+- **provinces / cities**
+  - Seed data used to populate forms. `members.city_id` references `cities.city_id`, and `cities.province_id` references `provinces.province_id`.
+
+- **leagues**
+  - Configurable competition leagues with `name`, optional `icon`, and `description`. Two optional foreign keys on `teams` reference leagues.
+
+- **news**
+  - Title, HTML content, optional image and template path, and `publish_date` timestamp.
+
+- **history_logs**
+  - Tracks significant client/admin actions. Stores `action`, `timestamp`, `client_id`, and `admin_involved` flag for auditing.
+
+- **login_attempts**
+  - Captures IP-addressed success/failure attempts with timestamps for monitoring.
+
+- **password_resets**
+  - Password reset tokens with `identifier` (phone/email), `identifier_type`, `code`, and timestamp.
+
+- **chat_messages**
+  - Admin-client chat history with `sender`, message text, and timestamp.
+
+- **team_documents**
+  - Uploaded document metadata for each team/client.
 
 ### Archiving & Restoration
 - Entity `status` enums allow soft-archiving (inactive/withdrawn) without deleting rows.
 - Admin routes can archive teams/members/clients and restore them later. Archived teams retain payment history and can be reactivated from both the client detail view and the advanced search/teams list.
+- When a client is archived or restored, the linked teams and members are updated together to keep dashboards and counts in sync.
 
-### Schema Compatibility
-`database.ensure_schema_upgrades()` applies lightweight migrations on startup to add missing columns (education level, unpaid member counts, payer metadata, verification flags, etc.) and normalizes null statuses, making it safer to merge or reuse older SQLite files alongside the current codebase.
+### Schema Compatibility and Upgrades
+- `database.ensure_schema_upgrades()` runs at startup to align older SQLite files with the current schema. It will:
+  - Add missing columns (education level, unpaid member counts, payer metadata, verification flags, etc.).
+  - Normalize null `status` fields to sensible defaults to avoid comparison errors.
+  - Create helper indexes for status-aware filtering and sorting on clients, teams, members, and payments to keep the admin experience responsive even on legacy databases.
+- You can safely drop in an older database file; the helper will patch it in place. If you want to inspect the resulting structure, run `sqlite3 src/database/database.db '.schema'` after the app starts.
 
 ## Admin Tips
 - Use **جستجوی پیشرفته** (Advanced Search) to filter by client/team status, payment state, and sorting preferences. Restoration actions are available directly from the results when an entity is archived.

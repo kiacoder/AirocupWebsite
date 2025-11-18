@@ -60,6 +60,11 @@ def ensure_schema_upgrades():
     def _add_column(connection, table: str, ddl: str):
         connection.execute(text(f"ALTER TABLE {table} ADD COLUMN {ddl};"))
 
+    def _ensure_index(connection, name: str, table: str, columns: str):
+        existing = [row[1] for row in connection.execute(text(f"PRAGMA index_list('{table}');"))]
+        if name not in existing:
+            connection.execute(text(f"CREATE INDEX IF NOT EXISTS {name} ON {table}({columns});"))
+
     with db_engine.connect() as connection:
         # Team table upgrades
         if not _has_column(connection, "teams", "education_level"):
@@ -114,6 +119,22 @@ def ensure_schema_upgrades():
         connection.execute(
             text("UPDATE payments SET status='pending' WHERE status IS NULL;")
         )
+
+        # Indexes for faster search and archive filtering
+        _ensure_index(connection, "clients_status_email_idx", "clients", "status, email")
+        _ensure_index(connection, "clients_phone_status_idx", "clients", "phone_number, status")
+        _ensure_index(connection, "teams_client_status_idx", "teams", "client_id, status")
+        _ensure_index(
+            connection,
+            "teams_status_registration_idx",
+            "teams",
+            "status, team_registration_date",
+        )
+        _ensure_index(
+            connection, "payments_status_upload_idx", "payments", "status, upload_date"
+        )
+        _ensure_index(connection, "payments_team_status_idx", "payments", "team_id, status")
+        _ensure_index(connection, "members_team_status_idx", "members", "team_id, status")
 
 
 @contextmanager

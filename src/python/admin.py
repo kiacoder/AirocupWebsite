@@ -1242,6 +1242,15 @@ def admin_delete_client(client_id):
             ):
                 team.status = models.EntityStatus.INACTIVE
 
+            # Archive members to avoid showing orphaned active records in dashboards
+            db.query(models.Member).filter(
+                models.Member.team_id.in_(
+                    db.query(models.Team.team_id).filter(
+                        models.Team.client_id == client_id
+                    )
+                )
+            ).update({"status": models.EntityStatus.INACTIVE}, synchronize_session=False)
+
             db.commit()
             flash("کاربر و تمام تیم‌های مرتبط با او با موفقیت غیرفعال شدند.", "success")
         else:
@@ -1265,6 +1274,11 @@ def admin_restore_client(client_id):
         db.query(models.Team).filter(models.Team.client_id == client_id).update(
             {"status": models.EntityStatus.ACTIVE}, synchronize_session=False
         )
+        db.query(models.Member).filter(
+            models.Member.team_id.in_(
+                db.query(models.Team.team_id).filter(models.Team.client_id == client_id)
+            )
+        ).update({"status": models.EntityStatus.ACTIVE}, synchronize_session=False)
         db.commit()
         flash("کاربر و تیم‌های او دوباره فعال شدند.", "success")
 
