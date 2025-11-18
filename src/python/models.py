@@ -44,7 +44,7 @@ class LabeledEnum(enum.Enum):
 
 
 class EntityStatus(LabeledEnum):
-    """Enumeration for the status of entities (e.g., Client, Team)."""
+    """Enumeration for the status of entities (e.g., client, فeam)."""
 
     ACTIVE = ("active", "فعال")
     INACTIVE = ("inactive", "غیرفعال")
