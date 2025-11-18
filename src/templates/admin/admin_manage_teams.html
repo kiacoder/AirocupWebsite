@@ -37,7 +37,7 @@
                 id="q"
                 name="q"
                 value="{{ keyword or '' }}"
-                placeholder="نام تیم"
+                placeholder="نام تیم، ایمیل یا شماره کاربر"
               />
             </div>
             <div class="form-group">
@@ -67,6 +67,24 @@
                 <option value="members_desc" {% if sort_option=='members_desc' %}selected{% endif %}>بیشترین عضو</option>
               </select>
             </div>
+            <div class="form-group">
+              <label for="league_id">لیگ</label>
+              <select id="league_id" name="league_id">
+                <option value="">همه لیگ‌ها</option>
+                {% for league in leagues_list %}
+                <option value="{{ league.id }}" {% if league_filter==league.id %}selected{% endif %}>{{ league.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="education_level">مقطع تحصیلی</label>
+              <select id="education_level" name="education_level">
+                <option value="">همه مقاطع</option>
+                {% for level_name in education_levels.keys() %}
+                <option value="{{ level_name }}" {% if education_filter==level_name %}selected{% endif %}>{{ level_name }}</option>
+                {% endfor %}
+              </select>
+            </div>
           </div>
           <div class="admin-search-actions">
             <button type="submit" class="btn btn-primary">
@@ -82,6 +100,8 @@
               <tr>
                 <th>نام تیم</th>
                 <th>کاربر مالک</th>
+                <th>لیگ‌ها</th>
+                <th>مقطع</th>
                 <th>تعداد اعضا</th>
                 <th>آخرین وضعیت پرداخت</th>
                 <th>وضعیت</th>
@@ -98,6 +118,13 @@
                   <small class="admin-page__lead">کد تیم: #{{ team.team_id | persian_digits }}</small>
                 </td>
                 <td>{{ team.client_email }}</td>
+                <td>
+                  <div class="admin-meta-grid">
+                    <span>اول: {{ team.league_one.name if team.league_one else '—' }}</span>
+                    <span>دوم: {{ team.league_two.name if team.league_two else '—' }}</span>
+                  </div>
+                </td>
+                <td>{{ team.education_level or '—' }}</td>
                 <td>{{ team.member_count | persian_digits }} نفر</td>
                 <td>
                   <span
@@ -130,7 +157,7 @@
               </tr>
               {% else %}
               <tr class="admin-table__empty">
-                <td colspan="6">
+                <td colspan="8">
                   <div class="admin-empty-state">
                     <i class="fas fa-layer-group"></i>
                     هیچ تیمی با فیلتر فعلی یافت نشد.
