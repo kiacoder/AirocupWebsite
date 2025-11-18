@@ -15,6 +15,15 @@ def login_required(decorated_route):
             flash("برای مشاهده این صفحه باید وارد شوید.", "warning")
             return redirect(url_for("client.login_client", next=request.url))
 
+        if session.get("needs_contact_completion"):
+            allowed_endpoints = {"client.complete_profile", "global.logout"}
+            if request.endpoint not in allowed_endpoints:
+                flash(
+                    "برای ادامه، لطفا اطلاعات تماس حساب کاربری خود را تکمیل کنید.",
+                    "warning",
+                )
+                return redirect(url_for("client.complete_profile"))
+
         if "client_id_for_resolution" in session:
             flash(
                 "ابتدا باید اطلاعات حساب کاربری خود را تکمیل و اصلاح نمایید.", "warning"
