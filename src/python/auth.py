@@ -3,6 +3,8 @@
 from functools import wraps
 from flask import request, session, flash, redirect, url_for, abort
 from flask_wtf.csrf import CSRFError  # type:ignore
+
+from . import database, models
 from .extensions import csrf_protector
 
 
@@ -14,6 +16,28 @@ def login_required(decorated_route):
         if "client_id" not in session:
             flash("برای مشاهده این صفحه باید وارد شوید.", "warning")
             return redirect(url_for("client.login_client", next=request.url))
+
+        if not session.get("needs_contact_completion"):
+            with database.get_db_session() as db:
+                client = (
+                    db.query(models.Client)
+                    .filter(models.Client.client_id == session.get("client_id"))
+                    .first()
+                )
+
+                if not client:
+                    session.clear()
+                    flash("برای ادامه باید دوباره وارد حساب خود شوید.", "warning")
+                    return redirect(url_for("client.login_client", next=request.url))
+
+                if not client.email or not client.phone_number:
+                    session["needs_contact_completion"] = True
+                    flash(
+                        "برای ادامه، لطفا اطلاعات تماس حساب کاربری خود را تکمیل کنید.",
+                        "warning",
+                    )
+                    if request.endpoint != "client.complete_profile":
+                        return redirect(url_for("client.complete_profile"))
 
         if session.get("needs_contact_completion"):
             allowed_endpoints = {"client.complete_profile", "global.logout"}
