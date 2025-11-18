@@ -239,7 +239,7 @@ def on_join_message(data_dictionary):
         flask_app.logger.info("admin joined room %s", room_name)
     elif client_id and str(client_id) == str(room_name):
         join_room(str(client_id))
-        flask_app.logger.info("Client %s joined their room", client_id)
+        flask_app.logger.info("client %s joined their room", client_id)
     else:
         flask_app.logger.warning(
             "Unauthorized chat room join attempt by session %s for room %s",
