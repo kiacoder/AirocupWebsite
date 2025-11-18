@@ -178,6 +178,27 @@ def get_team_by_id(db: Session, team_id: int) -> Optional[models.Team]:
     return db.query(models.Team).filter(models.Team.team_id == team_id).first()
 
 
+def parse_nullable_datetime(
+    raw_value: Optional[str],
+) -> Tuple[Optional[datetime.datetime], Optional[str]]:
+    """Parse an ISO datetime string or return ``None`` for blanks/null markers."""
+
+    if raw_value is None:
+        return None, None
+
+    cleaned = raw_value.strip()
+    if not cleaned or cleaned.lower() == "null":
+        return None, None
+
+    try:
+        parsed = datetime.datetime.fromisoformat(cleaned)
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=datetime.timezone.utc)
+        return parsed, None
+    except ValueError:
+        return None, "زمان/تاریخ ثبت‌نام معتبر نیست. لطفاً از فرمت ISO 8601 استفاده کنید."
+
+
 def validate_client_update(
     db: Session,
     client_id: int,
@@ -241,8 +262,31 @@ def validate_client_update(
         else:
             clean_data["password"] = new_password
 
+    registration_raw = form_data.get("registration_date")
+    parsed_registration, registration_error = parse_nullable_datetime(registration_raw)
+    if registration_error:
+        errors.append(registration_error)
+    elif registration_raw is not None:
+        clean_data["registration_date"] = parsed_registration
+
+    status_value = form_data.get("status")
+    if status_value:
+        try:
+            clean_data["status"] = models.EntityStatus(status_value)
+        except ValueError:
+            errors.append("وضعیت انتخاب‌شده معتبر نیست.")
+
+    if "is_phone_verified" in form_data:
+        clean_data["is_phone_verified"] = str(form_data.get("is_phone_verified")).lower() in (
+            "1",
+            "true",
+            "on",
+            "yes",
+        )
+
     if errors:
         return None, errors
+
     return clean_data, []
 
 
@@ -258,10 +302,16 @@ def update_client_details(db: Session, client_id: int, clean_data: dict):
         client_to_update.phone_number = clean_data["phone_number"]
     if "email" in clean_data:
         client_to_update.email = clean_data["email"]
+    if "registration_date" in clean_data:
+        client_to_update.registration_date = clean_data["registration_date"]
     if "password" in clean_data:
         client_to_update.password = bcrypt.hashpw(
             clean_data["password"].encode("utf-8"), bcrypt.gensalt()
         ).decode("utf-8")
+    if "status" in clean_data:
+        client_to_update.status = clean_data["status"]
+    if "is_phone_verified" in clean_data:
+        client_to_update.is_phone_verified = clean_data["is_phone_verified"]
     db.commit()
 
 

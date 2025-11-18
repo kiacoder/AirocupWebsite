@@ -48,6 +48,31 @@ def _coerce_payment_status(raw_status):
         return None
 
 
+def _normalize_nullable_text(raw_value: str | None) -> str | None:
+    """Return cleaned text value or ``None`` when input is empty/null."""
+
+    if raw_value is None:
+        return None
+
+    cleaned = bleach.clean(raw_value).strip()
+    if not cleaned or cleaned.lower() == "null":
+        return None
+    return cleaned
+
+
+def _parse_nullable_int(raw_value: str | None) -> int | None:
+    """Parse int from a nullable form field, returning ``None`` on blanks."""
+
+    normalized = _normalize_nullable_text(raw_value)
+    if normalized is None:
+        return None
+
+    try:
+        return int(normalized)
+    except (TypeError, ValueError):
+        return None
+
+
 def _summarize_expected_payment(
     team, payment, active_members_count, has_approved_payment
 ):
@@ -219,29 +244,35 @@ def admin_chat(client_id):
 @admin_required
 def admin_add_team(client_id):
     "add a new team for a specific client"
-    team_name = bleach.clean(request.form.get("team_name", "").strip())
-    league_one_raw = request.form.get("LeagueOne", "").strip()
-    league_two_raw = request.form.get("LeagueTwo", "").strip()
-    education_level = request.form.get("EducationLevel", "").strip()
+    team_name = _normalize_nullable_text(request.form.get("team_name"))
+    league_one_raw = request.form.get("LeagueOne")
+    league_two_raw = request.form.get("LeagueTwo")
+    education_level = _normalize_nullable_text(request.form.get("EducationLevel"))
+    team_registration_raw = request.form.get("team_registration_date")
 
-    if not team_name:
-        flash("نام تیم نمی‌تواند خالی باشد.", "error")
+    team_registration_date, team_registration_error = database.parse_nullable_datetime(
+        team_registration_raw
+    )
+    if team_registration_error:
+        flash(team_registration_error, "error")
         return redirect(url_for("admin.admin_manage_client", client_id=client_id))
 
-    if education_level not in constants.allowed_education:
+    if team_name:
+        is_valid, error_message = utils.is_valid_team_name(team_name)
+        if not is_valid:
+            flash(error_message, "error")
+            return redirect(url_for("admin.admin_manage_client", client_id=client_id))
+
+    if education_level and education_level not in constants.allowed_education:
         flash("لطفاً مقطع تحصیلی معتبری انتخاب کنید.", "error")
-        return redirect(url_for("admin.admin_manage_client", client_id=client_id))
-
-    if not league_one_raw:
-        flash("لطفاً لیگ اصلی تیم را مشخص کنید.", "error")
         return redirect(url_for("admin.admin_manage_client", client_id=client_id))
 
     if league_two_raw and league_two_raw == league_one_raw:
         flash("نمی‌توانید یک لیگ را به عنوان لیگ اول و دوم انتخاب کنید.", "error")
         return redirect(url_for("admin.admin_manage_client", client_id=client_id))
 
-    league_one_id = int(league_one_raw) if league_one_raw else None
-    league_two_id = int(league_two_raw) if league_two_raw else None
+    league_one_id = _parse_nullable_int(league_one_raw)
+    league_two_id = _parse_nullable_int(league_two_raw)
 
     with database.get_db_session() as db:
         try:
@@ -249,14 +280,21 @@ def admin_add_team(client_id):
                 models.Team(
                     client_id=client_id,
                     team_name=team_name,
-                    team_registration_date=datetime.datetime.now(datetime.timezone.utc),
+                    team_registration_date=(
+                        team_registration_date
+                        if team_registration_raw is not None
+                        else datetime.datetime.now(datetime.timezone.utc)
+                    ),
                     league_one_id=league_one_id,
                     league_two_id=league_two_id,
                     education_level=education_level,
                 )
             )
             db.commit()
-            flash(f"تیم «{team_name}» با موفقیت برای این کاربر ساخته شد.", "success")
+            flash(
+                f"تیم «{team_name or 'نامشخص'}» با موفقیت برای این کاربر ساخته شد.",
+                "success",
+            )
         except exc.IntegrityError:
             db.rollback()
             flash(
@@ -882,19 +920,6 @@ def admin_add_member(team_id):
                         "success",
                     )
 
-                if html_file and html_file.filename:
-                    html_file.stream.seek(0)
-                    if not html_file.filename.lower().endswith(".html"):
-                        flash("فقط فایل HTML مجاز است.", "error")
-                        return redirect(
-                            url_for("admin.admin_edit_news", article_id=article_id)
-                        )
-                    safe_name = f"{uuid.uuid4()}.html"
-                    os.makedirs(constants.Path.news_html_dir, exist_ok=True)
-                    html_path = os.path.join(constants.Path.news_html_dir, safe_name)
-                    html_file.save(html_path)
-                    article.template_path = f"news/htmls/{safe_name}"
-
                 db.commit()
                 utils.update_team_stats(db, team_id)
                 return redirect(url_for("admin.admin_edit_team", team_id=team_id))
@@ -925,15 +950,25 @@ def admin_edit_team(team_id):
 
         if request.method == "POST":
             try:
-                new_team_name = bleach.clean(request.form.get("team_name", "").strip())
-                league_one_id = request.form.get("league_one_id")
-                league_two_id = request.form.get("league_two_id")
-                education_level = request.form.get("education_level", "").strip()
+                new_team_name = _normalize_nullable_text(request.form.get("team_name"))
+                league_one_id = _parse_nullable_int(request.form.get("league_one_id"))
+                league_two_id = _parse_nullable_int(request.form.get("league_two_id"))
+                education_level = _normalize_nullable_text(request.form.get("education_level"))
+                registration_raw = request.form.get("team_registration_date")
 
-                is_valid, error_message = utils.is_valid_team_name(new_team_name)
-                if not is_valid:
-                    flash(error_message, "error")
-                else:
+                registration_date, registration_error = database.parse_nullable_datetime(
+                    registration_raw
+                )
+                if registration_error:
+                    flash(registration_error, "error")
+                    return redirect(url_for("admin.admin_edit_team", team_id=team_id))
+
+                if new_team_name:
+                    is_valid, error_message = utils.is_valid_team_name(new_team_name)
+                    if not is_valid:
+                        flash(error_message, "error")
+                        return redirect(url_for("admin.admin_edit_team", team_id=team_id))
+
                     existing_team = (
                         db.query(models.Team)
                         .filter(
@@ -945,64 +980,55 @@ def admin_edit_team(team_id):
                     )
                     if existing_team:
                         flash("تیمی با این نام از قبل وجود دارد.", "error")
-                    else:
-                        if (
-                            education_level
-                            and education_level not in constants.allowed_education
-                        ):
-                            flash("مقطع تحصیلی انتخاب شده معتبر نیست.", "error")
-                            return redirect(
-                                url_for("admin.admin_edit_team", team_id=team_id)
-                            )
+                        return redirect(url_for("admin.admin_edit_team", team_id=team_id))
 
-                        if education_level and education_level != (
-                            team.education_level or ""
-                        ):
-                            level_info = constants.education_levels.get(education_level)
-                            age_range = level_info.get("ages") if level_info else None
-                            if age_range:
-                                min_age, max_age = age_range
-                                violating_member = next(
-                                    (
-                                        member
-                                        for member in team.members
-                                        if member.status == models.EntityStatus.ACTIVE
-                                        and member.role == models.MemberRole.MEMBER
-                                        and not (
-                                            min_age
-                                            <= utils.calculate_age(member.birth_date)
-                                            <= max_age
-                                        )
-                                    ),
-                                    None,
+                if (
+                    education_level
+                    and education_level not in constants.allowed_education
+                ):
+                    flash("مقطع تحصیلی انتخاب شده معتبر نیست.", "error")
+                    return redirect(url_for("admin.admin_edit_team", team_id=team_id))
+
+                if education_level and education_level != (team.education_level or ""):
+                    level_info = constants.education_levels.get(education_level)
+                    age_range = level_info.get("ages") if level_info else None
+                    if age_range:
+                        min_age, max_age = age_range
+                        violating_member = next(
+                            (
+                                member
+                                for member in team.members
+                                if member.status == models.EntityStatus.ACTIVE
+                                and member.role == models.MemberRole.MEMBER
+                                and not (
+                                    min_age
+                                    <= utils.calculate_age(member.birth_date)
+                                    <= max_age
                                 )
-                                if violating_member:
-                                    flash(
-                                        f"عضو «{violating_member.name}» با مقطع «{education_level}» سازگار نیست.",
-                                        "error",
-                                    )
-                                    return redirect(
-                                        url_for(
-                                            "admin.admin_edit_team",
-                                            team_id=team_id,
-                                        )
-                                    )
+                            ),
+                            None,
+                        )
+                        if violating_member:
+                            flash(
+                                f"عضو «{violating_member.name}» با مقطع «{education_level}» سازگار نیست.",
+                                "error",
+                            )
+                            return redirect(
+                                url_for(
+                                    "admin.admin_edit_team",
+                                    team_id=team_id,
+                                )
+                            )
 
-                            setattr(team, "team_name", new_team_name)
-                            setattr(
-                                team,
-                                "league_one_id",
-                                int(league_one_id) if league_one_id else None,
-                            )
-                            setattr(
-                                team,
-                                "league_two_id",
-                                int(league_two_id) if league_two_id else None,
-                            )
-                            team.education_level = education_level or None
-                            db.commit()
-                            utils.update_team_stats(db, team_id)
-                            flash("جزئیات تیم با موفقیت ذخیره شد", "success")
+                setattr(team, "team_name", new_team_name)
+                setattr(team, "league_one_id", league_one_id)
+                setattr(team, "league_two_id", league_two_id)
+                team.education_level = education_level or None
+                if registration_raw is not None:
+                    team.team_registration_date = registration_date
+                db.commit()
+                utils.update_team_stats(db, team_id)
+                flash("جزئیات تیم با موفقیت ذخیره شد", "success")
 
             except (exc.SQLAlchemyError, ValueError) as error:
                 db.rollback()
@@ -1161,6 +1187,16 @@ def admin_add_client():
         request.form.get("phone_number") or request.form.get("PhoneNumber") or ""
     ).strip()
     password = request.form.get("password") or request.form.get("Password") or ""
+    registration_raw = request.form.get("registration_date")
+
+    registration_date_value = None
+    if registration_raw is not None:
+        registration_date_value, date_error = database.parse_nullable_datetime(
+            registration_raw
+        )
+        if date_error:
+            flash(date_error, "error")
+            return redirect(url_for("admin.admin_clients_list"))
 
     if not all(
         [
@@ -1192,7 +1228,7 @@ def admin_add_client():
                     password=bcrypt.hashpw(
                         password.encode("utf-8"), bcrypt.gensalt()
                     ).decode("utf-8"),
-                    registration_date=datetime.datetime.now(datetime.timezone.utc),
+                    registration_date=registration_date_value,
                     is_phone_verified=True,
                 )
             )

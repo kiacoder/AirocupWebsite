@@ -79,9 +79,10 @@ class Client(Base):
     phone_number: Mapped[str] = mapped_column(String(11), nullable=False, unique=True)
     email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     password: Mapped[str] = mapped_column(String(255), nullable=False)
-    registration_date: Mapped[datetime.datetime] = mapped_column(
+    registration_date: Mapped[Optional[datetime.datetime]] = mapped_column(
         DateTime,
         default=lambda: datetime.datetime.now(datetime.timezone.utc),
+        nullable=True,
     )
     status: Mapped[EntityStatus] = mapped_column(
         sql_alchemy_enum(EntityStatus),
@@ -167,7 +168,9 @@ class Team(Base):
         nullable=False,
         index=True,
     )
-    team_name: Mapped[str] = mapped_column(String(50), nullable=False, unique=True)
+    team_name: Mapped[Optional[str]] = mapped_column(
+        String(50), nullable=True, unique=True
+    )
     league_one_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("leagues.league_id"), nullable=True
     )
@@ -175,9 +178,10 @@ class Team(Base):
         ForeignKey("leagues.league_id"), nullable=True
     )
     education_level: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    team_registration_date: Mapped[datetime.datetime] = mapped_column(
+    team_registration_date: Mapped[Optional[datetime.datetime]] = mapped_column(
         DateTime,
         default=lambda: datetime.datetime.now(datetime.timezone.utc),
+        nullable=True,
     )
     average_age: Mapped[int] = mapped_column(default=0)
     average_provinces: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
