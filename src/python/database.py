@@ -9,6 +9,10 @@ import bcrypt
 from sqlalchemy import create_engine, func, text
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.util import typing as sa_typing
+from . import constants
+from . import models
+from . import utils
+
 
 if hasattr(sa_typing, "make_union_type"):
     _sa_make_union_type = sa_typing.make_union_type
@@ -29,10 +33,6 @@ if hasattr(sa_typing, "make_union_type"):
             return union_type
 
     sa_typing.make_union_type = _patched_make_union_type
-
-from . import constants
-from . import models
-from . import utils
 
 _normalized_sqlite_path = Path(constants.Path.database).as_posix()
 
