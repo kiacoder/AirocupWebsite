@@ -201,7 +201,7 @@ def send_templated_sms_async(
                 )
                 if not client:
                     current_app.logger.error(
-                        f"SMS error: Client with ID {client_id} not found."
+                        f"SMS error: client with ID {client_id} not found."
                     )
                     return
                 recipient = client.phone_number
@@ -329,7 +329,7 @@ def send_async_email(
                 )
                 if not client:
                     current_app.logger.error(
-                        f"email error: Client with ID {client_id} not found."
+                        f"email error: client with ID {client_id} not found."
                     )
                     return
                 recipient_email = client.email
@@ -550,13 +550,13 @@ def internal_add_member(
     except SQLAlchemyError as error:
         db.rollback()
         current_app.logger.error(
-            f"Internal error adding member to Team {team_id}: {error}"
+            f"Internal error adding member to team {team_id}: {error}"
         )
         return None, "خطایی داخلی در هنگام افزودن عضو رخ داد."
 
 
 def get_current_client(allow_inactive: bool = False) -> Optional[models.Client]:
-    """Retrieve the currently logged-in Client based on session data."""
+    """Retrieve the currently logged-in client based on session data."""
     client_id = session.get("client_id")
     if not client_id:
         return None
