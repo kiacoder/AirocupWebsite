@@ -127,14 +127,17 @@ class Client(Base):
 
     @property
     def Email(self) -> str:
+        """Get the email address of the client"""
         return self.email
 
     @property
     def PhoneNumber(self) -> str:
+        """Get the phone number of the client"""
         return self.phone_number
 
     @property
     def RegistrationDate(self) -> datetime.datetime:
+        """Get the registration date of the client"""
         return self.registration_date
 
 
