@@ -3,43 +3,60 @@
 {% block title %}تکمیل اطلاعات تماس | آیروکاپ{% endblock %}
 
 {% block body %}
-<div class="auth-card">
-  <h1 class="auth-card__title">تکمیل اطلاعات حساب</h1>
-  <p class="auth-card__subtitle">
-    لطفا ایمیل و شماره تماس خود را وارد کنید تا دسترسی کامل به پنل کاربری فعال شود.
-  </p>
+<section class="complete-profile-page">
+  <div class="complete-profile-card">
+    <header class="complete-profile-card__header">
+      <p class="eyebrow">فعالسازی حساب</p>
+      <h1>تکمیل اطلاعات حساب</h1>
+      <p class="subtitle">
+        لطفاً اطلاعات تماس خود را وارد یا اصلاح کنید تا دسترسی کامل به داشبورد و تیم‌های شما فعال شود.
+      </p>
+    </header>
 
-  <form method="POST" class="auth-form">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    <form method="POST" class="complete-profile-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
-    <div class="form-group">
-      <label for="email">ایمیل</label>
-      <input
-        type="email"
-        id="email"
-        name="email"
-        required
-        value="{{ form_email or '' }}"
-        placeholder="example@email.com"
-      />
-    </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="email">ایمیل</label>
+          <div class="input-with-icon">
+            <i class="fas fa-envelope"></i>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              required
+              dir="ltr"
+              value="{{ form_email or '' }}"
+              placeholder="example@email.com"
+            />
+          </div>
+          <small class="helper">برای بازیابی حساب و دریافت اطلاعیه‌ها استفاده می‌شود.</small>
+        </div>
 
-    <div class="form-group">
-      <label for="phone_number">شماره همراه</label>
-      <input
-        type="tel"
-        id="phone_number"
-        name="phone_number"
-        required
-        value="{{ form_phone or '' }}"
-        placeholder="09XXXXXXXXX"
-      />
-    </div>
+        <div class="form-group">
+          <label for="phone_number">شماره همراه</label>
+          <div class="input-with-icon">
+            <i class="fas fa-phone"></i>
+            <input
+              type="tel"
+              id="phone_number"
+              name="phone_number"
+              required
+              dir="ltr"
+              value="{{ form_phone or '' }}"
+              placeholder="09XXXXXXXXX"
+            />
+          </div>
+          <small class="helper">شماره باید با 09 شروع شود و ۱۱ رقم باشد.</small>
+        </div>
+      </div>
 
-    <div class="form-actions">
-      <button type="submit" class="btn btn-primary">ذخیره و ادامه</button>
-      <a href="{{ url_for('global.logout') }}" class="btn btn-secondary">خروج</a>
-    </div>
-  </form>
-</div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary btn--full-width">ذخیره و ادامه</button>
+        <a href="{{ url_for('global.logout') }}" class="btn btn-secondary btn--ghost">خروج</a>
+      </div>
+    </form>
+  </div>
+</section>
 {% endblock %}

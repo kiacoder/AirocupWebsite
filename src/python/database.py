@@ -57,6 +57,12 @@ def ensure_schema_upgrades():
             for row in connection.execute(text(f"PRAGMA table_info({table});"))
         )
 
+    def _is_column_not_null(connection, table: str, column: str) -> bool:
+        for row in connection.execute(text(f"PRAGMA table_info({table});")):
+            if row[1] == column:
+                return bool(row[3])
+        return False
+
     def _add_column(connection, table: str, ddl: str):
         connection.execute(text(f"ALTER TABLE {table} ADD COLUMN {ddl};"))
 
@@ -70,6 +76,57 @@ def ensure_schema_upgrades():
             )
 
     with db_engine.connect() as connection:
+        if _is_column_not_null(connection, "clients", "email"):
+            fk_initial_state = connection.execute(text("PRAGMA foreign_keys;")).scalar()
+            connection.execute(text("PRAGMA foreign_keys=off;"))
+            connection.execute(text("ALTER TABLE clients RENAME TO clients_old;"))
+            connection.execute(
+                text(
+                    """
+                    CREATE TABLE clients (
+                        client_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        phone_number VARCHAR(11) NOT NULL UNIQUE,
+                        email VARCHAR(255) UNIQUE,
+                        password VARCHAR(255) NOT NULL,
+                        registration_date DATETIME,
+                        status VARCHAR(50) NOT NULL DEFAULT 'active',
+                        is_phone_verified BOOLEAN DEFAULT 0,
+                        phone_verification_code VARCHAR(10),
+                        verification_code_timestamp DATETIME
+                    );
+                    """
+                )
+            )
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO clients (
+                        client_id,
+                        phone_number,
+                        email,
+                        password,
+                        registration_date,
+                        status,
+                        is_phone_verified,
+                        phone_verification_code,
+                        verification_code_timestamp
+                    )
+                    SELECT
+                        client_id,
+                        phone_number,
+                        email,
+                        password,
+                        registration_date,
+                        COALESCE(status, 'active'),
+                        is_phone_verified,
+                        phone_verification_code,
+                        verification_code_timestamp
+                    FROM clients_old;
+                    """
+                )
+            )
+            connection.execute(text("DROP TABLE clients_old;"))
+            connection.execute(text(f"PRAGMA foreign_keys={'on' if fk_initial_state else 'off'};"))
         if not _has_column(connection, "teams", "education_level"):
             _add_column(connection, "teams", "education_level VARCHAR(50)")
 
@@ -218,23 +275,27 @@ def validate_client_update(
     if not client_to_update:
         return None, ["اطلاعات کاربر مورد نظر یافت نشد."]
 
-    new_email = form_data.get("email", "").strip()
-    if new_email and new_email != client_to_update.email:
-        if not is_valid_email(new_email):
-            errors.append("فرمت ایمیل وارد شده معتبر نیست.")
-        else:
-            existing_client = (
-                db.query(models.Client)
-                .filter(
-                    func.lower(models.Client.email) == func.lower(new_email),
-                    models.Client.client_id != client_id,
-                )
-                .first()
-            )
-            if existing_client:
-                errors.append("این ایمیل قبلاً توسط کاربر دیگری ثبت شده است.")
+    new_email_raw = form_data.get("email")
+    if new_email_raw is not None:
+        new_email = new_email_raw.strip()
+        if new_email and new_email != (client_to_update.email or ""):
+            if not is_valid_email(new_email):
+                errors.append("فرمت ایمیل وارد شده معتبر نیست.")
             else:
-                clean_data["email"] = new_email
+                existing_client = (
+                    db.query(models.Client)
+                    .filter(
+                        func.lower(models.Client.email) == func.lower(new_email),
+                        models.Client.client_id != client_id,
+                    )
+                    .first()
+                )
+                if existing_client:
+                    errors.append("این ایمیل قبلاً توسط کاربر دیگری ثبت شده است.")
+                else:
+                    clean_data["email"] = new_email
+        elif new_email == "":
+            clean_data["email"] = None
 
     new_phone_number = fa_to_en(form_data.get("phone_number", "").strip())
     if new_phone_number and new_phone_number != client_to_update.phone_number:

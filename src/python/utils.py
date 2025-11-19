@@ -7,6 +7,7 @@ import datetime
 from typing import Any, IO, Tuple, Optional
 from sqlalchemy.orm import Session, subqueryload
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import func, or_
 import jdatetime  # type: ignore
 import filetype  # type: ignore
 from flask import Flask, session, current_app
@@ -501,6 +502,24 @@ def check_for_data_completion_issues(db: Session, client_id: int) -> Tuple[bool,
                 needs_resolution = True
 
     return needs_resolution, problematic_members
+
+
+def get_first_incomplete_team(db: Session, client_id: int) -> Optional[models.Team]:
+    """Return the first active team missing essential fields (e.g., name)."""
+
+    return (
+        db.query(models.Team)
+        .filter(
+            models.Team.client_id == client_id,
+            models.Team.status == models.EntityStatus.ACTIVE,
+            or_(
+                models.Team.team_name == None,  # noqa: E711
+                func.length(func.trim(models.Team.team_name)) == 0,
+            ),
+        )
+        .order_by(models.Team.team_id.asc())
+        .first()
+    )
 
 
 def internal_add_member(
