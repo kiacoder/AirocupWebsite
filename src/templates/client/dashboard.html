@@ -14,43 +14,64 @@
       background: linear-gradient(135deg, var(--color-primary-light), #fff);
       border: 1px solid var(--color-primary-light);
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-      margin-bottom: 1.5rem;
+      margin-bottom: 1rem;
     "
   >
     <div
       style="
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 1rem;
+        gap: 0.5rem;
         align-items: stretch;
       "
     >
       <div style="display: flex; flex-direction: column; gap: 0.25rem">
-        <span class="form-subtitle" style="margin-bottom: 0; color: var(--color-text)">
-          <i class="fas fa-hand-holding-usd" style="color: var(--color-primary)"></i>
+        <span
+          class="form-subtitle"
+          style="margin-bottom: 0; color: var(--color-text)"
+        >
+          <i
+            class="fas fa-hand-holding-usd"
+            style="color: var(--color-primary)"
+          ></i>
           هزینه ورودی هر تیم
         </span>
         <strong style="font-size: 1.4rem">
           {{ (payment.fee_team or 0) | humanize_number | persian_digits }} ریال
         </strong>
+        <p class="form-subtitle" style="font-size: 0.9rem">
+          هزینه ورودی تیم، یک هزینه ثابت برای هر تیم است و به هزینه اعضا اضافه
+          می‌گردد.
+        </p>
       </div>
 
       <div style="display: flex; flex-direction: column; gap: 0.25rem">
-        <span class="form-subtitle" style="margin-bottom: 0; color: var(--color-text)">
+        <span
+          class="form-subtitle"
+          style="margin-bottom: 0; color: var(--color-text)"
+        >
           <i class="fas fa-user-tag" style="color: var(--color-secondary)"></i>
           هزینه هر عضو فعال
         </span>
         <strong style="font-size: 1.4rem">
-          {{ (payment.fee_per_person or 0) | humanize_number | persian_digits }} ریال
+          {{ (payment.fee_per_person or 0) | humanize_number | persian_digits }}
+          ریال
         </strong>
         <small style="color: var(--color-text-muted)">
-          برای اعضای جدید در هر لیگ: {{ (payment.new_member_fee_per_league or 0) | humanize_number | persian_digits }} ریال
+          برای اعضای جدید در هر لیگ: {{ (payment.new_member_fee_per_league or 0)
+          | humanize_number | persian_digits }} ریال
         </small>
       </div>
 
       <div style="display: flex; flex-direction: column; gap: 0.25rem">
-        <span class="form-subtitle" style="margin-bottom: 0; color: var(--color-text)">
-          <i class="fas fa-percent" style="color: var(--color-primary-dark)"></i>
+        <span
+          class="form-subtitle"
+          style="margin-bottom: 0; color: var(--color-text)"
+        >
+          <i
+            class="fas fa-percent"
+            style="color: var(--color-primary-dark)"
+          ></i>
           تخفیف لیگ دوم
         </span>
         <strong style="font-size: 1.4rem">
@@ -124,105 +145,8 @@
     class="card"
     style="margin-bottom: 2rem; border-left: 5px solid var(--color-primary)"
   >
-    <h3
-      style="
-        padding-bottom: 1rem;
-        margin-bottom: 1.5rem;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        font-size: 1.3rem;
-      "
-    >
-      <i
-        class="fas fa-file-invoice-dollar"
-        style="color: var(--color-primary)"
-      ></i>
-      اطلاعات و هزینه‌های ثبت‌نام
-    </h3>
-    <div class="form-grid" style="gap: 1.5rem">
-      <div
-        class="detail-item"
-        style="
-          border: none;
-          padding: 1rem;
-          background: var(--color-background-muted);
-          border-radius: var(--border-radius-small);
-          display: flex;
-          flex-direction: column;
-          gap: 0.5rem;
-        "
-      >
-        <span style="display: flex; align-items: center; gap: 0.5rem">
-          <i class="fas fa-users" style="color: var(--color-primary-dark)"></i>
-          هزینه ورودی تیم
-        </span>
-        <strong>
-          {{ (payment.fee_team or 0) | humanize_number | persian_digits }} ریال
-        </strong>
-      </div>
-      <div
-        class="detail-item"
-        style="
-          border: none;
-          padding: 1rem;
-          background: var(--color-background-muted);
-          border-radius: var(--border-radius-small);
-          display: flex;
-          flex-direction: column;
-          gap: 0.5rem;
-        "
-      >
-        <span style="display: flex; align-items: center; gap: 0.5rem">
-          <i
-            class="fas fa-user-plus"
-            style="color: var(--color-primary-dark)"
-          ></i>
-          هزینه هر عضو
-        </span>
-        <strong>
-          {{ (payment.fee_per_person or 0) | humanize_number | persian_digits }}
-          ریال
-        </strong>
-      </div>
-      <div
-        class="detail-item grid-col-span-2"
-        style="
-          border: none;
-          padding: 1rem;
-          background: var(--color-background-muted);
-          border-radius: var(--border-radius-small);
-          display: flex;
-          flex-direction: column;
-          gap: 0.5rem;
-        "
-      >
-        <span style="display: flex; align-items: center; gap: 0.5rem">
-          <i
-            class="fas fa-percent"
-            style="color: var(--color-secondary-dark)"
-          ></i>
-          تخفیف ثبت‌نام در لیگ دوم
-        </span>
-        <strong>
-          {{ (payment.league_two_discount or 0) | persian_digits }} درصد
-        </strong>
-      </div>
-    </div>
-    <div
-      style="
-        padding-top: 1.5rem;
-        margin-top: 1.5rem;
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        flex-wrap: wrap;
-      "
-    >
-      <p style="margin-bottom: 0">
-        <strong>نکته:</strong> هزینه ورودی تیم، یک هزینه ثابت برای هر تیم است و
-        به هزینه اعضا اضافه می‌گردد.
-      </p>
+    <div class="form-grid" style="gap: 1.5rem"></div>
+    <div>
       <a
         href="{{ url_for('client.my_history') }}"
         class="btn btn-secondary btn-sm"
@@ -291,7 +215,9 @@
             ><i class="fas fa-graduation-cap"></i> مقطع تحصیلی</span
           >
           {% if team.education_level %}
-          <strong class="team-card-meta-value">{{ team.education_level }}</strong>
+          <strong class="team-card-meta-value"
+            >{{ team.education_level }}</strong
+          >
           {% else %}
           <strong class="team-card-meta-value team-card-meta-value--muted"
             >انتخاب نشده</strong

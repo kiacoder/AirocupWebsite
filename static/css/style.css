@@ -159,7 +159,7 @@
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
   --gradient-angle: 0deg;
-  --site-header-height: 110px;
+  --site-header-height: 100px;
   --border-radius: 30px;
   --border-radius-small: 10px;
 }
@@ -675,14 +675,14 @@ address {
   border-radius: var(--border-radius);
   padding: 15px 25px;
   margin: 0 auto 30px auto;
-  max-width: 90%;
+  max-width: 100%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 15px;
   font-size: 1.1rem;
+  width: 900px;
 }
-
 .olympiad-highlight i {
   color: var(--color-secondary-dark);
   font-size: 1.5rem;
@@ -1570,26 +1570,6 @@ legend {
   border-right: 4px solid var(--color-secondary);
   font-weight: 500;
   margin: 0;
-}
-
-.olympiad-highlight {
-  background-color: rgba(247, 166, 0, 0.1);
-  border: 1px solid var(--color-secondary);
-  border-radius: var(--border-radius);
-  padding: 15px 25px;
-  margin: 0 auto 30px auto;
-  max-width: 90%;
-  width: 700px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 15px;
-  font-size: 1.1rem;
-}
-
-.olympiad-highlight i {
-  color: var(--color-secondary-dark);
-  font-size: 1.5rem;
 }
 
 .sponsorship-benefits {

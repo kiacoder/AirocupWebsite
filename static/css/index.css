@@ -246,12 +246,12 @@
   display: inline-flex;
   align-items: center;
   gap: 0.6rem;
-  padding: 0.9rem 1.2rem;
+  padding: 1rem 1.8rem;
   background: rgba(247, 166, 0, 0.18);
   color: #ffe0a6;
   border-radius: 16px;
   border: 1px solid rgba(247, 166, 0, 0.35);
-  font-weight: 600;
+  font-weight: 800;
 }
 
 .olympiad-highlight .icon {
