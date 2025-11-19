@@ -1285,9 +1285,10 @@ def admin_clients_list():
 @admin_required
 def admin_add_client():
     "add a new client to the database"
-    email = bleach.clean(
+    email_raw = bleach.clean(
         (request.form.get("email") or request.form.get("Email") or "").strip().lower()
     )
+    email = email_raw or None
     phone = persiantools.digits.fa_to_en(
         (request.form.get("phone_number") or request.form.get("PhoneNumber") or "")
     ).strip()
@@ -1305,7 +1306,7 @@ def admin_add_client():
 
     validation_errors = []
 
-    if not utils.is_valid_email(email):
+    if email and not utils.is_valid_email(email):
         validation_errors.append("ایمیل وارد شده معتبر نیست.")
 
     if not utils.is_valid_iranian_phone(phone):
@@ -1322,16 +1323,24 @@ def admin_add_client():
 
     with database.get_db_session() as db:
         try:
-            if (
+            existing_phone = (
                 db.query(models.Client)
-                .filter(
-                    (models.Client.email == email)
-                    | (models.Client.phone_number == phone)
-                )
+                .filter(models.Client.phone_number == phone)
                 .first()
-            ):
-                flash("کاربری با این ایمیل یا شماره تلفن از قبل وجود دارد.", "error")
+            )
+            if existing_phone:
+                flash("کاربری با این شماره تلفن از قبل وجود دارد.", "error")
                 return redirect(url_for("admin.admin_clients_list"))
+
+            if email:
+                existing_email = (
+                    db.query(models.Client)
+                    .filter(func.lower(models.Client.email) == func.lower(email))
+                    .first()
+                )
+                if existing_email:
+                    flash("کاربری با این ایمیل از قبل وجود دارد.", "error")
+                    return redirect(url_for("admin.admin_clients_list"))
 
             db.add(
                 models.Client(

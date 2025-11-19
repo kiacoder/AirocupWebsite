@@ -77,7 +77,7 @@ class Client(Base):
     )
     client_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     phone_number: Mapped[str] = mapped_column(String(11), nullable=False, unique=True)
-    email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, unique=True)
     password: Mapped[str] = mapped_column(String(255), nullable=False)
     registration_date: Mapped[Optional[datetime.datetime]] = mapped_column(
         DateTime,
