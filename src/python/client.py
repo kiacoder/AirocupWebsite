@@ -44,6 +44,39 @@ from .auth import login_required
 client_blueprint = Blueprint("client", __name__)
 
 
+@client_blueprint.before_request
+def enforce_profile_and_team_completion():
+    """Redirect users to required completion steps before normal navigation."""
+
+    if not session.get("client_id"):
+        return None
+
+    allowed_endpoints = {
+        "client.complete_profile",
+        "global.logout",
+        "client.update_team",
+        "client.upload_document",
+    }
+
+    if session.get("needs_contact_completion") and request.endpoint != "client.complete_profile":
+        return redirect(url_for("client.complete_profile"))
+
+    pending_team_id = session.get("pending_team_completion_id")
+    if pending_team_id:
+        with database.get_db_session() as db:
+            incomplete_team = utils.get_first_incomplete_team(db, session["client_id"])
+            if incomplete_team:
+                session["pending_team_completion_id"] = incomplete_team.team_id
+                if request.endpoint not in allowed_endpoints:
+                    return redirect(
+                        url_for("client.update_team", team_id=incomplete_team.team_id)
+                    )
+            else:
+                session.pop("pending_team_completion_id", None)
+
+    return None
+
+
 def _ensure_aware(dt: datetime.datetime | None) -> datetime.datetime | None:
     """Return timezone-aware datetime (UTC). If dt is None return None.
     If dt.tzinfo is None assume UTC (replace tzinfo)."""
@@ -317,6 +350,9 @@ def login_client():
                 )
                 db.commit()
 
+            incomplete_team = utils.get_first_incomplete_team(
+                db, client_check.client_id
+            )
             team_count = (
                 db.query(models.Team)
                 .filter(
@@ -346,6 +382,16 @@ def login_client():
             session["client_id"] = client_check.client_id
             session.permanent = True
             flash("شما با موفقیت وارد شدید.", "success")
+
+            if incomplete_team:
+                session["pending_team_completion_id"] = incomplete_team.team_id
+                flash(
+                    "تیم شما نیاز به تکمیل اطلاعات دارد. لطفاً ابتدا نام تیم را ثبت کنید.",
+                    "warning",
+                )
+                return redirect(
+                    url_for("client.update_team", team_id=incomplete_team.team_id)
+                )
 
             if team_count == 0 and not next_url_from_form:
                 flash("برای ادامه، لطفا اولین تیم خود را ایجاد کنید.", "info")
@@ -443,10 +489,21 @@ def complete_profile():
                 needs_resolution, problems = utils.check_for_data_completion_issues(
                     db, client.client_id
                 )
+                incomplete_team = utils.get_first_incomplete_team(db, client.client_id)
                 session.clear()
                 session["client_id"] = client.client_id
                 session.permanent = True
                 session.pop("needs_contact_completion", None)
+
+                if incomplete_team:
+                    session["pending_team_completion_id"] = incomplete_team.team_id
+                    flash(
+                        "برای ادامه لطفاً نام تیم خود را تکمیل کنید.",
+                        "warning",
+                    )
+                    return redirect(
+                        url_for("client.update_team", team_id=incomplete_team.team_id)
+                    )
 
                 if needs_resolution:
                     session["resolution_problems"] = {
@@ -565,6 +622,13 @@ def update_team(team_id):
                             session["client_id"],
                             f"User updated team name for team id {team_id} to '{new_team_name}'.",
                         )
+                        pending_team = utils.get_first_incomplete_team(
+                            db, session["client_id"]
+                        )
+                        if pending_team:
+                            session["pending_team_completion_id"] = pending_team.team_id
+                        else:
+                            session.pop("pending_team_completion_id", None)
                         flash("نام تیم با موفقیت به‌روزرسانی شد!", "success")
                 except exc.IntegrityError:
                     db.rollback()

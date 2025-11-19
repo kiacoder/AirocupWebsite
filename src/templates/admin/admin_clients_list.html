@@ -5,7 +5,7 @@
 {% block body %}
 <div class="admin-page">
   <header class="admin-page__header">
-    <div class="admin-page__title">
+        <div class="admin-page__title">
       <h1>مدیریت کاربران</h1>
       <p class="admin-page__subtitle">
         افزودن و مدیریت تمام کاربران ثبت‌نام شده در سامانه آیروکاپ.
@@ -72,7 +72,7 @@
               </tr>
             </thead>
             <tbody>
-              {% for client_data in clients %}
+              {% for client_data in Clients %}
               <tr>
                 <td>#{{ client_data.client_id | persian_digits }}</td>
                 <td dir="ltr">{{ client_data.email or '—' }}</td>
