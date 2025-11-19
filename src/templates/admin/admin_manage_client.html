@@ -1,6 +1,6 @@
 {% extends "global/base.html" %}
 
-{% block title %}مدیریت کاربر: {{ client.email }} | پنل آیروکاپ{% endblock %}
+{% block title %}مدیریت کاربر: {{ client.email or 'بدون ایمیل' }} | پنل آیروکاپ{% endblock %}
 
 {% block body %}
 <div class="admin-page">
@@ -8,7 +8,7 @@
     <div class="admin-page__title">
       <h1>مدیریت کاربر</h1>
       <p class="admin-page__subtitle">
-        جزئیات حساب <strong dir="ltr">{{ client.email }}</strong> و تیم‌های ثبت‌شده توسط او را مدیریت کنید.
+        جزئیات حساب <strong dir="ltr">{{ client.email or '—' }}</strong> و تیم‌های ثبت‌شده توسط او را مدیریت کنید.
       </p>
     </div>
     <div class="admin-page__actions">
@@ -54,7 +54,7 @@
         <dl class="admin-info-list">
           <div>
             <dt>ایمیل</dt>
-            <dd dir="ltr">{{ client.email }}</dd>
+            <dd dir="ltr">{{ client.email or '—' }}</dd>
           </div>
           <div>
             <dt>شماره تماس</dt>
@@ -372,13 +372,12 @@
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
           <div class="form-group">
-            <label for="EditEmail">ایمیل</label>
+            <label for="EditEmail">ایمیل (اختیاری)</label>
             <input
               type="email"
               id="EditEmail"
               name="email"
-              value="{{ client.email }}"
-              required
+              value="{{ client.email or '' }}"
               dir="ltr"
             />
           </div>
@@ -442,7 +441,7 @@
     <div class="modal-content">
       <button class="modal-close" data-dismiss="modal" aria-label="بستن">&times;</button>
       <header class="modal-header">
-        <h2 id="addTeamModalTitle" class="modal-title">افزودن تیم جدید برای {{ client.email }}</h2>
+        <h2 id="addTeamModalTitle" class="modal-title">افزودن تیم جدید برای {{ client.email or 'بدون ایمیل' }}</h2>
       </header>
       <div class="modal-body">
         <form
