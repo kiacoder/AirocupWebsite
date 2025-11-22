@@ -502,6 +502,9 @@ def admin_manage_news():
             image_file = request.files.get("image")
             html_file = request.files.get("html_file")
 
+            if link_string and not link_string.startswith(("http://", "https://")):
+                link_string = f"https://{link_string}"
+
             if not title_string or not content_string:
                 flash("عنوان و محتوای خبر نمی‌توانند خالی باشند.", "error")
                 return redirect(url_for("admin.admin_manage_news"))
@@ -593,7 +596,10 @@ def admin_edit_news(article_id):
             try:
                 article.template_path = request.form.get("template_path", "").strip()
                 article.content = bleach.clean(request.form.get("content", "").strip())
-                article.link = request.form.get("link", "").strip() or None
+                link_val = request.form.get("link", "").strip()
+                if link_val and not link_val.startswith(("http://", "https://")):
+                    link_val = f"https://{link_val}"
+                article.link = link_val or None
                 new_title = bleach.clean(request.form.get("title", "").strip())
 
                 if new_title and new_title != article.title:
