@@ -56,9 +56,11 @@ def is_file_allowed(file_stream: IO[bytes]) -> bool:
 
 
 def calculate_age(
-    birth_date: datetime.date, reference_date: Optional[datetime.date] = None
+    birth_date: Optional[datetime.date], reference_date: Optional[datetime.date] = None
 ) -> int:
     """Return the age in completed years at the given reference date (today by default)."""
+    if birth_date is None:
+        return 0
 
     if reference_date is None:
         reference_date = datetime.date.today()
@@ -71,7 +73,7 @@ def calculate_age(
 
 
 def validate_member_age(
-    birth_date: datetime.date,
+    birth_date: Optional[datetime.date],
     role: Optional[models.MemberRole],
     education_level: Optional[str],
 ) -> Tuple[bool, Optional[str]]:
@@ -79,6 +81,9 @@ def validate_member_age(
 
     if role is None:
         return False, "نقش عضو مشخص نشده است."
+
+    if birth_date is None:
+        return False, "تاریخ تولد مشخص نشده است."
 
     age = calculate_age(birth_date)
 
@@ -184,12 +189,19 @@ def send_templated_sms_async(
     sms_config: dict,
 ):
     "Send a templated SMS asynchronously"
+    from . import database
     with app.app_context():
         try:
             rest_url = sms_config.get("rest_url")
             if not isinstance(rest_url, str):
                 current_app.logger.error(
                     "SMS configuration is missing or invalid for 'rest_url'."
+                )
+                return
+
+            if not template_id:
+                current_app.logger.error(
+                    f"SMS error: template_id is missing or zero for client_id {client_id}."
                 )
                 return
 
@@ -213,7 +225,7 @@ def send_templated_sms_async(
                 "bodyId": template_id,
                 "text": verification_code,
             }
-            response = requests.post(rest_url, data=payload, timeout=10)
+            response = requests.post(rest_url, json=payload, timeout=10)
             response.raise_for_status()
             api_response = response.json()
 
@@ -225,7 +237,9 @@ def send_templated_sms_async(
             else:
                 current_app.logger.error(
                     f"SMS API failure for {recipient}. "
-                    f"Status: {api_response.get('Value')}"
+                    f"RetStatus: {api_response.get('RetStatus')} - "
+                    f"Value: {api_response.get('Value')} - "
+                    f"Full Response: {api_response}"
                 )
 
         except requests.exceptions.RequestException as error:
@@ -393,6 +407,8 @@ def create_member_from_form_data(
     try:
         name = bleach.clean(form_data.get("name", "").strip())
         national_id = fa_to_en(form_data.get("national_id", "").strip())
+        phone_number = fa_to_en(form_data.get("phone_number", "").strip())
+        gender_value = form_data.get("gender", "").strip()
         role_value = form_data.get("role", "").strip()
         province = form_data.get("province", "").strip()
         city_name = form_data.get("city", "").strip()
@@ -412,6 +428,8 @@ def create_member_from_form_data(
         birth_month,
         birth_day,
         role_value,
+        gender_value=gender_value,
+        phone_number=phone_number,
         team_id=team_id,
         member_id_to_exclude=member_id,
     )
@@ -426,12 +444,15 @@ def create_member_from_form_data(
     )
 
     role = next((r for r in models.MemberRole if r.value == role_value), None)
+    gender = next((g for g in models.Gender if g.value == gender_value), None)
     persian_date = jdatetime.date(birth_year, birth_month, birth_day)
     gregorian_date = persian_date.togregorian()
 
     return {
         "name": name,
         "national_id": national_id,
+        "phone_number": phone_number,
+        "gender": gender,
         "role": role,
         "city_id": city_id,
         "birth_date": gregorian_date,
@@ -453,6 +474,8 @@ def validate_member_for_resolution(
         problems["missing"].append("city")
     if member.birth_date is None:
         problems["missing"].append("birth_date")
+    if member.gender is None:
+        problems["missing"].append("gender")
 
     if member.birth_date is not None:
         try:
