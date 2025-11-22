@@ -1068,6 +1068,13 @@ technical_committee_members = [
         "image": "images/technical_committee/amir_hossain.png",
     },
     {
+        "name": "سهیل رحیمی",
+        "role": "رئیس لیگ ربات جنگجو",
+        "description": "مسئولیت برنامه‌ریزی و اجرای لیگ ربات جنگجو",
+        "image": None,
+    },
+]
+    {
         "name": "مهندس مهدی محمدی",
         "role": "مدیر ارتباطات آیروکاپ",
         "description": "مسئولیت مدیریت ارتباطات و روابط عمومی",
