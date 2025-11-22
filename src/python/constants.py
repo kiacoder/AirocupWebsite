@@ -62,7 +62,7 @@ class Path:
         ),
         "student_research_center": ("images/logo/sponsors/student_research_center.png"),
         "student_research_center_tehran": (
-            "images/logo/sponsors/student_research_center.png"
+            "images/logo/sponsors/student_research_center_tehran.png"
         ),
         "science_ministry": (
             "images/logo/sponsors/ministry_of_science_and_technology.png"
@@ -72,6 +72,7 @@ class Path:
         ),
         "university": "images/logo/sponsors/university_logo.png",
         "water_waste": "images/logo/sponsors/water_and_waste.png",
+        "naft_iran": "images/logo/sponsors/naft.png",
     }
 
 
@@ -1262,13 +1263,14 @@ class Contact:
     )
     eitaa = "https://eitaa.com/airocup2025"
     telegram = "https://t.me/airocup"
+    whatsapp = "https://whatsapp.com/channel/0029VbBmVyjBvvskgr0yqY0o"
 
 
 contact_points_data = [
     {
         "href": f"mailto:{Contact.email_primary}",
         "icon": "fas fa-envelope",
-        "label": "ایمیل اصلی (سازمانی)",
+        "label": "ایمیل",
         "display": Contact.email_primary,
         "target": None,
     },
@@ -1312,6 +1314,13 @@ contact_points_data = [
         "icon": "fa-brands fa-telegram",
         "label": "تلگرام",
         "display": "کانال تلگرام",
+        "target": "_blank",
+    },
+    {
+        "href": Contact.whatsapp,
+        "icon": "fab fa-whatsapp",
+        "label": "واتساپ",
+        "display": "کانال واتساپ آیروکاپ",
         "target": "_blank",
     },
     {
@@ -1460,6 +1469,7 @@ homepage_sponsors_data = [
         "alt_text": "پژوهش سرای دانش‌آموزی تهران",
     },
     {"logo_key": "water_waste", "alt_text": "شرکت مهندسی آب و فاضلاب کشور"},
+    {"logo_key": "naft_iran", "alt_text": "شرکت ملی نفت ایران"},
 ]
 
 gallery_videos_data = [
