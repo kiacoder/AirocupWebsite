@@ -49,6 +49,10 @@
         <i class="fas fa-user-clock"></i>
         میانگین سن: {{ team.average_age | default(0, true) | persian_digits }} سال
       </div>
+      <div class="admin-badge {% if payable_amount > 0 %}admin-badge--warning{% else %}admin-badge--success{% endif %}">
+        <i class="fas fa-coins"></i>
+        مبلغ قابل پرداخت: {{ payable_amount | humanize_number | persian_digits }} ریال
+      </div>
       <div class="admin-badge admin-badge--info">
         <i class="fas fa-map"></i>
         استان/شهر: {{ team.average_provinces or '—' }}
@@ -183,8 +187,10 @@
             <thead>
               <tr>
                 <th>نام عضو</th>
+                <th>جنسیت</th>
                 <th>نقش</th>
                 <th>کد ملی</th>
+                <th>شماره موبایل</th>
                 <th>محل سکونت</th>
                 <th>تاریخ تولد</th>
                 <th>عملیات</th>
@@ -194,6 +200,7 @@
               {% for member in members %}
               <tr>
                 <td>{{ member.name }}</td>
+                <td>{{ member.gender.label if member.gender else '—' }}</td>
                 <td>
                   <span class="admin-status admin-status--idle">
                     <i class="fas fa-user-tag"></i>
@@ -201,6 +208,7 @@
                   </span>
                 </td>
                 <td dir="ltr">{{ member.national_id }}</td>
+                <td dir="ltr">{{ member.phone_number if member.phone_number else '—' }}</td>
                 <td>
                   {{ member.city.province.name if member.city and member.city.province else '—' }}
                   {% if member.city and member.city.name %} | {{ member.city.name }}{% endif %}
@@ -214,6 +222,8 @@
                     data-member-id="{{ member.member_id }}"
                     data-name="{{ member.name }}"
                     data-national-id="{{ member.national_id }}"
+                    data-phone-number="{{ member.phone_number if member.phone_number else '' }}"
+                    data-gender="{{ member.gender.value if member.gender else '' }}"
                     data-role="{{ member.role.value if member.role else '' }}"
                     data-province="{{ member.city.province.name if member.city and member.city.province else '' }}"
                     data-city="{{ member.city.name if member.city else '' }}"

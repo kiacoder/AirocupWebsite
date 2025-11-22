@@ -1164,6 +1164,32 @@ def admin_edit_team(team_id):
 
         last_payment = payments[0] if payments else None
 
+        # Calculate Payable Amount
+        active_members_count = sum(1 for m in members if m.status == models.EntityStatus.ACTIVE)
+        has_approved_payment = database.check_if_team_is_paid(db, team_id)
+        
+        fee_per_person = config.payment_config.get("fee_per_person") or 0
+        fee_team = config.payment_config.get("fee_team") or 0
+        league_two_discount = config.payment_config.get("league_two_discount") or 0
+        new_member_fee_per_league = config.payment_config.get("new_member_fee_per_league") or 0
+
+        payable_amount = 0
+        if has_approved_payment:
+            # Team has paid initially, so they only pay for new (unpaid) members
+            if team.unpaid_members_count > 0:
+                num_leagues = 1 + (1 if team.league_two_id else 0)
+                payable_amount = team.unpaid_members_count * new_member_fee_per_league * num_leagues
+        else:
+            # Initial payment calculation
+            members_fee = active_members_count * fee_per_person
+            base_cost = fee_team + members_fee
+            
+            league_two_cost = 0
+            if team.league_two_id:
+                league_two_cost = int(round(base_cost * (1 - league_two_discount / 100)))
+            
+            payable_amount = base_cost + league_two_cost
+
     return render_template(
         constants.admin_html_names_data["admin_edit_team"],
         team=team,
@@ -1171,6 +1197,7 @@ def admin_edit_team(team_id):
         payments=payments,
         education_levels=constants.education_levels,
         last_payment=last_payment,
+        payable_amount=payable_amount,
         **form_context,
     )
 
