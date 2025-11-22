@@ -19,7 +19,7 @@ from flask import (
     current_app,
 )
 import persiantools.digits  # type:ignore
-from sqlalchemy import exc, func, select, or_, case
+from sqlalchemy import exc, func, select, or_, case, String
 from sqlalchemy.sql.functions import count
 from sqlalchemy.orm import joinedload, subqueryload
 import bleach
@@ -498,6 +498,7 @@ def admin_manage_news():
             template_path = request.form.get("template_path", "").strip()
             title_string = bleach.clean(request.form.get("title", "")).strip()
             content_string = bleach.clean(request.form.get("content", "")).strip()
+            link_string = request.form.get("link", "").strip()
             image_file = request.files.get("image")
             html_file = request.files.get("html_file")
 
@@ -517,6 +518,7 @@ def admin_manage_news():
             new_article = models.News(
                 title=title_string,
                 content=content_string,
+                link=link_string or None,
                 publish_date=datetime.datetime.now(datetime.timezone.utc),
                 template_path=template_path,
             )
@@ -591,6 +593,7 @@ def admin_edit_news(article_id):
             try:
                 article.template_path = request.form.get("template_path", "").strip()
                 article.content = bleach.clean(request.form.get("content", "").strip())
+                article.link = request.form.get("link", "").strip() or None
                 new_title = bleach.clean(request.form.get("title", "").strip())
 
                 if new_title and new_title != article.title:
@@ -1217,6 +1220,8 @@ def admin_edit_member(team_id, member_id):
                 member_to_update.name = updated_member_data["name"]
                 member_to_update.birth_date = updated_member_data["birth_date"]
                 member_to_update.national_id = updated_member_data["national_id"]
+                member_to_update.phone_number = updated_member_data["phone_number"]
+                member_to_update.gender = updated_member_data["gender"]
                 member_to_update.role = updated_member_data["role"]
                 member_to_update.city_id = updated_member_data["city_id"]
 
@@ -1652,7 +1657,7 @@ def admin_search():
             )
         clients = client_query.limit(150).all()
 
-        team_query = db.query(models.Team).options(
+        team_query = db.query(models.Team).join(models.Client).options(
             joinedload(models.Team.client),
             joinedload(models.Team.league_one),
             joinedload(models.Team.league_two),
@@ -1729,6 +1734,34 @@ def admin_search():
             payment_query = payment_query.order_by(models.Payment.upload_date.desc())
         payments = payment_query.limit(100).all()
 
+        members = []
+        if query:
+            member_query = (
+                db.query(models.Member)
+                .options(
+                    joinedload(models.Member.team).joinedload(models.Team.client),
+                    joinedload(models.Member.city).joinedload(models.City.province),
+                )
+            )
+            keyword_like = f"%{query}%"
+            member_query = member_query.filter(
+                or_(
+                    models.Member.name.ilike(keyword_like),
+                    models.Member.national_id.ilike(keyword_like),
+                    models.Member.phone_number.ilike(keyword_like),
+                )
+            )
+            if team_status == "archived":
+                member_query = member_query.filter(
+                    models.Member.status != models.EntityStatus.ACTIVE
+                )
+            elif team_status != "all":
+                member_query = member_query.filter(
+                    models.Member.status == models.EntityStatus.ACTIVE
+                )
+                
+            members = member_query.limit(300).all()
+
         return render_template(
             constants.admin_html_names_data["admin_search"],
             query=query,
@@ -1743,6 +1776,7 @@ def admin_search():
             clients=clients,
             teams=teams,
             payments=payments,
+            members=members,
             enums=models,
         )
 

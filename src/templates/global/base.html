@@ -196,13 +196,14 @@
     {% elif not _is_admin %}
     <header class="site-header">
       <div class="container header-inner">
-        <div class="logo" aria-hidden="false">
-          <a href="{{ url_for('global.index') }}">
+        <div class="logo-wrapper">
+          <a href="{{ url_for('global.index') }}" class="logo" aria-hidden="false">
             <img
               src="{{ url_for('static', filename=path.transparent_logos['transparent_white'], v=static_version) }}"
               alt="لوگو آیروکاپ"
             />
           </a>
+          <span class="logo-subtitle">National Artificial Intelligence and Robotics Cup</span>
         </div>
         <nav
           class="main-nav"
@@ -578,11 +579,9 @@
       defer
     ></script>
 
-    {% if not _is_admin %}
     <script>
       window.AirocupData = {{ airocup_data | tojson | safe }};
     </script>
-    {% endif %}
     
     <script
       src="{{ url_for('static', filename=path.js_main, v=static_version) }}"

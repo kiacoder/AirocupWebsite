@@ -197,7 +197,45 @@
                 </td>
               </tr>
               {% else %}
-              <tr class="admin-table__empty"><td colspan="6">نتیجه‌ای برای تیم‌ها یافت نشد.</td></tr>
+      </div>
+    </article>
+
+    <article class="admin-surface">
+      <header class="admin-surface__header">
+        <div class="admin-surface__title">
+          <h2><i class="fas fa-user-graduate"></i> نتایج اعضا</h2>
+          <p>اعضای منطبق با نام، کد ملی یا شماره تماس.</p>
+        </div>
+      </header>
+      <div class="admin-surface__body">
+        <div class="admin-table-wrapper">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>نام عضو</th>
+                <th>تیم</th>
+                <th>کد ملی</th>
+                <th>نقش</th>
+                <th>وضعیت</th>
+                <th>عملیات</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for m in members %}
+              <tr>
+                <td>{{ m.name }}</td>
+                <td>{{ m.team.team_name if m.team else '—' }}</td>
+                <td>{{ m.national_id | persian_digits }}</td>
+                <td>{{ m.role.label }}</td>
+                <td>{{ m.status.label }}</td>
+                <td class="admin-table__actions">
+                  {% if m.team %}
+                  <a href="{{ url_for('admin.admin_edit_team', team_id=m.team.team_id) }}" class="btn btn-primary btn-small">مدیریت تیم</a>
+                  {% endif %}
+                </td>
+              </tr>
+              {% else %}
+              <tr class="admin-table__empty"><td colspan="6">نتیجه‌ای برای اعضا یافت نشد.</td></tr>
               {% endfor %}
             </tbody>
           </table>

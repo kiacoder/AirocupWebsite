@@ -29,36 +29,6 @@
       </header>
 
       <div class="admin-surface__body">
-        <form class="admin-search-form" method="GET" action="{{ url_for('admin.admin_clients_list') }}">
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="q">جستجو</label>
-              <input
-                type="search"
-                id="q"
-                name="q"
-                value="{{ Keyword or '' }}"
-                placeholder="ایمیل یا شماره تلفن"
-              />
-            </div>
-            <div class="form-group">
-              <label for="status">وضعیت</label>
-              <select id="status" name="status">
-                <option value="active" {% if FilterStatus=='active' %}selected{% endif %}>فقط فعال</option>
-                <option value="archived" {% if FilterStatus=='archived' %}selected{% endif %}>فقط آرشیو شده</option>
-                <option value="all" {% if FilterStatus=='all' %}selected{% endif %}>همه</option>
-              </select>
-            </div>
-          </div>
-          <div class="admin-search-actions">
-            <button type="submit" class="btn btn-primary">
-              <i class="fas fa-search"></i>
-              اعمال فیلتر
-            </button>
-            <a href="{{ url_for('admin.admin_clients_list') }}" class="btn btn-secondary">پاک کردن</a>
-          </div>
-        </form>
-
         <div class="admin-table-wrapper">
           <table class="admin-table" id="clients-table">
             <thead>
@@ -129,14 +99,6 @@
                 </td>
               </tr>
               {% endfor %}
-              <tr id="noResultsMessage" class="admin-table__empty" style="display: none">
-                <td colspan="6">
-                  <div class="admin-empty-state">
-                    <i class="fas fa-search"></i>
-                    هیچ کاربری با مشخصات وارد شده یافت نشد.
-                  </div>
-                </td>
-              </tr>
             </tbody>
           </table>
         </div>
