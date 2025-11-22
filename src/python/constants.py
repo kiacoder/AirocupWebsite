@@ -1453,6 +1453,12 @@ committee_members_data = [
         "description": "مسئولیت پشتیبانی فنی و حل مشکلات شرکت‌کنندگان",
         "image": "images/committee/khalil_pore.png",
     },
+    {
+        "name": "مهندس مهدی محمدی",
+        "role": "مدیر ارتباطات آیروکاپ",
+        "description": "مسئولیت مدیریت ارتباطات و روابط عمومی",
+        "image": "images/committee/mahdi.jpg",
+    },
 ]
 
 homepage_sponsors_data = [
