@@ -7,6 +7,6 @@ from flask_limiter.util import get_remote_address
 from flask_socketio import SocketIO
 
 csrf_protector = CSRFProtect()
-limiter_storage_uri = os.getenv("AIROCUP_RATE_LIMIT_STORAGE", "redis://localhost:6379")
+limiter_storage_uri = os.getenv("AIROCUP_RATE_LIMIT_STORAGE", "memory://")
 limiter = Limiter(key_func=get_remote_address, storage_uri=limiter_storage_uri)
 socket_io = SocketIO()

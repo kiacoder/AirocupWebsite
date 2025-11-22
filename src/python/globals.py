@@ -88,8 +88,13 @@ def view_article(article_id):
     "View a specific news article"
     with database.get_db_session() as db:
         article = database.get_article_by_id(db, article_id)
-    if not article:
-        abort(404)
+        if not article:
+            abort(404)
+        
+        database.increment_news_view(db, article_id)
+
+    # if article.link:
+    #     return redirect(article.link)
 
     if article.template_path:
         template_path = article.template_path.strip()

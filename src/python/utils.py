@@ -16,6 +16,7 @@ import requests  # type: ignore
 import bleach  # type: ignore
 from . import models
 from . import constants
+from . import database
 
 
 def is_valid_name(name: str) -> bool:
@@ -189,19 +190,12 @@ def send_templated_sms_async(
     sms_config: dict,
 ):
     "Send a templated SMS asynchronously"
-    from . import database
     with app.app_context():
         try:
             rest_url = sms_config.get("rest_url")
             if not isinstance(rest_url, str):
                 current_app.logger.error(
                     "SMS configuration is missing or invalid for 'rest_url'."
-                )
-                return
-
-            if not template_id:
-                current_app.logger.error(
-                    f"SMS error: template_id is missing or zero for client_id {client_id}."
                 )
                 return
 
@@ -213,7 +207,7 @@ def send_templated_sms_async(
                 )
                 if not client:
                     current_app.logger.error(
-                        f"SMS error: client with id {client_id} not found."
+                        f"SMS error: Client with ID {client_id} not found."
                     )
                     return
                 recipient = client.phone_number
@@ -225,7 +219,7 @@ def send_templated_sms_async(
                 "bodyId": template_id,
                 "text": verification_code,
             }
-            response = requests.post(rest_url, json=payload, timeout=10)
+            response = requests.post(rest_url, data=payload, timeout=10)
             response.raise_for_status()
             api_response = response.json()
 
@@ -237,9 +231,7 @@ def send_templated_sms_async(
             else:
                 current_app.logger.error(
                     f"SMS API failure for {recipient}. "
-                    f"RetStatus: {api_response.get('RetStatus')} - "
-                    f"Value: {api_response.get('Value')} - "
-                    f"Full Response: {api_response}"
+                    f"Status: {api_response.get('Value')}"
                 )
 
         except requests.exceptions.RequestException as error:
@@ -402,19 +394,23 @@ def create_member_from_form_data(
     team_id: Optional[int] = None,
     member_id: Optional[int] = None,
 ) -> Tuple[Optional[dict], Optional[str]]:
-    """Create a member dictionary from form data after validation"""
-    from . import database
+    """Create a member dictionary from form data after validation.
+
+    ``team_id`` and ``member_id`` are optional and let the validator ignore the
+    current record when editing as well as block duplicates within the same
+    team without preventing members from joining different teams/leagues.
+    """
     try:
         name = bleach.clean(form_data.get("name", "").strip())
         national_id = fa_to_en(form_data.get("national_id", "").strip())
         phone_number = fa_to_en(form_data.get("phone_number", "").strip())
-        gender_value = form_data.get("gender", "").strip()
         role_value = form_data.get("role", "").strip()
         province = form_data.get("province", "").strip()
         city_name = form_data.get("city", "").strip()
         birth_year = int(form_data.get("birth_year", 0))
         birth_month = int(form_data.get("birth_month", 0))
         birth_day = int(form_data.get("birth_day", 0))
+        gender_value = form_data.get("gender", "").strip()
     except (ValueError, TypeError):
         return None, "تاریخ تولد باید به صورت عددی وارد شود."
 
@@ -452,8 +448,8 @@ def create_member_from_form_data(
         "name": name,
         "national_id": national_id,
         "phone_number": phone_number,
-        "gender": gender,
         "role": role,
+        "gender": gender,
         "city_id": city_id,
         "birth_date": gregorian_date,
     }, None
@@ -474,8 +470,6 @@ def validate_member_for_resolution(
         problems["missing"].append("city")
     if member.birth_date is None:
         problems["missing"].append("birth_date")
-    if member.gender is None:
-        problems["missing"].append("gender")
 
     if member.birth_date is not None:
         try:
@@ -494,7 +488,6 @@ def validate_member_for_resolution(
 
 def check_for_data_completion_issues(db: Session, client_id: int) -> Tuple[bool, dict]:
     "Check all teams and members for data completion issues"
-    from . import database
     client = (
         db.query(models.Client).filter(models.Client.client_id == client_id).first()
     )
@@ -549,7 +542,6 @@ def internal_add_member(
     db: Session, team_id: int, form_data: dict
 ) -> Tuple[Optional[models.Member], Optional[str]]:
     "Add a new member to a team after validating the data"
-    from . import database
     new_member_data, error = create_member_from_form_data(
         db, form_data, team_id=team_id
     )
@@ -596,7 +588,6 @@ def internal_add_member(
 
 def get_current_client(allow_inactive: bool = False) -> Optional[models.Client]:
     """Retrieve the currently logged-in client based on session data."""
-    from . import database
     client_id = session.get("client_id")
     if not client_id:
         return None

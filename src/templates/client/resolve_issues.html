@@ -111,6 +111,22 @@
                     </div>
 
                     <div class="form-grid">
+                      <div class="form-group {% if 'gender' in missing_fields %}has-error{% endif %}">
+                        <label for="member_gender_{{ member.member_id }}">جنسیت<span class="required-star">*</span></label>
+                        <select
+                          id="member_gender_{{ member.member_id }}"
+                          name="member_gender_{{ member.member_id }}"
+                          class="form-control"
+                          required
+                        >
+                          <option value="">انتخاب کنید...</option>
+                          <option value="male" {% if member.gender.value == 'male' %}selected{% endif %}>آقا</option>
+                          <option value="female" {% if member.gender.value == 'female' %}selected{% endif %}>خانم</option>
+                        </select>
+                        {% if 'gender' in missing_fields %}
+                          <span class="error-msg">انتخاب جنسیت الزامی است.</span>
+                        {% endif %}
+                      </div>
                       <div class="form-group {% if 'role' in missing_fields %}has-error{% endif %}">
                         <label for="member_role_{{ member.member_id }}">نقش در تیم<span class="required-star">*</span></label>
                         <select

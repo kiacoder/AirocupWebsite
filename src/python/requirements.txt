@@ -40,3 +40,4 @@ bidict
 redis
 3DViewer-Flask
 accessible-pygments
+filetype

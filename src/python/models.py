@@ -59,6 +59,13 @@ class MemberRole(LabeledEnum):
     MEMBER = ("member", "عضو")
 
 
+class Gender(LabeledEnum):
+    """Enumeration for the gender of a member."""
+
+    MALE = ("male", "آقا")
+    FEMALE = ("female", "خانم")
+
+
 class PaymentStatus(LabeledEnum):
     """Enumeration for the status of a payment."""
 
@@ -264,8 +271,13 @@ class Member(Base):
         ForeignKey("teams.team_id"), nullable=False, index=True
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    birth_date: Mapped[datetime.date] = mapped_column(Date, nullable=False)
+    birth_date: Mapped[Optional[datetime.date]] = mapped_column(Date, nullable=True)
     national_id: Mapped[str] = mapped_column(String(10), nullable=False)
+    phone_number: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    gender: Mapped[Gender] = mapped_column(
+        sql_alchemy_enum(Gender),
+        nullable=True,
+    )
     role: Mapped[MemberRole] = mapped_column(
         sql_alchemy_enum(MemberRole),
         nullable=False,
@@ -340,6 +352,8 @@ class News(Base):
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     content: Mapped[str] = mapped_column(TEXT, nullable=False)
     image_path: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    link: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    views: Mapped[int] = mapped_column(default=0, nullable=False)
     publish_date: Mapped[datetime.datetime] = mapped_column(
         DateTime, nullable=False, index=True
     )

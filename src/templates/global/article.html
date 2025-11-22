@@ -91,6 +91,12 @@
           <hr />
 
           <div class="article-nav">
+            {% if article.link %}
+            <a href="{{ article.link }}" class="btn btn-primary" target="_blank" rel="noopener noreferrer">
+              <i class="fas fa-external-link-alt" aria-hidden="true"></i>
+              مشاهده منبع خبر
+            </a>
+            {% endif %}
             <a href="{{ url_for('global.news') }}" class="btn btn-secondary">
               <i class="fas fa-arrow-right" aria-hidden="true"></i>
               بازگشت به همه اخبار

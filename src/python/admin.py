@@ -4,6 +4,7 @@ import os
 import math
 import uuid
 import datetime
+import shutil
 from types import SimpleNamespace
 from flask import (
     Blueprint,
@@ -1557,6 +1558,12 @@ def admin_dashboard():
             .count()
         )
 
+        total_income = (
+            db.query(func.sum(models.Payment.amount))
+            .filter(models.Payment.status == models.PaymentStatus.APPROVED)
+            .scalar()
+        ) or 0
+
         stats = {
             "total_clients": total_clients,
             "total_teams": total_teams,
@@ -1565,7 +1572,90 @@ def admin_dashboard():
             "total_leaders": total_leaders,
             "total_coaches": total_coaches,
             "new_clients_this_week": new_clients_this_week,
+            "total_income": total_income,
         }
+
+        # --- New Statistics ---
+        # 1. League Popularity
+        league_counts = {}
+        active_teams = (
+            db.query(models.Team)
+            .options(joinedload(models.Team.league_one), joinedload(models.Team.league_two))
+            .filter(models.Team.status == models.EntityStatus.ACTIVE)
+            .all()
+        )
+        for team in active_teams:
+            if team.league_one:
+                league_counts[team.league_one.name] = league_counts.get(team.league_one.name, 0) + 1
+            if team.league_two:
+                league_counts[team.league_two.name] = league_counts.get(team.league_two.name, 0) + 1
+        
+        league_stats = [
+            {"name": k, "count": v} 
+            for k, v in sorted(league_counts.items(), key=lambda item: item[1], reverse=True)
+        ]
+
+        # 2. Gender Stats
+        gender_data = (
+            db.query(models.Member.gender, func.count(models.Member.member_id))
+            .filter(models.Member.status == models.EntityStatus.ACTIVE)
+            .group_by(models.Member.gender)
+            .all()
+        )
+        gender_stats = {
+            "male": 0,
+            "female": 0,
+            "unknown": 0
+        }
+        for gender_enum, count_val in gender_data:
+            if gender_enum == models.Gender.MALE:
+                gender_stats["male"] = count_val
+            elif gender_enum == models.Gender.FEMALE:
+                gender_stats["female"] = count_val
+            else:
+                gender_stats["unknown"] += count_val
+        
+        total_gender_count = sum(gender_stats.values()) or 1
+        gender_stats["male_percent"] = round((gender_stats["male"] / total_gender_count) * 100, 1)
+        gender_stats["female_percent"] = round((gender_stats["female"] / total_gender_count) * 100, 1)
+
+        # New: Average Age by Gender
+        gender_age_data = (
+            db.query(models.Member.gender, models.Member.birth_date)
+            .filter(models.Member.status == models.EntityStatus.ACTIVE,
+                    models.Member.birth_date.isnot(None))
+            .all()
+        )
+
+        male_ages = []
+        female_ages = []
+        for gender, birth_date in gender_age_data:
+            age = utils.calculate_age(birth_date)
+            if gender == models.Gender.MALE:
+                male_ages.append(age)
+            elif gender == models.Gender.FEMALE:
+                female_ages.append(age)
+        
+        gender_stats["average_male_age"] = round(sum(male_ages) / len(male_ages)) if male_ages else 0
+        gender_stats["average_female_age"] = round(sum(female_ages) / len(female_ages)) if female_ages else 0
+
+        # 3. Server Stats
+        server_stats = {}
+        try:
+            total_disk, used_disk, free_disk = shutil.disk_usage("/")
+            server_stats["disk_percent"] = round((used_disk / total_disk) * 100, 1)
+            server_stats["disk_free_gb"] = round(free_disk / (1024**3), 1)
+        except Exception:
+            server_stats["disk_percent"] = 0
+            server_stats["disk_free_gb"] = 0
+
+        # 4. Top Viewed News
+        top_news = (
+            db.query(models.News)
+            .order_by(models.News.views.desc())
+            .limit(5)
+            .all()
+        )
 
         active_member_counts = (
             db.query(
@@ -1634,10 +1724,36 @@ def admin_dashboard():
     return render_template(
         constants.admin_html_names_data["admin_dashboard"],
         stats=stats,
+        league_stats=league_stats,
+        gender_stats=gender_stats,
+        server_stats=server_stats,
+        top_news=top_news,
         pending_payments=pending_payments,
         pending_payments_count=len(pending_payments),
         admin_greeting_name=session.get("admin_display_name", "مدیر محترم"),
     )
+
+
+@admin_blueprint.route("/Admin/DownloadDatabase")
+@admin_required
+def admin_download_db():
+    """Download the current SQLite database file."""
+    try:
+        db_path = constants.Path.database
+        if not os.path.exists(db_path):
+            flash("فایل دیتابیس یافت نشد.", "error")
+            return redirect(url_for("admin.admin_dashboard"))
+        
+        return send_from_directory(
+            os.path.dirname(db_path),
+            os.path.basename(db_path),
+            as_attachment=True,
+            download_name=f"airocup_backup_{datetime.datetime.now().strftime('%Y%m%d_%H%M')}.db"
+        )
+    except Exception as e:
+        current_app.logger.error(f"Error downloading DB: {e}")
+        flash("خطا در دانلود دیتابیس.", "error")
+        return redirect(url_for("admin.admin_dashboard"))
 
 
 @admin_blueprint.route("/Admin/Search")
@@ -1651,7 +1767,8 @@ def admin_search():
     client_sort = request.args.get("client_sort", "recent")
     team_sort = request.args.get("team_sort", "recent")
     payment_sort = request.args.get("payment_sort", "recent")
-    league_id = _parse_nullable_int(request.args.get("league_id"))
+    league_id_1 = _parse_nullable_int(request.args.get("league_id"))
+    league_id_2 = _parse_nullable_int(request.args.get("league_id_2"))
     education_filter = _normalize_nullable_text(
         request.args.get("education_level")
     )
@@ -1714,11 +1831,19 @@ def admin_search():
                 models.Team.status == models.EntityStatus.ACTIVE
             )
 
-        if league_id:
+        if league_id_1:
             team_query = team_query.filter(
                 or_(
-                    models.Team.league_one_id == league_id,
-                    models.Team.league_two_id == league_id,
+                    models.Team.league_one_id == league_id_1,
+                    models.Team.league_two_id == league_id_1,
+                )
+            )
+            
+        if league_id_2:
+            team_query = team_query.filter(
+                or_(
+                    models.Team.league_one_id == league_id_2,
+                    models.Team.league_two_id == league_id_2,
                 )
             )
 
@@ -1804,7 +1929,8 @@ def admin_search():
             client_sort=client_sort,
             team_sort=team_sort,
             payment_sort=payment_sort,
-            league_filter=league_id,
+            league_filter_1=league_id_1,
+            league_filter_2=league_id_2,
             education_filter=education_filter,
             clients=clients,
             teams=teams,

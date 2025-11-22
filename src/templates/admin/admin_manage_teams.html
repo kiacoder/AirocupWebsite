@@ -47,7 +47,11 @@
               {% set status_enum = team.last_payment_status %}
               {% set status_value = status_enum.value if status_enum else None %}
               {% set needs_attention = (not team.has_leader) or team.is_name_missing %}
-              <tr class="{% if needs_attention %}admin-table__row--warning{% endif %}" {% if needs_attention %}style="background-color: #fff4e5;"{% endif %}>
+              <tr 
+                class="clickable-row {% if needs_attention %}admin-table__row--warning{% endif %}" 
+                {% if needs_attention %}style="background-color: #fff4e5;"{% endif %}
+                onclick="window.location.href='{{ url_for('admin.admin_edit_team', team_id=team.team_id) }}';"
+              >
                 <td>
                   <strong>{{ team.team_name or '—' }}</strong><br />
                   <small class="admin-page__lead">کد تیم: #{{ team.team_id | persian_digits }}</small>
@@ -78,7 +82,7 @@
                   </span>
                 </td>
                 <td>{{ team.status.label if team.status else '—' }}</td>
-                <td class="admin-table__actions">
+                <td class="admin-table__actions" onclick="event.stopPropagation()">
                   <a
                     href="{{ url_for('admin.admin_edit_team', team_id=team.team_id) }}"
                     class="btn btn-primary btn-small"

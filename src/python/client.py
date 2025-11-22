@@ -11,6 +11,7 @@ from typing import Any, cast
 from threading import Thread
 import bcrypt
 import jdatetime  # type:ignore
+import filetype  # type:ignore
 from persiantools.digits import fa_to_en  # type:ignore
 from sqlalchemy import exc, func, select
 from sqlalchemy.orm import subqueryload, joinedload
@@ -853,9 +854,13 @@ def edit_member(team_id, member_id):
             try:
                 name_value = new_member_data_safe.get("name") or member.name
                 city_id_value = new_member_data_safe.get("city_id") or member.city_id
+                phone_value = new_member_data_safe.get("phone_number")
+                gender_value = new_member_data_safe.get("gender")
 
                 member.name = name_value
                 member.national_id = national_id
+                member.phone_number = phone_value
+                member.gender = gender_value or member.gender
                 member.role = role_value or member.role
                 member.city_id = city_id_value
                 member.birth_date = birth_date or member.birth_date
@@ -1759,6 +1764,10 @@ def submit_data_resolution():
                     member.national_id = fa_to_en(
                         request.form.get(f"member_national_id_{member_id}", "").strip()
                     )
+                    
+                    gender_str = request.form.get(f"member_gender_{member_id}", "").strip()
+                    member.gender = next((g for g in models.Gender if g.value == gender_str), None)
+
                     member.role = role_map.get(
                         request.form.get(f"member_role_{member_id}", "").strip(),
                         models.MemberRole.MEMBER,
@@ -2063,13 +2072,19 @@ def upload_document(team_id):
 
         if not file or not file.filename:
             flash("نام فایل نامعتبر است.", "error")
-            return redirect(url_for("client.update_team", team_id=team_id))
-        original_filename = secure_filename(file.filename)
-        extension = (
-            original_filename.rsplit(".", 1)[1].lower()
-            if "." in original_filename
-            else ""
-        )
+        file.stream.seek(0)
+        kind = filetype.guess(file.stream)
+        file.stream.seek(0)
+        extension = ""
+        if kind:
+            extension = kind.extension
+        else:
+            original_filename = secure_filename(file.filename)
+            if "." in original_filename:
+                extension = original_filename.rsplit(".", 1)[1].lower()
+            elif "." in file.filename:
+                extension = file.filename.rsplit(".", 1)[1].lower()
+
         if not extension:
             flash("پسوند فایل نامعتبر است.", "error")
             return redirect(url_for("client.update_team", team_id=team_id))
@@ -2612,10 +2627,23 @@ def _process_payment_submission(
     paid_at=None,
 ):
     """Handles saving the receipt file and creating a payment record."""
-    original_filename = secure_filename(receipt_file.filename)
-    extension = (
-        original_filename.rsplit(".", 1)[1].lower() if "." in original_filename else ""
-    )
+    
+    # Attempt to detect extension from content first
+    receipt_file.stream.seek(0)
+    kind = filetype.guess(receipt_file.stream)
+    receipt_file.stream.seek(0)
+    
+    extension = ""
+    if kind:
+        extension = kind.extension
+    else:
+        # Fallback to filename extension if content detection fails (though likely caught by validation)
+        original_filename = secure_filename(receipt_file.filename)
+        if "." in original_filename:
+             extension = original_filename.rsplit(".", 1)[1].lower()
+        elif "." in receipt_file.filename: # Try insecure filename if secure stripped it
+             extension = receipt_file.filename.rsplit(".", 1)[1].lower()
+
     secure_name = f"{uuid.uuid4()}.{extension}" if extension else str(uuid.uuid4())
 
     new_payment = models.Payment(

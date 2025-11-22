@@ -96,6 +96,7 @@ team.team_name }}{% endblock %} {% block body %}
           <thead>
             <tr>
               <th>نام و نام خانوادگی</th>
+              <th>جنسیت</th>
               <th>نقش</th>
               <th>کد ملی</th>
               <th class="actions-header">عملیات</th>
@@ -105,6 +106,7 @@ team.team_name }}{% endblock %} {% block body %}
             {% for member in members %}
             <tr>
               <td data-label="نام">{{ member.name }}</td>
+              <td data-label="جنسیت">{{ member.gender.label if member.gender else '-' }}</td>
               <td data-label="نقش">{{ member.role.label }}</td>
               <td data-label="کد ملی" dir="ltr">
                 {{ member.national_id | persian_digits or '-' }}

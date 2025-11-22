@@ -1068,12 +1068,11 @@ technical_committee_members = [
         "image": "images/technical_committee/amir_hossain.png",
     },
     {
-        "name": "سهیل رحیمی",
+        "name": "مهندس سهیل رحیمی",
         "role": "رئیس لیگ ربات جنگجو",
         "description": "مسئولیت برنامه‌ریزی و اجرای لیگ ربات جنگجو",
-        "image": None,
+        "image": "images/technical_committee/soheil.jpg",
     },
-]
     {
         "name": "مهندس مهدی محمدی",
         "role": "مدیر ارتباطات آیروکاپ",
@@ -1502,8 +1501,15 @@ gallery_videos_data = [
         "title": "آیروکاپ | مشاغل آینده دار برای نوجوانان",
         "src": ("https://www.aparat.com/video/video/embed/videohash/ket93i2/vt/frame"),
     },
+    {
+        "title": "اولین وبینار مسابقات ملی هوش مصنوعی و رباتیک آیروکاپ٬ دانشگاه علم و صنعت ایران",
+        "src": ("https://www.aparat.com/video/video/embed/videohash/vohv6ua/vt/frame"),
+    },
+    {
+        "title": "دومین وبینار مسابقات ملی هوش مصنوعی و رباتیک آیروکاپ٬ دانشگاه علم و صنعت ایران",
+        "src": ("https://www.aparat.com/video/video/embed/videohash/zdd9k6u/vt/frame"),
+    },
 ]
-
 global_html_names_data = {
     "about": "global/about.html",
     "base": "global/base.html",

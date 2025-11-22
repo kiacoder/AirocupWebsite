@@ -75,11 +75,20 @@
               </select>
             </div>
             <div class="form-group">
-              <label for="league_id">لیگ</label>
+              <label for="league_id">لیگ اول (یا تک لیگ)</label>
               <select id="league_id" name="league_id">
                 <option value="">همه لیگ‌ها</option>
                 {% for league in leagues_list %}
-                <option value="{{ league.id }}" {% if league_filter==league.id %}selected{% endif %}>{{ league.name }}</option>
+                <option value="{{ league.id }}" {% if league_filter_1==league.id %}selected{% endif %}>{{ league.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="league_id_2">لیگ دوم (اختیاری)</label>
+              <select id="league_id_2" name="league_id_2">
+                <option value="">انتخاب نشده</option>
+                {% for league in leagues_list %}
+                <option value="{{ league.id }}" {% if league_filter_2==league.id %}selected{% endif %}>{{ league.name }}</option>
                 {% endfor %}
               </select>
             </div>
@@ -197,6 +206,11 @@
                 </td>
               </tr>
               {% else %}
+              <tr class="admin-table__empty"><td colspan="6">نتیجه‌ای برای تیم‌ها یافت نشد.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       </div>
     </article>
 

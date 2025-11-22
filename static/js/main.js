@@ -203,6 +203,12 @@ const airocupApp = {
       );
       if (!container) return;
 
+      // Limit number of visible flash messages to 3
+      const existingFlashes = container.querySelectorAll('.flash-message:not(.flash-message-closing)');
+      if (existingFlashes.length >= 3) {
+        this.dismissFlash(existingFlashes[0]);
+      }
+
       const iconMap = {
         success: "fa-check-circle",
         error: "fa-exclamation-triangle",
@@ -1613,6 +1619,8 @@ const airocupApp = {
         assignValue("name", data.name || "");
         assignValue("national_id", data.nationalId || "");
         assignValue("role", data.role || "");
+        assignValue("gender", data.gender || "");
+        assignValue("phone_number", data.phoneNumber || "");
         assignValue("province", data.province || "");
         assignValue("city", data.city || "");
 

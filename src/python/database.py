@@ -143,6 +143,14 @@ def ensure_schema_upgrades():
             _add_column(connection, "teams", "status VARCHAR(50) DEFAULT 'active'")
         if not _has_column(connection, "members", "status"):
             _add_column(connection, "members", "status VARCHAR(50) DEFAULT 'active'")
+        if not _has_column(connection, "members", "phone_number"):
+            _add_column(connection, "members", "phone_number VARCHAR(20)")
+        if not _has_column(connection, "members", "gender"):
+            _add_column(connection, "members", "gender VARCHAR(10)")
+        if not _has_column(connection, "news", "link"):
+            _add_column(connection, "news", "link VARCHAR(500)")
+        if not _has_column(connection, "news", "views"):
+            _add_column(connection, "news", "views INTEGER DEFAULT 0")
         if not _has_column(connection, "clients", "status"):
             _add_column(connection, "clients", "status VARCHAR(50) DEFAULT 'active'")
         if not _has_column(connection, "clients", "is_phone_verified"):
@@ -468,6 +476,8 @@ def validate_new_member_data(
     birth_day: int,
     role_value: str,
     *,
+    gender_value: Optional[str] = None,
+    phone_number: Optional[str] = None,
     team_id: Optional[int] = None,
     member_id_to_exclude: Optional[int] = None,
 ) -> List[str]:
@@ -476,6 +486,12 @@ def validate_new_member_data(
 
     if not utils.is_valid_name(name):
         errors.append("نام و نام خانوادگی معتبر نیست. لطفاً نام کامل را وارد کنید.")
+
+    if phone_number and not utils.is_valid_iranian_phone(phone_number):
+        errors.append("شماره تلفن وارد شده معتبر نیست.")
+
+    if not gender_value or gender_value not in {g.value for g in models.Gender}:
+        errors.append("جنسیت انتخاب نشده است یا معتبر نیست.")
 
     if not utils.is_valid_national_id(national_id):
         errors.append("کد ملی وارد شده معتبر نیست.")
@@ -640,3 +656,15 @@ def is_member_league_conflict(
             f"این عضو در تیم «{conflicting_team.team_name}» که در لیگ(های) «{names}» حضور دارد، ثبت شده است.",
         )
     return False, ""
+
+
+def increment_news_view(db: Session, news_id: int):
+    """Increments the view count for a news article safely."""
+    try:
+        db.query(models.News).filter(models.News.news_id == news_id).update(
+            {"views": models.News.views + 1}, synchronize_session=False
+        )
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        current_app.logger.error(f"Error incrementing views for news {news_id}: {e}")
