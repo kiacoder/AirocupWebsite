@@ -37,6 +37,7 @@
             role="img"
             aria-label="تصویر {{ member.name }}"
           >
+            {% if member.image %}
             <img
               src="{{ url_for('static', filename=member.image) }}"
               alt="تصویر پرسنلی {{ member.name }}"
@@ -44,6 +45,11 @@
               itemprop="image"
               onerror="this.closest('.committee-photo').classList.add('photo-fallback'); this.remove();"
             />
+            {% else %}
+            <div class="photo-placeholder">
+              <i class="fas fa-user"></i>
+            </div>
+            {% endif %}
           </div>
 
           <div class="committee-info">
