@@ -97,7 +97,7 @@
           </div>
           <div class="highlight-pill" role="listitem">
             <i class="fas fa-award" aria-hidden="true"></i>
-            دسترسی به جوایز ویژه و فرصت حضور در COMSTECH
+            دسترسی به فرصت های ویژه و امکان حضور در COMSTECH
           </div>
         </div>
 
@@ -193,6 +193,7 @@
       </div>
     </div>
   </div>
+  </div>
 </header>
 <section id="about-section" class="video-section fade-in-element">
   <div class="container">
@@ -207,27 +208,15 @@
 
     <div class="about-grid">
       <div class="about-card">
-        <div
-          class="video-wrapper lazy-video"
-          data-src="{{ contact.aparat_embed_url }}?recom=self"
-          data-title="تیزر رسمی مسابقات"
-        >
-          <div class="video-play-button" aria-label="پخش تیزر رسمی مسابقات">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="32"
-              height="32"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              class="icon"
-            >
-              <polygon points="5 3 19 12 5 21 5 3"></polygon>
-            </svg>
-          </div>
+        <div class="video-wrapper">
+          <iframe
+            src="{{ contact.aparat_embed_url }}?recom=self"
+            title="تیزر رسمی مسابقات"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen
+            loading="lazy"
+            style="width: 100%; height: 100%; border: none; min-height: 300px;"
+          ></iframe>
         </div>
       </div>
 
