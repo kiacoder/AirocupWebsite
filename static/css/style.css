@@ -3090,18 +3090,7 @@ select option {
   z-index: -1;
 }
 
-.site-header::after {
-  content: "";
-  position: absolute;
-  left: 8%;
-  right: 8%;
-  bottom: 0;
-  height: 12px;
-  background: linear-gradient(180deg, rgba(123, 75, 170, 0.25), rgba(248, 249, 250, 0));
-  filter: blur(6px);
-  opacity: 0.65;
-  pointer-events: none;
-}
+
 /* Removed duplicate logo style */
 /* Removed duplicate main-nav styles */
 
