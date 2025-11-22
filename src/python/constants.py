@@ -1067,6 +1067,12 @@ technical_committee_members = [
         "description": "هماهنگی٬ برنامه ریزی و پیگیری امور استان ها",
         "image": "images/technical_committee/amir_hossain.png",
     },
+    {
+        "name": "مهندس مهدی محمدی",
+        "role": "مدیر ارتباطات آیروکاپ",
+        "description": "مسئولیت مدیریت ارتباطات و روابط عمومی",
+        "image": "images/technical_committee/mahdi.jpg",
+    },
 ]
 
 
@@ -1452,12 +1458,6 @@ committee_members_data = [
         "role": "دبیر کمیته پشتیبانی",
         "description": "مسئولیت پشتیبانی فنی و حل مشکلات شرکت‌کنندگان",
         "image": "images/committee/khalil_pore.png",
-    },
-    {
-        "name": "مهندس مهدی محمدی",
-        "role": "مدیر ارتباطات آیروکاپ",
-        "description": "مسئولیت مدیریت ارتباطات و روابط عمومی",
-        "image": "images/committee/mahdi.jpg",
     },
 ]
 
