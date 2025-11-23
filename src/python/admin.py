@@ -1,5 +1,4 @@
-"""admin panel routes and functionalities for managing clients, teams, members, news, and chat"""
-
+"""admin panel routes and functionalities"""
 import os
 import math
 import uuid
@@ -26,7 +25,6 @@ from sqlalchemy.orm import joinedload, subqueryload
 import bleach
 import bcrypt
 from werkzeug.utils import secure_filename
-
 from . import config
 from . import database
 from . import constants
@@ -50,11 +48,9 @@ def _coerce_payment_status(raw_status):
 
 
 def _normalize_nullable_text(raw_value: str | None) -> str | None:
-    """Return cleaned text value or ``None`` when input is empty/null."""
-
+    """Return cleaned text value or ``None`` when input is empty/null"""
     if raw_value is None:
         return None
-
     cleaned = bleach.clean(raw_value).strip()
     if not cleaned or cleaned.lower() == "null":
         return None
@@ -63,11 +59,9 @@ def _normalize_nullable_text(raw_value: str | None) -> str | None:
 
 def _parse_nullable_int(raw_value: str | None) -> int | None:
     """Parse int from a nullable form field, returning ``None`` on blanks."""
-
     normalized = _normalize_nullable_text(raw_value)
     if normalized is None:
         return None
-
     try:
         return int(normalized)
     except (TypeError, ValueError):
@@ -78,7 +72,6 @@ def _summarize_expected_payment(
     team, payment, active_members_count, has_approved_payment
 ):
     """Return calculated payment expectations for admin review."""
-
     if active_members_count <= 0:
         return {
             "expected_amount": None,
@@ -90,7 +83,6 @@ def _summarize_expected_payment(
             "is_new_member_payment": False,
             "status_note": "هیچ عضو فعالی برای محاسبه وجود ندارد.",
         }
-
     if not team.league_one_id or not team.education_level:
         return {
             "expected_amount": None,
@@ -105,14 +97,12 @@ def _summarize_expected_payment(
 
     selected_leagues_count = 1 + (1 if team.league_two_id is not None else 0)
     selected_leagues_count = max(1, selected_leagues_count)
-
     fee_per_person = config.payment_config.get("fee_per_person") or 0
     fee_team = config.payment_config.get("fee_team") or 0
     league_two_discount_percent = config.payment_config.get("league_two_discount") or 0
     new_member_fee_per_league = (
         config.payment_config.get("new_member_fee_per_league") or 0
     )
-
     members_basis = payment.members_paid_for or (
         team.unpaid_members_count if has_approved_payment else active_members_count
     )
@@ -136,7 +126,6 @@ def _summarize_expected_payment(
     base_league_cost = fee_team + members_fee
     league_two_cost = 0
     discount_amount = 0
-
     if team.league_two_id is not None:
         league_two_cost = int(
             round(base_league_cost * (1 - league_two_discount_percent / 100))
@@ -144,7 +133,6 @@ def _summarize_expected_payment(
         discount_amount = max(0, base_league_cost - league_two_cost)
 
     expected_amount = base_league_cost + (league_two_cost or 0)
-
     return {
         "expected_amount": int(expected_amount),
         "members_count": members_basis,
@@ -188,7 +176,6 @@ def admin_login():
             return redirect(url_for("admin.admin_dashboard"))
         else:
             flash("رمز عبور ادمین نامعتبر است.", "error")
-
     return render_template(constants.admin_html_names_data["admin_login"])
 
 
