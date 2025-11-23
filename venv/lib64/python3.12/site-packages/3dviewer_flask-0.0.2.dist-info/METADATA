@@ -1,0 +1,28 @@
+Metadata-Version: 2.4
+Name: 3DViewer-Flask
+Version: 0.0.2
+Summary: View 3D CAD models with the Python web-framework Flask
+Home-page: https://github.com/alekssadowski95/3DViewer-Flask
+Author: Aleksander Sadowski
+Author-email: aleksander.sadowski@alsado.de
+License: MIT
+Classifier: Development Status :: 1 - Planning
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: Flask
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: home-page
+Dynamic: license
+Dynamic: license-file
+Dynamic: requires-dist
+Dynamic: summary
+
+# 3DViewer-Flask
+3DViewer-Flask
