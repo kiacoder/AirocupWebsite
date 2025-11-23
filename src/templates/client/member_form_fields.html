@@ -58,7 +58,7 @@
     />
   </div>
   <div class="form-group">
-    <label for="{{ id_prefix }}phone_number">شماره موبایل (اختیاری):</label>
+    <label for="{{ id_prefix }}phone_number">شماره موبایل:<span class="required-star">*</span></label>
     <input
       id="{{ id_prefix }}phone_number"
       name="phone_number"
@@ -66,6 +66,7 @@
       class="form-control"
       inputmode="numeric"
       maxlength="11"
+      required
       value="{{ phone_number_value }}"
       dir="ltr"
       placeholder="09xxxxxxxxx"

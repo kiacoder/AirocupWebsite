@@ -2187,9 +2187,12 @@ def upload_document(team_id):
 
 
 @client_blueprint.route("/UploadDocuments/<int:team_id>/<filename>")
-@auth.login_required
 def get_document(team_id, filename):
     "Return the requested document for a specific team"
+    if "client_id" not in session and not session.get("admin_logged_in"):
+        flash("برای مشاهده این فایل باید وارد شوید.", "warning")
+        return redirect(url_for("client.login_client"))
+
     with database.get_db_session() as db:
         team = (
             db.query(models.Team.client_id)

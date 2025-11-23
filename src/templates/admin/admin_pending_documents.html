@@ -17,62 +17,71 @@
     <article class="admin-surface">
       <div class="admin-surface__body">
         <div class="admin-table-wrapper">
-          <table class="admin-table">
-            <thead>
-              <tr>
-                <th>نام فایل</th>
-                <th>کاربر</th>
-                <th>تیم</th>
-                <th>تاریخ بارگذاری</th>
-                <th>دانلود</th>
-                <th>عملیات</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for doc in documents %}
-              <tr>
-                <td dir="ltr">{{ doc.file_name }}</td>
-                <td>
-                    <a href="{{ url_for('admin.admin_manage_client', client_id=doc.client_id) }}" class="admin-link">
-                        {{ doc.client.email or doc.client.phone_number }}
-                    </a>
-                </td>
-                <td>{{ doc.team.team_name if doc.team else 'تیم حذف شده' }}</td>
-                <td>{{ doc.upload_date | formatdate | persian_digits }}</td>
-                <td>
-                  <a href="{{ url_for('client.get_document', team_id=doc.team_id, filename=doc.file_name) }}" class="btn btn-secondary btn-small" target="_blank">
-                    <i class="fas fa-download"></i>
-                  </a>
-                </td>
-                <td>
-                  <div class="admin-table__actions">
-                    <form method="POST" action="{{ url_for('admin.admin_manage_document', document_id=doc.document_id, action='approve') }}" style="display:inline;">
-                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                      <button type="submit" class="btn btn-success btn-small" title="تایید">
-                        <i class="fas fa-check"></i> تایید
-                      </button>
-                    </form>
-                    <form method="POST" action="{{ url_for('admin.admin_manage_document', document_id=doc.document_id, action='reject') }}" style="display:inline;">
-                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                      <button type="submit" class="btn btn-danger btn-small" title="رد">
-                        <i class="fas fa-times"></i> رد
-                      </button>
-                    </form>
-                  </div>
-                </td>
-              </tr>
-              {% else %}
-              <tr class="admin-table__empty">
-                <td colspan="6">
-                  <div class="admin-empty-state">
-                    <i class="fas fa-folder-open"></i>
-                    هیچ مستندی در انتظار بررسی وجود ندارد.
-                  </div>
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+          {% if grouped_documents %}
+            {% for team, docs in grouped_documents.items() %}
+            <div class="team-group" style="margin-bottom: 2rem; border: 1px solid #e0e0e0; padding: 1.5rem; border-radius: 8px; background-color: #f9f9f9;">
+                <div class="team-group__header" style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; font-weight: bold; font-size: 1.1em; color: #333; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
+                    <i class="fas fa-folder-open" style="color: #f39c12; font-size: 1.2em;"></i>
+                    {% if team != "Unknown" %}
+                        <span>{{ team.team_name }}</span>
+                        <span style="font-size: 0.85em; color: #666; font-weight: normal;">(شناسه تیم: {{ team.team_id }})</span>
+                    {% else %}
+                        <span>تیم نامشخص / حذف شده</span>
+                    {% endif %}
+                </div>
+                <table class="admin-table">
+                    <thead>
+                    <tr>
+                        <th>نام فایل</th>
+                        <th>کاربر</th>
+                        <th>تاریخ بارگذاری</th>
+                        <th>دانلود</th>
+                        <th>عملیات</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for doc in docs %}
+                    <tr>
+                        <td dir="ltr">{{ doc.file_name }}</td>
+                        <td>
+                            <a href="{{ url_for('admin.admin_manage_client', client_id=doc.client_id) }}" class="admin-link">
+                                {{ doc.client.email or doc.client.phone_number }}
+                            </a>
+                        </td>
+                        <td>{{ doc.upload_date | formatdate | persian_digits }}</td>
+                        <td>
+                        <a href="{{ url_for('client.get_document', team_id=doc.team_id, filename=doc.file_name) }}" class="btn btn-secondary btn-small" target="_blank">
+                            <i class="fas fa-download"></i>
+                        </a>
+                        </td>
+                        <td>
+                        <div class="admin-table__actions">
+                            <form method="POST" action="{{ url_for('admin.admin_manage_document', document_id=doc.document_id, action='approve') }}" style="display:inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-success btn-small" title="تایید">
+                                <i class="fas fa-check"></i> تایید
+                            </button>
+                            </form>
+                            <form method="POST" action="{{ url_for('admin.admin_manage_document', document_id=doc.document_id, action='reject') }}" style="display:inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-danger btn-small" title="رد">
+                                <i class="fas fa-times"></i> رد
+                            </button>
+                            </form>
+                        </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endfor %}
+          {% else %}
+          <div class="admin-empty-state">
+            <i class="fas fa-folder-open"></i>
+            هیچ مستندی در انتظار بررسی وجود ندارد.
+          </div>
+          {% endif %}
         </div>
       </div>
     </article>

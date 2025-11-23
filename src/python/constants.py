@@ -1248,6 +1248,44 @@ class AppConfig:
         "video/x-matroska",
         "video/webm",
     ]
+    allowed_bleach_tags = [
+        "a",
+        "b",
+        "i",
+        "u",
+        "em",
+        "strong",
+        "p",
+        "br",
+        "div",
+        "span",
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "h6",
+        "ul",
+        "ol",
+        "li",
+        "img",
+        "blockquote",
+        "pre",
+        "code",
+        "table",
+        "thead",
+        "tbody",
+        "tr",
+        "th",
+        "td",
+        "hr",
+        "strike",
+    ]
+    allowed_bleach_attrs = {
+        "*": ["class", "style", "title", "dir", "align"],
+        "a": ["href", "title", "target", "rel"],
+        "img": ["src", "alt", "width", "height", "title"],
+    }
 
 
 class Details:

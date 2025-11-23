@@ -484,8 +484,16 @@ def admin_manage_news():
     with database.get_db_session() as db:
         if request.method == "POST":
             template_path = request.form.get("template_path", "").strip()
-            title_string = bleach.clean(request.form.get("title", "")).strip()
-            content_string = bleach.clean(request.form.get("content", "")).strip()
+            title_string = bleach.clean(
+                request.form.get("title", ""),
+                tags=constants.AppConfig.allowed_bleach_tags,
+                attributes=constants.AppConfig.allowed_bleach_attrs,
+            ).strip()
+            content_string = bleach.clean(
+                request.form.get("content", ""),
+                tags=constants.AppConfig.allowed_bleach_tags,
+                attributes=constants.AppConfig.allowed_bleach_attrs,
+            ).strip()
             link_string = request.form.get("link", "").strip()
             image_file = request.files.get("image")
             html_file = request.files.get("html_file")
@@ -583,12 +591,20 @@ def admin_edit_news(article_id):
         if request.method == "POST":
             try:
                 article.template_path = request.form.get("template_path", "").strip()
-                article.content = bleach.clean(request.form.get("content", "").strip())
+                article.content = bleach.clean(
+                    request.form.get("content", "").strip(),
+                    tags=constants.AppConfig.allowed_bleach_tags,
+                    attributes=constants.AppConfig.allowed_bleach_attrs,
+                )
                 link_val = request.form.get("link", "").strip()
                 if link_val and not link_val.startswith(("http://", "https://")):
                     link_val = f"https://{link_val}"
                 article.link = link_val or None
-                new_title = bleach.clean(request.form.get("title", "").strip())
+                new_title = bleach.clean(
+                    request.form.get("title", "").strip(),
+                    tags=constants.AppConfig.allowed_bleach_tags,
+                    attributes=constants.AppConfig.allowed_bleach_attrs,
+                )
 
                 if new_title and new_title != article.title:
                     existing_news = (
@@ -847,7 +863,7 @@ def admin_manage_client(client_id):
 @admin_blueprint.route("/Admin/PendingDocuments")
 @admin_required
 def admin_pending_documents():
-    """List all pending documents."""
+    """List all pending documents grouped by team."""
     with database.get_db_session() as db:
         documents = (
             db.query(models.TeamDocument)
@@ -856,13 +872,22 @@ def admin_pending_documents():
                 joinedload(models.TeamDocument.client),
             )
             .filter(models.TeamDocument.status == models.DocumentStatus.PENDING)
-            .order_by(models.TeamDocument.upload_date.asc())
+            .order_by(models.TeamDocument.team_id, models.TeamDocument.upload_date.asc())
             .all()
         )
 
+        grouped_documents = {}
+        for doc in documents:
+            team = doc.team
+            # Group by team object. If team is None, handle gracefully.
+            key = team if team else "Unknown"
+            if key not in grouped_documents:
+                grouped_documents[key] = []
+            grouped_documents[key].append(doc)
+
     return render_template(
         constants.admin_html_names_data["admin_pending_documents"],
-        documents=documents,
+        grouped_documents=grouped_documents,
     )
 
 
@@ -1615,11 +1640,22 @@ def admin_dashboard():
             .count()
         )
 
-        total_income = (
-            db.query(func.sum(models.Payment.amount))
-            .filter(models.Payment.status == models.PaymentStatus.APPROVED)
-            .scalar()
-        ) or 0
+        # Online Users (Active in last 5 minutes)
+        five_mins_ago = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(
+            minutes=5
+        )
+        online_users_count = (
+            db.query(models.Client)
+            .filter(models.Client.last_seen >= five_mins_ago)
+            .count()
+        )
+
+        # Daily Visits
+        today = datetime.date.today()
+        daily_stat = (
+            db.query(models.DailyStat).filter(models.DailyStat.date == today).first()
+        )
+        daily_visits = daily_stat.visit_count if daily_stat else 0
 
         stats = {
             "total_clients": total_clients,
@@ -1629,7 +1665,8 @@ def admin_dashboard():
             "total_leaders": total_leaders,
             "total_coaches": total_coaches,
             "new_clients_this_week": new_clients_this_week,
-            "total_income": total_income,
+            "online_users_count": online_users_count,
+            "daily_visits": daily_visits,
         }
         league_counts = {}
         active_teams = (
@@ -1642,20 +1679,28 @@ def admin_dashboard():
         )
         for team in active_teams:
             if team.league_one:
-                league_counts[team.league_one.name] = (
-                    league_counts.get(team.league_one.name, 0) + 1
-                )
-            if team.league_two:
-                league_counts[team.league_two.name] = (
-                    league_counts.get(team.league_two.name, 0) + 1
-                )
+                l_id = team.league_one.league_id
+                if l_id not in league_counts:
+                    league_counts[l_id] = {
+                        "id": l_id,
+                        "name": team.league_one.name,
+                        "count": 0,
+                    }
+                league_counts[l_id]["count"] += 1
 
-        league_stats = [
-            {"name": k, "count": v}
-            for k, v in sorted(
-                league_counts.items(), key=lambda item: item[1], reverse=True
-            )
-        ]
+            if team.league_two:
+                l_id = team.league_two.league_id
+                if l_id not in league_counts:
+                    league_counts[l_id] = {
+                        "id": l_id,
+                        "name": team.league_two.name,
+                        "count": 0,
+                    }
+                league_counts[l_id]["count"] += 1
+
+        league_stats = sorted(
+            league_counts.values(), key=lambda item: item["count"], reverse=True
+        )
         gender_data = (
             db.query(models.Member.gender, func.count(models.Member.member_id))
             .filter(models.Member.status == models.EntityStatus.ACTIVE)
@@ -1875,6 +1920,8 @@ def admin_search():
                     models.Client.email.ilike(keyword_like),
                     models.Client.phone_number.ilike(keyword_like),
                     func.cast(models.Team.team_id, String).ilike(keyword_like),
+                    models.Team.league_one.has(models.League.name.ilike(keyword_like)),
+                    models.Team.league_two.has(models.League.name.ilike(keyword_like)),
                 )
             )
         if team_status == "archived":

@@ -258,6 +258,7 @@ def update_team_stats(db: Session, team_id: int):
         .filter(
             models.Member.team_id == team_id,
             models.Member.status == models.EntityStatus.ACTIVE,
+            models.Member.role == models.MemberRole.MEMBER,
             models.Member.birth_date.isnot(None),
         )
         .all()
@@ -464,6 +465,8 @@ def validate_member_for_resolution(
         problems["missing"].append("name")
     if not member.national_id or not member.national_id.strip():
         problems["missing"].append("national_id")
+    if not member.phone_number or not member.phone_number.strip():
+        problems["missing"].append("phone_number")
     if member.role is None:
         problems["missing"].append("role")
     if member.city_id is None:

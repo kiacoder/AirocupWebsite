@@ -97,9 +97,21 @@ def view_article(article_id):
             file_name = os.path.basename(template_path)
             html_path = os.path.join(constants.Path.news_html_dir, file_name)
             if os.path.exists(html_path):
-                return send_from_directory(
-                    constants.Path.news_html_dir, file_name, mimetype="text/html"
-                )
+                try:
+                    with open(html_path, "r", encoding="utf-8") as f:
+                        custom_content = f.read()
+                    return render_template(
+                        constants.global_html_names_data["article"],
+                        article=article,
+                        custom_content=custom_content,
+                    )
+                except OSError:
+                    current_app.logger.error(
+                        "Could not read template file %s for Article %s",
+                        html_path,
+                        article_id,
+                    )
+                    abort(500, "Could not read article content file.")
         else:
             try:
                 return render_template(f"News/{template_path}")

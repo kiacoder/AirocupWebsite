@@ -35,9 +35,14 @@
               <small>در هفته جاری</small>
             </div>
             <div class="admin-dashboard__highlight">
-              <span class="admin-dashboard__highlight-label">مجموع درآمد</span>
-              <strong>{{ stats.total_income | humanize_number | persian_digits }} <span style="font-size: 0.4em; vertical-align: middle;">ریال</span></strong>
-              <small>کل پرداختی‌های تایید شده</small>
+              <span class="admin-dashboard__highlight-label">کاربران آنلاین</span>
+              <strong>{{ stats.online_users_count | default(0, true) | persian_digits }}</strong>
+              <small>فعال در ۵ دقیقه اخیر</small>
+            </div>
+            <div class="admin-dashboard__highlight">
+              <span class="admin-dashboard__highlight-label">بازدید امروز</span>
+              <strong>{{ stats.daily_visits | default(0, true) | persian_digits }}</strong>
+              <small>تعداد بازدیدهای یکتا</small>
             </div>
           </div>
 
@@ -105,7 +110,9 @@
             <ul class="stat-list">
               {% for league in league_stats %}
               <li class="stat-list__item">
-                <span>{{ league.name }}</span>
+                <a href="{{ url_for('admin.admin_manage_teams', league_id=league.id) }}" class="admin-link">
+                  {{ league.name }}
+                </a>
                 <span class="stat-badge">{{ league.count | persian_digits }} تیم</span>
               </li>
               {% else %}

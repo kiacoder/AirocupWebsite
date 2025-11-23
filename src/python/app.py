@@ -56,6 +56,58 @@ flask_app.config.update(
     ALLOWED_EXTENSIONS=list(constants.AppConfig.allowed_extensions),
 )
 
+
+@flask_app.before_request
+def update_activity():
+    """Tracks user activity and daily site visits."""
+    now = datetime.datetime.now(datetime.timezone.utc)
+    today = now.date()
+
+    # 1. Update last_seen for logged-in users
+    client_id = session.get("client_id")
+    if client_id:
+        try:
+            with database.get_db_session() as db:
+                db.query(models.Client).filter(
+                    models.Client.client_id == client_id
+                ).update({"last_seen": now})
+                db.commit()
+        except Exception as e:
+            flask_app.logger.error(f"Error updating last_seen: {e}")
+
+    # 2. Track Daily Stats (Unique Visits per Session per Day)
+    last_updated_str = session.get("daily_stat_updated")
+    should_update = False
+
+    if not last_updated_str:
+        should_update = True
+    else:
+        try:
+            last_updated_date = datetime.date.fromisoformat(last_updated_str)
+            if last_updated_date < today:
+                should_update = True
+        except ValueError:
+            should_update = True
+
+    if should_update:
+        try:
+            with database.get_db_session() as db:
+                daily_stat = (
+                    db.query(models.DailyStat)
+                    .filter(models.DailyStat.date == today)
+                    .first()
+                )
+                if daily_stat:
+                    daily_stat.visit_count += 1
+                else:
+                    daily_stat = models.DailyStat(date=today, visit_count=1)
+                    db.add(daily_stat)
+                db.commit()
+            session["daily_stat_updated"] = today.isoformat()
+        except Exception as e:
+            flask_app.logger.error(f"Error updating daily stats: {e}")
+
+
 database.create_database()
 database.ensure_schema_upgrades()
 with database.get_db_session() as _db_bootstrap_session:

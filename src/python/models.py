@@ -113,6 +113,9 @@ class Client(Base):
     verification_code_timestamp: Mapped[Optional[datetime.datetime]] = mapped_column(
         DateTime, nullable=True
     )
+    last_seen: Mapped[Optional[datetime.datetime]] = mapped_column(
+        DateTime, nullable=True
+    )
 
     teams = relationship(
         "Team",
@@ -437,3 +440,12 @@ class TeamDocument(Base):
     )
     team = relationship("Team", back_populates="documents")
     client = relationship("Client", back_populates="team_documents")
+
+
+class DailyStat(Base):
+    """Tracks daily site visits."""
+
+    __tablename__ = "daily_stats"
+    stat_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    date: Mapped[datetime.date] = mapped_column(Date, unique=True, nullable=False)
+    visit_count: Mapped[int] = mapped_column(default=0, nullable=False)

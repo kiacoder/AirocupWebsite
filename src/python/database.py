@@ -173,6 +173,22 @@ def ensure_schema_upgrades():
             _add_column(
                 connection, "team_documents", "status VARCHAR(50) DEFAULT 'PENDING'"
             )
+        if not _has_column(connection, "clients", "last_seen"):
+            _add_column(connection, "clients", "last_seen DATETIME")
+
+        # Create DailyStat table if it doesn't exist
+        connection.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS daily_stats (
+                    stat_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                    date DATE NOT NULL UNIQUE,
+                    visit_count INTEGER NOT NULL DEFAULT 0
+                );
+                """
+            )
+        )
+
         connection.execute(
             text("UPDATE teams SET status='active' WHERE status IS NULL;")
         )
@@ -518,8 +534,8 @@ def validate_new_member_data(
     if not utils.is_valid_name(name):
         errors.append("نام و نام خانوادگی معتبر نیست. لطفاً نام کامل را وارد کنید.")
 
-    if phone_number and not utils.is_valid_iranian_phone(phone_number):
-        errors.append("شماره تلفن وارد شده معتبر نیست.")
+    if not phone_number or not utils.is_valid_iranian_phone(phone_number):
+        errors.append("شماره تلفن وارد شده معتبر نیست (باید ۱۱ رقم و با ۰۹ شروع شود).")
 
     if not gender_value or gender_value not in {g.value for g in models.Gender}:
         errors.append("جنسیت انتخاب نشده است یا معتبر نیست.")
