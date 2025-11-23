@@ -175,8 +175,6 @@ def ensure_schema_upgrades():
             )
         if not _has_column(connection, "clients", "last_seen"):
             _add_column(connection, "clients", "last_seen DATETIME")
-
-        # Create DailyStat table if it doesn't exist
         connection.execute(
             text(
                 """

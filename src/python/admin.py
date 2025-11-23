@@ -1,4 +1,5 @@
 """admin panel routes and functionalities"""
+
 import os
 import math
 import uuid
@@ -872,14 +873,15 @@ def admin_pending_documents():
                 joinedload(models.TeamDocument.client),
             )
             .filter(models.TeamDocument.status == models.DocumentStatus.PENDING)
-            .order_by(models.TeamDocument.team_id, models.TeamDocument.upload_date.asc())
+            .order_by(
+                models.TeamDocument.team_id, models.TeamDocument.upload_date.asc()
+            )
             .all()
         )
 
         grouped_documents = {}
         for doc in documents:
             team = doc.team
-            # Group by team object. If team is None, handle gracefully.
             key = team if team else "Unknown"
             if key not in grouped_documents:
                 grouped_documents[key] = []
@@ -1639,18 +1641,14 @@ def admin_dashboard():
             )
             .count()
         )
-
-        # Online Users (Active in last 5 minutes)
-        five_mins_ago = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(
-            minutes=5
-        )
+        five_mins_ago = datetime.datetime.now(
+            datetime.timezone.utc
+        ) - datetime.timedelta(minutes=5)
         online_users_count = (
             db.query(models.Client)
             .filter(models.Client.last_seen >= five_mins_ago)
             .count()
         )
-
-        # Daily Visits
         today = datetime.date.today()
         daily_stat = (
             db.query(models.DailyStat).filter(models.DailyStat.date == today).first()

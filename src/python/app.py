@@ -62,8 +62,6 @@ def update_activity():
     """Tracks user activity and daily site visits."""
     now = datetime.datetime.now(datetime.timezone.utc)
     today = now.date()
-
-    # 1. Update last_seen for logged-in users
     client_id = session.get("client_id")
     if client_id:
         try:
@@ -74,8 +72,6 @@ def update_activity():
                 db.commit()
         except Exception as e:
             flask_app.logger.error(f"Error updating last_seen: {e}")
-
-    # 2. Track Daily Stats (Unique Visits per Session per Day)
     last_updated_str = session.get("daily_stat_updated")
     should_update = False
 
