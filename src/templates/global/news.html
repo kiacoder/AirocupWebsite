@@ -14,7 +14,7 @@
   <div class="container">
 
     <header class="page-header text-center">
-      <h1 class="page-title">اخبار و اطلاعیه‌ها</h1>
+      <h1 class="section-title">اخبار و اطلاعیه‌ها</h1>
       <p class="page-subtitle">
         در این بخش آخرین اخبار، اطلاعیه‌ها و رویدادهای مربوط به مسابقات آیروکاپ را دنبال کنید.
       </p>
@@ -26,9 +26,10 @@
 
       <div class="card card-news {% if loop.first %}card-news--featured{% endif %}">
         <a
-          href="{{ url_for('global.view_article', article_id=article.news_id) }}"
+          href="{{ article.link if article.link else url_for('global.view_article', article_id=article.news_id) }}"
           class="card-news-link"
           aria-label="ادامه مطلب درباره {{ article.title }}"
+          {% if article.link %}target="_blank" rel="noopener noreferrer"{% endif %}
         >
 
           {% if article.image_path %}

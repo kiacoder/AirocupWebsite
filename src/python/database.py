@@ -1,18 +1,44 @@
-"""DataBase Code For Adding Editing And Deleting Members, Teams and Clients"""
+"""DataBase Code For adding Editing and Deleting Members, Teams and Clients"""
 
 import datetime
 import os
 from contextlib import contextmanager
+from pathlib import Path
 from typing import Any, Iterator, List, Optional, Tuple
 import bcrypt
-from sqlalchemy import create_engine, func
+from sqlalchemy import create_engine, func, text
 from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.util import typing as sa_typing
 from . import constants
 from . import models
 from . import utils
 
+
+if hasattr(sa_typing, "make_union_type"):
+    _sa_make_union_type = sa_typing.make_union_type
+
+    def _patched_make_union_type(*types):
+        if len(types) == 1 and isinstance(types[0], tuple):
+            types = types[0]
+        try:
+            return _sa_make_union_type(*types)
+        except TypeError:
+            iterator = iter(types)
+            try:
+                union_type = next(iterator)
+            except StopIteration as stop_error:
+                raise stop_error
+            for typ in iterator:
+                union_type = union_type | typ
+            return union_type
+
+    sa_typing.make_union_type = _patched_make_union_type
+
+_normalized_sqlite_path = Path(constants.Path.database).as_posix()
+
 db_engine = create_engine(
-    f"sqlite:///{constants.Path.database.replace('\\', '/')}", connect_args={"check_same_thread": False}
+    f"sqlite:///{_normalized_sqlite_path}",
+    connect_args={"check_same_thread": False},
 )
 
 
@@ -20,6 +46,186 @@ def create_database():
     "Create the database and its tables if they do not exist"
     os.makedirs(os.path.dirname(constants.Path.database), exist_ok=True)
     models.Base.metadata.create_all(bind=db_engine)
+
+
+def ensure_schema_upgrades():
+    """apply lightweight schema adjustments that older databases may lack."""
+
+    def _has_column(connection, table: str, column: str) -> bool:
+        return any(
+            row[1] == column
+            for row in connection.execute(text(f"PRAGMA table_info({table});"))
+        )
+
+    def _is_column_not_null(connection, table: str, column: str) -> bool:
+        for row in connection.execute(text(f"PRAGMA table_info({table});")):
+            if row[1] == column:
+                return bool(row[3])
+        return False
+
+    def _add_column(connection, table: str, ddl: str):
+        connection.execute(text(f"ALTER TABLE {table} ADD COLUMN {ddl};"))
+
+    def _ensure_index(connection, name: str, table: str, columns: str):
+        existing = [
+            row[1] for row in connection.execute(text(f"PRAGMA index_list('{table}');"))
+        ]
+        if name not in existing:
+            connection.execute(
+                text(f"CREATE INDEX IF NOT EXISTS {name} ON {table}({columns});")
+            )
+
+    with db_engine.connect() as connection:
+        if _is_column_not_null(connection, "clients", "email"):
+            fk_initial_state = connection.execute(text("PRAGMA foreign_keys;")).scalar()
+            connection.execute(text("PRAGMA foreign_keys=off;"))
+            connection.execute(text("ALTER TABLE clients RENAME TO clients_old;"))
+            connection.execute(
+                text(
+                    """
+                    CREATE TABLE clients (
+                        client_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        phone_number VARCHAR(11) NOT NULL UNIQUE,
+                        email VARCHAR(255) UNIQUE,
+                        password VARCHAR(255) NOT NULL,
+                        registration_date DATETIME,
+                        status VARCHAR(50) NOT NULL DEFAULT 'active',
+                        is_phone_verified BOOLEAN DEFAULT 0,
+                        phone_verification_code VARCHAR(10),
+                        verification_code_timestamp DATETIME
+                    );
+                    """
+                )
+            )
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO clients (
+                        client_id,
+                        phone_number,
+                        email,
+                        password,
+                        registration_date,
+                        status,
+                        is_phone_verified,
+                        phone_verification_code,
+                        verification_code_timestamp
+                    )
+                    SELECT
+                        client_id,
+                        phone_number,
+                        email,
+                        password,
+                        registration_date,
+                        COALESCE(status, 'active'),
+                        is_phone_verified,
+                        phone_verification_code,
+                        verification_code_timestamp
+                    FROM clients_old;
+                    """
+                )
+            )
+            connection.execute(text("DROP TABLE clients_old;"))
+            connection.execute(text(f"PRAGMA foreign_keys={'on' if fk_initial_state else 'off'};"))
+        if not _has_column(connection, "teams", "education_level"):
+            _add_column(connection, "teams", "education_level VARCHAR(50)")
+
+        if not _has_column(connection, "teams", "average_age"):
+            _add_column(connection, "teams", "average_age INTEGER DEFAULT 0")
+
+        if not _has_column(connection, "teams", "average_provinces"):
+            _add_column(connection, "teams", "average_provinces VARCHAR(255)")
+
+        if not _has_column(connection, "teams", "unpaid_members_count"):
+            _add_column(connection, "teams", "unpaid_members_count INTEGER DEFAULT 0")
+
+        if not _has_column(connection, "teams", "status"):
+            _add_column(connection, "teams", "status VARCHAR(50) DEFAULT 'active'")
+        if not _has_column(connection, "members", "status"):
+            _add_column(connection, "members", "status VARCHAR(50) DEFAULT 'active'")
+        if not _has_column(connection, "members", "phone_number"):
+            _add_column(connection, "members", "phone_number VARCHAR(20)")
+        if not _has_column(connection, "members", "gender"):
+            _add_column(connection, "members", "gender VARCHAR(10)")
+        if not _has_column(connection, "news", "link"):
+            _add_column(connection, "news", "link VARCHAR(500)")
+        if not _has_column(connection, "news", "views"):
+            _add_column(connection, "news", "views INTEGER DEFAULT 0")
+        if not _has_column(connection, "clients", "status"):
+            _add_column(connection, "clients", "status VARCHAR(50) DEFAULT 'active'")
+        if not _has_column(connection, "clients", "is_phone_verified"):
+            _add_column(connection, "clients", "is_phone_verified BOOLEAN DEFAULT 0")
+        if not _has_column(connection, "clients", "phone_verification_code"):
+            _add_column(connection, "clients", "phone_verification_code VARCHAR(10)")
+        if not _has_column(connection, "clients", "verification_code_timestamp"):
+            _add_column(connection, "clients", "verification_code_timestamp DATETIME")
+        if not _has_column(connection, "payments", "tracking_number"):
+            _add_column(connection, "payments", "tracking_number VARCHAR(64)")
+        if not _has_column(connection, "payments", "payer_name"):
+            _add_column(connection, "payments", "payer_name VARCHAR(100)")
+        if not _has_column(connection, "payments", "payer_phone"):
+            _add_column(connection, "payments", "payer_phone VARCHAR(20)")
+        if not _has_column(connection, "payments", "paid_at"):
+            _add_column(connection, "payments", "paid_at DATETIME")
+        if not _has_column(connection, "team_documents", "status"):
+            _add_column(
+                connection, "team_documents", "status VARCHAR(50) DEFAULT 'PENDING'"
+            )
+        connection.execute(
+            text("UPDATE teams SET status='active' WHERE status IS NULL;")
+        )
+        connection.execute(
+            text("UPDATE members SET status='active' WHERE status IS NULL;")
+        )
+        connection.execute(
+            text("UPDATE clients SET status='active' WHERE status IS NULL;")
+        )
+        connection.execute(
+            text("UPDATE payments SET status='PENDING' WHERE status IS NULL OR status='pending';")
+        )
+        connection.execute(
+            text("UPDATE team_documents SET status='PENDING' WHERE status IS NULL OR status='pending';")
+        )
+        connection.execute(
+            text(
+                "UPDATE teams SET unpaid_members_count=0 WHERE unpaid_members_count IS NULL;"
+            )
+        )
+        connection.execute(
+            text(
+                "UPDATE payments SET receipt_filename='unknown' WHERE receipt_filename IS NULL;"
+            )
+        )
+        connection.execute(
+            text(
+                "UPDATE team_documents SET file_name='unknown', file_type='unknown' WHERE file_name IS NULL OR file_type IS NULL;"
+            )
+        )
+        connection.commit()
+        _ensure_index(
+            connection, "clients_status_email_idx", "clients", "status, email"
+        )
+        _ensure_index(
+            connection, "clients_phone_status_idx", "clients", "phone_number, status"
+        )
+        _ensure_index(
+            connection, "teams_client_status_idx", "teams", "client_id, status"
+        )
+        _ensure_index(
+            connection,
+            "teams_status_registration_idx",
+            "teams",
+            "status, team_registration_date",
+        )
+        _ensure_index(
+            connection, "payments_status_upload_idx", "payments", "status, upload_date"
+        )
+        _ensure_index(
+            connection, "payments_team_status_idx", "payments", "team_id, status"
+        )
+        _ensure_index(
+            connection, "members_team_status_idx", "members", "team_id, status"
+        )
 
 
 @contextmanager
@@ -36,7 +242,7 @@ def get_db_session() -> Iterator[Session]:
 def has_existing_leader(
     db: Session, team_id: int, member_id_to_exclude: Optional[int] = None
 ) -> bool:
-    "Check if team already has leader, optionally excluding specific member ID"
+    "Check if team already has leader, optionally excluding specific member id"
     query = db.query(models.Member).filter(
         models.Member.team_id == team_id, models.Member.role == models.MemberRole.LEADER
     )
@@ -56,8 +262,29 @@ def get_all_active_clients(db: Session) -> list[models.Client]:
 
 
 def get_team_by_id(db: Session, team_id: int) -> Optional[models.Team]:
-    "Retrieve a team by its ID"
+    "Retrieve a team by its id"
     return db.query(models.Team).filter(models.Team.team_id == team_id).first()
+
+
+def parse_nullable_datetime(
+    raw_value: Optional[str],
+) -> Tuple[Optional[datetime.datetime], Optional[str]]:
+    """Parse an ISO datetime string or return ``None`` for blanks/null markers."""
+
+    if raw_value is None:
+        return None, None
+
+    cleaned = raw_value.strip()
+    if not cleaned or cleaned.lower() == "null":
+        return None, None
+
+    try:
+        parsed = datetime.datetime.fromisoformat(cleaned)
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=datetime.timezone.utc)
+        return parsed, None
+    except ValueError:
+        return None, "زمان/تاریخ ثبت‌نام معتبر نیست. لطفاً از فرمت ISO 8601 استفاده کنید."
 
 
 def validate_client_update(
@@ -79,23 +306,27 @@ def validate_client_update(
     if not client_to_update:
         return None, ["اطلاعات کاربر مورد نظر یافت نشد."]
 
-    new_email = form_data.get("email", "").strip()
-    if new_email and new_email != client_to_update.email:
-        if not is_valid_email(new_email):
-            errors.append("فرمت ایمیل وارد شده معتبر نیست.")
-        else:
-            existing_client = (
-                db.query(models.Client)
-                .filter(
-                    func.lower(models.Client.email) == func.lower(new_email),
-                    models.Client.client_id != client_id,
-                )
-                .first()
-            )
-            if existing_client:
-                errors.append("این ایمیل قبلاً توسط کاربر دیگری ثبت شده است.")
+    new_email_raw = form_data.get("email")
+    if new_email_raw is not None:
+        new_email = new_email_raw.strip()
+        if new_email and new_email != (client_to_update.email or ""):
+            if not is_valid_email(new_email):
+                errors.append("فرمت ایمیل وارد شده معتبر نیست.")
             else:
-                clean_data["email"] = new_email
+                existing_client = (
+                    db.query(models.Client)
+                    .filter(
+                        func.lower(models.Client.email) == func.lower(new_email),
+                        models.Client.client_id != client_id,
+                    )
+                    .first()
+                )
+                if existing_client:
+                    errors.append("این ایمیل قبلاً توسط کاربر دیگری ثبت شده است.")
+                else:
+                    clean_data["email"] = new_email
+        elif new_email == "":
+            clean_data["email"] = None
 
     new_phone_number = fa_to_en(form_data.get("phone_number", "").strip())
     if new_phone_number and new_phone_number != client_to_update.phone_number:
@@ -123,8 +354,31 @@ def validate_client_update(
         else:
             clean_data["password"] = new_password
 
+    registration_raw = form_data.get("registration_date")
+    parsed_registration, registration_error = parse_nullable_datetime(registration_raw)
+    if registration_error:
+        errors.append(registration_error)
+    elif registration_raw is not None:
+        clean_data["registration_date"] = parsed_registration
+
+    status_value = form_data.get("status")
+    if status_value:
+        try:
+            clean_data["status"] = models.EntityStatus(status_value)
+        except ValueError:
+            errors.append("وضعیت انتخاب‌شده معتبر نیست.")
+
+    if "is_phone_verified" in form_data:
+        clean_data["is_phone_verified"] = str(form_data.get("is_phone_verified")).lower() in (
+            "1",
+            "true",
+            "on",
+            "yes",
+        )
+
     if errors:
         return None, errors
+
     return clean_data, []
 
 
@@ -140,15 +394,21 @@ def update_client_details(db: Session, client_id: int, clean_data: dict):
         client_to_update.phone_number = clean_data["phone_number"]
     if "email" in clean_data:
         client_to_update.email = clean_data["email"]
+    if "registration_date" in clean_data:
+        client_to_update.registration_date = clean_data["registration_date"]
     if "password" in clean_data:
         client_to_update.password = bcrypt.hashpw(
             clean_data["password"].encode("utf-8"), bcrypt.gensalt()
         ).decode("utf-8")
+    if "status" in clean_data:
+        client_to_update.status = clean_data["status"]
+    if "is_phone_verified" in clean_data:
+        client_to_update.is_phone_verified = clean_data["is_phone_verified"]
     db.commit()
 
 
 def get_client_by(db: Session, identifier: str, value: Any) -> Optional[models.Client]:
-    "Retrieve a Client by specified identifier"
+    "Retrieve a client by specified identifier"
     if identifier == "client_id":
         return db.query(models.Client).filter(models.Client.client_id == value).first()
     elif identifier == "email":
@@ -161,7 +421,7 @@ def get_client_by(db: Session, identifier: str, value: Any) -> Optional[models.C
         return (
             db.query(models.Client).filter(models.Client.phone_number == value).first()
         )
-    raise ValueError(f"Invalid Identifier for searching Clients: {identifier}")
+    raise ValueError(f"Invalid Identifier for searching clients: {identifier}")
 
 
 def get_all_articles(db: Session):
@@ -170,7 +430,7 @@ def get_all_articles(db: Session):
 
 
 def get_article_by_id(db: Session, article_id: int):
-    "Retrieve a news article by its ID"
+    "Retrieve a news article by its id"
     return db.query(models.News).filter(models.News.news_id == article_id).first()
 
 
@@ -214,10 +474,10 @@ def populate_leagues(db: Session):
 
 
 def populate_geography_data(db: Session):
-    "Populate Provinces and Cities tables from constants if they are empty"
+    "Populate provinces and Cities tables from constants if they are empty"
     if db.query(models.Province).first():
         return
-    print("Populating Provinces and Cities tables...")
+    print("Populating provinces and Cities tables...")
     for province_name, cities in constants.provinces_data.items():
         new_province = models.Province(name=province_name)
         db.add(new_province)
@@ -238,6 +498,11 @@ def validate_new_member_data(
     birth_month: int,
     birth_day: int,
     role_value: str,
+    *,
+    gender_value: Optional[str] = None,
+    phone_number: Optional[str] = None,
+    team_id: Optional[int] = None,
+    member_id_to_exclude: Optional[int] = None,
 ) -> List[str]:
     "Validate new member data and return a list of error messages if any"
     errors = []
@@ -245,23 +510,27 @@ def validate_new_member_data(
     if not utils.is_valid_name(name):
         errors.append("نام و نام خانوادگی معتبر نیست. لطفاً نام کامل را وارد کنید.")
 
+    if phone_number and not utils.is_valid_iranian_phone(phone_number):
+        errors.append("شماره تلفن وارد شده معتبر نیست.")
+
+    if not gender_value or gender_value not in {g.value for g in models.Gender}:
+        errors.append("جنسیت انتخاب نشده است یا معتبر نیست.")
+
     if not utils.is_valid_national_id(national_id):
         errors.append("کد ملی وارد شده معتبر نیست.")
 
-    elif role_value == models.MemberRole.MEMBER.value:
-        existing_member = (
-            db.query(models.Member.member_id)
-            .filter(
-                models.Member.national_id == national_id,
-                models.Member.role == models.MemberRole.MEMBER,
-                models.Member.status == models.EntityStatus.ACTIVE,
-            )
-            .first()
+    elif team_id:
+        duplicate_query = db.query(models.Member.member_id).filter(
+            models.Member.team_id == team_id,
+            models.Member.national_id == national_id,
+            models.Member.status == models.EntityStatus.ACTIVE,
         )
-        if existing_member:
-            errors.append(
-                "این کد ملی قبلاً برای (عضو) دیگری در یک تیم فعال ثبت شده است."
+        if member_id_to_exclude:
+            duplicate_query = duplicate_query.filter(
+                models.Member.member_id != member_id_to_exclude
             )
+        if duplicate_query.first():
+            errors.append("این کد ملی قبلاً برای این تیم ثبت شده است.")
 
     if not (
         db.query(models.City.city_id)
@@ -297,16 +566,20 @@ def log_action(
     )
 
 
-def save_chat_message(db: Session, client_id: int, message_text: str, sender: str):
-    "Save a chat message to the database"
-    db.add(
-        models.ChatMessage(
-            client_id=client_id,
-            message_text=message_text,
-            sender=sender,
-            timestamp=datetime.datetime.now(datetime.timezone.utc),
-        )
+def save_chat_message(
+    db: Session, client_id: int, message_text: str, sender: str
+) -> models.ChatMessage:
+    "Save a chat message to the database and return it."
+    message = models.ChatMessage(
+        client_id=client_id,
+        message_text=message_text,
+        sender=sender,
+        timestamp=datetime.datetime.now(datetime.timezone.utc),
     )
+    db.add(message)
+    db.commit()
+    db.refresh(message)
+    return message
 
 
 def get_chat_history_by_client_id(
@@ -342,7 +615,10 @@ def check_if_team_is_paid(db: Session, team_id: int) -> bool:
 
 
 def is_member_league_conflict(
-    db: Session, national_id: str, target_team_id: int
+    db: Session,
+    national_id: str,
+    target_team_id: int,
+    member_id_to_exclude: Optional[int] = None,
 ) -> Tuple[bool, str]:
     "Check if adding a member to the target team would create league conflict"
     target_team = (
@@ -362,7 +638,7 @@ def is_member_league_conflict(
     if not target_league_ids:
         return False, ""
 
-    conflicting_team = (
+    query = (
         db.query(models.Team)
         .join(models.Member)
         .filter(
@@ -378,8 +654,11 @@ def is_member_league_conflict(
                 | models.Team.league_two_id.in_(target_league_ids)
             ),
         )
-        .first()
     )
+    if member_id_to_exclude:
+        query = query.filter(models.Member.member_id != member_id_to_exclude)
+
+    conflicting_team = query.first()
 
     if conflicting_team:
         conflicting_team_league_ids = {
@@ -400,3 +679,15 @@ def is_member_league_conflict(
             f"این عضو در تیم «{conflicting_team.team_name}» که در لیگ(های) «{names}» حضور دارد، ثبت شده است.",
         )
     return False, ""
+
+
+def increment_news_view(db: Session, news_id: int):
+    """Increments the view count for a news article safely."""
+    try:
+        db.query(models.News).filter(models.News.news_id == news_id).update(
+            {"views": models.News.views + 1}, synchronize_session=False
+        )
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        current_app.logger.error(f"Error incrementing views for news {news_id}: {e}")

@@ -1,53 +1,112 @@
-{% extends "global/base.html" %}
-
-{% block title %}مدیریت اعضای تیم: {{ team.team_name }}{% endblock %}
-
-{% block body %}
-<main
-  class="app-container members-page"
-  data-team-id="{{ team.team_id }}"
->
-  <div class="container">
-    <header class="page-header">
-      <h1 class="page-title">تیم شما: {{ team.team_name }}</h1>
-      <p class="page-subtitle">
+{% extends "global/base.html" %} {% block title %}مدیریت اعضای تیم: {{
+team.team_name }}{% endblock %} {% block body %}
+<div class="members-page" data-team-id="{{ team.team_id }}">
+  <div class="container" style="margin: 2rem auto">
+    <div class="section-header" style="margin-bottom: 2rem">
+      <h1 class="section-title">تیم شما: {{ team.team_name }}</h1>
+      <p class="form-subtitle" style="margin-bottom: 0">
         در این بخش اعضای تیم خود را اضافه، ویرایش یا حذف کنید.
       </p>
-    </header>
+    </div>
 
-    {% if is_paid and team.unpaid_members_count > 0 %}
+    {% if has_any_payment and team.unpaid_members_count > 0 %}
     <div class="alert alert--warning" role="alert">
       <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
       <p>
         <strong>توجه:</strong>
-        شما {{ team.unpaid_members_count | persian_digits }} عضو جدید اضافه کرده‌اید که هزینه آن‌ها پرداخت نشده است.
-        لطفاً برای نهایی کردن ثبت‌نام آن‌ها به
-        <a href="{{ url_for('client.payment', team_id=team.team_id) }}">صفحه پرداخت</a>
-        مراجعه کنید.
+        شما {{ team.unpaid_members_count | persian_digits }} عضو جدید اضافه
+        کرده‌اید که به دلیل ارسال رسید پرداخت قبلی (در انتظار تایید / تایید
+        شده / رد شده) فقط با پرداخت مبلغ
+        <strong>۹,۵۰۰,۰۰۰ ریال برای هر لیگ و هر عضو</strong>
+        نهایی می‌شوند. لطفاً برای بارگذاری رسید پرداخت جدید و تکمیل ثبت‌نام
+        آن‌ها به
+        <a href="{{ url_for('client.payment', team_id=team.team_id) }}"
+          >صفحه پرداخت</a
+        >
+        مراجعه کنید. بدون بارگذاری رسید جدید ثبت‌نام این اعضا تکمیل نخواهد شد.
       </p>
     </div>
     {% endif %}
 
-    <section class="card card--table">
-      <header class="card-header">
-        <h2>
-          اعضای فعلی ({{ members|length | persian_digits }} از {{ app_config.max_members_per_team | persian_digits }})
-        </h2>
-      </header>
+    <div class="card card--table" style="margin-bottom: 2rem">
+      <h2 style="padding: 1.5rem 1.5rem 0; font-size: 1.4rem; font-weight: 700">
+        اعضای فعلی ({{ members|length | persian_digits }} از {{
+        app_config.max_members_per_team | persian_digits }})
+      </h2>
+
+      <div
+        style="
+          padding: 0 1.5rem 1rem;
+          border-bottom: 1px solid var(--color-border-muted);
+        "
+      >
+        <div style="margin-bottom: 0.5rem">
+          <span style="font-weight: 600; color: var(--color-text-muted)"
+            >مقطع تحصیلی تیم:</span
+          >
+          {% if team.education_level %}
+          {% set level_info = education_levels.get(team.education_level) %}
+          {% set ages = level_info.get('ages') if level_info else None %}
+          {% set age_min = ages[0] if ages else None %}
+          {% set age_max = ages[1] if ages else None %}
+          {% set age_label = '' %}
+          {% if ages %}
+            {% if age_min is not none and age_max is not none %}
+              {% set age_label = age_min | persian_digits ~ ' تا ' ~ age_max | persian_digits ~ ' سال' %}
+            {% elif age_min is not none %}
+              {% set age_label = 'از ' ~ (age_min | persian_digits) ~ ' سال به بالا' %}
+            {% elif age_max is not none %}
+              {% set age_label = 'تا ' ~ (age_max | persian_digits) ~ ' سال' %}
+            {% endif %}
+          {% endif %}
+          <strong style="color: var(--color-primary)"
+            >{{ team.education_level }}</strong
+          >
+          {% if age_label %}
+          <span style="color: var(--color-text-muted); margin-right: 0.75rem">
+            بازه سنی مجاز: {{ age_label }}
+          </span>
+          {% endif %}
+          {% else %}
+          <strong style="color: var(--color-error)">هنوز انتخاب نشده</strong>
+          {% endif %}
+        </div>
+        <div>
+          <span style="font-weight: 600; color: var(--color-text-muted)"
+            >لیگ‌های فعال:</span
+          >
+          {% if team.league_one %}
+          <strong style="color: var(--color-primary)"
+            >{{ team.league_one.name }}</strong
+          >
+          {% if team.league_two %}
+          <span style="color: var(--color-text-muted)">&</span>
+          <strong style="color: var(--color-primary)"
+            >{{ team.league_two.name }}</strong
+          >
+          {% endif %}
+          {% else %}
+          <strong style="color: var(--color-error)">هنوز انتخاب نشده</strong>
+          {% endif %}
+        </div>
+      </div>
+
       <div class="user-table-wrapper">
         <table class="user-table">
           <thead>
             <tr>
               <th>نام و نام خانوادگی</th>
+              <th>جنسیت</th>
               <th>نقش</th>
               <th>کد ملی</th>
-              <th class="actions">عملیات</th>
+              <th class="actions-header">عملیات</th>
             </tr>
           </thead>
           <tbody>
             {% for member in members %}
             <tr>
               <td data-label="نام">{{ member.name }}</td>
+              <td data-label="جنسیت">{{ member.gender.label if member.gender else '-' }}</td>
               <td data-label="نقش">{{ member.role.label }}</td>
               <td data-label="کد ملی" dir="ltr">
                 {{ member.national_id | persian_digits or '-' }}
@@ -57,28 +116,35 @@
                   href="{{ url_for('client.edit_member', team_id=team.team_id, member_id=member.member_id) }}"
                   class="btn btn-secondary btn-sm"
                 >
-                  <i class="fas fa-edit" aria-hidden="true"></i>
-                  ویرایش
+                  <i class="fas fa-edit"></i> ویرایش
                 </a>
                 <form
                   action="{{ url_for('client.delete_member', team_id=team.team_id, member_id=member.member_id) }}"
                   method="POST"
+                  style="display: inline"
                 >
-                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                  {% set is_archive_locked = is_paid %}
+                  <input
+                    type="hidden"
+                    name="csrf_token"
+                    value="{{ csrf_token() }}"
+                  />
                   <button
                     type="button"
                     class="btn btn-danger btn-sm delete-btn"
                     data-modal-title="تایید حذف عضو"
                     data-modal-body="آیا از حذف «{{ member.name }}» اطمینان دارید؟"
                     data-modal-confirm-text="بله، حذف کن"
-                    {% if is_archive_locked %}
+                    {%
+                    if
+                    has_any_payment
+                    %}
                     disabled
-                    title="پس از تایید پرداخت، امکان حذف عضو وجود ندارد."
-                    {% endif %}
+                    title="پس از ارسال رسید پرداخت (در انتظار تایید/تایید شده/رد شده)، امکان حذف عضو فقط برای ادمین وجود دارد."
+                    {%
+                    endif
+                    %}
                   >
-                    <i class="fas fa-trash" aria-hidden="true"></i>
-                    حذف
+                    <i class="fas fa-trash"></i> حذف
                   </button>
                 </form>
               </td>
@@ -86,7 +152,10 @@
             {% else %}
             <tr class="empty-state-row">
               <td colspan="4" class="empty-state">
-                <i class="fas fa-users-slash empty-state-icon" aria-hidden="true"></i>
+                <i
+                  class="fas fa-users-slash empty-state__icon"
+                  aria-hidden="true"
+                ></i>
                 این تیم هنوز عضوی ندارد.
               </td>
             </tr>
@@ -94,40 +163,90 @@
           </tbody>
         </table>
       </div>
-    </section>
+    </div>
 
-    {% if members|length < app_config.max_members_per_team %}
-    <section class="form-container form-container--medium" id="addMemberFormContainer">
+    {% if not team.education_level or not team.league_one_id %}
+    <div class="alert alert--warning" role="alert" style="text-align: center">
+      <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+      <p style="font-weight: 600; font-size: 1.1rem; margin-top: 0.5rem">
+        مرحله بعد: انتخاب مقطع تحصیلی و لیگ
+      </p>
+      <p>
+        برای افزودن اعضا، ابتدا باید مقطع تحصیلی و حداقل یک لیگ برای تیم خود
+        انتخاب کنید.
+      </p>
+      <a
+        href="{{ url_for('client.select_league', team_id=team.team_id) }}"
+        class="btn btn-primary"
+        style="margin-top: 1rem"
+      >
+        <i class="fas fa-trophy"></i> برو به صفحه انتخاب لیگ
+      </a>
+    </div>
+
+    {% elif members|length < app_config.max_members_per_team %}
+    <div
+      class="form-container"
+      id="addMemberFormContainer"
+      style="margin-bottom: 2rem"
+    >
       <h2 class="form-title">افزودن عضو جدید</h2>
       <form
         method="POST"
         action="{{ url_for('client.add_member', team_id=team.team_id) }}"
         id="addMemberForm"
         novalidate
+        enctype="multipart/form-data"
       >
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-        {% with id_prefix='add-', member_data=None, form_data=None %}
-          {% include 'client/member_form_fields.html' %}
-        {% endwith %}
+
+        {% if has_any_payment %}
+        <div class="alert alert--info" role="alert">
+          <i class="fas fa-credit-card" aria-hidden="true"></i>
+          <p>
+            برای هر عضو جدید، پرداخت مبلغ
+            <strong>۹,۵۰۰,۰۰۰ ریال به ازای هر لیگ</strong>
+            الزامی است. لطفاً هنگام تکمیل فرم زیر تصویر رسید پرداخت همین عضو را
+            بارگذاری کنید؛ بدون بارگذاری رسید ثبت‌نام انجام نمی‌شود.
+          </p>
+        </div>
+        {% endif %}
+
+        {% with id_prefix='add-', member_data=None, form_data=form_data %} {%
+        include 'client/member_form_fields.html' %} {% endwith %}
+
+        {% if has_any_payment %}
+        <div class="form-group">
+          <label for="member_receipt"
+            >رسید پرداخت عضو جدید <span class="required">*</span></label
+          >
+          <input
+            type="file"
+            id="member_receipt"
+            name="member_receipt"
+            accept=".jpg,.jpeg,.png,.pdf"
+            required
+          />
+          <small class="form-hint">
+            این رسید باید پرداخت {{ (app_config.new_member_fee_per_league or 0) | humanize_number | persian_digits }} ریالی هر لیگ را
+            نشان دهد.
+          </small>
+        </div>
+        {% endif %}
+
         <div class="form-group">
           <button type="submit" class="btn btn-primary btn--full-width">
             افزودن عضو
           </button>
         </div>
       </form>
-    </section>
+    </div>
     {% endif %}
-
-    <div class="section-cta">
+    <div style="text-align: center; margin-bottom: 2rem">
       <a href="{{ url_for('client.dashboard') }}" class="btn btn-secondary">
-        <i class="fas fa-arrow-left" aria-hidden="true"></i>
-        بازگشت به داشبورد
+        <i class="fas fa-arrow-left"></i> بازگشت به داشبورد
       </a>
     </div>
   </div>
-</main>
-{% endblock %}
-
-{% block scripts %}
-  {{ super() }}
-{% endblock %}
+</div>
+{% endblock %} {% block scripts %} {{ super() }} {% endblock %}

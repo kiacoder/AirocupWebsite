@@ -14,7 +14,7 @@
 
   <header class="page-header">
     <div class="container">
-      <h1 class="page-title">درباره آیروکاپ</h1>
+      <h1 class="section-title">درباره آیروکاپ</h1>
       <p class="page-subtitle">نخستین رویداد ملی هوش مصنوعی و رباتیک ایران</p>
     </div>
   </header>
@@ -33,13 +33,11 @@
       </div>
 
       <div class="about-story__logo">
-        {% if Path and Path.TransparentLogos and Path.TransparentLogos.TransparentBlack %}
         <img
-          src="{{ url_for('static', filename=Path.TransparentLogos.TransparentBlack) }}"
+          src="{{ url_for('static', filename=path.transparent_logos['transparent_purple']) }}"
           alt="لوگوی آیروکاپ"
           loading="lazy"
         />
-        {% endif %}
       </div>
     </div>
   </section>

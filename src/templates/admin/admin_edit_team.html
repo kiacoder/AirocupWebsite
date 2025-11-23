@@ -1,182 +1,373 @@
-{% extends "Global/Base.html" %}
+{% extends "global/base.html" %}
 
-{% block Title %}مدیریت تیم: {{ Team.TeamName }} | پنل آیروکاپ{% endblock %}
+{% block title %}مدیریت تیم: {{ team.team_name }} | پنل آیروکاپ{% endblock %}
 
-{% block Body %}
-<div class="Container AdminMembersPage" data-team-id="{{ Team.TeamID }}">
-  <div class="PageHeader">
-    <h1 class="SectionTitle">مدیریت تیم: {{ Team.TeamName }}</h1>
-    <p class="FormSubtitle">
-      اطلاعات، پرداخت، لیگ‌ها و اعضای این تیم را مدیریت کنید.
-    </p>
-  </div>
+{% block body %}
+<div class="admin-page admin-edit-team-page" data-team-id="{{ team.team_id }}">
+  <header class="admin-page__header">
+    <div class="admin-page__title">
+      <h1>مدیریت تیم «{{ team.team_name }}»</h1>
+      <p class="admin-page__subtitle">
+        اطلاعات تیم، لیگ‌های فعال، وضعیت پرداخت و اعضای ثبت‌شده را از این بخش کنترل کنید.
+      </p>
+    </div>
+    <div class="admin-page__actions admin-page__meta">
+      <div class="admin-page__meta-item">
+        <span>شناسه تیم</span>
+        <strong>#{{ team.team_id | persian_digits }}</strong>
+      </div>
+      <div class="admin-page__meta-item">
+        <span>لیگ اصلی</span>
+        <strong>{{ team.league_one.name if team.league_one else 'ثبت نشده' }}</strong>
+      </div>
+      <div class="admin-page__meta-item">
+        <span>لیگ دوم</span>
+        <strong>{{ team.league_two.name if team.league_two else 'انتخاب نشده' }}</strong>
+      </div>
+      <div class="admin-page__meta-item">
+        <span>اعضای ثبت‌شده</span>
+        <strong>{{ members|length | persian_digits }} نفر</strong>
+      </div>
+      <div class="admin-page__meta-item">
+        <span>وضعیت تیم</span>
+        <strong>{{ team.status.label if team.status else 'نامشخص' }}</strong>
+      </div>
+      <div class="admin-page__meta-item">
+        <span>اعضای پرداخت‌نشده</span>
+        <strong>{{ team.unpaid_members_count | default(0, true) | persian_digits }} نفر</strong>
+      </div>
+    </div>
+  </header>
 
-  <div class="PageGrid PageGrid--2">
-    <div>
-      <div class="Card">
-        <h2 class="Card__header"><i class="fas fa-edit"></i> اطلاعات و لیگ‌ها</h2>
-        <div class="Card__body" style="padding: 1.5rem;">
-          <form method="POST" action="{{ url_for('Admin.AdminEditTeam', TeamID=Team.TeamID) }}" id="teamForm">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-            <div class="FormGroup">
-              <label for="TeamName" class="FormLabel">نام تیم *</label>
-              <input type="text" id="TeamName" name="TeamName" value="{{ Team.TeamName }}" required class="FormControl" maxlength="30" />
-            </div>
-            <div class="FormGroup">
-              <label for="LeagueOneID" class="FormLabel">لیگ اول (اجباری) *</label>
-              <select id="LeagueOneID" name="LeagueOneID" required class="FormControl">
-                <option value="">-- انتخاب لیگ اول --</option>
-                {% for league in LeaguesList %}
-                <option value="{{ league.ID }}" {% if league.ID == Team.LeagueOneID %}selected{% endif %}>{{ league.Name }}</option>
-                {% endfor %}
-              </select>
-            </div>
-            <div class="FormGroup">
-              <label for="LeagueTwoID" class="FormLabel">لیگ دوم (اختیاری)</label>
-              <select id="LeagueTwoID" name="LeagueTwoID" class="FormControl">
-                <option value="">-- بدون لیگ دوم --</option>
-                {% for league in LeaguesList %}
-                <option value="{{ league.ID }}" {% if league.ID == Team.LeagueTwoID %}selected{% endif %}>{{ league.Name }}</option>
-                {% endfor %}
-              </select>
-            </div>
-            <button type="submit" class="Btn BtnPrimary Btn--fullWidth"><i class="fas fa-save"></i> ذخیره اطلاعات</button>
-          </form>
-        </div>
+  <section class="admin-page__section">
+    <div class="admin-page__stats">
+      <div class="admin-badge admin-badge--muted">
+        <i class="fas fa-calendar-day"></i>
+        ثبت: {{ team.team_registration_date | formatdate | persian_digits }}
+      </div>
+      <div class="admin-badge admin-badge--info">
+        <i class="fas fa-user-clock"></i>
+        میانگین سن: {{ team.average_age | default(0, true) | persian_digits }} سال
+      </div>
+      <div class="admin-badge {% if payable_amount > 0 %}admin-badge--warning{% else %}admin-badge--success{% endif %}">
+        <i class="fas fa-coins"></i>
+        مبلغ قابل پرداخت: {{ payable_amount | humanize_number | persian_digits }} ریال
+      </div>
+      <div class="admin-badge admin-badge--info">
+        <i class="fas fa-map"></i>
+        استان/شهر: {{ team.average_provinces or '—' }}
+      </div>
+      <div class="admin-badge">
+        <i class="fas fa-receipt"></i>
+        آخرین پرداخت:
+        {% if last_payment %}
+        {{ last_payment.status.label if last_payment.status else 'نامشخص' }} — {{ last_payment.upload_date | formatdate | persian_digits }}
+        {% else %}
+        ثبت نشده
+        {% endif %}
       </div>
     </div>
 
-    <div>
-      <div class="Card Card--table">
-        <h2 class="Card__header">
-          <i class="fas fa-users"></i> مدیریت اعضا
-          <a href="{{ url_for('Admin.AdminAddMember', TeamID=Team.TeamID) }}" class="Btn BtnPrimary"><i class="fas fa-plus"></i> افزودن عضو</a>
-        </h2>
-        <div class="UserTableWrapper">
-          <table class="UserTable">
+    <article class="admin-surface">
+      <header class="admin-surface__header">
+        <div class="admin-surface__title">
+          <h2><i class="fas fa-edit"></i> اطلاعات و لیگ‌ها</h2>
+          <p>نام تیم و لیگ‌های منتخب را ویرایش کنید.</p>
+        </div>
+      </header>
+      <div class="admin-surface__body">
+        <form
+          method="POST"
+          action="{{ url_for('admin.admin_edit_team', team_id=team.team_id) }}"
+          id="teamForm"
+          class="admin-form"
+        >
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+          <div class="form-group">
+            <label for="team_name">نام تیم *</label>
+            <input
+              type="text"
+              id="team_name"
+              name="team_name"
+              value="{{ team.team_name }}"
+              required
+              maxlength="30"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="education_level">مقطع تحصیلی تیم *</label>
+            <select id="education_level" name="education_level" required>
+              <option value="">-- انتخاب مقطع --</option>
+              {% for level_name, level_info in education_levels.items() %}
+              {% set ages = level_info.get('ages') %}
+              {% set age_label = '' %}
+              {% if ages %}
+                {% set age_min = ages[0] %}
+                {% set age_max = ages[1] %}
+                {% if age_min is not none and age_max is not none %}
+                  {% set age_label = age_min | persian_digits ~ ' تا ' ~ age_max | persian_digits ~ ' سال' %}
+                {% elif age_min is not none %}
+                  {% set age_label = 'از ' ~ (age_min | persian_digits) ~ ' سال به بالا' %}
+                {% elif age_max is not none %}
+                  {% set age_label = 'تا ' ~ (age_max | persian_digits) ~ ' سال' %}
+                {% endif %}
+              {% endif %}
+              <option
+                value="{{ level_name }}"
+                {% if team.education_level == level_name %}selected{% endif %}
+              >
+                {{ level_name }}{% if age_label %} ({{ age_label }}){% endif %}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-grid form-grid--two">
+            <div class="form-group">
+              <label for="league_one_id">لیگ اول (اجباری) *</label>
+              <select id="league_one_id" name="league_one_id" required>
+                <option value="">-- انتخاب لیگ اول --</option>
+                {% for league in leagues_list %}
+                <option value="{{ league.id }}" {% if league.id == team.league_one_id %}selected{% endif %}>
+                  {{ league.name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="league_two_id">لیگ دوم (اختیاری)</label>
+              <select id="league_two_id" name="league_two_id">
+                <option value="">-- بدون لیگ دوم --</option>
+                {% for league in leagues_list %}
+                <option value="{{ league.id }}" {% if league.id == team.league_two_id %}selected{% endif %}>
+                  {{ league.name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-save"></i>
+              ذخیره اطلاعات تیم
+            </button>
+            <a
+              href="{{ url_for('admin.admin_manage_client', client_id=team.client_id) }}"
+              class="btn btn-secondary"
+            >
+              بازگشت به صفحه کاربر
+            </a>
+          </div>
+        </form>
+      </div>
+    </article>
+
+    <article class="admin-surface">
+      <header class="admin-surface__header">
+        <div class="admin-surface__title">
+          <h2><i class="fas fa-users"></i> مدیریت اعضا</h2>
+          <p>ویرایش اطلاعات اعضای تیم یا افزودن عضو جدید.</p>
+        </div>
+        <div class="admin-surface__actions">
+          <a
+            href="{{ url_for('admin.admin_add_member', team_id=team.team_id) }}"
+            class="btn btn-primary"
+          >
+            <i class="fas fa-user-plus"></i>
+            افزودن عضو جدید
+          </a>
+        </div>
+      </header>
+      <div class="admin-surface__body">
+        <div class="admin-table-wrapper">
+          <table class="admin-table">
             <thead>
               <tr>
                 <th>نام عضو</th>
+                <th>جنسیت</th>
                 <th>نقش</th>
-                <th class="ActionsHeader">عملیات</th>
+                <th>کد ملی</th>
+                <th>شماره موبایل</th>
+                <th>محل سکونت</th>
+                <th>تاریخ تولد</th>
+                <th>عملیات</th>
               </tr>
             </thead>
             <tbody>
-              {% for member in Members %}
+              {% for member in members %}
               <tr>
-                <td>{{ member.Name }}</td>
+                <td>{{ member.name }}</td>
+                <td>{{ member.gender.label if member.gender else '—' }}</td>
                 <td>
-                  <span class="Badge Badge--primary">{{ member.Role.label }}</span>
+                  <span class="admin-status admin-status--idle">
+                    <i class="fas fa-user-tag"></i>
+                    {{ member.role.label if member.role else 'نامشخص' }}
+                  </span>
                 </td>
-                <td class="Actions">
-                  <button type="button" class="Btn BtnSecondary BtnSmall EditBtn" 
-                          data-modal-target="MemberModal"
-                          data-member-id="{{ member.MemberID }}"
-                          data-name="{{ member.Name }}"
-                          data-national-id="{{ member.NationalID }}"
-                          data-role="{{ member.Role.value }}"
-                          data-city-id="{{ member.CityID }}"
-                          data-birth-date="{{ member.BirthDate | formatdate }}">
-                    <i class="fas fa-edit"></i> ویرایش
+                <td dir="ltr">{{ member.national_id }}</td>
+                <td dir="ltr">{{ member.phone_number if member.phone_number else '—' }}</td>
+                <td>
+                  {{ member.city.province.name if member.city and member.city.province else '—' }}
+                  {% if member.city and member.city.name %} | {{ member.city.name }}{% endif %}
+                </td>
+                <td>{{ member.birth_date | formatdate | persian_digits }}</td>
+                <td class="admin-table__actions">
+                  <button
+                    type="button"
+                    class="btn btn-secondary btn-small"
+                    data-modal-target="editMemberModal"
+                    data-member-id="{{ member.member_id }}"
+                    data-name="{{ member.name }}"
+                    data-national-id="{{ member.national_id }}"
+                    data-phone-number="{{ member.phone_number if member.phone_number else '' }}"
+                    data-gender="{{ member.gender.value if member.gender else '' }}"
+                    data-role="{{ member.role.value if member.role else '' }}"
+                    data-province="{{ member.city.province.name if member.city and member.city.province else '' }}"
+                    data-city="{{ member.city.name if member.city else '' }}"
+                    data-birth-date="{{ member.birth_date | formatdate }}"
+                  >
+                    <i class="fas fa-edit"></i>
+                    ویرایش
                   </button>
-                  <form method="POST" action="{{ url_for('Admin.AdminDeleteMember', TeamID=Team.TeamID, MemberID=member.MemberID) }}">
+                  <form
+                    method="POST"
+                    action="{{ url_for('admin.admin_delete_member', team_id=team.team_id, member_id=member.member_id) }}"
+                  >
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                    <button type="button" class="Btn BtnDanger BtnSmall DeleteBtn" data-modal-title="تایید حذف عضو" data-modal-text="آیا از حذف عضو «{{ member.Name }}» اطمینان دارید؟" data-modal-confirm="بله، حذف کن">
-                      <i class="fas fa-trash"></i> حذف
+                    <button
+                      type="submit"
+                      class="btn btn-danger btn-small delete-btn"
+                      data-modal-title="تایید حذف عضو"
+                      data-modal-body="آیا از حذف عضو «{{ member.name }}» اطمینان دارید؟"
+                      data-modal-confirm-text="بله، حذف کن"
+                      data-modal-confirm-class="btn-danger"
+                    >
+                      <i class="fas fa-trash"></i>
+                      حذف
                     </button>
                   </form>
                 </td>
               </tr>
               {% else %}
-              <tr class="EmptyStateRow">
-                <td colspan="3" class="EmptyState">هنوز عضوی برای این تیم ثبت نشده است.</td>
+              <tr class="admin-table__empty">
+                <td colspan="6">
+                  <div class="admin-empty-state">
+                    <i class="fas fa-users"></i>
+                    هنوز عضوی برای این تیم ثبت نشده است.
+                  </div>
+                </td>
               </tr>
               {% endfor %}
             </tbody>
           </table>
         </div>
       </div>
+    </article>
+
+    <article class="admin-surface">
+      <header class="admin-surface__header">
+        <div class="admin-surface__title">
+          <h2><i class="fas fa-wallet"></i> سوابق پرداخت تیم</h2>
+          <p>همه رسیدها و وضعیت‌های مربوط به این تیم.</p>
+        </div>
+      </header>
+      <div class="admin-surface__body">
+        <div class="admin-table-wrapper">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>شناسه پرداخت</th>
+                <th>مبلغ</th>
+                <th>اعضای پرداخت شده</th>
+                <th>تاریخ بارگذاری</th>
+                <th>وضعیت</th>
+                <th>رسید</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for payment in payments %}
+              <tr>
+                <td>#{{ payment.payment_id | persian_digits }}</td>
+                <td>{{ payment.amount | humanize_number | persian_digits }} ریال</td>
+                <td>{{ payment.members_paid_for | persian_digits }} نفر</td>
+                <td>{{ payment.upload_date | formatdate | persian_digits }}</td>
+                <td>
+                  <span
+                    class="admin-status {% if payment.status.value == 'approved' %}admin-status--approved{% elif payment.status.value == 'pending' %}admin-status--pending{% else %}admin-status--rejected{% endif %}"
+                  >
+                    {{ payment.status.label if payment.status else 'نامشخص' }}
+                  </span>
+                </td>
+                <td>
+                  {% if payment.receipt_filename %}
+                  <a
+                    href="{{ url_for('uploaded_receipt_file', client_id=payment.client_id, filename=payment.receipt_filename) }}"
+                    class="btn btn-secondary btn-small"
+                    target="_blank"
+                    rel="noopener"
+                  >
+                    مشاهده رسید
+                  </a>
+                  {% else %}-{% endif %}
+                </td>
+              </tr>
+              {% else %}
+              <tr class="admin-table__empty">
+                <td colspan="6">
+                  <div class="admin-empty-state">
+                    <i class="fas fa-receipt"></i>
+                    پرداختی برای این تیم ثبت نشده است.
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </article>
+  </section>
+</div>
+
+<div
+  id="editMemberModal"
+  class="modal modal--admin"
+  aria-hidden="true"
+  role="dialog"
+  aria-labelledby="editMemberModalTitle"
+>
+  <div class="modal-dialog" role="document">
+    <div class="modal-content modal-content--wide">
+      <button class="modal-close" data-dismiss="modal" aria-label="بستن">&times;</button>
+      <header class="modal-header">
+        <h2 id="editMemberModalTitle" class="modal-title">ویرایش عضو</h2>
+      </header>
+      <div class="modal-body">
+        <form id="MemberForm" method="POST" action="" class="admin-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+          {% with
+              id_prefix='Modal-',
+              provinces=Provinces,
+              persian_months=PersianMonths,
+              allowed_years=AllowedYears
+          %}
+            {% include 'client/member_form_fields.html' %}
+          {% endwith %}
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-save"></i>
+              ذخیره تغییرات
+            </button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">
+              انصراف
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
-
-  <div class="SectionCta">
-    <a href="{{ url_for('Admin.AdminManageClient', ClientID=Team.ClientID) }}" class="Btn BtnSecondary"><i class="fas fa-arrow-left"></i> بازگشت به صفحه کاربر</a>
-  </div>
 </div>
-
-<div id="MemberModal" class="Modal" aria-hidden="true">
-  <div class="ModalContent ModalContent--large">
-    <button class="CloseBtn" data-dismiss="modal" aria-label="بستن">&times;</button>
-    <h2 class="FormTitle" id="MemberModalTitle">ویرایش عضو</h2>
-    <form id="MemberForm" method="POST" action="">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-      {% with 
-          IdPrefix='Modal-',
-          Provinces=Provinces,
-          PersianMonths=PersianMonths,
-          AllowedYears=AllowedYears,
-          DaysInMonth=DaysInMonth
-      %} 
-        {% include 'Client/MemberFormFields.html' %} 
-      {% endwith %}
-      <div class="FormGroup" style="margin-top: 2rem;">
-        <button type="submit" class="Btn BtnPrimary Btn--fullWidth"><i class="fas fa-save"></i> ذخیره تغییرات</button>
-      </div>
-    </form>
-  </div>
-</div>
-{% endblock %}
-
-{% block Scripts %}
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-      const teamId = document.querySelector('.AdminMembersPage').dataset.teamId;
-
-      document.querySelectorAll('.EditBtn').forEach(button => {
-          button.addEventListener('click', function () {
-              const memberId = this.dataset.memberId;
-              const form = document.getElementById('MemberForm');
-              form.action = `/Admin/Team/${teamId}/EditMember/${memberId}`;
-
-              document.getElementById('MemberModalTitle').textContent = 'ویرایش عضو';
-              document.getElementById('Modal-Name').value = this.dataset.name;
-              document.getElementById('Modal-NationalID').value = this.dataset.nationalId;
-              document.getElementById('Modal-Role').value = this.dataset.role;
-
-              const birthDate = this.dataset.birthDate.split('-');
-              if (birthDate.length === 3) {
-                  document.getElementById('Modal-BirthYear').value = birthDate[0];
-                  document.getElementById('Modal-BirthMonth').value = birthDate[1];
-                  document.getElementById('Modal-BirthDay').value = birthDate[2];
-              }
-
-              // You'll need a way to get Province from CityID if not directly available
-              // This is a placeholder for that logic
-              const cityId = this.dataset.cityId;
-              // Find province and city from cityId and populate selects...
-
-              if (typeof ModalHelpers !== "undefined") {
-                  ModalHelpers.openModal('MemberModal');
-              }
-          });
-      });
-
-      if (typeof ModalHelpers !== "undefined") {
-          ModalHelpers.init();
-      }
-      if (typeof FormHelpers !== "undefined") {
-          const modalForm = document.getElementById('MemberForm');
-          FormHelpers.PopulateProvinces(modalForm.querySelector('[name="Province"]'));
-          FormHelpers.SetupDatePicker(modalForm);
-          FormHelpers.SetupProvinceCityListener(modalForm);
-          document.querySelectorAll('.DeleteBtn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                FormHelpers.showConfirmModal(this.dataset.modalTitle, this.dataset.modalText, this.dataset.modalConfirm, () => {
-                    this.closest('form').submit();
-                });
-            });
-          });
-      }
-  });
-</script>
 {% endblock %}

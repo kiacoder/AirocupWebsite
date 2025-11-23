@@ -3,21 +3,21 @@
 {% block title %}تایید شماره موبایل{% endblock %}
 
 {% block body %}
-<main class="app-container">
+<main class="container" style="margin: 2rem auto">
   <div class="form-container form-container--small">
     <form
       method="POST"
       action="{{ url_for('client.verify_code') }}"
       id="verificationForm"
       data-cooldown="{{ Cooldown or 0 }}"
-      data-client-id="{{ ClientID or '' }}"
+      data-client-id="{{ client_id or '' }}"
       data-action="phone_signup"
       data-resend-url="{{ url_for('client.resend_code') }}"
       data-csrf-token="{{ csrf_token() }}"
     >
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-      <input type="hidden" name="action" value="phone_signup" />
-      <input type="hidden" name="client_id" value="{{ ClientID or '' }}" />
+      <input type="hidden" name="Action" value="phone_signup" />
+      <input type="hidden" name="client_id" value="{{ client_id or '' }}" />
 
       <h1 class="form-title">تایید شماره موبایل</h1>
       <p class="form-subtitle">
@@ -25,11 +25,11 @@
       </p>
 
       <div class="form-group">
-        <label for="code">کد تایید <span class="required-star">*</span></label>
+        <label for="code">کد تایید<span class="required-star">*</span></label>
         <input
           type="text"
           id="code"
-          name="code"
+          name="Code"
           class="form-control"
           placeholder="کد ۶ رقمی"
           required
@@ -39,7 +39,7 @@
           pattern="\d{6}"
           inputmode="numeric"
           autocomplete="one-time-code"
-          title="لطفا یک کد ۶ رقمی وارد کنید."
+          title="لطفاً یک کد ۶ رقمی وارد کنید."
         />
       </div>
 
@@ -49,11 +49,26 @@
         </button>
       </div>
 
-      <div class="form-links" style="text-align: center">
-        <button type="button" id="resendButton" class="link-button">
+      <div class="resend-container">
+        <button type="button" id="resendButton" class="btn btn--link">
           ارسال مجدد کد
         </button>
         <span id="timerDisplay"></span>
+      </div>
+
+      <div class="password-requirements" style="margin-top: 2rem; text-align: right;">
+        <p style="margin-bottom: 0.5rem; color: var(--color-danger);">کد را دریافت نکردید؟</p>
+        <ul style="list-style: disc; padding-right: 1.5rem; margin: 0; color: var(--color-text-muted);">
+          <li><strong>ایمیل:</strong> لطفاً پوشه <strong>Spam (هرزنامه)</strong>، <strong>Junk</strong> یا <strong>Promotions</strong> ایمیل خود را بررسی کنید.</li>
+          <li><strong>پیامک:</strong> اگر کد را دریافت نمی‌کنید، ممکن است توسط گوشی یا اپلیکیشن‌ها مسدود شده باشد:
+            <ul style="list-style: circle; padding-right: 1.5rem; margin-top: 0.5rem;">
+              <li><strong>شیائومی (Xiaomi):</strong> برنامه پیام‌ها (Messages) &larr; تنظیمات &larr; بخش Spam & Blocked را چک کنید.</li>
+              <li><strong>سامسونگ و گوگل:</strong> در برنامه پیام‌ها &larr; منوی سه نقطه &larr; Spam & Blocked.</li>
+              <li><strong>آیفون (iOS):</strong> تنظیمات (Settings) &larr; Messages &larr; بخش Unknown & Spam.</li>
+              <li>اگر از برنامه‌هایی مثل <strong>Truecaller</strong> استفاده می‌کنید، لیست پیام‌های مسدود شده آن را بررسی کنید.</li>
+            </ul>
+          </li>
+        </ul>
       </div>
     </form>
   </div>
@@ -63,18 +78,26 @@
 {% block scripts %}
   {{ super() }}
   <script>
-    document.addEventListener("DOMContentLoaded", function () {
+    document.addEventListener("DOMContentLoaded", () => {
       const form = document.getElementById("verificationForm");
       const resendButton = document.getElementById("resendButton");
       const timerDisplay = document.getElementById("timerDisplay");
 
       if (!form || !resendButton || !timerDisplay) return;
 
-      const clientId = form.dataset.clientId;
+      const clientID = form.dataset.clientId;
       const resendUrl = form.dataset.resendUrl;
       const csrfToken = form.dataset.csrfToken;
       const action = form.dataset.action;
       let countdown = parseInt(form.dataset.cooldown, 10) || 0;
+
+      const showFlash = (type, message) => {
+        if (window.airocupApp?.ui?.createFlash) {
+          window.airocupApp.ui.createFlash(type, message);
+        } else {
+          alert(message);
+        }
+      };
 
       const resendCode = async () => {
         if (countdown > 0) return;
@@ -86,57 +109,49 @@
               "Content-Type": "application/json",
               "X-CSRFToken": csrfToken,
             },
-            body: JSON.stringify({ client_id: clientId, action }),
+            body: JSON.stringify({ client_id: clientID, Action: action }),
           });
+
           const data = await response.json();
 
-          if (response.ok && data.success) {
-            airocupApp.ui.createFlash(
-              "success",
-              data.message || "کد با موفقیت ارسال شد."
-            );
+          if (response.ok) {
+            showFlash("success", data.Message);
             startTimer(180);
           } else {
-            airocupApp.ui.createFlash(
-              "error",
-              data.message || "خطایی در ارسال مجدد کد رخ داد."
-            );
+            showFlash("error", data.Message || "خطایی در ارسال مجدد کد رخ داد.");
           }
         } catch (error) {
           console.error("Resend error:", error);
-          airocupApp.ui.createFlash(
-            "error",
-            "خطا در ارتباط با سرور. لطفا اتصال اینترنت خود را بررسی کنید."
-          );
+          showFlash("error", "خطا در ارتباط با سرور. لطفاً اتصال اینترنت خود را بررسی کنید.");
         }
       };
 
-      function startTimer(duration) {
+      const startTimer = (duration) => {
         countdown = duration;
         resendButton.disabled = true;
         resendButton.classList.add("btn-disabled");
 
-        const updateLabel = () => {
-          timerDisplay.textContent = `(${Math.floor(countdown / 60)}:${(countdown % 60)
+        const interval = setInterval(() => {
+          const minutes = Math.floor(countdown / 60);
+          const seconds = countdown % 60;
+          timerDisplay.textContent = `(${minutes}:${seconds
             .toString()
             .padStart(2, "0")})`;
-        };
 
-        updateLabel();
-        const interval = setInterval(() => {
-          countdown--;
-          updateLabel();
-          if (countdown <= 0) {
+          if (--countdown < 0) {
             clearInterval(interval);
             timerDisplay.textContent = "";
             resendButton.disabled = false;
             resendButton.classList.remove("btn-disabled");
           }
         }, 1000);
-      }
+      };
 
       resendButton.addEventListener("click", resendCode);
-      if (countdown > 0) startTimer(countdown);
+
+      if (countdown > 0) {
+        startTimer(countdown);
+      }
     });
   </script>
 {% endblock %}

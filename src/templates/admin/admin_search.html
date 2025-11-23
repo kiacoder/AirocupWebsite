@@ -1,0 +1,319 @@
+{% extends "global/base.html" %}
+{% block title %}جستجوی پیشرفته مدیریت | پنل آیروکاپ{% endblock %}
+{% block body %}
+<div class="admin-page">
+  <header class="admin-page__header">
+    <div class="admin-page__title">
+      <h1>جستجوی پیشرفته</h1>
+      <p class="admin-page__subtitle">
+        همه چیز را یکجا بیابید: کاربران، تیم‌ها و پرداخت‌ها با فیلتر و مرتب‌سازی.
+      </p>
+    </div>
+  </header>
+
+  <section class="admin-page__section">
+    <article class="admin-surface">
+      <header class="admin-surface__header">
+        <div class="admin-surface__title">
+          <h2><i class="fas fa-search"></i> فیلترها</h2>
+          <p>بر اساس نام تیم، ایمیل کاربر یا وضعیت پرداخت جستجو کنید.</p>
+        </div>
+      </header>
+      <div class="admin-surface__body">
+        <form class="admin-search-form" method="GET" action="{{ url_for('admin.admin_search') }}">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="q">کلمه کلیدی</label>
+              <input type="search" id="q" name="q" placeholder="نام تیم، ایمیل یا تلفن" value="{{ query }}" />
+            </div>
+            <div class="form-group">
+              <label for="client_status">وضعیت کاربر</label>
+              <select id="client_status" name="client_status">
+                <option value="all" {% if client_status=='all' %}selected{% endif %}>همه</option>
+                <option value="active" {% if client_status=='active' %}selected{% endif %}>فقط فعال</option>
+                <option value="archived" {% if client_status=='archived' %}selected{% endif %}>فقط آرشیو شده</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="client_sort">مرتب‌سازی کاربران</label>
+              <select id="client_sort" name="client_sort">
+                <option value="recent" {% if client_sort=='recent' %}selected{% endif %}>جدیدترین ثبت‌نام</option>
+                <option value="oldest" {% if client_sort=='oldest' %}selected{% endif %}>قدیمی‌ترین</option>
+                <option value="email" {% if client_sort=='email' %}selected{% endif %}>بر اساس ایمیل</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="team_status">وضعیت تیم</label>
+              <select id="team_status" name="team_status">
+                <option value="all" {% if team_status=='all' %}selected{% endif %}>همه</option>
+                <option value="active" {% if team_status=='active' %}selected{% endif %}>فقط فعال</option>
+                <option value="archived" {% if team_status=='archived' %}selected{% endif %}>فقط آرشیو شده</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="team_sort">مرتب‌سازی تیم‌ها</label>
+              <select id="team_sort" name="team_sort">
+                <option value="recent" {% if team_sort=='recent' %}selected{% endif %}>تازه‌ترین</option>
+                <option value="oldest" {% if team_sort=='oldest' %}selected{% endif %}>قدیمی‌ترین</option>
+                <option value="name" {% if team_sort=='name' %}selected{% endif %}>نام تیم</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="payment_status">وضعیت پرداخت</label>
+              <select id="payment_status" name="payment_status">
+                <option value="">همه</option>
+                {% for status in enums.PaymentStatus %}
+                <option value="{{ status.name }}" {% if payment_status==status.name %}selected{% endif %}>{{ status.label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="payment_sort">مرتب‌سازی پرداخت</label>
+              <select id="payment_sort" name="payment_sort">
+                <option value="recent" {% if payment_sort=='recent' %}selected{% endif %}>آخرین بارگذاری</option>
+                <option value="amount" {% if payment_sort=='amount' %}selected{% endif %}>بیشترین مبلغ</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="league_id">لیگ اول (یا تک لیگ)</label>
+              <select id="league_id" name="league_id">
+                <option value="">همه لیگ‌ها</option>
+                {% for league in leagues_list %}
+                <option value="{{ league.id }}" {% if league_filter_1==league.id %}selected{% endif %}>{{ league.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="league_id_2">لیگ دوم (اختیاری)</label>
+              <select id="league_id_2" name="league_id_2">
+                <option value="">انتخاب نشده</option>
+                {% for league in leagues_list %}
+                <option value="{{ league.id }}" {% if league_filter_2==league.id %}selected{% endif %}>{{ league.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="education_level">مقطع تحصیلی تیم</label>
+              <select id="education_level" name="education_level">
+                <option value="">همه مقاطع</option>
+                {% for level_name in education_levels.keys() %}
+                <option value="{{ level_name }}" {% if education_filter==level_name %}selected{% endif %}>{{ level_name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="has_document">وضعیت مستندات</label>
+              <select id="has_document" name="has_document">
+                <option value="">مهم نیست</option>
+                <option value="yes" {% if has_document_filter=='yes' %}selected{% endif %}>دارای مستندات</option>
+                <option value="no" {% if has_document_filter=='no' %}selected{% endif %}>بدون مستندات</option>
+              </select>
+            </div>
+          </div>
+          <div class="admin-search-actions">
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-search"></i>
+              جستجو
+            </button>
+            <a href="{{ url_for('admin.admin_search') }}" class="btn btn-secondary">پاک کردن فیلترها</a>
+          </div>
+        </form>
+      </div>
+    </article>
+
+    <article class="admin-surface">
+      <header class="admin-surface__header">
+        <div class="admin-surface__title">
+          <h2><i class="fas fa-users"></i> نتایج کاربران</h2>
+          <p>کاربران مطابق کلیدواژه و فیلتر وضعیت.</p>
+        </div>
+      </header>
+      <div class="admin-surface__body">
+        <div class="admin-table-wrapper">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>ایمیل</th>
+                <th>شماره</th>
+                <th>وضعیت</th>
+                <th>عملیات</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for c in clients %}
+              <tr>
+                <td dir="ltr">{{ c.email }}</td>
+                <td dir="ltr">{{ c.phone_number | persian_digits }}</td>
+                <td>{{ c.status.label if c.status else '—' }}</td>
+                <td class="admin-table__actions">
+                  <a href="{{ url_for('admin.admin_manage_client', client_id=c.client_id) }}" class="btn btn-primary btn-small">جزئیات</a>
+                  {% if c.status != enums.EntityStatus.ACTIVE %}
+                  <form method="POST" action="{{ url_for('admin.admin_restore_client', client_id=c.client_id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <button type="submit" class="btn btn-success btn-small">
+                      <i class="fas fa-undo"></i>
+                      بازگردانی
+                    </button>
+                  </form>
+                  {% endif %}
+                </td>
+              </tr>
+              {% else %}
+              <tr class="admin-table__empty"><td colspan="4">نتیجه‌ای یافت نشد.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </article>
+
+    <article class="admin-surface">
+      <header class="admin-surface__header">
+        <div class="admin-surface__title">
+          <h2><i class="fas fa-users-cog"></i> نتایج تیم‌ها</h2>
+          <p>تیم‌های منطبق با نام یا وضعیت انتخاب شده.</p>
+        </div>
+      </header>
+      <div class="admin-surface__body">
+        <div class="admin-table-wrapper">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>نام تیم</th>
+                <th>کاربر</th>
+                <th>لیگ‌ها</th>
+                <th>مقطع</th>
+                <th>وضعیت</th>
+                <th>مستندات</th>
+                <th>عملیات</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for t in teams %}
+              <tr>
+                <td>{{ t.team_name }}</td>
+                <td dir="ltr">{{ t.client.email if t.client else '—' }}</td>
+                <td>
+                  <div class="admin-meta-grid">
+                    <span>اول: {{ t.league_one.name if t.league_one else '—' }}</span>
+                    <span>دوم: {{ t.league_two.name if t.league_two else '—' }}</span>
+                  </div>
+                </td>
+                <td>{{ t.education_level or '—' }}</td>
+                <td>{{ t.status.label if t.status else '—' }}</td>
+                <td>
+                  {% if t.documents %}
+                    <span class="admin-badge admin-badge--success">
+                      <i class="fas fa-file-check"></i> دارد
+                    </span>
+                    <a href="{{ url_for('admin.admin_manage_client', client_id=t.client_id) }}" class="btn btn-secondary btn-small" title="مشاهده مستندات">
+                      <i class="fas fa-eye"></i>
+                    </a>
+                  {% else %}
+                    <span class="admin-badge admin-badge--muted">ندارد</span>
+                  {% endif %}
+                </td>
+                <td class="admin-table__actions">
+                  <a href="{{ url_for('admin.admin_edit_team', team_id=t.team_id) }}" class="btn btn-primary btn-small">مدیریت</a>
+                  {% if t.status != enums.EntityStatus.ACTIVE %}
+                  <form method="POST" action="{{ url_for('admin.admin_restore_team', team_id=t.team_id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <button type="submit" class="btn btn-success btn-small">
+                      <i class="fas fa-undo"></i>
+                      بازگردانی
+                    </button>
+                  </form>
+                  {% endif %}
+                </td>
+              </tr>
+              {% else %}
+              <tr class="admin-table__empty"><td colspan="7">نتیجه‌ای برای تیم‌ها یافت نشد.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </article>
+
+    <article class="admin-surface">
+      <header class="admin-surface__header">
+        <div class="admin-surface__title">
+          <h2><i class="fas fa-user-graduate"></i> نتایج اعضا</h2>
+          <p>اعضای منطبق با نام، کد ملی یا شماره تماس.</p>
+        </div>
+      </header>
+      <div class="admin-surface__body">
+        <div class="admin-table-wrapper">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>نام عضو</th>
+                <th>تیم</th>
+                <th>کد ملی</th>
+                <th>نقش</th>
+                <th>وضعیت</th>
+                <th>عملیات</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for m in members %}
+              <tr>
+                <td>{{ m.name }}</td>
+                <td>{{ m.team.team_name if m.team else '—' }}</td>
+                <td>{{ m.national_id | persian_digits }}</td>
+                <td>{{ m.role.label }}</td>
+                <td>{{ m.status.label }}</td>
+                <td class="admin-table__actions">
+                  {% if m.team %}
+                  <a href="{{ url_for('admin.admin_edit_team', team_id=m.team.team_id) }}" class="btn btn-primary btn-small">مدیریت تیم</a>
+                  {% endif %}
+                </td>
+              </tr>
+              {% else %}
+              <tr class="admin-table__empty"><td colspan="6">نتیجه‌ای برای اعضا یافت نشد.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </article>
+
+    <article class="admin-surface">
+      <header class="admin-surface__header">
+        <div class="admin-surface__title">
+          <h2><i class="fas fa-receipt"></i> نتایج پرداخت</h2>
+          <p>آخرین پرداخت‌های مطابق فیلتر وضعیت.</p>
+        </div>
+      </header>
+      <div class="admin-surface__body">
+        <div class="admin-table-wrapper">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>شناسه</th>
+                <th>تیم</th>
+                <th>مبلغ</th>
+                <th>تلفن پرداخت‌کننده</th>
+                <th>وضعیت</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in payments %}
+              <tr>
+                <td>#{{ p.payment_id | persian_digits }}</td>
+                <td>#{{ p.team_id | persian_digits }}</td>
+                <td>{{ p.amount | humanize_number | persian_digits }}</td>
+                <td dir="ltr">{{ p.payer_phone or '—' }}</td>
+                <td>{{ p.status.label if p.status else '—' }}</td>
+              </tr>
+              {% else %}
+              <tr class="admin-table__empty"><td colspan="5">پرداختی مطابق فیلتر نیست.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </article>
+  </section>
+</div>
+{% endblock %}

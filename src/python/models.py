@@ -1,8 +1,11 @@
 """ORM models for the application using SQLAlchemy."""
 
+from __future__ import annotations
+
 import enum
 import datetime
 from typing import Optional
+
 from sqlalchemy.orm import (
     DeclarativeBase,
     relationship,
@@ -41,7 +44,7 @@ class LabeledEnum(enum.Enum):
 
 
 class EntityStatus(LabeledEnum):
-    """Enumeration for the status of entities (e.g., Client, Team)."""
+    """Enumeration for the status of entities (e.g., client, فeam)."""
 
     ACTIVE = ("active", "فعال")
     INACTIVE = ("inactive", "غیرفعال")
@@ -56,8 +59,23 @@ class MemberRole(LabeledEnum):
     MEMBER = ("member", "عضو")
 
 
+class Gender(LabeledEnum):
+    """Enumeration for the gender of a member."""
+
+    MALE = ("male", "آقا")
+    FEMALE = ("female", "خانم")
+
+
 class PaymentStatus(LabeledEnum):
     """Enumeration for the status of a payment."""
+
+    PENDING = ("pending", "در حال بررسی")
+    APPROVED = ("approved", "تایید شده")
+    REJECTED = ("rejected", "رد شده")
+
+
+class DocumentStatus(LabeledEnum):
+    """Enumeration for the status of a document."""
 
     PENDING = ("pending", "در حال بررسی")
     APPROVED = ("approved", "تایید شده")
@@ -68,15 +86,19 @@ class Client(Base):
     """Represents a registered user account (client)."""
 
     __tablename__ = "clients"
+    __table_args__ = (
+        Index("clients_status_email_idx", "status", "email"),
+        Index("clients_phone_status_idx", "phone_number", "status"),
+    )
     client_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     phone_number: Mapped[str] = mapped_column(String(11), nullable=False, unique=True)
-    email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, unique=True)
     password: Mapped[str] = mapped_column(String(255), nullable=False)
-    registration_date: Mapped[datetime.datetime] = mapped_column(
+    registration_date: Mapped[Optional[datetime.datetime]] = mapped_column(
         DateTime,
         default=lambda: datetime.datetime.now(datetime.timezone.utc),
+        nullable=True,
     )
-    education_level: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     status: Mapped[EntityStatus] = mapped_column(
         sql_alchemy_enum(EntityStatus),
         default=EntityStatus.ACTIVE,
@@ -116,6 +138,26 @@ class Client(Base):
         cascade="all, delete-orphan",
     )
 
+    @property
+    def ClientID(self) -> int:
+        """Get the client id"""
+        return self.client_id
+
+    @property
+    def Email(self) -> str:
+        """Get the email address of the client"""
+        return self.email
+
+    @property
+    def PhoneNumber(self) -> str:
+        """Get the phone number of the client"""
+        return self.phone_number
+
+    @property
+    def RegistrationDate(self) -> datetime.datetime:
+        """Get the registration date of the client"""
+        return self.registration_date
+
 
 class League(Base):
     """Represents a competition league that a team can join."""
@@ -131,22 +173,30 @@ class Team(Base):
     """Represents a team of members, owned by a client."""
 
     __tablename__ = "teams"
+    __table_args__ = (
+        Index("teams_client_status_idx", "client_id", "status"),
+        Index("teams_status_registration_idx", "status", "team_registration_date"),
+    )
     team_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     client_id: Mapped[int] = mapped_column(
         ForeignKey("clients.client_id"),
         nullable=False,
         index=True,
     )
-    team_name: Mapped[str] = mapped_column(String(50), nullable=False, unique=True)
+    team_name: Mapped[Optional[str]] = mapped_column(
+        String(50), nullable=True, unique=True
+    )
     league_one_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("leagues.league_id"), nullable=True
     )
     league_two_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("leagues.league_id"), nullable=True
     )
-    team_registration_date: Mapped[datetime.datetime] = mapped_column(
+    education_level: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    team_registration_date: Mapped[Optional[datetime.datetime]] = mapped_column(
         DateTime,
         default=lambda: datetime.datetime.now(datetime.timezone.utc),
+        nullable=True,
     )
     average_age: Mapped[int] = mapped_column(default=0)
     average_provinces: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
@@ -187,6 +237,10 @@ class Payment(Base):
     """Represents a payment transaction for a team."""
 
     __tablename__ = "payments"
+    __table_args__ = (
+        Index("payments_status_upload_idx", "status", "upload_date"),
+        Index("payments_team_status_idx", "team_id", "status"),
+    )
 
     payment_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     team_id: Mapped[int] = mapped_column(
@@ -198,6 +252,12 @@ class Payment(Base):
     amount: Mapped[int] = mapped_column(nullable=False)
     members_paid_for: Mapped[int] = mapped_column(nullable=False)
     receipt_filename: Mapped[str] = mapped_column(String(255), nullable=False)
+    tracking_number: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    payer_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    payer_phone: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    paid_at: Mapped[Optional[datetime.datetime]] = mapped_column(
+        DateTime, nullable=True
+    )
     upload_date: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=False)
     status: Mapped[PaymentStatus] = mapped_column(
         sql_alchemy_enum(PaymentStatus),
@@ -219,8 +279,13 @@ class Member(Base):
         ForeignKey("teams.team_id"), nullable=False, index=True
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    birth_date: Mapped[datetime.date] = mapped_column(Date, nullable=False)
+    birth_date: Mapped[Optional[datetime.date]] = mapped_column(Date, nullable=True)
     national_id: Mapped[str] = mapped_column(String(10), nullable=False)
+    phone_number: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    gender: Mapped[Gender] = mapped_column(
+        sql_alchemy_enum(Gender),
+        nullable=True,
+    )
     role: Mapped[MemberRole] = mapped_column(
         sql_alchemy_enum(MemberRole),
         nullable=False,
@@ -244,6 +309,7 @@ class Member(Base):
             unique=True,
             sqlite_where=text(f"role = '{MemberRole.LEADER.value}'"),
         ),
+        Index("members_team_status_idx", "team_id", "status"),
     )
 
 
@@ -294,6 +360,8 @@ class News(Base):
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     content: Mapped[str] = mapped_column(TEXT, nullable=False)
     image_path: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    link: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    views: Mapped[int] = mapped_column(default=0, nullable=False)
     publish_date: Mapped[datetime.datetime] = mapped_column(
         DateTime, nullable=False, index=True
     )
@@ -360,5 +428,10 @@ class TeamDocument(Base):
     file_name: Mapped[str] = mapped_column(String(255), nullable=False)
     file_type: Mapped[str] = mapped_column(String(50), nullable=False)
     upload_date: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=False)
+    status: Mapped[DocumentStatus] = mapped_column(
+        sql_alchemy_enum(DocumentStatus),
+        nullable=False,
+        default=DocumentStatus.PENDING,
+    )
     team = relationship("Team", back_populates="documents")
     client = relationship("Client", back_populates="team_documents")

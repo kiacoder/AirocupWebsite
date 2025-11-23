@@ -1,65 +1,59 @@
-{% extends "Global/Base.html" %} {% block Title %}چت با {{ Client.Email }} | پنل
-آیروکاپ{% endblock %} {% block Body %}
+{% extends "global/base.html" %}
+
+{% block title %}چت با {{ client.email }} | پنل آیروکاپ{% endblock %}
+
+{% block body %}
 <div
-  class="AdminChatContainer"
-  data-client-id="{{ Client.ClientID }}"
-  data-history-url="{{ url_for('admin.get_chat_history', client_id=Client.ClientID) }}"
+  class="admin-chat-container"
+  data-client-id="{{ client.client_id }}"
+  data-history-url="{{ url_for('admin.get_chat_history', client_id=client.client_id) }}"
 >
-  <div class="PageHeader">
-    <h1 class="SectionTitle">چت با کاربر</h1>
-    <p class="FormSubtitle">
-      شما در حال گفتگو با <strong>{{ Client.Email }}</strong> هستید.
-    </p>
-  </div>
-
-  <div class="Card ChatWrapper">
-    <div class="ChatBox" id="ChatBox" role="log">
-      <div class="Loader" role="status" aria-live="polite">
-        درحال بارگذاری تاریخچه...
-      </div>
+  <header class="admin-page__header">
+    <div class="admin-page__title">
+      <h1>چت با کاربر</h1>
+      <p class="admin-page__subtitle">
+        شما در حال گفتگو با <strong dir="ltr">{{ client.email }}</strong> هستید. پیام‌های جدید را در لحظه ببینید و پاسخ دهید.
+      </p>
     </div>
+    <div class="admin-page__actions">
+      <a href="{{ url_for('admin.admin_manage_client', client_id=client.client_id) }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-right"></i>
+        بازگشت به مدیریت کاربر
+      </a>
+    </div>
+  </header>
 
-    <div class="ChatInput">
-      <div class="PersonaSelector">
-        <label for="PersonaSelect">ارسال با نام:</label>
-        <select id="PersonaSelect" class="FormControl">
-          <option value="Admin">ادمین</option>
-          {% for Persona in Personas %} {% if Persona != 'Admin' %}
-          <option value="{{ Persona|e }}">{{ Persona|e }}</option>
-          {% endif %} {% endfor %}
-        </select>
+  <section class="admin-chat-layout">
+    <div class="admin-chat-layout__log" id="chat-box" role="log" aria-live="polite">
+      <div class="Loader" role="status">درحال بارگذاری تاریخچه...</div>
+    </div>
+    <div class="admin-chat-layout__composer">
+      <div class="admin-chat-layout__controls">
+        <div>
+          <label for="personaSelect">ارسال با نام:</label>
+          <select id="personaSelect" class="form-control">
+            <option value="Admin">ادمین</option>
+            {% for persona in personas %}
+              {% if persona != 'Admin' %}
+              <option value="{{ persona|e }}">{{ persona|e }}</option>
+              {% endif %}
+            {% endfor %}
+          </select>
+        </div>
       </div>
-
-      <div class="MessageInputGroup">
+      <div class="admin-chat-layout__message">
         <input
           type="text"
-          id="MessageInput"
+          id="message-input"
           placeholder="پاسخ خود را بنویسید..."
           autocomplete="off"
-          aria-label="پیام"
+          aria-label="متن پیام"
         />
-        <button id="SendButton" class="Btn BtnPrimary" aria-label="ارسال">
-          <i class="fas fa-paper-plane"></i>
+        <button id="send-button" class="btn btn-primary" aria-label="ارسال پیام">
+          <i class="fa-solid fa-paper-plane"></i>
         </button>
       </div>
     </div>
-  </div>
-
-  <div class="SectionCta">
-    <a
-      href="{{ url_for('admin.admin_manage_client', client_id=Client.ClientID) }}"
-      class="Btn BtnSecondary"
-    >
-      <i class="fas fa-arrow-left"></i> بازگشت به مدیریت کاربر
-    </a>
-  </div>
+  </section>
 </div>
-{% endblock %} {% block Scripts %}
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    if (typeof AdminChat !== "undefined") {
-      AdminChat.init();
-    }
-  });
-</script>
 {% endblock %}

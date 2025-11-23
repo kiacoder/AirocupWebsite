@@ -33,6 +33,28 @@ def get_bool(key: str, default: bool = False) -> bool:
     return val in ("true", "1", "t", "yes", "y")
 
 
+def _normalize_samesite(value: Any) -> str | None:
+    """Normalize SameSite strings to Flask-compatible values."""
+
+    if value is None:
+        return None
+
+    normalized = str(value).strip().strip('"').strip("'").lower()
+
+    if not normalized:
+        return None
+
+    if normalized == "none":
+        return "None"
+
+    if normalized == "lax":
+        return "Lax"
+
+    if normalized == "strict":
+        return "Strict"
+    return "Lax"
+
+
 admin_password_hash = get_env("admin_password_hash")
 secret_key = get_env("secret_key")
 if not admin_password_hash or not secret_key:
@@ -67,9 +89,12 @@ melli_payamak = {
 }
 
 payment_config = {
-    "fee_per_person": get_env("payment_fee_per_person", 0, cast=int),
-    "fee_team": get_env("payment_fee_team", 0, cast=int),
-    "league_two_discount": get_env("payment_league_two_discount", 0, cast=int),
+    "fee_per_person": get_env("payment_fee_per_person", 9_500_000, cast=int),
+    "fee_team": get_env("payment_fee_team", 4_500_000, cast=int),
+    "league_two_discount": get_env("payment_league_two_discount", 20, cast=int),
+    "new_member_fee_per_league": get_env(
+        "payment_new_member_fee_per_league", 9_500_000, cast=int
+    ),
     "bank_name": get_env("payment_bank_name"),
     "owner_name": get_env("payment_owner_name"),
     "card_number": get_env("payment_card_number"),
@@ -77,3 +102,16 @@ payment_config = {
 }
 
 host = get_env("host", "0.0.0.0")
+port = get_env("port", 5000, cast=int)
+session_cookie_secure = get_bool("session_cookie_secure", False)
+session_cookie_httponly = get_bool("session_cookie_httponly", True)
+session_cookie_samesite = _normalize_samesite(
+    get_env("session_cookie_samesite", "Lax"),
+)
+if debug:
+    session_cookie_secure = False
+    if session_cookie_samesite == "None":
+        session_cookie_samesite = "Lax"
+
+if session_cookie_samesite == "None" and not session_cookie_secure:
+    session_cookie_samesite = "Lax"

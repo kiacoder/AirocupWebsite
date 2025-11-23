@@ -9,7 +9,7 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/Images/Logo/Solid/SWF Airocup Logo.ico",
+      "src": "/images/logo/solid/ico/BWT.ico",
       "sizes": "64x64 32x32 24x24 16x16 192x192 512x512 790x790",
       "type": "image/x-icon"
     }

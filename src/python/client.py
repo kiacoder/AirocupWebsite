@@ -1,15 +1,18 @@
-"Client-side routes and logic for the web application"
+"client-side routes and logic for the web application"
 
+import io
 import os
 import random
 import string
 import uuid
 import datetime
 import secrets
+from typing import Any, cast
 from threading import Thread
 import bcrypt
-import jdatetime
-from persiantools.digits import fa_to_en
+import jdatetime  # type:ignore
+import filetype  # type:ignore
+from persiantools.digits import fa_to_en  # type:ignore
 from sqlalchemy import exc, func, select
 from sqlalchemy.orm import subqueryload, joinedload
 import bleach
@@ -27,6 +30,7 @@ from flask import (
     url_for,
     jsonify,
     current_app,
+    Flask,
 )
 
 from . import config
@@ -41,7 +45,47 @@ from .auth import login_required
 client_blueprint = Blueprint("client", __name__)
 
 
-def _ensure_aware(dt):
+@client_blueprint.before_request
+def enforce_profile_and_team_completion():
+    """Redirect users to required completion steps before normal navigation."""
+
+    if not session.get("client_id"):
+        return None
+
+    allowed_endpoints = {
+        "client.complete_profile",
+        "global.logout",
+        "client.update_team",
+        "client.upload_document",
+        "client.select_league",
+    }
+
+    if session.get("needs_contact_completion") and request.endpoint != "client.complete_profile":
+        return redirect(url_for("client.complete_profile"))
+
+    pending_team_id = session.get("pending_team_completion_id")
+    if pending_team_id:
+        with database.get_db_session() as db:
+            incomplete_team = utils.get_first_incomplete_team(db, session["client_id"])
+            if incomplete_team:
+                session["pending_team_completion_id"] = incomplete_team.team_id
+                if request.endpoint not in allowed_endpoints:
+                    if not incomplete_team.team_name:
+                        return redirect(
+                            url_for(
+                                "client.update_team", team_id=incomplete_team.team_id
+                            )
+                        )
+                    return redirect(
+                        url_for("client.select_league", team_id=incomplete_team.team_id)
+                    )
+            else:
+                session.pop("pending_team_completion_id", None)
+
+    return None
+
+
+def _ensure_aware(dt: datetime.datetime | None) -> datetime.datetime | None:
     """Return timezone-aware datetime (UTC). If dt is None return None.
     If dt.tzinfo is None assume UTC (replace tzinfo)."""
     if dt is None:
@@ -51,12 +95,19 @@ def _ensure_aware(dt):
     return dt
 
 
-def _seconds_since(dt):
+def _seconds_since(dt: datetime.datetime | None) -> float | None:
     """Return seconds elapsed since dt (dt may be naive or aware)."""
     if dt is None:
         return None
     dt_aware = _ensure_aware(dt)
+    if dt_aware is None:
+        return None
     return (datetime.datetime.now(datetime.timezone.utc) - dt_aware).total_seconds()
+
+
+def _get_current_app() -> Flask:
+    """Return the underlying Flask app instance for type checkers."""
+    return cast(Flask, current_app._get_current_object())
 
 
 @client_blueprint.route("/signup", methods=["GET", "POST"])
@@ -68,22 +119,14 @@ def signup():
         phone = fa_to_en(request.form.get("phone_number", "").strip())
         email = fa_to_en(request.form.get("email", "").strip().lower())
         password = request.form.get("password", "")
-        education_level = request.form.get("education_level", "").strip()
 
         form_values = {
             "phone_number": phone,
             "email": email,
-            "education_level": education_level,
         }
 
         response = None
-
-        if education_level not in constants.allowed_education:
-            flash("مقطع تحصیلی انتخاب‌شده نامعتبر است.", "error")
-            response = render_template(
-                constants.client_html_names_data["sign_up"], form_values=form_values
-            )
-        elif password != request.form.get("confirm_password", ""):
+        if password != request.form.get("confirm_password", ""):
             flash("رمز عبور و تکرار آن یکسان نیستند.", "error")
             response = render_template(
                 constants.client_html_names_data["sign_up"], form_values=form_values
@@ -115,7 +158,6 @@ def signup():
                         email=email,
                         password=hashed_password.decode("utf-8"),
                         registration_date=datetime.datetime.now(datetime.timezone.utc),
-                        education_level=education_level,
                         phone_verification_code=verification_code,
                         verification_code_timestamp=datetime.datetime.now(
                             datetime.timezone.utc
@@ -127,7 +169,7 @@ def signup():
                     Thread(
                         target=utils.send_templated_sms_async,
                         args=(
-                            current_app._get_current_object(),
+                            _get_current_app(),
                             new_client.client_id,
                             config.melli_payamak["template_id_verification"],
                             verification_code,
@@ -180,12 +222,16 @@ def signup():
 @client_blueprint.route("/ResolveIssues", methods=["GET"])
 @auth.resolution_required
 def resolve_data_issues():
-    """Render the data resolution form for clients with incomplete/invalid data."""
+    """Render the data resolution form for clients with incomplete/invalid data"""
+    province_city_rows: list[tuple[str, str]] = []
     with database.get_db_session() as db:
         client = (
             db.query(models.Client)
             .options(
-                subqueryload(models.Client.teams).subqueryload(models.Team.members)
+                subqueryload(models.Client.teams)
+                .subqueryload(models.Team.members)
+                .joinedload(models.Member.city)
+                .joinedload(models.City.province)
             )
             .filter(models.Client.client_id == session.get("client_id_for_resolution"))
             .first()
@@ -196,12 +242,39 @@ def resolve_data_issues():
             flash("خطا: اطلاعات کاربری برای اصلاح یافت نشد.", "error")
             return redirect(url_for("client.login_client"))
 
-    return render_template(
-        constants.client_html_names_data["resolve_issues"],
-        client=client,
-        problems=session.get("resolution_problems", {}),
-        **utils.get_form_context(),
-    )
+        province_city_rows = [
+            (province_name, city_name)
+            for province_name, city_name in db.query(
+                models.Province.name, models.City.name
+            )
+            .join(models.City)
+            .all()
+        ]
+
+        session_problems = session.get("resolution_problems", {})
+        normalized_problems = {
+            int(member_id): details
+            for member_id, details in session_problems.items()
+            if str(member_id).isdigit()
+        }
+
+        province_city_map: dict[str, list[str]] = {}
+        for province_name, city_name in province_city_rows:
+            province_city_map.setdefault(province_name, []).append(city_name)
+
+        for cities in province_city_map.values():
+            cities.sort()
+
+        form_context = utils.get_form_context()
+        if province_city_map:
+            form_context = {**form_context, "Provinces": province_city_map}
+
+        return render_template(
+            constants.client_html_names_data["resolve_issues"],
+            client=client,
+            problems=normalized_problems,
+            **form_context,
+        )
 
 
 @client_blueprint.route("/Login", methods=["GET", "POST"])
@@ -239,6 +312,17 @@ def login_client():
 
             database.log_login_attempt(db, identifier, ip_address, is_success=True)
 
+            if not client_check.email or not client_check.phone_number:
+                session.clear()
+                session["client_id"] = client_check.client_id
+                session["needs_contact_completion"] = True
+                session.permanent = True
+                flash(
+                    "برای ادامه، لطفا ایمیل و شماره تماس خود را تکمیل کنید.",
+                    "warning",
+                )
+                return redirect(url_for("client.complete_profile"))
+
             if client_check.is_phone_verified is not True:
                 new_code = "".join(random.choices(string.digits, k=6))
                 client_check.phone_verification_code = new_code
@@ -267,12 +351,33 @@ def login_client():
                         client_id=client_check.client_id,
                     )
                 )
+
+            if client_check.registration_date is None:
+                client_check.registration_date = datetime.datetime.now(
+                    datetime.timezone.utc
+                )
+                db.commit()
+
+            incomplete_team = utils.get_first_incomplete_team(
+                db, client_check.client_id
+            )
+            team_count = (
+                db.query(models.Team)
+                .filter(
+                    models.Team.client_id == client_check.client_id,
+                    models.Team.status == models.EntityStatus.ACTIVE,
+                )
+                .count()
+            )
+
             needs_resolution, problems = utils.check_for_data_completion_issues(
                 db, client_check.client_id
             )
             if needs_resolution:
                 session.clear()
-                session["resolution_problems"] = problems
+                session["resolution_problems"] = {
+                    str(member_id): details for member_id, details in problems.items()
+                }
                 session["client_id_for_resolution"] = client_check.client_id
                 flash(
                     "حساب کاربری شما دارای اطلاعات ناقص یا نامعتبر است. "
@@ -285,11 +390,158 @@ def login_client():
             session["client_id"] = client_check.client_id
             session.permanent = True
             flash("شما با موفقیت وارد شدید.", "success")
+
+            if incomplete_team:
+                session["pending_team_completion_id"] = incomplete_team.team_id
+                flash(
+                    "تیم شما نیاز به تکمیل اطلاعات دارد. لطفاً ابتدا نام تیم را ثبت کنید.",
+                    "warning",
+                )
+                return redirect(
+                    url_for("client.update_team", team_id=incomplete_team.team_id)
+                )
+
+            if team_count == 0 and not next_url_from_form:
+                flash("برای ادامه، لطفا اولین تیم خود را ایجاد کنید.", "info")
+
             return redirect(next_url_from_form or url_for("client.dashboard"))
 
     return render_template(
         constants.client_html_names_data["login"], next_url=next_url or ""
     )
+
+
+@client_blueprint.route("/CompleteProfile", methods=["GET", "POST"])
+@login_required
+def complete_profile():
+    """Prompt the logged-in user to complete missing contact information."""
+
+    with database.get_db_session() as db:
+        client = (
+            db.query(models.Client)
+            .filter(models.Client.client_id == session.get("client_id"))
+            .first()
+        )
+
+        if not client:
+            session.clear()
+            flash("حساب کاربری شما یافت نشد. لطفا دوباره وارد شوید.", "error")
+            return redirect(url_for("client.login_client"))
+
+        if request.method == "POST":
+            csrf_protector.protect()
+
+            email = bleach.clean(request.form.get("email", "").strip())
+            phone_number = fa_to_en(request.form.get("phone_number", "").strip())
+
+            if not utils.is_valid_email(email):
+                flash("لطفا یک ایمیل معتبر وارد کنید.", "error")
+                return render_template(
+                    constants.client_html_names_data["complete_profile"],
+                    client=client,
+                    form_email=email,
+                    form_phone=phone_number,
+                )
+
+            if not utils.is_valid_iranian_phone(phone_number):
+                flash("شماره همراه معتبر نیست (باید با 09 شروع شود و ۱۱ رقم باشد).", "error")
+                return render_template(
+                    constants.client_html_names_data["complete_profile"],
+                    client=client,
+                    form_email=email,
+                    form_phone=phone_number,
+                )
+
+            email_taken = (
+                db.query(models.Client)
+                .filter(
+                    models.Client.email == email, models.Client.client_id != client.client_id
+                )
+                .first()
+            )
+            if email_taken:
+                flash("این ایمیل قبلا ثبت شده است.", "error")
+                return render_template(
+                    constants.client_html_names_data["complete_profile"],
+                    client=client,
+                    form_email=email,
+                    form_phone=phone_number,
+                )
+
+            phone_taken = (
+                db.query(models.Client)
+                .filter(
+                    models.Client.phone_number == phone_number,
+                    models.Client.client_id != client.client_id,
+                )
+                .first()
+            )
+            if phone_taken:
+                flash("این شماره همراه قبلا ثبت شده است.", "error")
+                return render_template(
+                    constants.client_html_names_data["complete_profile"],
+                    client=client,
+                    form_email=email,
+                    form_phone=phone_number,
+                )
+
+            client.email = email
+            if client.phone_number != phone_number:
+                client.phone_number = phone_number
+                client.is_phone_verified = False
+                client.phone_verification_code = None
+                client.verification_code_timestamp = None
+
+            try:
+                db.commit()
+                needs_resolution, problems = utils.check_for_data_completion_issues(
+                    db, client.client_id
+                )
+                incomplete_team = utils.get_first_incomplete_team(db, client.client_id)
+                session.clear()
+                session["client_id"] = client.client_id
+                session.permanent = True
+                session.pop("needs_contact_completion", None)
+
+                if incomplete_team:
+                    session["pending_team_completion_id"] = incomplete_team.team_id
+                    flash(
+                        "برای ادامه لطفاً نام تیم خود را تکمیل کنید.",
+                        "warning",
+                    )
+                    return redirect(
+                        url_for("client.update_team", team_id=incomplete_team.team_id)
+                    )
+
+                if needs_resolution:
+                    session["resolution_problems"] = {
+                        str(member_id): details
+                        for member_id, details in problems.items()
+                    }
+                    session["client_id_for_resolution"] = client.client_id
+                    flash(
+                        "حساب کاربری شما دارای اطلاعات ناقص یا نامعتبر است. لطفا موارد خواسته‌شده را تکمیل کنید.",
+                        "warning",
+                    )
+                    return redirect(url_for("client.resolve_data_issues"))
+
+                flash("اطلاعات تماس با موفقیت به‌روزرسانی شد.", "success")
+                return redirect(url_for("client.dashboard"))
+            except exc.SQLAlchemyError as error:
+                db.rollback()
+                current_app.logger.error(
+                    "failed to update contact info for client %s: %s",
+                    client.client_id,
+                    error,
+                )
+                flash("خطایی در هنگام ذخیره اطلاعات رخ داد. دوباره تلاش کنید.", "error")
+
+        return render_template(
+            constants.client_html_names_data["complete_profile"],
+            client=client,
+            form_email=client.email,
+            form_phone=client.phone_number,
+        )
 
 
 @client_blueprint.route("/MyHistory")
@@ -328,6 +580,7 @@ def update_team(team_id):
     with database.get_db_session() as db:
         team = (
             db.query(models.Team)
+            .options(subqueryload(models.Team.members))
             .filter(
                 models.Team.team_id == team_id,
                 models.Team.client_id == session["client_id"],
@@ -347,6 +600,14 @@ def update_team(team_id):
                 flash(error_message, "error")
             else:
                 try:
+                    if database.has_team_made_any_payment(db, team_id):
+                        if team.team_name != new_team_name:
+                            flash(
+                                "نام تیم پس از ارسال پرداخت قابل تغییر نیست.", "error"
+                            )
+                            return redirect(
+                                url_for("client.update_team", team_id=team_id)
+                            )
                     existing_team = (
                         db.query(models.Team)
                         .filter(
@@ -367,8 +628,15 @@ def update_team(team_id):
                         database.log_action(
                             db,
                             session["client_id"],
-                            f"User updated Team name for Team ID {team_id} to '{new_team_name}'.",
+                            f"User updated team name for team id {team_id} to '{new_team_name}'.",
                         )
+                        pending_team = utils.get_first_incomplete_team(
+                            db, session["client_id"]
+                        )
+                        if pending_team:
+                            session["pending_team_completion_id"] = pending_team.team_id
+                        else:
+                            session.pop("pending_team_completion_id", None)
                         flash("نام تیم با موفقیت به‌روزرسانی شد!", "success")
                 except exc.IntegrityError:
                     db.rollback()
@@ -379,7 +647,17 @@ def update_team(team_id):
 
             return redirect(url_for("client.update_team", team_id=team_id))
 
+        has_any_payment = database.has_team_made_any_payment(db, team_id)
         is_paid = database.check_if_team_is_paid(db, team_id)
+        is_payment_approved = (
+            db.query(models.Payment)
+            .filter(
+                models.Payment.team_id == team_id,
+                models.Payment.status == models.PaymentStatus.APPROVED,
+            )
+            .first()
+            is not None
+        )
         documents = []
         if is_paid:
             documents = (
@@ -389,12 +667,23 @@ def update_team(team_id):
                 .all()
             )
 
-    return render_template(
-        constants.client_html_names_data["update_team"],
-        team=team,
-        is_paid=is_paid,
-        documents=documents,
-    )
+        is_documents_approved = any(
+            doc.status == models.DocumentStatus.APPROVED for doc in documents
+        )
+        is_documents_rejected = any(
+            doc.status == models.DocumentStatus.REJECTED for doc in documents
+        )
+
+        return render_template(
+            constants.client_html_names_data["update_team"],
+            team=team,
+            is_paid=is_paid,
+            has_any_payment=has_any_payment,
+            is_payment_approved=is_payment_approved,
+            documents=documents,
+            is_documents_approved=is_documents_approved,
+            is_documents_rejected=is_documents_rejected,
+        )
 
 
 @client_blueprint.route("/Team/<int:team_id>/members")
@@ -404,6 +693,9 @@ def manage_members(team_id):
     with database.get_db_session() as db:
         team = (
             db.query(models.Team)
+            .options(
+                joinedload(models.Team.league_one), joinedload(models.Team.league_two)
+            )
             .filter(
                 models.Team.team_id == team_id,
                 models.Team.client_id == session["client_id"],
@@ -417,6 +709,7 @@ def manage_members(team_id):
 
         members = (
             db.query(models.Member)
+            .options(joinedload(models.Member.city).joinedload(models.City.province))
             .filter(
                 models.Member.team_id == team_id,
                 models.Member.status == models.EntityStatus.ACTIVE,
@@ -424,28 +717,45 @@ def manage_members(team_id):
             .all()
         )
         is_paid = database.check_if_team_is_paid(db, team_id)
+        has_any_payment = database.has_team_made_any_payment(db, team_id)
 
-    return render_template(
-        constants.client_html_names_data["members"],
-        team=team,
-        members=members,
-        is_paid=is_paid,
-        **utils.get_form_context(),
-    )
+        return render_template(
+            constants.client_html_names_data["members"],
+            team=team,
+            members=members,
+            is_paid=is_paid,
+            has_any_payment=has_any_payment,
+            education_levels=constants.education_levels,
+            form_data=None,
+            **utils.get_form_context(),
+        )
 
 
 @client_blueprint.route("/SupportChat")
-@auth.login_required
 def support_chat():
-    "Render the support chat page for the logged-in client"
-    client_user = utils.get_current_client()
-    if not client_user:
-        flash("خطا در بارگیری اطلاعات کاربری. لطفا دوباره وارد شوید.", "error")
-        return redirect(url_for("client.login_client"))
-    return render_template(
-        constants.client_html_names_data["support_chat"],
-        user=client_user,
-    )
+    "Render the support chat page for the logged-in or resolving client"
+    with database.get_db_session() as db:
+        client_id = session.get("client_id")
+        if not client_id:
+            resolution_id = session.get("client_id_for_resolution")
+            if isinstance(resolution_id, int):
+                client_id = resolution_id
+        client_user = None
+        if client_id:
+            client_user = (
+                db.query(models.Client)
+                .filter(models.Client.client_id == client_id)
+                .first()
+            )
+
+        if not client_user:
+            flash("برای دسترسی به پشتیبانی ابتدا وارد حساب کاربری شوید.", "warning")
+            return redirect(url_for("client.login_client", next=request.url))
+
+        return render_template(
+            constants.client_html_names_data["support_chat"],
+            user=client_user,
+        )
 
 
 @client_blueprint.route(
@@ -453,12 +763,15 @@ def support_chat():
 )
 @auth.login_required
 def edit_member(team_id, member_id):
-    """Render and handle editing a member's information in a specific team."""
+    """Render and handle editing a member's information in a specific team"""
     template_name = constants.client_html_names_data["edit_member"]
 
     with database.get_db_session() as db:
         team = (
             db.query(models.Team)
+            .options(
+                joinedload(models.Team.league_one), joinedload(models.Team.league_two)
+            )
             .filter(
                 models.Team.team_id == team_id,
                 models.Team.client_id == session["client_id"],
@@ -470,8 +783,16 @@ def edit_member(team_id, member_id):
         if not team:
             abort(404, "تیم مورد نظر پیدا نشد یا شما دسترسی به این تیم را ندارید")
 
+        if not team.education_level:
+            flash(
+                "برای ویرایش اعضا، ابتدا باید مقطع تحصیلی تیم را مشخص کنید.",
+                "error",
+            )
+            return redirect(url_for("client.select_league", team_id=team_id))
+
         member = (
             db.query(models.Member)
+            .options(joinedload(models.Member.city).joinedload(models.City.province))
             .filter(
                 models.Member.member_id == member_id,
                 models.Member.team_id == team_id,
@@ -486,23 +807,14 @@ def edit_member(team_id, member_id):
 
         if request.method == "POST":
             csrf_protector.protect()
-
-            new_name = bleach.clean(request.form.get("name", "").strip())
-            new_role_value = request.form.get("role", "").strip()
-            new_national_id = fa_to_en(request.form.get("national_id", "").strip())
-            new_city_name = request.form.get("city", "").strip()
-            new_province_name = request.form.get("province", "").strip()
-
-            role_map = {role.value: role for role in models.MemberRole}
-            new_role = role_map.get(new_role_value)
-
-            if (
-                not new_name
-                or not new_national_id
-                or not new_city_name
-                or not new_province_name
-            ):
-                flash("نام، کد ملی، استان و شهر الزامی هستند.", "error")
+            new_member_data, error_message = utils.create_member_from_form_data(
+                db,
+                request.form,
+                team_id=team_id,
+                member_id=member_id,
+            )
+            if error_message:
+                flash(error_message, "error")
                 return render_template(
                     template_name,
                     team=team,
@@ -511,7 +823,11 @@ def edit_member(team_id, member_id):
                     **utils.get_form_context(),
                 )
 
-            if new_role == models.MemberRole.LEADER:
+            new_member_data_safe = new_member_data or {}
+            role_value = new_member_data_safe.get("role")
+            birth_date = new_member_data_safe.get("birth_date")
+            national_id = new_member_data_safe.get("national_id", "")
+            if role_value == models.MemberRole.LEADER:
                 if database.has_existing_leader(
                     db, team_id, member_id_to_exclude=member_id
                 ):
@@ -521,45 +837,60 @@ def edit_member(team_id, member_id):
                             "client.edit_member", team_id=team_id, member_id=member_id
                         )
                     )
-
-            try:
-                new_city_id = (
-                    db.query(models.City.city_id)
-                    .join(models.Province)
-                    .filter(
-                        models.Province.name == new_province_name,
-                        models.City.name == new_city_name,
+            if birth_date and role_value:
+                is_valid, age_error = utils.validate_member_age(
+                    birth_date,
+                    role_value,
+                    team.education_level,
+                )
+                if not is_valid:
+                    flash(age_error or "سن عضو در بازه مجاز نیست.", "error")
+                    return render_template(
+                        template_name,
+                        team=team,
+                        member=member,
+                        form_data=request.form,
+                        **utils.get_form_context(),
                     )
-                    .scalar()
+            if national_id and role_value == models.MemberRole.MEMBER:
+                has_conflict, conflict_error = database.is_member_league_conflict(
+                    db, national_id, team_id, member_id_to_exclude=member_id
+                )
+                if has_conflict:
+                    flash(
+                        conflict_error or "این عضو در لیگ دیگری ثبت شده است.", "error"
+                    )
+                    return render_template(
+                        template_name,
+                        team=team,
+                        member=member,
+                        form_data=request.form,
+                        **utils.get_form_context(),
+                    )
+            try:
+                name_value = new_member_data_safe.get("name") or member.name
+                city_id_value = new_member_data_safe.get("city_id") or member.city_id
+                phone_value = new_member_data_safe.get("phone_number")
+                gender_value = new_member_data_safe.get("gender")
+
+                member.name = name_value
+                member.national_id = national_id
+                member.phone_number = phone_value
+                member.gender = gender_value or member.gender
+                member.role = role_value or member.role
+                member.city_id = city_id_value
+                member.birth_date = birth_date or member.birth_date
+                db.commit()
+
+                utils.update_team_stats(db, team_id)
+                database.log_action(
+                    db,
+                    session["client_id"],
+                    f"Edited member '{member.name}' (id: {member_id}) in team id {team_id}.",
                 )
 
-                if not new_city_id:
-                    flash("استان یا شهر انتخاب شده معتبر نیست.", "error")
-                else:
-                    member.name = new_name
-                    if new_role is None:
-                        flash("نقش انتخاب شده نامعتبر است.", "error")
-                        return render_template(
-                            template_name,
-                            team=team,
-                            member=member,
-                            form_data=request.form,
-                            **utils.get_form_context(),
-                        )
-                    member.role = new_role
-                    member.national_id = new_national_id
-                    member.city_id = new_city_id
-                    db.commit()
-
-                    utils.update_team_stats(db, team_id)
-                    database.log_action(
-                        db,
-                        session["client_id"],
-                        f"Edited member '{new_name}' (ID: {member_id}) in Team ID {team_id}.",
-                    )
-
-                    flash("اطلاعات عضو با موفقیت به‌روزرسانی شد.", "success")
-                    return redirect(url_for("client.manage_members", team_id=team_id))
+                flash("اطلاعات عضو با موفقیت به‌روزرسانی شد.", "success")
+                return redirect(url_for("client.manage_members", team_id=team_id))
 
             except (exc.SQLAlchemyError, ValueError, TypeError) as error:
                 db.rollback()
@@ -575,10 +906,13 @@ def edit_member(team_id, member_id):
                 form_data=request.form,
                 **utils.get_form_context(),
             )
-
-    return render_template(
-        template_name, team=team, member=member, **utils.get_form_context()
-    )
+        return render_template(
+            template_name,
+            team=team,
+            member=member,
+            form_data=None,
+            **utils.get_form_context(),
+        )
 
 
 @client_blueprint.route("/ReceiptUploads/<int:client_id>/<filename>")
@@ -624,19 +958,17 @@ def create_team():
                     **form_context,
                 )
 
-            first_member_data, error = utils.create_member_from_form_data(
+            new_member_data, member_error = utils.create_member_from_form_data(
                 db, request.form
             )
-            if error:
-                flash(error, "error")
+            if member_error:
+                flash(member_error, "error")
                 return render_template(
                     constants.client_html_names_data["create_team"],
                     form_data=request.form,
                     **form_context,
                 )
-
             try:
-                assert first_member_data is not None
                 reg_date = datetime.datetime.now(datetime.timezone.utc)
                 new_team = models.Team(
                     client_id=session["client_id"],
@@ -646,16 +978,19 @@ def create_team():
                 db.add(new_team)
                 db.flush()
 
-                new_member = models.Member(
-                    team_id=new_team.team_id, **first_member_data
-                )
+                if not new_member_data:
+                    raise ValueError("member data missing during team creation")
+
+                new_member = models.Member(**new_member_data, team_id=new_team.team_id)
                 db.add(new_member)
+
                 db.commit()
-
-                utils.update_team_stats(db, new_team.team_id)
-
                 flash(f"تیم «{team_name}» با موفقیت ساخته شد!", "success")
-                return redirect(url_for("client.dashboard"))
+                flash("اکنون مقطع تحصیلی (لیگ) تیم خود را انتخاب کنید.", "info")
+                return redirect(
+                    url_for("client.select_league", team_id=new_team.team_id)
+                )
+
             except exc.IntegrityError:
                 db.rollback()
                 flash(
@@ -668,14 +1003,25 @@ def create_team():
                     **form_context,
                 )
 
+            except (exc.SQLAlchemyError, ValueError, TypeError) as error:
+                db.rollback()
+                current_app.logger.error("error creating team: %s", error)
+                flash("خطایی در هنگام ایجاد تیم رخ داد.", "error")
+                return render_template(
+                    constants.client_html_names_data["create_team"],
+                    form_data=request.form,
+                    **form_context,
+                )
+
     form_context = utils.get_form_context()
     return render_template(
-        constants.client_html_names_data["create_team"], **form_context
+        constants.client_html_names_data["create_team"], form_data={}, **form_context
     )
 
 
 @client_blueprint.route("/Verify", methods=["GET", "POST"])
 def verify_code():
+    """verify code route"""
     if request.method == "POST":
         csrf_protector.protect()
 
@@ -842,12 +1188,13 @@ def verify_code():
                     redirect_to_login = True
                 elif reset_record.timestamp:
                     ts = _ensure_aware(reset_record.timestamp)
-                    seconds_passed = (
-                        datetime.datetime.now(datetime.timezone.utc) - ts
-                    ).total_seconds()
+                    if ts is not None:
+                        seconds_passed = (
+                            datetime.datetime.now(datetime.timezone.utc) - ts
+                        ).total_seconds()
 
-                    if seconds_passed < 180:
-                        context["cooldown"] = 180 - int(seconds_passed)
+                        if seconds_passed < 180:
+                            context["cooldown"] = 180 - int(seconds_passed)
 
             context["identifier"] = identifier
             context["identifier_type"] = identifier_type
@@ -915,7 +1262,7 @@ def forgot_password():
                     Thread(
                         target=utils.send_async_email,
                         args=(
-                            current_app._get_current_object(),
+                            _get_current_app(),
                             client_check.client_id,
                             subject,
                             body,
@@ -927,7 +1274,7 @@ def forgot_password():
                     Thread(
                         target=utils.send_templated_sms_async,
                         args=(
-                            current_app._get_current_object(),
+                            _get_current_app(),
                             client_check.client_id,
                             config.melli_payamak["template_id_password_reset"],
                             reset_code,
@@ -1037,6 +1384,10 @@ def payment(team_id):
     with database.get_db_session() as db:
         team = (
             db.query(models.Team)
+            .options(
+                joinedload(models.Team.league_one),
+                joinedload(models.Team.league_two),
+            )
             .filter(
                 models.Team.team_id == team_id,
                 models.Team.client_id == session["client_id"],
@@ -1055,9 +1406,24 @@ def payment(team_id):
                 flash("لطفا فایل رسید پرداخت را انتخاب کنید.", "error")
                 return redirect(request.url)
 
-            if request.content_length is None or request.content_length > max_size:
+            upload_size = _determine_upload_size(receipt_file)
+            if upload_size is None:
                 flash(
-                    f"حجم فایل رسید نباید بیشتر از { max_size / 1024 / 1024:.1f} مگابایت باشد.",
+                    "امکان بررسی اندازه فایل رسید وجود ندارد. لطفاً مجدداً تلاش کنید.",
+                    "error",
+                )
+                return redirect(request.url)
+
+            if upload_size <= 0:
+                flash(
+                    "فایل انتخاب‌شده خالی است. لطفاً رسید صحیحی بارگذاری کنید.", "error"
+                )
+                return redirect(request.url)
+
+            if upload_size > max_size:
+                max_size_mb = max_size / 1024 / 1024
+                flash(
+                    f"حجم فایل رسید نباید بیشتر از {max_size_mb:.1f} مگابایت باشد.",
                     "error",
                 )
                 return redirect(request.url)
@@ -1067,6 +1433,31 @@ def payment(team_id):
                 flash("نوع فایل مجاز نیست یا فایل خراب است.", "error")
                 return redirect(request.url)
             receipt_file.stream.seek(0)
+
+            payer_name = (request.form.get("payer_name", "") or "").strip()
+            payer_phone = fa_to_en((request.form.get("payer_phone", "") or "").strip())
+            tracking_number = fa_to_en(
+                (request.form.get("tracking_number", "") or "").strip()
+            )
+            paid_date = (request.form.get("paid_date", "") or "").strip()
+            paid_time = (request.form.get("paid_time", "") or "").strip()
+
+            if not payer_name:
+                flash("لطفاً نام پرداخت‌کننده را وارد کنید.", "error")
+                return redirect(request.url)
+
+            if payer_phone and not payer_phone.isdigit():
+                flash("شماره تماس باید فقط شامل ارقام باشد.", "error")
+                return redirect(request.url)
+
+            if not tracking_number:
+                flash("شماره پیگیری پرداخت الزامی است.", "error")
+                return redirect(request.url)
+
+            paid_at = _parse_paid_datetime(paid_date, paid_time)
+            if paid_at is None:
+                flash("لطفاً تاریخ و ساعت پرداخت را به‌درستی وارد کنید.", "error")
+                return redirect(request.url)
 
             (
                 payment_context,
@@ -1082,8 +1473,21 @@ def payment(team_id):
             members_to_pay_for = payment_context.get("members_to_pay_for", 0)
 
             success, message = _process_payment_submission(
-                db, team, receipt_file, total_cost, members_to_pay_for
+                db,
+                team,
+                receipt_file,
+                total_cost,
+                members_to_pay_for,
+                payer_name=payer_name,
+                payer_phone=payer_phone,
+                tracking_number=tracking_number,
+                paid_at=paid_at,
             )
+
+            if success:
+                db.commit()
+            else:
+                db.rollback()
 
             flash(message, "success" if success else "error")
             return redirect(url_for("client.dashboard"))
@@ -1106,6 +1510,7 @@ def payment(team_id):
 @client_blueprint.route("/ResendCode", methods=["POST"])
 @limiter.limit("5 per 15 minutes")
 def resend_code():
+    """resend code route"""
     request_data = request.get_json() or {}
     action = request_data.get("action")
 
@@ -1155,7 +1560,7 @@ def resend_code():
         Thread(
             target=utils.send_templated_sms_async,
             args=(
-                current_app._get_current_object(),
+                _get_current_app(),
                 client.client_id,
                 config.melli_payamak["template_id_verification"],
                 new_code,
@@ -1221,7 +1626,7 @@ def resend_code():
             Thread(
                 target=utils.send_async_email,
                 args=(
-                    current_app._get_current_object(),
+                    _get_current_app(),
                     client.client_id,
                     "کد بازیابی رمز عبور آیروکاپ",
                     f"کد بازیابی رمز عبور شما: {new_code}",
@@ -1233,7 +1638,7 @@ def resend_code():
             Thread(
                 target=utils.send_templated_sms_async,
                 args=(
-                    current_app._get_current_object(),
+                    _get_current_app(),
                     client.client_id,
                     config.melli_payamak["template_id_password_reset"],
                     new_code,
@@ -1269,34 +1674,55 @@ def dashboard():
         team_ids = [team.team_id for team in teams]
         payment_statuses = {}
 
-        if team_ids:
-            subquery = (
-                select(
-                    models.Payment.team_id,
-                    models.Payment.status,
-                    func.row_number()
-                    .over(
-                        partition_by=models.Payment.team_id,
-                        order_by=models.Payment.upload_date.desc(),
-                    )
-                    .label("row_number"),
-                )
-                .where(models.Payment.team_id.in_(team_ids))
-                .subquery()
-            )
+        active_member_counts: dict[int, int] = {}
 
-            latest_payments = (
-                db.query(subquery).filter(subquery.c.row_number == 1).all()
+    if team_ids:
+        member_counts = (
+            db.query(
+                models.Member.team_id,
+                func.count(models.Member.member_id),
             )
-            payment_statuses = {
-                row.team_id: models.PaymentStatus(row.status)
-                if row.status is not None
-                else None
-                for row in latest_payments
-            }
+            .filter(
+                models.Member.team_id.in_(team_ids),
+                models.Member.status == models.EntityStatus.ACTIVE,
+            )
+            .group_by(models.Member.team_id)
+            .all()
+        )
+        active_member_counts = {
+            team_id: int(member_count) for team_id, member_count in member_counts
+        }
+
+        subquery = (
+            select(
+                models.Payment.team_id,
+                models.Payment.status,
+                func.row_number()
+                .over(
+                    partition_by=models.Payment.team_id,
+                    order_by=models.Payment.upload_date.desc(),
+                )
+                .label("row_number"),
+            )
+            .where(models.Payment.team_id.in_(team_ids))
+            .subquery()
+        )
+
+        latest_payments = db.query(subquery).filter(subquery.c.row_number == 1).all()
+        payment_statuses = {
+            row.team_id: (
+                models.PaymentStatus(row.status) if row.status is not None else None
+            )
+            for row in latest_payments
+        }
 
         for team in teams:
             setattr(team, "last_payment_status", payment_statuses.get(team.team_id))
+            setattr(
+                team,
+                "active_member_count",
+                active_member_counts.get(team.team_id, 0),
+            )
 
     return render_template(
         constants.client_html_names_data["dashboard"],
@@ -1319,6 +1745,22 @@ def submit_data_resolution():
                 if k.startswith("member_name_")
             }
 
+            province_city_rows = (
+                db.query(models.Province.name, models.City.name, models.City.city_id)
+                .join(models.City)
+                .all()
+            )
+
+            city_lookup = {
+                (
+                    utils.normalize_persian_text(province_name),
+                    utils.normalize_persian_text(city_name),
+                ): city_id
+                for province_name, city_name, city_id in province_city_rows
+            }
+
+            members_with_location_errors: set[int] = set()
+
             for member_id in updated_member_ids:
                 member = (
                     db.query(models.Member)
@@ -1338,25 +1780,30 @@ def submit_data_resolution():
                     member.national_id = fa_to_en(
                         request.form.get(f"member_national_id_{member_id}", "").strip()
                     )
+                    
+                    gender_str = request.form.get(f"member_gender_{member_id}", "").strip()
+                    member.gender = next((g for g in models.Gender if g.value == gender_str), None)
+
                     member.role = role_map.get(
                         request.form.get(f"member_role_{member_id}", "").strip(),
                         models.MemberRole.MEMBER,
                     )
 
-                    city_id = (
-                        db.query(models.City.city_id)
-                        .join(models.Province)
-                        .filter(
-                            models.Province.name
-                            == request.form.get(
-                                f"member_province_{member_id}", ""
-                            ).strip(),
-                            models.City.name
-                            == request.form.get(f"member_city_{member_id}", "").strip(),
-                        )
-                        .scalar()
+                    province_value = utils.normalize_persian_text(
+                        request.form.get(f"member_province_{member_id}", "")
                     )
-                    member.city_id = city_id
+                    city_value = utils.normalize_persian_text(
+                        request.form.get(f"member_city_{member_id}", "")
+                    )
+
+                    if province_value and city_value:
+                        matched_city_id = city_lookup.get((province_value, city_value))
+                        if matched_city_id is not None:
+                            member.city_id = matched_city_id
+                        else:
+                            members_with_location_errors.add(member_id)
+                    else:
+                        members_with_location_errors.add(member_id)
 
                     if (
                         request.form.get(f"member_birth_year_{member_id}")
@@ -1391,9 +1838,20 @@ def submit_data_resolution():
                 flash("خطا: شناسه کاربری برای اصلاح اطلاعات نامعتبر است.", "error")
                 return redirect(url_for("client.login_client"))
 
+            team_count = (
+                db.query(models.Team)
+                .filter(models.Team.client_id == client_id_for_resolution)
+                .count()
+            )
             needs_resolution, new_problems = utils.check_for_data_completion_issues(
                 db, client_id_for_resolution
             )
+
+            if members_with_location_errors:
+                flash(
+                    "لطفاً استان و شهر اعضای مشخص‌شده را دوباره انتخاب کنید.",
+                    "error",
+                )
 
             if not needs_resolution:
                 client = (
@@ -1418,15 +1876,20 @@ def submit_data_resolution():
                         "اطلاعات شما با موفقیت تکمیل و حساب کاربری شما مجددا فعال شد!",
                         "success",
                     )
+
+                    if team_count == 0:
+                        flash("برای ادامه، لطفا اولین تیم خود را ایجاد کنید.", "info")
                     return redirect(url_for("client.dashboard"))
                 else:
                     current_app.logger.error(
-                        "Client not found for ID %s during resolution.",
+                        "client not found for id %s during resolution.",
                         client_id_for_resolution,
                     )
                     flash("خطا: اطلاعات کاربری برای اصلاح یافت نشد.", "error")
                     return redirect(url_for("client.login_client"))
-            session["resolution_problems"] = new_problems
+            session["resolution_problems"] = {
+                str(member_id): details for member_id, details in new_problems.items()
+            }
             flash(
                 "برخی از مشکلات همچنان باقی است. لطفا موارد مشخص شده را اصلاح نمایید.",
                 "error",
@@ -1449,7 +1912,7 @@ def submit_data_resolution():
 @client_blueprint.route("/Team/<int:team_id>/Delete", methods=["POST"])
 @auth.login_required
 def delete_team(team_id):
-    "Archive a team and its members"
+    "archive a team and its members"
     csrf_protector.protect()
     with database.get_db_session() as db:
         try:
@@ -1469,7 +1932,7 @@ def delete_team(team_id):
 
             if database.has_team_made_any_payment(db, team_id):
                 flash(
-                    "پس از ارسال رسید پرداخت، امکان آرشیو تیم توسط شما وجود ندارد.",
+                    "پس از ارسال رسید پرداخت (در انتظار تایید/تایید شده/رد شده)، آرشیو تیم تنها توسط ادمین امکان‌پذیر است.",
                     "error",
                 )
                 return redirect(url_for("client.dashboard"))
@@ -1494,7 +1957,7 @@ def delete_team(team_id):
 )
 @auth.login_required
 def delete_member(team_id, member_id):
-    "Archive a member from a specific team."
+    "archive a member from a specific team."
     csrf_protector.protect()
     try:
         with database.get_db_session() as db:
@@ -1512,7 +1975,10 @@ def delete_member(team_id, member_id):
                 abort(404)
 
             if database.has_team_made_any_payment(db, team_id):
-                flash("پس از ارسال رسید پرداخت، امکان حذف عضو وجود ندارد.", "error")
+                flash(
+                    "پس از ارسال رسید پرداخت (در انتظار تایید/تایید شده/رد شده)، حذف عضو تنها توسط ادمین امکان‌پذیر است.",
+                    "error",
+                )
                 return redirect(url_for("client.manage_members", team_id=team_id))
 
             member_to_delete = (
@@ -1532,7 +1998,7 @@ def delete_member(team_id, member_id):
                 database.log_action(
                     db,
                     session["client_id"],
-                    f"User marked member '{member_name}' as withdrawn from Team ID {team_id}.",
+                    f"User marked member '{member_name}' as withdrawn from team id {team_id}.",
                 )
 
                 db.commit()
@@ -1544,7 +2010,7 @@ def delete_member(team_id, member_id):
 
     except exc.SQLAlchemyError as error:
         current_app.logger.error(
-            "error archiving member %s from Team %s: %s", member_id, team_id, error
+            "error archiving member %s from team %s: %s", member_id, team_id, error
         )
         flash("خطایی در هنگام حذف عضو رخ داد.", "error")
 
@@ -1552,25 +2018,29 @@ def delete_member(team_id, member_id):
 
 
 @client_blueprint.route("/get_my_chat_history")
-@auth.login_required
 def get_my_chat_history():
-    "Return the chat history for the logged-in client as JSON"
+    "Return the chat history for the logged-in or resolving client as JSON"
+
     client_id = session.get("client_id")
     if not isinstance(client_id, int):
-        return jsonify({"messages": []})
+        resolution_id = session.get("client_id_for_resolution")
+        client_id = resolution_id if isinstance(resolution_id, int) else None
+
+    if not isinstance(client_id, int):
+        return jsonify({"messages": []}), 401
+
     with database.get_db_session() as db:
-        return jsonify(
+        messages = [
             {
-                "messages": [
-                    {
-                        "message_text": message.message_text,
-                        "timestamp": message.timestamp.isoformat(),
-                        "sender": message.sender,
-                    }
-                    for message in database.get_chat_history_by_client_id(db, client_id)
-                ]
+                "message_text": message.message_text,
+                "timestamp": message.timestamp.isoformat(),
+                "message_id": message.message_id,
+                "sender": message.sender,
             }
-        )
+            for message in database.get_chat_history_by_client_id(db, client_id)
+        ]
+
+    return jsonify({"messages": messages})
 
 
 @client_blueprint.route("/Team/<int:team_id>/UploadDocument", methods=["POST"])
@@ -1597,23 +2067,81 @@ def upload_document(team_id):
         ):
             abort(403)
 
-        if not database.check_if_team_is_paid(db, team_id):
+        approved_payment = (
+            db.query(models.Payment)
+            .filter(
+                models.Payment.team_id == team_id,
+                models.Payment.status == models.PaymentStatus.APPROVED,
+            )
+            .first()
+        )
+
+        if not approved_payment:
             flash("شما اجازه بارگذاری مستندات برای این تیم را ندارید.", "error")
+            return redirect(url_for("client.update_team", team_id=team_id))
+
+        current_document_count = (
+            db.query(models.TeamDocument)
+            .filter(models.TeamDocument.team_id == team_id)
+            .count()
+        )
+
+        if current_document_count >= constants.AppConfig.max_documents_per_team:
+            flash(
+                f"شما به حداکثر تعداد مجاز مستندات ({constants.AppConfig.max_documents_per_team} فایل) برای این تیم رسیده‌اید.",
+                "error",
+            )
             return redirect(url_for("client.update_team", team_id=team_id))
 
         if "file" not in request.files:
             flash("فایلی برای بارگذاری انتخاب نشده است.", "error")
             return redirect(url_for("client.update_team", team_id=team_id))
 
-        max_size = constants.AppConfig.max_document_size
         file = request.files["file"]
 
         if not file or not file.filename:
             flash("نام فایل نامعتبر است.", "error")
+        file.stream.seek(0)
+        kind = filetype.guess(file.stream)
+        file.stream.seek(0)
+        extension = ""
+        if kind:
+            extension = kind.extension
+        else:
+            original_filename = secure_filename(file.filename)
+            if "." in original_filename:
+                extension = original_filename.rsplit(".", 1)[1].lower()
+            elif "." in file.filename:
+                extension = file.filename.rsplit(".", 1)[1].lower()
+
+        if not extension:
+            flash("پسوند فایل نامعتبر است.", "error")
             return redirect(url_for("client.update_team", team_id=team_id))
-        if request.content_length is None or request.content_length > max_size:
+
+        if extension not in constants.AppConfig.allowed_extensions:
+            flash("نوع فایل انتخاب شده مجاز نیست.", "error")
+            return redirect(url_for("client.update_team", team_id=team_id))
+
+        if extension in constants.AppConfig.video_extensions:
+            max_size = constants.AppConfig.max_video_size
+        elif extension in constants.AppConfig.image_extensions:
+            max_size = constants.AppConfig.max_image_size
+        else:
+            max_size = constants.AppConfig.max_office_size
+
+        if request.content_length is not None and request.content_length > max_size:
             flash(
-                f"حجم فایل سند نباید بیشتر از {max_size / 1024 / 1024:.1f} مگابایت باشد.",
+                f"حجم فایل انتخابی نباید بیشتر از {max_size / 1024 / 1024:.1f} مگابایت باشد.",
+                "error",
+            )
+            return redirect(url_for("client.update_team", team_id=team_id))
+
+        file.stream.seek(0, os.SEEK_END)
+        file_size = file.stream.tell()
+        file.stream.seek(0)
+        if file_size > max_size:
+            flash(
+                f"حجم فایل انتخابی نباید بیشتر از {max_size / 1024 / 1024:.1f} مگابایت باشد.",
                 "error",
             )
             return redirect(url_for("client.update_team", team_id=team_id))
@@ -1624,12 +2152,6 @@ def upload_document(team_id):
             return redirect(url_for("client.update_team", team_id=team_id))
         file.stream.seek(0)
 
-        original_filename = secure_filename(file.filename)
-        extension = (
-            original_filename.rsplit(".", 1)[1].lower()
-            if "." in original_filename
-            else ""
-        )
         secure_name = f"{uuid.uuid4()}.{extension}"
 
         new_document = models.TeamDocument(
@@ -1692,10 +2214,16 @@ def get_document(team_id, filename):
 def add_member(team_id):
     "Handle adding a new member to a specific team"
     csrf_protector.protect()
-    try:
-        with database.get_db_session() as db:
+
+    with database.get_db_session() as db_session:
+        team = None
+        try:
             team = (
-                db.query(models.Team)
+                db_session.query(models.Team)
+                .options(
+                    joinedload(models.Team.league_one),
+                    joinedload(models.Team.league_two),
+                )
                 .filter(
                     models.Team.team_id == team_id,
                     models.Team.client_id == session["client_id"],
@@ -1707,8 +2235,57 @@ def add_member(team_id):
             if not team:
                 abort(404)
 
+            has_any_payment = database.has_team_made_any_payment(db_session, team_id)
+
+            def _render_error(error_msg, error_type="error"):
+                flash(error_msg, error_type)
+                return render_template(
+                    constants.client_html_names_data["members"],
+                    team=team,
+                    members=db_session.query(models.Member)
+                    .filter(
+                        models.Member.team_id == team_id,
+                        models.Member.status == models.EntityStatus.ACTIVE,
+                    )
+                    .all(),
+                    is_paid=database.check_if_team_is_paid(db_session, team_id),
+                    has_any_payment=has_any_payment,
+                    education_levels=constants.education_levels,
+                    form_data=request.form,
+                    **utils.get_form_context(),
+                )
+
+            if not team.education_level:
+                return _render_error(
+                    "برای افزودن عضو، ابتدا باید مقطع تحصیلی تیم را انتخاب کنید."
+                )
+            if not team.league_one_id:
+                return _render_error(
+                    "برای افزودن عضو، ابتدا باید حداقل یک لیگ (مقطع تحصیلی) برای تیم خود انتخاب کنید."
+                )
+
+            selected_leagues_count = 1 + (1 if team.league_two_id is not None else 0)
+            selected_leagues_count = max(1, selected_leagues_count)
+            new_member_fee_per_league = (
+                config.payment_config.get("new_member_fee_per_league") or 0
+            )
+            receipt_file = (
+                request.files.get("member_receipt") if has_any_payment else None
+            )
+
+            if has_any_payment:
+                if new_member_fee_per_league <= 0:
+                    return _render_error(
+                        "سامانه قادر به محاسبه هزینه عضو جدید نیست. لطفاً با پشتیبانی تماس بگیرید.",
+                        "error",
+                    )
+
+                receipt_error = _validate_new_member_receipt(receipt_file)
+                if receipt_error:
+                    return _render_error(receipt_error)
+
             current_member_count = (
-                db.query(models.Member)
+                db_session.query(models.Member)
                 .filter(
                     models.Member.team_id == team_id,
                     models.Member.status == models.EntityStatus.ACTIVE,
@@ -1717,36 +2294,105 @@ def add_member(team_id):
             )
 
             if current_member_count >= constants.AppConfig.max_members_per_team:
-                flash("خطا: شما به حداکثر تعداد اعضای تیم رسیده‌اید.", "error")
-                return redirect(url_for("client.manage_members", team_id=team_id))
-            new_member, error_message = utils.internal_add_member(
-                db, team_id, request.form
-            )
+                return _render_error("خطا: شما به حداکثر تعداد اعضای تیم رسیده‌اید.")
 
+            new_member_data, error_message = utils.create_member_from_form_data(
+                db_session, request.form, team_id=team_id
+            )
             if error_message:
-                flash(error_message, "error")
-            else:
-                database.log_action(
-                    db,
-                    session["client_id"],
-                    f"Added new member '{new_member.name}' to Team ID {team_id}.",
+                return _render_error(error_message)
+
+            new_member_data_safe = new_member_data or {}
+            national_id = new_member_data_safe.get("national_id", "")
+            role_value = new_member_data_safe.get("role")
+            birth_date = new_member_data_safe.get("birth_date")
+            if birth_date and role_value:
+                is_age_valid, age_error = utils.validate_member_age(
+                    birth_date,
+                    role_value,
+                    team.education_level,
+                )
+                if not is_age_valid:
+                    return _render_error(age_error)
+
+            if national_id and role_value == models.MemberRole.MEMBER:
+                existing_leagues_query = (
+                    db_session.query(
+                        models.Team.league_one_id, models.Team.league_two_id
+                    )
+                    .join(models.Member, models.Team.team_id == models.Member.team_id)
+                    .filter(
+                        models.Member.national_id == national_id,
+                        models.Member.status == models.EntityStatus.ACTIVE,
+                        models.Team.status == models.EntityStatus.ACTIVE,
+                        models.Team.team_id != team_id,
+                    )
+                    .all()
                 )
 
-                if database.check_if_team_is_paid(db, team_id):
-                    team.unpaid_members_count = (team.unpaid_members_count or 0) + 1
-                    flash(
-                        f"عضو «{new_member.name}» با موفقیت اضافه شد. لطفاً برای فعال‌سازی، هزینه عضو جدید را پرداخت نمایید.",
-                        "warning",
+                leagues_user_is_in = set()
+                for l1, l2 in existing_leagues_query:
+                    if l1:
+                        leagues_user_is_in.add(l1)
+                    if l2:
+                        leagues_user_is_in.add(l2)
+
+                conflict_league_name = None
+                if team.league_one_id and team.league_one_id in leagues_user_is_in:
+                    conflict_league_name = team.league_one.name
+                elif team.league_two_id and team.league_two_id in leagues_user_is_in:
+                    conflict_league_name = team.league_two.name
+
+                if conflict_league_name:
+                    return _render_error(
+                        f"این عضو ({national_id}) هم‌اکنون در لیگ '{conflict_league_name}' در تیم دیگری عضو است."
                     )
-                else:
-                    flash(f"عضو «{new_member.name}» با موفقیت اضافه شد!", "success")
 
-                db.commit()
-                utils.update_team_stats(db, team_id)
+            new_member = models.Member(**new_member_data_safe, team_id=team_id)
+            db_session.add(new_member)
 
-    except (exc.SQLAlchemyError, ValueError, TypeError) as error:
-        current_app.logger.error("error adding member to Team %s: %s", team_id, error)
-        flash("خطایی در هنگام افزودن عضو رخ داد.", "error")
+            database.log_action(
+                db_session,
+                session["client_id"],
+                f"added new member '{new_member.name}' to team id {team_id}.",
+            )
+
+            db_session.flush()
+            utils.update_team_stats(db_session, team_id)
+
+            if has_any_payment:
+                team.unpaid_members_count = (team.unpaid_members_count or 0) + 1
+                per_member_total = new_member_fee_per_league * selected_leagues_count
+                success, payment_message = _process_payment_submission(
+                    db_session,
+                    team,
+                    receipt_file,
+                    per_member_total,
+                    1,
+                )
+
+                if not success:
+                    return _render_error(payment_message)
+
+                flash(
+                    "عضو «{name}» اضافه شد و رسید پرداخت او ثبت شد. {msg}".format(
+                        name=new_member.name,
+                        msg=payment_message,
+                    ),
+                    "success",
+                )
+            else:
+                flash(f"عضو «{new_member.name}» با موفقیت اضافه شد!", "success")
+
+            db_session.commit()
+
+        except (exc.SQLAlchemyError, ValueError, TypeError) as error:
+            db_session.rollback()
+            current_app.logger.error(
+                "error adding member to team %s: %s", team_id, error
+            )
+            flash("خطایی در هنگام افزودن عضو رخ داد.", "error")
+            return redirect(url_for("client.manage_members", team_id=team_id))
 
     return redirect(url_for("client.manage_members", team_id=team_id))
 
@@ -1780,6 +2426,11 @@ def select_league(team_id):
             csrf_protector.protect()
             league_one_id = request.form.get("league_one")
             league_two_id = request.form.get("league_two")
+            education_level = request.form.get("education_level", "").strip()
+
+            if education_level not in constants.allowed_education:
+                flash("لطفاً مقطع تحصیلی معتبری را انتخاب کنید.", "error")
+                return redirect(url_for("client.select_league", team_id=team_id))
 
             if not league_one_id:
                 flash("لطفاً لیگ اول (اجباری) را انتخاب کنید.", "error")
@@ -1789,8 +2440,39 @@ def select_league(team_id):
                 flash("شما نمی‌توانید یک لیگ را دو بار انتخاب کنید.", "error")
                 return redirect(url_for("client.select_league", team_id=team_id))
 
+            if education_level != (team.education_level or ""):
+                level_info = constants.education_levels.get(education_level)
+                age_range = level_info.get("ages") if level_info else None
+                if age_range:
+                    min_age, max_age = age_range
+                    violating_member = None
+                    for member in team.members:
+                        if (
+                            member.status == models.EntityStatus.ACTIVE
+                            and member.role == models.MemberRole.MEMBER
+                        ):
+                            member_age = utils.calculate_age(member.birth_date)
+                            if member_age is None:
+                                continue  # Skip invalid ages, let utils handle if needed
+                            
+                            is_below = min_age is not None and member_age < min_age
+                            is_above = max_age is not None and member_age > max_age
+                            
+                            if is_below or is_above:
+                                violating_member = member
+                                break
+                    if violating_member:
+                        flash(
+                            f"عضو «{violating_member.name}» با سن فعلی خود در بازه مجاز مقطع «{education_level}» قرار نمی‌گیرد.",
+                            "error",
+                        )
+                        return redirect(
+                            url_for("client.select_league", team_id=team_id)
+                        )
+
             team.league_one_id = int(league_one_id) if league_one_id else None
             team.league_two_id = int(league_two_id) if league_two_id else None
+            team.education_level = education_level
             db.commit()
             flash("لیگ‌های تیم با موفقیت به‌روزرسانی شد.", "success")
             return redirect(url_for("client.dashboard"))
@@ -1799,65 +2481,203 @@ def select_league(team_id):
         constants.client_html_names_data["select_league"],
         team=team,
         leagues=constants.leagues_list,
+        education_levels=constants.education_levels,
     )
 
 
-def _calculate_payment_details(db, team):
+def _calculate_payment_details(db, team) -> tuple[dict[str, Any], str, str, bool]:
     """Calculates payment details for a team based on its status and members."""
-    is_new_member_payment = database.check_if_team_is_paid(db, team.team_id)
-    total_cost = 0
+    latest_payment = (
+        db.query(models.Payment)
+        .filter(models.Payment.team_id == team.team_id)
+        .order_by(models.Payment.upload_date.desc())
+        .first()
+    )
+
+    if latest_payment and latest_payment.status == models.PaymentStatus.PENDING:
+        return (
+            {},
+            "رسید پرداخت قبلی شما در حال بررسی است. لطفاً تا اعلام نتیجه صبر کنید.",
+            "info",
+            True,
+        )
+
+    active_members_count = (
+        db.query(func.count(models.Member.member_id))
+        .filter(
+            models.Member.team_id == team.team_id,
+            models.Member.status == models.EntityStatus.ACTIVE,
+        )
+        .scalar()
+        or 0
+    )
+
+    if active_members_count == 0:
+        return (
+            {},
+            "برای پرداخت، ابتدا باید حداقل یک عضو فعال در تیم ثبت شده باشد.",
+            "warning",
+            True,
+        )
+
+    if not team.league_one_id:
+        return (
+            {},
+            "لطفاً ابتدا لیگ اصلی تیم را از بخش «انتخاب لیگ» مشخص کنید.",
+            "warning",
+            True,
+        )
+
+    if not team.education_level:
+        return (
+            {},
+            "لطفاً ابتدا مقطع تحصیلی تیم را از بخش «انتخاب مقطع و لیگ» تعیین کنید.",
+            "warning",
+            True,
+        )
+
+    has_any_payment = database.has_team_made_any_payment(db, team.team_id)
+    is_new_member_payment = has_any_payment
+    fee_per_person = config.payment_config.get("fee_per_person") or 0
+    fee_team = config.payment_config.get("fee_team") or 0
+    league_two_discount_percent = config.payment_config.get("league_two_discount") or 0
+    new_member_fee_per_league = (
+        config.payment_config.get("new_member_fee_per_league") or 0
+    )
+    selected_leagues_count = 1 + (1 if team.league_two_id is not None else 0)
+    selected_leagues_count = max(1, selected_leagues_count)
+
     members_to_pay_for = 0
-    num_members = 0
+    total_cost = 0
     league_one_cost = 0
     league_two_cost = 0
     discount_amount = 0
+    per_member_total = 0
 
     if is_new_member_payment:
-        members_to_pay_for = (
-            team.unpaid_members_count if team.unpaid_members_count is not None else 0
-        )
-        if members_to_pay_for == 0:
-            return {}, "در حال حاضر عضو جدیدی برای پرداخت وجود ندارد.", "info", True
-        total_cost = members_to_pay_for * config.payment_config["fee_per_person"]
-    else:
-        num_members = (
-            db.query(models.Member)
-            .filter(
-                models.Member.team_id == team.team_id,
-                models.Member.status == models.EntityStatus.ACTIVE,
+        members_to_pay_for = team.unpaid_members_count or 0
+        if members_to_pay_for <= 0:
+            return (
+                {},
+                "در حال حاضر عضو جدیدی برای پرداخت وجود ندارد.",
+                "info",
+                True,
             )
-            .count()
-        )
-        members_to_pay_for = num_members
-        members_fee = num_members * config.payment_config["fee_per_person"]
-        league_one_cost = config.payment_config["fee_team"] + members_fee
+
+        per_member_total = new_member_fee_per_league * selected_leagues_count
+        total_cost = members_to_pay_for * per_member_total
+    else:
+        members_to_pay_for = active_members_count
+        members_fee = members_to_pay_for * fee_per_person
+        base_league_cost = fee_team + members_fee
+        league_one_cost = base_league_cost
         total_cost = league_one_cost
 
         if team.league_two_id is not None:
-            discount_percent = config.payment_config["league_two_discount"] / 100
-            discount_amount = members_fee * discount_percent
-            league_two_cost = members_fee - discount_amount
-            total_cost += league_two_cost
+            league_two_cost = int(
+                round(base_league_cost * (1 - league_two_discount_percent / 100))
+            )
+            discount_amount = max(0, base_league_cost - league_two_cost)
+            total_cost += max(league_two_cost, 0)
 
     context = {
         "is_new_member_payment": is_new_member_payment,
         "members_to_pay_for": members_to_pay_for,
-        "total_fee": total_cost,
-        "num_members": num_members,
-        "league_one_cost": league_one_cost,
-        "league_two_cost": league_two_cost,
-        "discount_amount": discount_amount,
+        "total_fee": int(total_cost),
+        "num_members": active_members_count,
+        "league_one_cost": int(league_one_cost),
+        "league_two_cost": int(league_two_cost),
+        "discount_amount": int(discount_amount),
+        "latest_payment": latest_payment,
+        "bank_info_complete": all(
+            config.payment_config.get(field)
+            for field in ("bank_name", "owner_name", "card_number", "iban")
+        ),
+        "new_member_fee_per_league": int(new_member_fee_per_league),
+        "selected_leagues_count": selected_leagues_count,
+        "new_member_total_per_member": int(per_member_total),
     }
     return context, None, None, False
 
 
-def _process_payment_submission(db, team, receipt_file, total_cost, members_to_pay_for):
-    """Handles saving the receipt file and creating a payment record."""
-    original_filename = secure_filename(receipt_file.filename)
-    extension = (
-        original_filename.rsplit(".", 1)[1].lower() if "." in original_filename else ""
+def _parse_paid_datetime(date_str, time_str):
+    """Parse separate date and time strings into a timezone-aware datetime."""
+    if not date_str or not time_str:
+        return None
+
+    try:
+        parsed_date = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
+        parsed_time = datetime.datetime.strptime(time_str, "%H:%M").time()
+    except (ValueError, TypeError):
+        return None
+
+    return datetime.datetime.combine(parsed_date, parsed_time).replace(
+        tzinfo=datetime.timezone.utc
     )
-    secure_name = f"{uuid.uuid4()}.{extension}"
+
+
+def _determine_upload_size(file_storage):
+    """Best-effort helper to determine the size of an uploaded file."""
+    size = getattr(file_storage, "content_length", None)
+    if size is not None and size > 0:
+        return size
+
+    stream = getattr(file_storage, "stream", None)
+    if stream is None:
+        return size
+
+    try:
+        stream.seek(0, os.SEEK_END)
+        size = stream.tell()
+    except (OSError, AttributeError):
+        try:
+            stream.seek(0)
+        except (OSError, AttributeError):
+            return size
+        data = stream.read()
+        size = len(data)
+        stream = io.BytesIO(data)
+        file_storage.stream = stream
+    finally:
+        try:
+            file_storage.stream.seek(0)
+        except (OSError, AttributeError):
+            pass
+
+    return size
+
+
+def _process_payment_submission(
+    db,
+    team,
+    receipt_file,
+    total_cost,
+    members_to_pay_for,
+    *,
+    payer_name=None,
+    payer_phone=None,
+    tracking_number=None,
+    paid_at=None,
+):
+    """Handles saving the receipt file and creating a payment record."""
+    
+    # Attempt to detect extension from content first
+    receipt_file.stream.seek(0)
+    kind = filetype.guess(receipt_file.stream)
+    receipt_file.stream.seek(0)
+    
+    extension = ""
+    if kind:
+        extension = kind.extension
+    else:
+        # Fallback to filename extension if content detection fails (though likely caught by validation)
+        original_filename = secure_filename(receipt_file.filename)
+        if "." in original_filename:
+             extension = original_filename.rsplit(".", 1)[1].lower()
+        elif "." in receipt_file.filename: # Try insecure filename if secure stripped it
+             extension = receipt_file.filename.rsplit(".", 1)[1].lower()
+
+    secure_name = f"{uuid.uuid4()}.{extension}" if extension else str(uuid.uuid4())
 
     new_payment = models.Payment(
         team_id=team.team_id,
@@ -1865,10 +2685,19 @@ def _process_payment_submission(db, team, receipt_file, total_cost, members_to_p
         amount=total_cost,
         members_paid_for=members_to_pay_for,
         receipt_filename=secure_name,
+        tracking_number=tracking_number,
+        payer_name=payer_name,
+        payer_phone=payer_phone,
+        paid_at=paid_at,
         upload_date=datetime.datetime.now(datetime.timezone.utc),
         status=models.PaymentStatus.PENDING,
     )
     db.add(new_payment)
+
+    if team.unpaid_members_count and members_to_pay_for > 0:
+        team.unpaid_members_count = max(
+            0, (team.unpaid_members_count or 0) - members_to_pay_for
+        )
 
     try:
         user_receipts_folder = os.path.join(
@@ -1877,9 +2706,35 @@ def _process_payment_submission(db, team, receipt_file, total_cost, members_to_p
         )
         os.makedirs(user_receipts_folder, exist_ok=True)
         receipt_file.save(os.path.join(user_receipts_folder, secure_name))
-        db.commit()
+        db.flush()
         return True, "متشکریم! رسید شما با موفقیت بارگذاری و برای بررسی ارسال شد."
     except (IOError, OSError, exc.SQLAlchemyError) as error:
         db.rollback()
         current_app.logger.error("File save failed for payment: %s", error)
         return False, "خطایی در هنگام ذخیره فایل رسید رخ داد. لطفا دوباره تلاش کنید."
+
+
+def _validate_new_member_receipt(receipt_file):
+    """Ensure a receipt file exists and respects format/size rules."""
+    max_size = constants.AppConfig.max_image_size
+
+    if not receipt_file or receipt_file.filename == "":
+        return "لطفاً تصویر رسید پرداخت عضو جدید را بارگذاری کنید."
+
+    upload_size = _determine_upload_size(receipt_file)
+    if upload_size is None:
+        return "امکان بررسی اندازه فایل رسید وجود ندارد. لطفاً دوباره تلاش کنید."
+
+    if upload_size <= 0:
+        return "فایل انتخاب‌شده خالی است. لطفاً رسید صحیحی انتخاب کنید."
+
+    if upload_size > max_size:
+        max_size_mb = max_size / 1024 / 1024
+        return f"حجم فایل رسید نباید بیشتر از {max_size_mb:.1f} مگابایت باشد."
+
+    receipt_file.stream.seek(0)
+    if not utils.is_file_allowed(receipt_file.stream):
+        return "نوع فایل رسید مجاز نیست یا فایل خراب است."
+    receipt_file.stream.seek(0)
+
+    return None

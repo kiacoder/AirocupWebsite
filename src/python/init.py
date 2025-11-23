@@ -1,1 +1,1 @@
-# Initialize the package, leave this file empty
+"""Initialize the package, leave this file empty"""

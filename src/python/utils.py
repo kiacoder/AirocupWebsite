@@ -5,17 +5,18 @@ import smtplib
 from email.mime.text import MIMEText
 import datetime
 from typing import Any, IO, Tuple, Optional
-from . import constants
 from sqlalchemy.orm import Session, subqueryload
 from sqlalchemy.exc import SQLAlchemyError
-from . import database
-from . import models
+from sqlalchemy import func, or_
 import jdatetime  # type: ignore
 import filetype  # type: ignore
 from flask import Flask, session, current_app
 from persiantools.digits import fa_to_en  # type: ignore
 import requests  # type: ignore
 import bleach  # type: ignore
+from . import models
+from . import constants
+from . import database
 
 
 def is_valid_name(name: str) -> bool:
@@ -55,6 +56,82 @@ def is_file_allowed(file_stream: IO[bytes]) -> bool:
         file_stream.seek(0)
 
 
+def calculate_age(
+    birth_date: Optional[datetime.date], reference_date: Optional[datetime.date] = None
+) -> int:
+    """Return the age in completed years at the given reference date (today by default)."""
+    if birth_date is None:
+        return 0
+
+    if reference_date is None:
+        reference_date = datetime.date.today()
+
+    has_had_birthday = (reference_date.month, reference_date.day) >= (
+        birth_date.month,
+        birth_date.day,
+    )
+    return reference_date.year - birth_date.year - (0 if has_had_birthday else 1)
+
+
+def validate_member_age(
+    birth_date: Optional[datetime.date],
+    role: Optional[models.MemberRole],
+    education_level: Optional[str],
+) -> Tuple[bool, Optional[str]]:
+    """Validate a member's age against role-specific and education-level rules."""
+
+    if role is None:
+        return False, "نقش عضو مشخص نشده است."
+
+    if birth_date is None:
+        return False, "تاریخ تولد مشخص نشده است."
+
+    age = calculate_age(birth_date)
+
+    if role == models.MemberRole.LEADER:
+        if age < 18 or age > 70:
+            return False, "سن سرپرست باید بین ۱۸ تا ۷۰ سال باشد."
+        return True, None
+
+    if role == models.MemberRole.COACH:
+        if age < 16 or age > 70:
+            return False, "سن مربی باید بین ۱۶ تا ۷۰ سال باشد."
+        return True, None
+
+    if role != models.MemberRole.MEMBER:
+        return True, None
+
+    if not education_level:
+        return True, None
+
+    level_config = constants.education_levels.get(education_level)
+    if not level_config:
+        return False, "مقطع تحصیلی انتخاب شده معتبر نیست."
+
+    age_range = level_config.get("ages")
+    if not age_range:
+        return True, None
+
+    min_age, max_age = age_range
+    is_below_min = min_age is not None and age < min_age
+    is_above_max = max_age is not None and age > max_age
+
+    if is_below_min or is_above_max:
+        if min_age is None and max_age is not None:
+            allowed_text = f"تا {max_age} سال"
+        elif min_age is not None and max_age is None:
+            allowed_text = f"از {min_age} سال به بالا"
+        else:
+            allowed_text = f"بین {min_age} تا {max_age} سال"
+
+        return (
+            False,
+            f"سن عضو ({age} سال) با بازه مجاز برای مقطع «{education_level}» ({allowed_text}) همخوانی ندارد.",
+        )
+
+    return True, None
+
+
 def validate_persian_date(year: Any, month: Any, day: Any) -> Tuple[bool, str]:
     """Validate a Persian date given year, month, and day"""
     try:
@@ -73,6 +150,27 @@ def validate_persian_date(year: Any, month: Any, day: Any) -> Tuple[bool, str]:
         return False, "لطفاً تاریخ معتبر را انتخاب کنید (روز و ماه صحیح باشد)"
     except TypeError:
         return False, "لطفاً اعداد معتبر برای تاریخ وارد کنید"
+
+
+_PERSIAN_NORMALIZATION_TABLE = str.maketrans({"ي": "ی", "ك": "ک"})
+
+
+def normalize_persian_text(value: Optional[str]) -> str:
+    """Normalize Persian text for consistent comparisons.
+
+    This helper removes leading/trailing whitespace, replaces Arabic Ya/Kaf
+    variants with their Persian counterparts, and collapses internal
+    whitespace. The function returns an empty string when the provided value is
+    falsy or not a string, allowing callers to safely chain the result in
+    dictionary lookups without additional guards.
+    """
+
+    if not isinstance(value, str):
+        return ""
+
+    normalized = value.translate(_PERSIAN_NORMALIZATION_TABLE).strip()
+    normalized = normalized.replace("\u200c", " ")
+    return " ".join(normalized.split())
 
 
 def get_form_context() -> dict:
@@ -215,7 +313,7 @@ def is_valid_team_name(team_name: str) -> Tuple[bool, str]:
 
 
 def is_valid_national_id(national_id: str) -> bool:
-    "Validate Iranian national ID"
+    "Validate Iranian national id"
     if not re.fullmatch(r"^\d{10}$", national_id) or len(set(national_id)) == 1:
         return False
     s = sum(int(national_id[i]) * (10 - i) for i in range(9))
@@ -237,7 +335,7 @@ def send_async_email(
                 )
                 if not client:
                     current_app.logger.error(
-                        f"email error: Client with ID {client_id} not found."
+                        f"email error: client with id {client_id} not found."
                     )
                     return
                 recipient_email = client.email
@@ -290,18 +388,29 @@ def is_valid_password(password: str) -> Tuple[bool, Optional[str]]:
 
 
 def create_member_from_form_data(
-    db: Session, form_data: dict
+    db: Session,
+    form_data: dict,
+    *,
+    team_id: Optional[int] = None,
+    member_id: Optional[int] = None,
 ) -> Tuple[Optional[dict], Optional[str]]:
-    "Create a member dictionary from form data after validation"
+    """Create a member dictionary from form data after validation.
+
+    ``team_id`` and ``member_id`` are optional and let the validator ignore the
+    current record when editing as well as block duplicates within the same
+    team without preventing members from joining different teams/leagues.
+    """
     try:
         name = bleach.clean(form_data.get("name", "").strip())
         national_id = fa_to_en(form_data.get("national_id", "").strip())
+        phone_number = fa_to_en(form_data.get("phone_number", "").strip())
         role_value = form_data.get("role", "").strip()
         province = form_data.get("province", "").strip()
         city_name = form_data.get("city", "").strip()
         birth_year = int(form_data.get("birth_year", 0))
         birth_month = int(form_data.get("birth_month", 0))
         birth_day = int(form_data.get("birth_day", 0))
+        gender_value = form_data.get("gender", "").strip()
     except (ValueError, TypeError):
         return None, "تاریخ تولد باید به صورت عددی وارد شود."
 
@@ -315,6 +424,10 @@ def create_member_from_form_data(
         birth_month,
         birth_day,
         role_value,
+        gender_value=gender_value,
+        phone_number=phone_number,
+        team_id=team_id,
+        member_id_to_exclude=member_id,
     )
     if errors:
         return None, " ".join(errors)
@@ -327,62 +440,52 @@ def create_member_from_form_data(
     )
 
     role = next((r for r in models.MemberRole if r.value == role_value), None)
+    gender = next((g for g in models.Gender if g.value == gender_value), None)
     persian_date = jdatetime.date(birth_year, birth_month, birth_day)
     gregorian_date = persian_date.togregorian()
 
     return {
         "name": name,
         "national_id": national_id,
+        "phone_number": phone_number,
         "role": role,
+        "gender": gender,
         "city_id": city_id,
         "birth_date": gregorian_date,
     }, None
 
 
-def validate_member_for_resolution(member: models.Member, education_level: str) -> dict:
+def validate_member_for_resolution(
+    member: models.Member, education_level: Optional[str]
+) -> dict:
     "Validate a member's data for missing or invalid fields"
     problems: dict[str, list[str]] = {"missing": [], "invalid": []}
-    if member.name is None:
+    # TEMP_COMMENT: Checking file update
+    if not member.name or not member.name.strip():
         problems["missing"].append("name")
-    if member.national_id is None:
+    if not member.national_id or not member.national_id.strip():
         problems["missing"].append("national_id")
     if member.role is None:
         problems["missing"].append("role")
     if member.city_id is None:
         problems["missing"].append("city")
+    if member.gender is None:
+        problems["missing"].append("gender")
     if member.birth_date is None:
         problems["missing"].append("birth_date")
 
     if member.birth_date is not None:
-        try:
-            today = datetime.date.today()
-            age = (
-                today.year
-                - member.birth_date.year
-                - (
-                    (today.month, today.day)
-                    < (member.birth_date.month, member.birth_date.day)
+        if education_level:
+            try:
+                is_valid_age, age_error = validate_member_age(
+                    member.birth_date,
+                    member.role,
+                    education_level,
                 )
-            )
-
-            if member.role == models.MemberRole.LEADER and not (18 <= age <= 70):
-                problems["invalid"].append(
-                    f"سن سرپرست باید بین 18 تا 70 باشد (سن فعلی: {age})"
-                )
-            elif member.role == models.MemberRole.COACH and not (16 <= age <= 70):
-                problems["invalid"].append(
-                    f"سن مربی باید بین 16 تا 70 باشد (سن فعلی: {age})"
-                )
-
-            if education_level in constants.education_age_ranges:
-                min_age, max_age = constants.education_age_ranges[education_level]
-                if not (min_age <= age <= max_age):
-                    problems["invalid"].append(
-                        f"سن عضو ({age}) با مقطع تحصیلی ({education_level}) "
-                        f"مطابقت ندارد. محدوده مجاز: {min_age}-{max_age} سال."
-                    )
-        except (ValueError, AttributeError):
-            problems["invalid"].append("تاریخ تولد نامعتبر است")
+                if not is_valid_age and age_error:
+                    problems["invalid"].append(age_error)
+            except (ValueError, AttributeError):
+                problems["invalid"].append("تاریخ تولد نامعتبر است")
 
     return problems
 
@@ -408,12 +511,12 @@ def check_for_data_completion_issues(db: Session, client_id: int) -> Tuple[bool,
     problematic_members = {}
     needs_resolution = False
     for team in teams:
+        education_level = getattr(team, "education_level", None)
+
         for member in filter(
             lambda m: m.status == models.EntityStatus.ACTIVE, team.members
         ):
-            problems = validate_member_for_resolution(
-                member, str(client.education_level)
-            )
+            problems = validate_member_for_resolution(member, education_level)
             if problems["missing"] or problems["invalid"]:
                 problematic_members[member.member_id] = problems
                 needs_resolution = True
@@ -421,11 +524,33 @@ def check_for_data_completion_issues(db: Session, client_id: int) -> Tuple[bool,
     return needs_resolution, problematic_members
 
 
+def get_first_incomplete_team(db: Session, client_id: int) -> Optional[models.Team]:
+    """Return the first active team missing essential fields (e.g., name)."""
+
+    return (
+        db.query(models.Team)
+        .filter(
+            models.Team.client_id == client_id,
+            models.Team.status == models.EntityStatus.ACTIVE,
+            or_(
+                models.Team.team_name == None,  # noqa: E711
+                func.length(func.trim(models.Team.team_name)) == 0,
+                models.Team.education_level == None,  # noqa: E711
+                models.Team.league_one_id == None,  # noqa: E711
+            ),
+        )
+        .order_by(models.Team.team_id.asc())
+        .first()
+    )
+
+
 def internal_add_member(
     db: Session, team_id: int, form_data: dict
 ) -> Tuple[Optional[models.Member], Optional[str]]:
     "Add a new member to a team after validating the data"
-    new_member_data, error = create_member_from_form_data(db, form_data)
+    new_member_data, error = create_member_from_form_data(
+        db, form_data, team_id=team_id
+    )
     if error:
         return None, error
     if not new_member_data:
@@ -435,6 +560,19 @@ def internal_add_member(
         "role"
     ] == models.MemberRole.LEADER and database.has_existing_leader(db, team_id):
         return None, "خطا: این تیم از قبل یک سرپرست دارد."
+
+    team = db.query(models.Team).filter(models.Team.team_id == team_id).first()
+    education_level = getattr(team, "education_level", None) if team else None
+    if new_member_data["role"] == models.MemberRole.MEMBER and not education_level:
+        return None, "ابتدا مقطع تحصیلی تیم را مشخص کنید."
+
+    is_age_valid, age_error = validate_member_age(
+        new_member_data["birth_date"],
+        new_member_data["role"],
+        education_level,
+    )
+    if not is_age_valid:
+        return None, age_error or "سن عضو با قوانین مقطع انتخاب شده همخوانی ندارد."
 
     has_conflict, error_message = database.is_member_league_conflict(
         db, new_member_data["national_id"], team_id
@@ -449,26 +587,22 @@ def internal_add_member(
     except SQLAlchemyError as error:
         db.rollback()
         current_app.logger.error(
-            f"Internal error adding member to Team {team_id}: {error}"
+            f"Internal error adding member to team {team_id}: {error}"
         )
         return None, "خطایی داخلی در هنگام افزودن عضو رخ داد."
 
 
-def get_current_client() -> Optional[models.Client]:
-    "Retrieve the currently logged-in Client based on session data"
+def get_current_client(allow_inactive: bool = False) -> Optional[models.Client]:
+    """Retrieve the currently logged-in client based on session data."""
     client_id = session.get("client_id")
     if not client_id:
         return None
     try:
         with database.get_db_session() as db:
-            return (
-                db.query(models.Client)
-                .filter(
-                    models.Client.client_id == client_id,
-                    models.Client.status == models.EntityStatus.ACTIVE,
-                )
-                .first()
-            )
+            query = db.query(models.Client).filter(models.Client.client_id == client_id)
+            if not allow_inactive:
+                query = query.filter(models.Client.status == models.EntityStatus.ACTIVE)
+            return query.first()
     except SQLAlchemyError as error:
-        current_app.logger.error(f"error fetching current Client: {error}")
+        current_app.logger.error(f"error fetching current client: {error}")
         return None

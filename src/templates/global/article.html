@@ -1,9 +1,9 @@
 {% extends "global/base.html" %}
 
-{% block title %}{{ article.Title }} | اخبار آیروکاپ{% endblock %}
+{% block title %}{{ article.title }} | اخبار آیروکاپ{% endblock %}
 
 {% block seo_description %}
-<meta name="description" content="{{ article.Content|striptags|truncate(155) }}" />
+<meta name="description" content="{{ article.content|striptags|truncate(155) }}" />
 {% endblock %}
 
 {% block body %}
@@ -13,8 +13,8 @@
     <nav aria-label="breadcrumb" class="breadcrumb-nav">
       <ol>
         <li><a href="{{ url_for('global.index') }}">خانه</a></li>
-        <li><a href="{{ url_for('Global.News') }}">اخبار</a></li>
-        <li aria-current="page">{{ article.Title }}</li>
+        <li><a href="{{ url_for('global.news') }}">اخبار</a></li>
+        <li aria-current="page">{{ article.title }}</li>
       </ol>
     </nav>
 
@@ -23,30 +23,30 @@
       <article class="news-article">
 
         <header class="article-header">
-          <h1 class="article-title">{{ article.Title }}</h1>
+          <h1 class="article-title">{{ article.title }}</h1>
 
           <div class="article-meta">
-            {% if article.PublishDate %}
-            <time datetime="{{ article.PublishDate|to_iso_format }}">
+            {% if article.publish_date %}
+            <time datetime="{{ article.publish_date|to_iso_format }}">
               <i class="fas fa-calendar-alt" aria-hidden="true"></i>
-              {{ article.PublishDate|formatdate }}
+              {{ article.publish_date|formatdate }}
             </time>
             {% endif %}
           </div>
         </header>
 
-        {% if article.ImagePath %}
+        {% if article.image_path %}
         <figure class="article-image">
           <img
-            src="{{ url_for('Global.UploadedNewsImage', filename=article.ImagePath) }}"
-            alt="تصویر اصلی مقاله: {{ article.Title }}"
+            src="{{ url_for('global.uploaded_news_image', filename=article.image_path) }}"
+            alt="تصویر اصلی مقاله: {{ article.title }}"
             loading="lazy"
           />
         </figure>
         {% endif %}
 
         <div class="article-content">
-          {{ article.Content | safe }}
+          {{ article.content | safe }}
         </div>
 
         <footer class="article-footer">
@@ -56,7 +56,7 @@
             <ul>
               <li>
                 <a
-                  href="https://twitter.com/intent/tweet?url={{ request.url }}&text={{ article.Title }}"
+                  href="https://twitter.com/intent/tweet?url={{ request.url }}&text={{ article.title }}"
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="اشتراک‌گذاری در توییتر"
@@ -67,7 +67,7 @@
 
               <li>
                 <a
-                  href="https://www.linkedin.com/shareArticle?mini=true&url={{ request.url }}&title={{ article.Title }}"
+                  href="https://www.linkedin.com/shareArticle?mini=true&url={{ request.url }}&title={{ article.title }}"
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="اشتراک‌گذاری در لینکدین"
@@ -91,7 +91,13 @@
           <hr />
 
           <div class="article-nav">
-            <a href="{{ url_for('Global.News') }}" class="btn btn-secondary">
+            {% if article.link %}
+            <a href="{{ article.link }}" class="btn btn-primary" target="_blank" rel="noopener noreferrer">
+              <i class="fas fa-external-link-alt" aria-hidden="true"></i>
+              مشاهده منبع خبر
+            </a>
+            {% endif %}
+            <a href="{{ url_for('global.news') }}" class="btn btn-secondary">
               <i class="fas fa-arrow-right" aria-hidden="true"></i>
               بازگشت به همه اخبار
             </a>

@@ -14,7 +14,7 @@
   <div class="container">
 
     <header class="page-header text-center">
-      <h1 class="page-title">کمیته فنی و هماهنگی</h1>
+      <h1 class="section-title">کمیته فنی و هماهنگی</h1>
       <p class="page-subtitle">
         اعضای کمیته فنی آیروکاپ، متشکل از متخصصان ارشد و اساتید برجسته، مسئولیت
         تضمین بالاترین استانداردهای علمی و فنی مسابقات را بر عهده دارند. این تیم
@@ -31,14 +31,25 @@
       {% if technical_committee_members %}
         {% for member in technical_committee_members %}
         <div class="card committee-member" itemscope itemtype="https://schema.org/Person">
-          <div class="committee-photo">
+          <div
+            class="committee-photo"
+            data-initial="{{ member.name[0] }}"
+            role="img"
+            aria-label="تصویر {{ member.name }}"
+          >
+            {% if member.image %}
             <img
               src="{{ url_for('static', filename=member.image) }}"
               alt="تصویر پرسنلی {{ member.name }}"
               loading="lazy"
               itemprop="image"
-              onerror="this.onerror=null; this.src='{{ url_for('static', filename='images/placeholder-avatar.png') }}';"
+              onerror="this.closest('.committee-photo').classList.add('photo-fallback'); this.remove();"
             />
+            {% else %}
+            <div class="photo-placeholder">
+              <i class="fas fa-user"></i>
+            </div>
+            {% endif %}
           </div>
 
           <div class="committee-info">

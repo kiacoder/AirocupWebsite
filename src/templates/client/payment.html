@@ -3,191 +3,290 @@
 {% block title %}اطلاعات پرداخت{% endblock %}
 
 {% block body %}
-<main class="app-container">
-  <div class="container">
-    <header class="page-header">
-      <h1 class="page-title">
-        پرداخت هزینه ثبت‌نام برای تیم: {{ team.team_name }}
-      </h1>
-      <p class="page-subtitle">
-        برای نهایی کردن ثبت‌نام، لطفاً مبلغ نهایی را به حساب زیر واریز کرده و سپس تصویر رسید را بارگذاری نمایید.
-      </p>
-    </header>
+<div class="container" style="margin: 2rem auto">
+  <div class="section-header" style="margin-bottom: 2rem">
+    <h1 class="section-title">پرداخت هزینه ثبت‌نام برای تیم: {{ team.team_name }}</h1>
+    <p class="form-subtitle" style="margin-bottom: 0">
+      برای نهایی کردن ثبت‌نام، لطفاً مبلغ نهایی را به حساب زیر واریز کرده و سپس تصویر رسید را بارگذاری نمایید.
+    </p>
+  </div>
 
-    <div class="payment-grid">
-      <section class="card payment-info-card">
-        <h2>
-          <i class="fas fa-university" aria-hidden="true"></i>
-          اطلاعات حساب بانکی
-        </h2>
-        <div class="payment-details">
-          <div class="detail-item">
-            <span>بانک</span>
-            <strong>{{ payment.bank_name }}</strong>
-          </div>
-          <div class="detail-item copyable">
-            <span>صاحب حساب</span>
-            <div class="value-with-copy">
-              <strong>{{ payment.owner_name }}</strong>
-              <button
-                class="copy-btn"
-                data-copy="{{ payment.owner_name }}"
-                title="کپی کردن"
-              >
-                <i class="far fa-copy" aria-hidden="true"></i>
-              </button>
-            </div>
-          </div>
-          <div class="detail-item copyable">
-            <span>شماره کارت</span>
-            <div class="value-with-copy">
-              <strong dir="ltr">{{ payment.card_number }}</strong>
-              <button
-                class="copy-btn"
-                data-copy="{{ payment.card_number | replace('-', '') }}"
-                title="کپی کردن"
-              >
-                <i class="far fa-copy" aria-hidden="true"></i>
-              </button>
-            </div>
-          </div>
-          <div class="detail-item copyable">
-            <span>شماره شبا (IBAN)</span>
-            <div class="value-with-copy">
-              <strong dir="ltr">{{ payment.iban }}</strong>
-              <button
-                class="copy-btn"
-                data-copy="{{ payment.iban }}"
-                title="کپی کردن"
-              >
-                <i class="far fa-copy" aria-hidden="true"></i>
-              </button>
-            </div>
-          </div>
+  <div class="payment-grid">
+    <div class="card payment-info-card">
+      <h2><i class="fas fa-university"></i> اطلاعات حساب بانکی</h2>
+      {% set has_bank_info = bank_info_complete if bank_info_complete is defined else payment.bank_name and payment.owner_name and payment.card_number and payment.iban %}
+      <div class="payment-details">
+        {% if not has_bank_info %}
+        <div class="alert alert--warning payment-status-alert">
+          اطلاعات حساب بانکی به‌طور کامل در دسترس نیست. لطفاً در صورت نیاز با پشتیبانی آیروکاپ تماس بگیرید تا آخرین جزئیات پرداخت را دریافت کنید.
         </div>
-      </section>
-
-      <section class="card payment-summary-card">
-        <h2>
-          <i class="fas fa-file-invoice-dollar" aria-hidden="true"></i>
-          خلاصه هزینه‌ها
-        </h2>
-        <div class="payment-details">
-          {% if is_new_member_payment %}
-          <div class="alert alert--info" role="alert">
-            هزینه برای
-            <strong>{{ members_to_pay_for | persian_digits }} عضو جدید</strong>
-            محاسبه شده است.
-          </div>
-          <div class="detail-item">
-            <span>هزینه هر عضو جدید</span>
-            <strong>
-              {{ payment.fee_per_person | humanize_number | persian_digits }} ریال
-            </strong>
-          </div>
-          <div class="detail-item">
-            <span>تعداد اعضای جدید</span>
-            <strong>{{ members_to_pay_for | persian_digits }} نفر</strong>
-          </div>
-          {% else %}
-          <div class="detail-item">
-            <span>هزینه ورودی تیم</span>
-            <strong>
-              {{ payment.fee_team | humanize_number | persian_digits }} ریال
-            </strong>
-          </div>
-          <div class="detail-item">
-            <span>هزینه ثبت‌نام ({{ num_members | persian_digits }} عضو)</span>
-            <strong>
-              {{ (num_members * payment.fee_per_person) | humanize_number | persian_digits }} ریال
-            </strong>
-          </div>
-          <hr class="summary-divider" />
-          <div class="detail-item subtotal-item">
-            <span>هزینه پایه (لیگ اول)</span>
-            <strong>
-              {{ league_one_cost | humanize_number | persian_digits }} ریال
-            </strong>
-          </div>
-          {% if league_two_cost > 0 %}
-          <div class="detail-item">
-            <span>هزینه لیگ دوم</span>
-            <strong>
-              {{ league_two_cost | humanize_number | persian_digits }} ریال
-            </strong>
-          </div>
-          <div class="detail-item discount-amount">
-            <span>
-              تخفیف {{ payment.league_two_discount | persian_digits }}٪ برای لیگ دوم
-            </span>
-            <strong>
-              - {{ discount_amount | humanize_number | persian_digits }} ریال
-            </strong>
-          </div>
-          {% endif %}
-          {% endif %}
-          <hr class="summary-divider" />
-          <div class="detail-item total-amount copyable">
-            <span>مبلغ نهایی قابل پرداخت</span>
-            <div class="value-with-copy">
-              <strong class="final-amount">
-                {{ total_fee | humanize_number | persian_digits }} ریال
-              </strong>
-              <button
-                class="copy-btn"
-                data-copy="{{ total_fee }}"
-                title="کپی کردن مبلغ"
-              >
-                <i class="far fa-copy" aria-hidden="true"></i>
-              </button>
-            </div>
-          </div>
+        {% endif %}
+        {% if payment.bank_name %}
+        <div class="detail-item">
+          <span>بانک</span>
+          <strong>{{ payment.bank_name }}</strong>
         </div>
-
-        <footer class="card-footer">
-          <form
-            method="POST"
-            action="{{ url_for('client.payment', team_id=team.team_id) }}"
-            enctype="multipart/form-data"
-            id="documentUploadForm"
-          >
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-            <p class="upload-instruction">
-              پس از واریز وجه، لطفاً <strong>تصویر رسید پرداخت</strong> را بارگذاری کنید.
-            </p>
-            <div class="form-group">
-              <label for="receipt" class="btn btn-secondary file-upload-btn">
-                <i class="fas fa-paperclip" aria-hidden="true"></i>
-                انتخاب فایل رسید
-              </label>
-              <input
-                type="file"
-                id="receipt"
-                name="receipt"
-                required
-                class="file-upload-input"
-                accept="image/*,.pdf"
-              />
-              <span id="filename" class="file-name-display">
-                هیچ فایلی انتخاب نشده
-              </span>
-            </div>
-            <button type="submit" class="btn btn-primary btn--full-width">
-              ارسال رسید و نهایی کردن پرداخت
+        {% endif %}
+        {% if payment.owner_name %}
+        <div class="detail-item copyable">
+          <span>صاحب حساب</span>
+          <div class="value-with-copy">
+            <strong>{{ payment.owner_name }}</strong>
+            <button class="copy-btn" data-copy="{{ payment.owner_name }}" title="کپی کردن">
+              <i class="far fa-copy"></i>
             </button>
-          </form>
-        </footer>
-      </section>
+          </div>
+        </div>
+        {% endif %}
+        {% if payment.card_number %}
+        <div class="detail-item copyable">
+          <span>شماره کارت</span>
+          <div class="value-with-copy">
+            <strong dir="ltr">{{ payment.card_number }}</strong>
+            <button
+              class="copy-btn"
+              data-copy="{{ payment.card_number | replace('-', '') }}"
+              title="کپی کردن"
+            >
+              <i class="far fa-copy"></i>
+            </button>
+          </div>
+        </div>
+        {% endif %}
+        {% if payment.iban %}
+        <div class="detail-item copyable">
+          <span>شماره شبا (IBAN)</span>
+          <div class="value-with-copy">
+            <strong dir="ltr">{{ payment.iban }}</strong>
+            <button class="copy-btn" data-copy="{{ payment.iban }}" title="کپی کردن">
+              <i class="far fa-copy"></i>
+            </button>
+          </div>
+        </div>
+        {% endif %}
+      </div>
     </div>
 
-    <div class="section-cta">
-      <a href="{{ url_for('client.dashboard') }}" class="btn btn-secondary">
-        <i class="fas fa-arrow-left" aria-hidden="true"></i>
-        بازگشت به داشبورد
-      </a>
+    <div class="card payment-summary-card">
+      <h2><i class="fas fa-file-invoice-dollar"></i> خلاصه هزینه‌ها</h2>
+      <div class="payment-details">
+        {% if is_new_member_payment %}
+        <div class="alert alert--info" role="alert" style="text-align: center">
+          هزینه برای
+          <strong>{{ members_to_pay_for | persian_digits }} عضو جدید</strong>
+          محاسبه شده است.
+        </div>
+        <div class="detail-item">
+          <span>هزینه هر لیگ برای عضو جدید</span>
+          <strong>{{ new_member_fee_per_league | humanize_number | persian_digits }} ریال</strong>
+        </div>
+        <div class="detail-item">
+          <span>تعداد لیگ‌های فعال تیم</span>
+          <strong>{{ selected_leagues_count | persian_digits }} لیگ</strong>
+        </div>
+        <div class="detail-item">
+          <span>مجموع هزینه هر عضو جدید</span>
+          <strong>{{ new_member_total_per_member | humanize_number | persian_digits }} ریال</strong>
+        </div>
+        <div class="detail-item">
+          <span>تعداد اعضای جدید</span>
+          <strong>{{ members_to_pay_for | persian_digits }} نفر</strong>
+        </div>
+        {% else %}
+        <div class="detail-item">
+          <span>هزینه ورودی تیم</span>
+          <strong>{{ payment.fee_team | humanize_number | persian_digits }} ریال</strong>
+        </div>
+        <div class="detail-item">
+          <span>هزینه ثبت‌نام ({{ num_members | persian_digits }} عضو)</span>
+          <strong>{{ (num_members * payment.fee_per_person) | humanize_number | persian_digits }} ریال</strong>
+        </div>
+        <hr class="summary-divider" />
+        <div class="detail-item subtotal-item">
+          <span>هزینه پایه (لیگ اول)</span>
+          <strong>{{ league_one_cost | humanize_number | persian_digits }} ریال</strong>
+        </div>
+        {% if league_two_cost > 0 %}
+        <div class="detail-item">
+          <span>هزینه لیگ دوم</span>
+          <strong>{{ league_two_cost | humanize_number | persian_digits }} ریال</strong>
+        </div>
+        <div class="detail-item discount-amount">
+          <span>تخفیف {{ payment.league_two_discount | persian_digits }}٪ برای لیگ دوم</span>
+          <strong>- {{ discount_amount | humanize_number | persian_digits }} ریال</strong>
+        </div>
+        {% endif %}
+        {% endif %}
+        <hr class="summary-divider" />
+        <div class="detail-item total-amount copyable">
+          <span>مبلغ نهایی قابل پرداخت</span>
+          <div class="value-with-copy">
+            <strong class="final-amount">{{ total_fee | humanize_number | persian_digits }} ریال</strong>
+            <button class="copy-btn" data-copy="{{ total_fee }}" title="کپی کردن مبلغ">
+              <i class="far fa-copy"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {% if latest_payment %}
+      {% set status_class_map = {
+        'approved': 'status-approved',
+        'pending': 'status-pending',
+        'rejected': 'status-rejected'
+      } %}
+      <div class="payment-status-card">
+        <div class="payment-status-card__header">
+          <span class="payment-status-card__title">آخرین وضعیت پرداخت</span>
+          {% if latest_payment.status %}
+          <span class="status-badge {{ status_class_map.get(latest_payment.status.value, 'status-not-started') }}">
+            {{ latest_payment.status.label }}
+          </span>
+          {% endif %}
+        </div>
+        <div class="payment-status-card__body">
+          <div class="payment-status-card__row">
+            <span>تاریخ ارسال</span>
+            <strong>{{ latest_payment.upload_date | formatdate | persian_digits }}</strong>
+          </div>
+          <div class="payment-status-card__row">
+            <span>مبلغ پرداختی</span>
+            <strong>{{ latest_payment.amount | humanize_number | persian_digits }} ریال</strong>
+          </div>
+          {% if latest_payment.tracking_number %}
+          <div class="payment-status-card__row">
+            <span>شماره پیگیری</span>
+            <strong dir="ltr">{{ latest_payment.tracking_number | persian_digits }}</strong>
+          </div>
+          {% endif %}
+          {% if latest_payment.members_paid_for %}
+          <div class="payment-status-card__row">
+            <span>تعداد اعضای پوشش داده شده</span>
+            <strong>{{ latest_payment.members_paid_for | persian_digits }} نفر</strong>
+          </div>
+          {% endif %}
+        </div>
+        {% if latest_payment.receipt_filename %}
+        <a
+          href="{{ url_for('client.get_receipt', client_id=latest_payment.client_id, filename=latest_payment.receipt_filename) }}"
+          class="btn btn-secondary btn-sm"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <i class="fas fa-receipt"></i> مشاهده رسید
+        </a>
+        {% endif %}
+      </div>
+
+      {% if latest_payment.status and latest_payment.status.value == 'rejected' %}
+      <div class="alert alert--warning payment-status-alert">
+        پرداخت قبلی شما تایید نشد. لطفاً پس از رفع ایراد، رسید جدیدی را بارگذاری کنید.
+      </div>
+      {% elif latest_payment.status and latest_payment.status.value == 'approved' and is_new_member_payment %}
+      <div class="alert alert--info payment-status-alert">
+        پرداخت اولیه تیم شما تایید شده است. در صورت اضافه شدن اعضای جدید، هزینه آن‌ها را از طریق این بخش پرداخت کنید.
+      </div>
+      {% endif %}
+      {% endif %}
+
+      <div style="margin-top: 1.5rem">
+        <form
+          id="teamPaymentForm"
+          method="POST"
+          action="{{ url_for('client.payment', team_id=team.team_id) }}"
+          enctype="multipart/form-data"
+        >
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+          <p class="upload-instruction">
+            پس از واریز وجه، لطفاً <strong>تصویر رسید پرداخت</strong> را بارگذاری کنید.
+            {% if is_new_member_payment %}
+            <span>
+              توجه: برای اعضای جدید، بارگذاری رسید ۹,۵۰۰,۰۰۰ ریالی هر لیگ الزامی است و بدون آن ثبت‌نام آنان انجام نمی‌شود.
+            </span>
+            {% endif %}
+          </p>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="payer_name">نام پرداخت‌کننده</label>
+              <input
+                id="payer_name"
+                name="payer_name"
+                type="text"
+                maxlength="100"
+                required
+                placeholder="مثلاً علی رضایی"
+                class="form-control"
+              />
+            </div>
+            <div class="form-group">
+              <label for="payer_phone">شماره تماس</label>
+              <input
+                id="payer_phone"
+                name="payer_phone"
+                type="tel"
+                maxlength="20"
+                inputmode="numeric"
+                pattern="[0-9]+"
+                placeholder="0912xxxxxxx"
+                class="form-control"
+              />
+            </div>
+            <div class="form-group">
+              <label for="tracking_number">شماره پیگیری</label>
+              <input
+                id="tracking_number"
+                name="tracking_number"
+                type="text"
+                maxlength="64"
+                required
+                class="form-control"
+                placeholder="شماره یا کد رهگیری درج‌شده روی رسید"
+              />
+            </div>
+            <div class="form-group">
+              <label for="paid_date">تاریخ پرداخت</label>
+              <input id="paid_date" name="paid_date" type="date" required class="form-control" />
+            </div>
+            <div class="form-group">
+              <label for="paid_time">ساعت پرداخت</label>
+              <input
+                id="paid_time"
+                name="paid_time"
+                type="time"
+                step="60"
+                required
+                class="form-control"
+              />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="receipt" class="btn btn-secondary file-upload-btn">
+              <i class="fas fa-paperclip"></i> انتخاب فایل رسید
+            </label>
+            <input
+              type="file"
+              id="receipt"
+              name="receipt"
+              required
+              class="file-upload-input"
+              accept="image/*,.pdf"
+            />
+            <span id="filename" class="file-name-display">هیچ فایلی انتخاب نشده</span>
+          </div>
+          <button type="submit" class="btn btn-primary btn--full-width" data-loading-text="در حال ارسال...">
+            ارسال رسید و نهایی کردن پرداخت
+          </button>
+        </form>
+      </div>
     </div>
   </div>
-</main>
+
+  <div style="text-align: center; margin: 2rem 0">
+    <a href="{{ url_for('client.dashboard') }}" class="btn btn-secondary">
+      <i class="fas fa-arrow-left"></i> بازگشت به داشبورد
+    </a>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}

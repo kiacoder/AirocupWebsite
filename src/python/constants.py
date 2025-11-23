@@ -1,14 +1,12 @@
 "containing various constants used throughout the airocup application"
 
 import os
-import datetime
 from typing import Dict, Optional, Tuple
-from better_profanity import profanity
-import jdatetime 
+from better_profanity import profanity  # type:ignore
+import jdatetime  # type:ignore
 
 class Path:
-    "Define All Paths Of Files"
-
+    "Define all Paths Of Files"
     base_dir = os.path.dirname(os.path.abspath(__file__))
     root_dir = os.path.abspath(os.path.join(base_dir, "..", ".."))
     static_dir = os.path.join(root_dir, "static")
@@ -22,6 +20,7 @@ class Path:
     images_dir = os.path.join(static_dir, "images")
     receipts_dir = os.path.join(uploads_dir, "receipts")
     news_dir = os.path.join(uploads_dir, "news")
+    news_html_dir = os.path.join(static_dir, "news", "htmls")
     gallery_dir = os.path.join(images_dir, "gallery")
     committee_dir = os.path.join(images_dir, "committee")
     technical_committee_dir = os.path.join(images_dir, "technical_committee")
@@ -40,18 +39,17 @@ class Path:
     guideline = "database/guideline/guideline.pdf"
     site_web_manifest = "site.webmanifest"
     solid_logos = {
-        "main_fest_192": "images/logo/solid/airocup_logo_mainfest_192.png",
-        "main_fest_512": "images/logo/solid/airocup_logo_mainfest_512.png",
-        "solid_purple_glow_crop": "images/logo/solid/spg_airocup_logo_crop.png",
-        "solid_purple_glow": "images/logo/solid/spg_airocup_logo.png",
-        "solid_white": "images/logo/solid/sw_airocup_logo.png",
-        "solid_white_favicon": "images/logo/solid/swf_airocup_logo.ico",
+        "main_fest_192": "images/logo/solid/png/192-BWT.png",
+        "main_fest_512": "images/logo/solid/png/512-BWT.png",
+        "solid_purple_glow_crop": "images/logo/solid/png/BWT.png",
+        "solid_purple_glow": "images/logo/solid/png/BWT.png",
+        "solid_white": "images/logo/solid/png/BWT.png",
+        "solid_white_favicon": "images/logo/solid/ico/BWT.ico",
     }
-
     transparent_logos = {
-        "transparent_black": "images/logo/transparent/tb_airocup_logo.png",
-        "transparent_purple": "images/logo/transparent/tp_airocup_logo.png",
-        "transparent_white": "images/logo/transparent/tw_airocup_logo.png",
+        "transparent_black": "images/logo/transparent/WBT.png",
+        "transparent_purple": "images/logo/transparent/BPT.png",
+        "transparent_white": "images/logo/transparent/BWT.png",
         "favicon": "images/logo/transparent/favicon.svg",
     }
 
@@ -62,7 +60,7 @@ class Path:
         ),
         "student_research_center": ("images/logo/sponsors/student_research_center.png"),
         "student_research_center_tehran": (
-            "images/logo/sponsors/student_research_center.png"
+            "images/logo/sponsors/student_research_center_tehran.png"
         ),
         "science_ministry": (
             "images/logo/sponsors/ministry_of_science_and_technology.png"
@@ -72,8 +70,8 @@ class Path:
         ),
         "university": "images/logo/sponsors/university_logo.png",
         "water_waste": "images/logo/sponsors/water_and_waste.png",
+        "naft_iran": "images/logo/sponsors/naft.png",
     }
-
 
 provinces_data = {
     "آذربایجان شرقی": [
@@ -1025,12 +1023,14 @@ leagues_list = [
 ]
 
 
-education_levels: Dict[str, Dict[str, Optional[Tuple[int, int]]]] = {
+education_levels: Dict[
+    str, Dict[str, Optional[Tuple[Optional[int], Optional[int]]]]
+] = {
     "ابتدایی": {"grades": (1, 6), "ages": (6, 12)},
-    "متوسطه اول": {"grades": (7, 9), "ages": (13, 16)},
-    "متوسطه دوم": {"grades": (10, 12), "ages": (16, 18)},
-    "دانشجویی": {"grades": None, "ages": (19, 60)},
-    "آزاد": {"grades": None, "ages": (18, 65)},
+    "متوسطه اول": {"grades": (7, 9), "ages": (6, 15)},
+    "متوسطه دوم": {"grades": (10, 12), "ages": (6, 18)},
+    "دانشجویی": {"grades": None, "ages": (6, 65)},
+    "آزاد": {"grades": None, "ages": (19, None)},
 }
 
 allowed_education = set(education_levels.keys())
@@ -1063,6 +1063,18 @@ technical_committee_members = [
         "role": "مدیر امور استان ها",
         "description": "هماهنگی٬ برنامه ریزی و پیگیری امور استان ها",
         "image": "images/technical_committee/amir_hossain.png",
+    },
+    {
+        "name": "مهندس سهیل رحیمی",
+        "role": "رئیس لیگ ربات جنگجو",
+        "description": "مسئولیت برنامه‌ریزی و اجرای لیگ ربات جنگجو",
+        "image": "images/technical_committee/soheil.jpg",
+    },
+    {
+        "name": "مهندس مهدی محمدی",
+        "role": "مدیر ارتباطات آیروکاپ",
+        "description": "مسئولیت مدیریت ارتباطات و روابط عمومی",
+        "image": "images/technical_committee/mahdi.jpg",
     },
 ]
 
@@ -1172,8 +1184,10 @@ class ForbiddenContent:
         ForbiddenContent._initialize_filter()
         return profanity.contains_profanity(text)
 
+
 class Date:
     "Date-related constants and methods for the application"
+
     persian_months = {
         1: "فروردین",
         2: "اردیبهشت",
@@ -1191,38 +1205,29 @@ class Date:
 
     @staticmethod
     def get_allowed_years():
-        "Returns a list of allowed Gregorian birth years for participants based on age limits (5-80)."
-        current_year = datetime.datetime.now(datetime.timezone.utc).year
+        "Returns a list of allowed Jalali birth years for participants based on age limits (5-80)."
+        today_jalali = jdatetime.date.today()
         min_age = 5
         max_age = 80
-        return list(range(current_year - max_age, current_year - min_age + 1))
+        start_year = today_jalali.year - max_age
+        end_year = today_jalali.year - min_age
+        return list(range(start_year, end_year + 1))
 
 
 class AppConfig:
     "Configuration constants for the application."
+
     max_team_per_client = 20
     max_members_per_team = 10
+    max_documents_per_team = 10
     max_image_size = 50 * 1024 * 1024
-    max_document_size = 100 * 1024 * 1024
-    max_video_size = 300 * 1024 * 1024
-    allowed_extensions = [
-        "png",
-        "jpg",
-        "jpeg",
-        "gif",
-        "pdf",
-        "doc",
-        "docx",
-        "xls",
-        "xlsx",
-        "ppt",
-        "pptx",
-        "mp4",
-        "mov",
-        "avi",
-        "mkv",
-        "webm",
-    ]
+    max_office_size = 50 * 1024 * 1024
+    max_document_size = 200 * 1024 * 1024
+    max_video_size = 200 * 1024 * 1024
+    image_extensions = {"png", "jpg", "jpeg", "gif"}
+    office_extensions = {"pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx"}
+    video_extensions = {"mp4", "mov", "avi", "mkv", "webm"}
+    allowed_extensions = sorted(image_extensions | office_extensions | video_extensions)
     allowed_mime_types = [
         "image/jpeg",
         "image/png",
@@ -1244,11 +1249,12 @@ class AppConfig:
 
 class Details:
     "Details for airocup event"
+
     address = "دانشگاه علم و صنعت ایران، تهران، ایران"
     google_map_url = "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3238.3671459295647!2d51.50422711222071!3d35.74177972652958!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3f8e032fd49e3809%3A0x470e49fef97ae303!2sIran%20University%20of%20Science%20and%20Technology%20(IUST)!5e0!3m2!1sen!2snl!4v1762083993443!5m2!1sen!2snl"
-    stage_one = "مجازی (لیگ ۲ ۳٬ ۴٬ ۵٬)"
-    stage_two = "حضوری در دانشگاه علم و صنعت، بهمن‌ماه ۱۴۰۴"
-    registration_deadline = "مهلت تا ۳۰ آبان"
+    stage_one = "مجازی"
+    stage_two = "حضوری، ۲۳ تا ۲۵ بهمن ۱۴۰۴"
+    registration_deadline = "مهلت تا ۳۰ آذر"
 
 
 class Contact:
@@ -1256,38 +1262,26 @@ class Contact:
 
     phone = "09352117339"
     email_primary = "airocupiran@gmail.com"
-    email_secondary = "ai90maharat@gmail.com"
     website = "https://airocup.org"
     instagram = "@airo.cup"
-    linked_in = "linkedin.com/in/airo-cup-آیروکاپ-5b4818231"
     bale = "https://ble.ir/join/8VwzjR1U3f"
     aparat_channel = "https://www.aparat.com/Kia_coder"
     aparat_playlist = "https://www.aparat.com/playlist/22114839"
+    linkedin = "https://www.linkedin.com/company/airocup"
     aparat_embed_url = (
         "https://www.aparat.com/video/video/embed/videohash/wtw75xo/vt/frame"
     )
+    eitaa = "https://eitaa.com/airocup2025"
+    telegram = "https://t.me/airocup"
+    whatsapp = "https://whatsapp.com/channel/0029VbBmVyjBvvskgr0yqY0o"
 
 
 contact_points_data = [
     {
-        "href": f"tel:{Contact.phone}",
-        "icon": "fas fa-phone-alt",
-        "label": "پشتیبانی (تلفنی)",
-        "display": Contact.phone,
-        "target": None,
-    },
-    {
         "href": f"mailto:{Contact.email_primary}",
         "icon": "fas fa-envelope",
-        "label": "ایمیل اصلی (سازمانی)",
+        "label": "ایمیل",
         "display": Contact.email_primary,
-        "target": None,
-    },
-    {
-        "href": f"mailto:{Contact.email_secondary}",
-        "icon": "fas fa-envelope-open-text",
-        "label": "ایمیل دوم (پشتیبانی)",
-        "display": Contact.email_secondary,
         "target": None,
     },
     {
@@ -1305,18 +1299,46 @@ contact_points_data = [
         "target": "_blank",
     },
     {
-        "href": f"https://{Contact.linked_in}",
-        "icon": "fab fa-linkedin",
-        "label": "لینکدین",
-        "display": "airocup LinkedIn",
-        "target": "_blank",
-    },
-    {
         "href": Contact.aparat_playlist,
         "icon": "fas fa-play-circle",
         "label": "آپارات",
         "display": "کانال آپارات آیروکاپ",
         "target": "_blank",
+    },
+    {
+        "href": Contact.linkedin,
+        "icon": "fa-brands fa-linkedin",
+        "label": "لینکدین",
+        "display": "کانال لینکدین",
+        "target": "_blank",
+    },
+    {
+        "href": Contact.eitaa,
+        "icon": "fa-solid fa-users",
+        "label": "ایتا",
+        "display": "کانال ایتا",
+        "target": "_blank",
+    },
+    {
+        "href": Contact.telegram,
+        "icon": "fa-brands fa-telegram",
+        "label": "تلگرام",
+        "display": "کانال تلگرام",
+        "target": "_blank",
+    },
+    {
+        "href": Contact.whatsapp,
+        "icon": "fab fa-whatsapp",
+        "label": "واتساپ",
+        "display": "کانال واتساپ آیروکاپ",
+        "target": "_blank",
+    },
+    {
+        "href": f"tel:{Contact.phone}",
+        "icon": "fas fa-phone-alt",
+        "label": "پشتیبانی",
+        "display": Contact.phone,
+        "target": None,
     },
 ]
 
@@ -1433,7 +1455,7 @@ committee_members_data = [
         "name": "مهندس پوریا حداد",
         "role": "دبیر کمیته هوش مصنوعی",
         "description": "مسئولیت برگزاری لیگ‌های هوش مصنوعی و ارزیابی پروژه‌ها",
-        "image": "images/committee/Poria.png",
+        "image": "images/committee/poria.png",
     },
     {
         "name": "دکتر محمد خلیل پور",
@@ -1457,6 +1479,7 @@ homepage_sponsors_data = [
         "alt_text": "پژوهش سرای دانش‌آموزی تهران",
     },
     {"logo_key": "water_waste", "alt_text": "شرکت مهندسی آب و فاضلاب کشور"},
+    {"logo_key": "naft_iran", "alt_text": "شرکت ملی نفت ایران"},
 ]
 
 gallery_videos_data = [
@@ -1476,8 +1499,15 @@ gallery_videos_data = [
         "title": "آیروکاپ | مشاغل آینده دار برای نوجوانان",
         "src": ("https://www.aparat.com/video/video/embed/videohash/ket93i2/vt/frame"),
     },
+    {
+        "title": "اولین وبینار مسابقات ملی هوش مصنوعی و رباتیک آیروکاپ٬ دانشگاه علم و صنعت ایران",
+        "src": ("https://www.aparat.com/video/video/embed/videohash/vohv6ua/vt/frame"),
+    },
+    {
+        "title": "دومین وبینار مسابقات ملی هوش مصنوعی و رباتیک آیروکاپ٬ دانشگاه علم و صنعت ایران",
+        "src": ("https://www.aparat.com/video/video/embed/videohash/zdd9k6u/vt/frame"),
+    },
 ]
-
 global_html_names_data = {
     "about": "global/about.html",
     "base": "global/base.html",
@@ -1510,6 +1540,7 @@ client_html_names_data = {
     "select_league": "client/select_league.html",
     "sign_up": "client/sign_up.html",
     "resolve_issues": "client/resolve_issues.html",
+    "complete_profile": "client/complete_profile.html",
     "support_chat": "client/support_chat.html",
     "update_team": "client/update_team.html",
     "verify": "client/verify.html",
@@ -1529,4 +1560,8 @@ admin_html_names_data = {
     "admin_manage_news": "admin/admin_manage_news.html",
     "admin_manage_teams": "admin/admin_manage_teams.html",
     "admin_add_member": "admin/admin_add_member.html",
+    "admin_select_chat": "admin/admin_chat_list.html",
+    "admin_search": "admin/admin_search.html",
+    "admin_logs": "admin/admin_logs.html",
+    "admin_pending_documents": "admin/admin_pending_documents.html",
 }

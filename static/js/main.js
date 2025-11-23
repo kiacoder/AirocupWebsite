@@ -1,13 +1,13 @@
 "use strict";
 
 const Validators = {
-    IsValidEmail(email) {
-        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    },
+  IsValidEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  },
 
-    IsValidIranianPhone(phone) {
-        return /^09\d{9}$/.test(phone);
-    }
+  IsValidIranianPhone(phone) {
+    return /^09\d{9}$/.test(phone);
+  },
 };
 
 const airocupApp = {
@@ -35,7 +35,7 @@ const airocupApp = {
       ACCORDION_BUTTON: ".accordion-button",
       ACCORDION_ITEM: ".accordion-item",
       GALLERY_GRID: ".gallery-grid",
-      IMAGE_MODAL: "#imageModal",
+      IMAGE_MODAL: "#image-modal",
       MODAL_IMAGE: ".modal-image",
       GALLERY_ITEM_IMG: ".gallery-item img",
       LOGIN_FORM: "#login-form",
@@ -51,14 +51,17 @@ const airocupApp = {
       LEAGUE_FILTER_INPUT: "#leagueFilter",
       NO_RESULTS_MESSAGE: "#noResultsMessage",
       ADMIN_BODY: ".admin-body",
-      ADMIN_HEADER_MOBILE_TOGGLE: ".admin-header__mobile-toggle",
-      ADMIN_HEADER_NAV: ".admin-header__nav",
+      ADMIN_HEADER_MOBILE_TOGGLE: ".admin-header-mobile-toggle",
+      ADMIN_HEADER_NAV: ".admin-header-nav",
       PROVINCE_CHART: "#provinceChart",
       CITY_CHART: "#cityChart",
       CLIENT_SEARCH_INPUT: "#clientSearchInput",
       CLIENTS_TABLE_BODY: "#clients-table tbody",
       ADMIN_CHAT_CONTAINER: ".admin-chat-container",
       RELATIVE_TIME: "[data-timestamp]",
+      POSTER_TRIGGER: ".poster-zoom-trigger",
+      POSTER_MODAL: "#posterZoomModal",
+      POSTER_MODAL_CLOSE: "[data-action=\"close-poster-modal\"]",
     },
     CLASSES: {
       IS_VISIBLE: "is-visible",
@@ -69,6 +72,7 @@ const airocupApp = {
       VALID: "valid",
       INVALID: "is-invalid",
       IS_OPEN: "is-open",
+      POSTER_MODAL_OPEN: "poster-modal-open",
     },
     ATTRIBUTES: {
       ARIA_HIDDEN: "aria-hidden",
@@ -92,6 +96,22 @@ const airocupApp = {
         navigator.clipboard?.writeText(text) ??
         Promise.reject("Clipboard API not available")
       );
+    },
+
+    toPersianDigits(value) {
+      const digitsMap = {
+        0: "۰",
+        1: "۱",
+        2: "۲",
+        3: "۳",
+        4: "۴",
+        5: "۵",
+        6: "۶",
+        7: "۷",
+        8: "۸",
+        9: "۹",
+      };
+      return String(value).replace(/[0-9]/g, (digit) => digitsMap[digit] || digit);
     },
 
     safeSocket() {
@@ -125,6 +145,7 @@ const airocupApp = {
 
   ui: {
     init() {
+      this.initializeHeaderLayout();
       this.initializeFlashMessages();
       this.initializeModals();
       this.initializeCopyButtons();
@@ -133,6 +154,47 @@ const airocupApp = {
       this.initializeVideoPlayer();
       this.initializeRelativeTime();
       this.initializeSmoothScroll();
+      this.initializePosterZoom();
+    },
+
+    initializeHeaderLayout() {
+      const header =
+        document.querySelector(".site-header") ||
+        document.querySelector(".admin-header");
+
+      if (!header) return;
+
+      const root = document.documentElement;
+      const setHeight = () => {
+        const height = Math.round(header.getBoundingClientRect().height);
+        if (height > 0) {
+          root.style.setProperty("--site-header-height", `${height}px`);
+        }
+      };
+
+      const debouncedUpdate = airocupApp.helpers.debounce(setHeight, 160);
+      window.addEventListener("resize", debouncedUpdate);
+      window.addEventListener("orientationchange", debouncedUpdate);
+      window.addEventListener("load", setHeight);
+
+      if ("ResizeObserver" in window) {
+        const resizeObserver = new ResizeObserver(() => setHeight());
+        resizeObserver.observe(header);
+      }
+
+      setHeight();
+
+      if (header.classList.contains("site-header")) {
+        const toggleCondensed = () => {
+          header.classList.toggle(
+            "site-header--condensed",
+            window.scrollY > 10
+          );
+        };
+
+        window.addEventListener("scroll", toggleCondensed, { passive: true });
+        toggleCondensed();
+      }
     },
 
     createFlash(type = "info", message = "", duration = 5000) {
@@ -140,6 +202,12 @@ const airocupApp = {
         airocupApp.constants.SELECTORS.FLASH_CONTAINER
       );
       if (!container) return;
+
+      // Limit number of visible flash messages to 3
+      const existingFlashes = container.querySelectorAll('.flash-message:not(.flash-message-closing)');
+      if (existingFlashes.length >= 3) {
+        this.dismissFlash(existingFlashes[0]);
+      }
 
       const iconMap = {
         success: "fa-check-circle",
@@ -152,10 +220,12 @@ const airocupApp = {
       flash.className = `flash-message flash-${type}`;
       flash.setAttribute("role", "alert");
       flash.innerHTML = `
-        <i class="fas ${iconMap[type] || iconMap.info}" aria-hidden="true"></i>
-        <span>${message}</span>
-        <button class="flash-close-btn" data-action="dismiss-flash" aria-label="بستن اعلان">&times;</button>
-      `;
+                <i class="fas ${
+                  iconMap[type] || iconMap.info
+                }" aria-hidden="true"></i>
+                <span>${message}</span>
+                <button class="flash-close-btn" data-action="dismiss-flash" aria-label="بستن اعلان">&times;</button>
+            `;
       container.appendChild(flash);
 
       setTimeout(() => this.dismissFlash(flash), duration);
@@ -449,6 +519,70 @@ const airocupApp = {
         });
       });
     },
+
+    initializePosterZoom() {
+      const triggers = document.querySelectorAll(
+        airocupApp.constants.SELECTORS.POSTER_TRIGGER
+      );
+      const modal = document.querySelector(
+        airocupApp.constants.SELECTORS.POSTER_MODAL
+      );
+
+      if (!modal || !triggers.length) {
+        return;
+      }
+
+      const modalImage = modal.querySelector("img");
+      const closeTargets = modal.querySelectorAll(
+        airocupApp.constants.SELECTORS.POSTER_MODAL_CLOSE
+      );
+      const backdrop = modal.querySelector(".poster-modal__backdrop");
+
+      const openModal = (posterSrc) => {
+        if (posterSrc && modalImage) {
+          modalImage.setAttribute("src", posterSrc);
+        }
+        modal.classList.add(airocupApp.constants.CLASSES.IS_VISIBLE);
+        modal.setAttribute(
+          airocupApp.constants.ATTRIBUTES.ARIA_HIDDEN,
+          "false"
+        );
+        document.body.classList.add(
+          airocupApp.constants.CLASSES.POSTER_MODAL_OPEN
+        );
+      };
+
+      const closeModal = () => {
+        modal.classList.remove(airocupApp.constants.CLASSES.IS_VISIBLE);
+        modal.setAttribute(
+          airocupApp.constants.ATTRIBUTES.ARIA_HIDDEN,
+          "true"
+        );
+        document.body.classList.remove(
+          airocupApp.constants.CLASSES.POSTER_MODAL_OPEN
+        );
+      };
+
+      triggers.forEach((trigger) => {
+        trigger.addEventListener("click", () => {
+          const posterImage = trigger.querySelector("img");
+          const source = posterImage?.getAttribute("src");
+          openModal(source || modalImage?.getAttribute("src"));
+        });
+      });
+
+      closeTargets.forEach((btn) => btn.addEventListener("click", closeModal));
+      backdrop?.addEventListener("click", closeModal);
+
+      document.addEventListener("keydown", (event) => {
+        if (
+          event.key === "Escape" &&
+          modal.classList.contains(airocupApp.constants.CLASSES.IS_VISIBLE)
+        ) {
+          closeModal();
+        }
+      });
+    },
   },
   formHelpers: {
     populateProvinces(selectElement) {
@@ -488,7 +622,10 @@ const airocupApp = {
       }
       if (yearSelect.options.length <= 1) {
         const years = window.AirocupData?.allowed_years || [];
-        years.forEach((year) => yearSelect.add(new Option(year, year)));
+        years.forEach((year) => {
+          const label = airocupApp.helpers.toPersianDigits(year);
+          yearSelect.add(new Option(label, year));
+        });
       }
 
       const isLeapYear = (year) => {
@@ -511,7 +648,8 @@ const airocupApp = {
         daySelect.innerHTML = "";
         daySelect.add(new Option("روز", ""));
         for (let day = 1; day <= maxDays; day++) {
-          daySelect.add(new Option(day, day));
+          const label = airocupApp.helpers.toPersianDigits(day);
+          daySelect.add(new Option(label, day));
         }
 
         if (currentDay && parseInt(currentDay, 10) <= maxDays) {
@@ -549,24 +687,31 @@ const airocupApp = {
   forms: {
     init() {
       this.initializeDeleteConfirmation();
+      this.initializeLegacyConfirmActions();
     },
 
     initializeDeleteConfirmation() {
       const modal = document.querySelector(
         airocupApp.constants.SELECTORS.CONFIRMATION_MODAL
       );
-      if (!modal) return;
-
-      const confirmBtn = modal.querySelector(
+      const confirmBtn = modal?.querySelector(
         airocupApp.constants.SELECTORS.CONFIRM_MODAL_BTN
       );
-      const titleEl = modal.querySelector(
+      const titleEl = modal?.querySelector(
         airocupApp.constants.SELECTORS.MODAL_TITLE
       );
-      const bodyEl = modal.querySelector(
+      const bodyEl = modal?.querySelector(
         airocupApp.constants.SELECTORS.MODAL_BODY
       );
       let formToSubmit = null;
+
+      const getFallbackMessage = (deleteBtn) => {
+        const rawMessage =
+          deleteBtn.dataset.modalBody || "آیا از انجام این عملیات اطمینان دارید؟";
+        const temp = document.createElement("div");
+        temp.innerHTML = rawMessage;
+        return temp.textContent?.trim() || temp.innerText?.trim() || rawMessage;
+      };
 
       document.body.addEventListener("click", (event) => {
         const deleteBtn = event.target.closest(
@@ -574,10 +719,20 @@ const airocupApp = {
         );
         if (!deleteBtn) return;
 
-        event.preventDefault();
-        formToSubmit = deleteBtn.closest("form");
-        if (!formToSubmit) return;
+        const form = deleteBtn.closest("form");
+        if (!form) return;
 
+        event.preventDefault();
+
+        if (!modal || !confirmBtn || !titleEl || !bodyEl) {
+          const confirmationMessage = getFallbackMessage(deleteBtn);
+          if (window.confirm(confirmationMessage)) {
+            form.submit();
+          }
+          return;
+        }
+
+        formToSubmit = form;
         titleEl.textContent = deleteBtn.dataset.modalTitle || "تایید عملیات";
         bodyEl.innerHTML =
           deleteBtn.dataset.modalBody ||
@@ -590,12 +745,28 @@ const airocupApp = {
         airocupApp.ui.openModal(modal, deleteBtn);
       });
 
-      confirmBtn.addEventListener("click", () => {
-        if (formToSubmit) {
-          formToSubmit.submit();
-          formToSubmit = null;
-          airocupApp.ui.closeModal(modal);
-        }
+      if (confirmBtn) {
+        confirmBtn.addEventListener("click", () => {
+          if (formToSubmit) {
+            formToSubmit.submit();
+            formToSubmit = null;
+            airocupApp.ui.closeModal(modal);
+          }
+        });
+      }
+    },
+    initializeLegacyConfirmActions() {
+      const forms = document.querySelectorAll("form.ConfirmAction");
+      forms.forEach((form) => {
+        if (form.dataset.confirmBound === "true") return;
+        form.dataset.confirmBound = "true";
+        form.addEventListener("submit", (event) => {
+          const message =
+            form.dataset.confirm || "آیا از انجام این عملیات اطمینان دارید؟";
+          if (!window.confirm(message)) {
+            event.preventDefault();
+          }
+        });
       });
     },
     initializePasswordConfirmation(form, passwordInput, confirmInput) {
@@ -728,116 +899,221 @@ const airocupApp = {
   },
 
   initializeChat(container) {
+    const app = this;
+    const { SELECTORS } = app.constants;
+
     const elements = {
-      chatBox: container.querySelector(this.constants.SELECTORS.CHAT_BOX),
-      messageInput: container.querySelector(
-        this.constants.SELECTORS.MESSAGE_INPUT
-      ),
-      sendButton: container.querySelector(this.constants.SELECTORS.SEND_BUTTON),
+      chatBox: container.querySelector(SELECTORS.CHAT_BOX),
+      messageInput: container.querySelector(SELECTORS.MESSAGE_INPUT),
+      sendButton: container.querySelector(SELECTORS.SEND_BUTTON),
     };
-    if (!elements.chatBox || !elements.messageInput || !elements.sendButton)
+
+    if (!elements.chatBox || !elements.messageInput || !elements.sendButton) {
+      console.error("Chat UI elements not found for", container);
       return;
+    }
+
+    const defaultPlaceholder =
+      elements.messageInput.getAttribute("placeholder") || "";
+    const offlinePlaceholder = "اتصال به سرور پشتیبانی برقرار نشد.";
 
     const state = {
-      roomId: container.dataset.clientId,
-      historyUrl: container.dataset.historyUrl,
-      isClient: container.matches(
-        this.constants.SELECTORS.CLIENT_CHAT_CONTAINER
-      ),
-      socket: this.helpers.safeSocket(),
+      roomId: (container.dataset.clientId || "").trim(),
+      historyUrl: (container.dataset.historyUrl || "").trim(),
+      isClientView: container.matches(SELECTORS.CLIENT_CHAT_CONTAINER),
+      socket: app.helpers.safeSocket(),
+      renderedMessages: new Set(),
     };
-    if (!state.roomId || !state.historyUrl) return;
 
-    const scrollToBottom = () =>
-      (elements.chatBox.scrollTop = elements.chatBox.scrollHeight);
+    if (!state.roomId) {
+      console.error("Chat Error: Missing client identifier");
+      return;
+    }
 
-    const addMessage = (msg, isLocal = false) => {
-      const isSentByCurrentUser =
-        isLocal ||
-        (state.isClient ? msg.sender === "client" : msg.sender !== "client");
-      const messageEl = document.createElement("div");
-      messageEl.className = `chat-message ${
-        isSentByCurrentUser ? "message-sent" : "message-received"
-      }`;
+    if (!state.historyUrl) {
+      state.historyUrl = state.isClientView
+        ? "/get_my_chat_history"
+        : `/Admin/GetChatHistory/${state.roomId}`;
+    }
 
-      const senderName = isLocal
-        ? "شما"
-        : state.isClient
-        ? isSentByCurrentUser
-          ? "شما"
-          : "پشتیبانی"
-        : isSentByCurrentUser
-        ? msg.sender
-        : "کاربر";
+    const setComposerEnabled = (isEnabled) => {
+      elements.messageInput.disabled = !isEnabled;
+      elements.sendButton.disabled = !isEnabled;
+      if (isEnabled) {
+        elements.sendButton.removeAttribute("aria-disabled");
+        elements.sendButton.removeAttribute("title");
+        elements.messageInput.setAttribute("placeholder", defaultPlaceholder);
+      } else {
+        elements.sendButton.setAttribute("aria-disabled", "true");
+        elements.sendButton.setAttribute("title", offlinePlaceholder);
+        elements.messageInput.setAttribute("placeholder", offlinePlaceholder);
+      }
+      container.classList.toggle("chat-offline", !isEnabled);
+    };
 
-      messageEl.innerHTML = `
-            <div class="message-meta">
-                <strong>${senderName}</strong>
-                <time>${new Date(msg.timestamp).toLocaleTimeString(
-                  "fa-IR"
-                )}</time>
-            </div>
-            <p class="message-text">${msg.message_text}</p>
-        `;
-      elements.chatBox.appendChild(messageEl);
+    setComposerEnabled(Boolean(state.socket));
+
+    const renderStateMessage = (className, message) => {
+      elements.chatBox.innerHTML = "";
+      const messageElement = document.createElement("div");
+      messageElement.className = className;
+      messageElement.textContent = message;
+      elements.chatBox.appendChild(messageElement);
+    };
+
+    const scrollToBottom = () => {
+      elements.chatBox.scrollTop = elements.chatBox.scrollHeight;
+    };
+
+    const resolveTimestamp = (value) => {
+      const parsedDate = app.helpers.parseTimestamp(value) || new Date();
+      return {
+        iso: parsedDate.toISOString(),
+        display: app.helpers.toPersianDigits(
+          parsedDate.toLocaleTimeString("fa-IR", {
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+        ),
+      };
+    };
+
+    const appendMessage = (message, { isLocal = false } = {}) => {
+      const rawText = (message?.message_text ?? message?.message ?? "").trim();
+      if (!rawText) return;
+
+      const bubble = document.createElement("div");
+      bubble.classList.add("chat-message");
+
+      const isClientMessage = isLocal
+        ? state.isClientView
+        : (message?.sender || "").toLowerCase() === "client";
+
+      bubble.classList.add(isClientMessage ? "is-client" : "is-admin");
+
+      const senderLabel = (() => {
+        const senderName = (message?.sender || "").trim();
+        if (state.isClientView) {
+          if (isClientMessage) return "شما";
+          return senderName || "پشتیبانی";
+        }
+        if (isClientMessage) return senderName || "کاربر";
+        if (senderName && senderName.toLowerCase() !== "admin") return senderName;
+        return "ادمین";
+      })();
+
+      const { iso, display } = resolveTimestamp(message?.timestamp);
+      const senderKey = (message?.sender || (isClientMessage ? "client" : "admin")).toLowerCase();
+      const signature = message?.message_id
+        ? `msg-${message.message_id}`
+        : `${rawText}|${senderKey}|${iso}`;
+
+      if (state.renderedMessages.has(signature)) return;
+      state.renderedMessages.add(signature);
+
+      const senderElement = document.createElement("span");
+      senderElement.className = "chat-message--sender";
+      senderElement.textContent = senderLabel;
+
+      const textElement = document.createElement("p");
+      textElement.className = "chat-message--text";
+      textElement.textContent = rawText;
+      textElement.dir = "auto";
+
+      const metaElement = document.createElement("span");
+      metaElement.className = "chat-message--meta";
+      metaElement.dataset.timestamp = iso;
+      metaElement.textContent = display;
+
+      bubble.append(senderElement, textElement, metaElement);
+      elements.chatBox.appendChild(bubble);
     };
 
     const sendMessage = () => {
-      const messageText = elements.messageInput.value.trim();
-      if (!messageText || !state.socket) return;
+      if (elements.sendButton.disabled) return;
 
-      const sender = state.isClient
+      const messageText = elements.messageInput.value.trim();
+      if (!messageText) return;
+
+      if (!state.socket) {
+        setComposerEnabled(false);
+        return;
+      }
+
+      const sender = state.isClientView
         ? "client"
         : container.querySelector("#personaSelect")?.value || "Admin";
 
       state.socket.emit("send_message", {
         room: state.roomId,
         message: messageText,
-        sender: sender,
+        sender,
       });
-      addMessage(
-        { message_text: messageText, timestamp: new Date().toISOString() },
-        true
+
+      appendMessage(
+        {
+          message_text: messageText,
+          timestamp: new Date().toISOString(),
+          sender,
+        },
+        { isLocal: true }
       );
 
       elements.messageInput.value = "";
       elements.messageInput.focus();
       scrollToBottom();
+      app.ui.initializeRelativeTime();
     };
 
     elements.sendButton.addEventListener("click", sendMessage);
-    elements.messageInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
+    elements.messageInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
         sendMessage();
       }
     });
 
     if (state.socket) {
-      state.socket.on("connect", () =>
-        state.socket.emit("join", { room: state.roomId })
-      );
-      state.socket.on("new_message", (data) => {
-        addMessage(data);
+      state.socket.on("connect", () => {
+        setComposerEnabled(true);
+        state.socket.emit("join", { room: state.roomId });
+      });
+
+      state.socket.on("disconnect", () => {
+        setComposerEnabled(false);
+      });
+
+      state.socket.on("new_message", (payload) => {
+        appendMessage(payload);
         scrollToBottom();
+        app.ui.initializeRelativeTime();
       });
     }
 
-    this.helpers
+    app.helpers
       .fetchJSON(state.historyUrl)
       .then((data) => {
         elements.chatBox.innerHTML = "";
-        data.messages?.forEach((msg) => addMessage(msg));
-        if (!data.messages || data.messages.length === 0) {
-          elements.chatBox.innerHTML =
-            '<div class="chat-empty-state">هنوز پیامی وجود ندارد.</div>';
+        const messages = Array.isArray(data?.messages) ? data.messages : [];
+
+        if (!messages.length) {
+          renderStateMessage(
+            "chat-empty-state",
+            "هنوز پیامی وجود ندارد."
+          );
+          return;
         }
+
+        messages.forEach((message) => appendMessage(message));
         scrollToBottom();
+        app.ui.initializeRelativeTime();
       })
-      .catch((err) => {
-        console.error("Failed to load chat history:", err);
-        elements.chatBox.innerHTML =
-          '<div class="chat-error-state">خطا در بارگذاری تاریخچه گفتگو.</div>';
+      .catch((error) => {
+        console.error("Failed to load chat history:", error);
+        renderStateMessage(
+          "chat-error-state",
+          "خطا در بارگذاری تاریخچه گفتگو."
+        );
       });
   },
 
@@ -872,6 +1148,7 @@ const airocupApp = {
       this.initializeMembersPage();
       this.initializeLeagueSelector();
       this.initializeFileUploadValidation();
+      this.initializePaymentPage();
     },
 
     initializeMobileMenu() {
@@ -891,24 +1168,9 @@ const airocupApp = {
             : !mobileMenu.classList.contains("is-open");
 
         mobileMenu.classList.toggle("is-open", isOpen);
-        backdrop.classList.toggle("is-visible", isOpen);
+        backdrop?.classList.toggle("is-visible", isOpen);
         document.body.classList.toggle("body-no-scroll", isOpen);
         menuBtn.classList.toggle("is-active", isOpen);
-
-        // Animate hamburger → X
-        const spans = menuBtn.querySelectorAll(".hamburger span");
-        spans.forEach(
-          (s, i) =>
-            (s.style.transform = isOpen
-              ? i === 0
-                ? "rotate(45deg) translateY(8px)"
-                : i === 1
-                ? "scale(0)"
-                : "rotate(-45deg) translateY(-8px)"
-              : "")
-        );
-
-        // Footer moves up when menu opens
         if (footer)
           footer.style.marginBottom = isOpen
             ? `${mobileMenu.scrollHeight}px`
@@ -921,7 +1183,10 @@ const airocupApp = {
       menuBtn.addEventListener("click", () => toggleMenu());
       backdrop?.addEventListener("click", () => toggleMenu(false));
 
-      // Move overflow items to mobile menu
+      mobileNavList?.addEventListener("click", (event) => {
+        const link = event.target.closest("a");
+        if (link) toggleMenu(false);
+      });
       function updateMenuOverflow() {
         if (window.innerWidth < 992) {
           mobileNavList.innerHTML = "";
@@ -1166,6 +1431,39 @@ const airocupApp = {
       });
     },
 
+    initializePaymentPage() {
+      const form = document.querySelector("#teamPaymentForm");
+      if (!form) return;
+
+      const fileInput = form.querySelector('input[type="file"][name="receipt"]');
+      const fileNameDisplay = document.getElementById("filename");
+      const submitButton = form.querySelector('button[type="submit"]');
+      const loadingText = submitButton?.dataset.loadingText || "در حال ارسال...";
+
+      if (fileInput && fileNameDisplay) {
+        fileInput.addEventListener("change", () => {
+          const file = fileInput.files[0];
+          fileNameDisplay.textContent = file ? file.name : "هیچ فایلی انتخاب نشده";
+          fileNameDisplay.classList.toggle("file-name-display--active", Boolean(file));
+        });
+      }
+
+      form.addEventListener("submit", (event) => {
+        if (form.dataset.submitting === "true") {
+          event.preventDefault();
+          return;
+        }
+        form.dataset.submitting = "true";
+
+        if (submitButton) {
+          submitButton.dataset.originalText = submitButton.innerHTML;
+          submitButton.textContent = loadingText;
+          submitButton.classList.add("btn--loading");
+          submitButton.disabled = true;
+        }
+      });
+    },
+
     initializeResetForm() {
       const form = document.querySelector("#resetPasswordForm");
       if (!form) return;
@@ -1206,121 +1504,8 @@ const airocupApp = {
         });
       }
     },
-    initializeChat(container) {
-      const elements = {
-        chatBox: container.querySelector(
-          airocupApp.constants.SELECTORS.CHAT_BOX
-        ),
-        messageInput: container.querySelector(
-          airocupApp.constants.SELECTORS.MESSAGE_INPUT
-        ),
-        sendButton: container.querySelector(
-          airocupApp.constants.SELECTORS.SEND_BUTTON
-        ),
-      };
-      if (!elements.chatBox || !elements.messageInput || !elements.sendButton)
-        return;
 
-      const state = {
-        roomId: container.dataset.clientId,
-        historyUrl: container.dataset.historyUrl,
-        isClient: container.matches(
-          airocupApp.constants.SELECTORS.CLIENT_CHAT_CONTAINER
-        ),
-        socket: airocupApp.helpers.safeSocket(),
-      };
-      if (!state.roomId || !state.historyUrl) return;
 
-      const scrollToBottom = () => {
-        elements.chatBox.scrollTop = elements.chatBox.scrollHeight;
-      };
-
-      const addMessage = (msg) => {
-        const isSentByUser = state.isClient
-          ? msg.sender === "client"
-          : msg.sender !== "client";
-        const messageEl = document.createElement("div");
-        messageEl.className = `chat-message ${
-          isSentByUser ? "message-sent" : "message-received"
-        }`;
-
-        const senderName = state.isClient
-          ? isSentByUser
-            ? "شما"
-            : "پشتیبانی"
-          : isSentByUser
-          ? msg.sender
-          : "کاربر";
-
-        messageEl.innerHTML = `
-            <div class="message-meta">
-                <strong>${senderName}</strong>
-                <time>${new Date(msg.timestamp).toLocaleTimeString()}</time>
-            </div>
-            <p class="message-text">${msg.message_text}</p>
-        `;
-        elements.chatBox.appendChild(messageEl);
-      };
-
-      const sendMessage = () => {
-        const messageText = elements.messageInput.value.trim();
-        if (!messageText || !state.socket) return;
-
-        const sender = state.isClient
-          ? "client"
-          : container.querySelector("#personaSelect")?.value || "Admin";
-
-        state.socket.emit("send_message", {
-          room: state.roomId,
-          message: messageText,
-          sender: sender,
-        });
-        addMessage({
-          sender: sender,
-          message_text: messageText,
-          timestamp: new Date().toISOString(),
-        });
-        elements.messageInput.value = "";
-        elements.messageInput.focus();
-        scrollToBottom();
-      };
-
-      elements.sendButton.addEventListener("click", sendMessage);
-      elements.messageInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" && !e.shiftKey) {
-          e.preventDefault();
-          sendMessage();
-        }
-      });
-
-      if (state.socket) {
-        state.socket.on("connect", () =>
-          state.socket.emit("join", { room: state.roomId })
-        );
-        state.socket.on("new_message", (data) => {
-          addMessage(data);
-          scrollToBottom();
-        });
-      }
-
-      airocupApp.helpers
-        .fetchJSON(state.historyUrl)
-        .then((data) => {
-          elements.chatBox.innerHTML = "";
-          if (data.messages && data.messages.length > 0) {
-            data.messages.forEach(addMessage);
-          } else {
-            elements.chatBox.innerHTML =
-              '<div class="chat-empty-state">هنوز پیامی وجود ندارد.</div>';
-          }
-          scrollToBottom();
-        })
-        .catch((err) => {
-          console.error("Failed to load chat history:", err);
-          elements.chatBox.innerHTML =
-            '<div class="chat-error-state">خطا در بارگذاری تاریخچه گفتگو.</div>';
-        });
-    },
   },
 
   admin: {
@@ -1360,14 +1545,32 @@ const airocupApp = {
       );
       if (!toggleButton || !navigation) return;
 
-      toggleButton.addEventListener("click", () => {
-        const isOpen = navigation.classList.toggle(
-          airocupApp.constants.CLASSES.IS_OPEN
+      const updateState = (isOpen) => {
+        navigation.classList.toggle(
+          airocupApp.constants.CLASSES.IS_OPEN,
+          isOpen
         );
         toggleButton.setAttribute("aria-expanded", String(isOpen));
         const icon = toggleButton.querySelector("i");
         if (icon) {
           icon.className = isOpen ? "fas fa-times" : "fas fa-bars";
+        }
+      };
+
+      toggleButton.addEventListener("click", () => {
+        const shouldOpen = !navigation.classList.contains(
+          airocupApp.constants.CLASSES.IS_OPEN
+        );
+        updateState(shouldOpen);
+      });
+
+      navigation.querySelectorAll("a").forEach((link) => {
+        link.addEventListener("click", () => updateState(false));
+      });
+
+      window.addEventListener("resize", () => {
+        if (window.innerWidth > 1100) {
+          updateState(false);
         }
       });
     },
@@ -1375,14 +1578,29 @@ const airocupApp = {
     initializeAdminMembersPage() {
       const page = document.querySelector(".admin-edit-team-page");
       if (!page) return;
+
+      const teamId = page.dataset.teamId;
       const addForm = page.querySelector("#adminAddMemberForm");
       if (addForm) {
         airocupApp.formHelpers.initializeDynamicSelects(addForm);
         airocupApp.formHelpers.setupDatePicker(addForm);
       }
+
       const editModal = document.querySelector("#editMemberModal");
       const editForm = editModal?.querySelector("form");
       if (!editModal || !editForm) return;
+
+      const assignValue = (name, value) => {
+        if (!name) return;
+        const field = editForm.querySelector(`[name="${name}"]`);
+        if (!field) return;
+
+        if (name === "province" || name === "city") {
+          field.dataset.initialValue = value;
+        } else {
+          field.value = value;
+        }
+      };
 
       airocupApp.formHelpers.initializeDynamicSelects(editForm);
       airocupApp.formHelpers.setupDatePicker(editForm);
@@ -1394,22 +1612,23 @@ const airocupApp = {
         if (!editBtn) return;
 
         const data = editBtn.dataset;
+        if (teamId && data.memberId) {
+          editForm.action = `/Admin/Team/${teamId}/EditMember/${data.memberId}`;
+        }
 
-        Object.keys(data).forEach((key) => {
-          const input = editForm.querySelector(`[name="${key}"]`);
-          if (input) {
-            if (key === "province" || key === "city") {
-              input.dataset.initialValue = data[key];
-            } else {
-              input.value = data[key];
-            }
-          }
-        });
+        assignValue("name", data.name || "");
+        assignValue("national_id", data.nationalId || "");
+        assignValue("role", data.role || "");
+        assignValue("gender", data.gender || "");
+        assignValue("phone_number", data.phoneNumber || "");
+        assignValue("province", data.province || "");
+        assignValue("city", data.city || "");
 
         const [year, month, day] = (data.birthDate || "0-0-0").split("-");
-        editForm.querySelector('[name="birth_year"]').value = year;
-        editForm.querySelector('[name="birth_month"]').value = month;
-        editForm.querySelector('[name="birth_day"]').value = day;
+        assignValue("birth_year", year);
+        assignValue("birth_month", month);
+        assignValue("birth_day", day);
+
         airocupApp.formHelpers.initializeDynamicSelects(editForm);
         airocupApp.formHelpers.setupDatePicker(editForm);
 
@@ -1454,15 +1673,16 @@ const airocupApp = {
 
       try {
         if (provinceCanvas) {
-          const data = await airocupApp.helpers.fetchJSON(
-            "/API/admin/ProvinceDistribution"
-          );
+          const endpoint =
+            provinceCanvas.dataset.endpoint ||
+            "/API/admin/ProvinceDistribution";
+          const data = await airocupApp.helpers.fetchJSON(endpoint);
           createChart(provinceCanvas, data, "doughnut", "توزیع استانی");
         }
         if (cityCanvas) {
-          const data = await airocupApp.helpers.fetchJSON(
-            "/API/AdminCityDistribution"
-          );
+          const endpoint =
+            cityCanvas.dataset.endpoint || "/API/AdminCityDistribution";
+          const data = await airocupApp.helpers.fetchJSON(endpoint);
           createChart(cityCanvas, data, "bar", "تعداد شرکت‌کنندگان", "y");
         }
       } catch (error) {
@@ -1502,138 +1722,6 @@ const airocupApp = {
         })
       );
     },
-
-    // This function should be placed inside the main airocupApp object,
-    // alongside helpers, ui, and forms.
-    initializeChat(container) {
-      const elements = {
-        chatBox: container.querySelector(this.constants.SELECTORS.CHAT_BOX),
-        messageInput: container.querySelector(
-          this.constants.SELECTORS.MESSAGE_INPUT
-        ),
-        sendButton: container.querySelector(
-          this.constants.SELECTORS.SEND_BUTTON
-        ),
-      };
-      if (!elements.chatBox || !elements.messageInput || !elements.sendButton) {
-        console.error("Chat UI elements not found.");
-        return;
-      }
-
-      const state = {
-        roomId: container.dataset.clientId,
-        isClient: container.matches(
-          this.constants.SELECTORS.CLIENT_CHAT_CONTAINER
-        ),
-        socket: this.helpers.safeSocket(),
-      };
-
-      if (!state.roomId) {
-        console.error("Chat Error: Missing client ID.");
-        return;
-      }
-
-      state.historyUrl = state.isClient
-        ? "/get_my_chat_history"
-        : `/Admin/GetChatHistory/${state.roomId}`;
-
-      const scrollToBottom = () => {
-        elements.chatBox.scrollTop = elements.chatBox.scrollHeight;
-      };
-
-      const addMessage = (msg, isLocalSend = false) => {
-        const isSentByThisUser =
-          isLocalSend ||
-          (state.isClient ? msg.sender === "client" : msg.sender !== "client");
-        const senderName = isLocalSend
-          ? "شما"
-          : isSentByThisUser
-          ? state.isClient
-            ? "شما"
-            : msg.sender
-          : state.isClient
-          ? "پشتیبانی"
-          : "کاربر";
-
-        const messageEl = document.createElement("div");
-        messageEl.className = `chat-message ${
-          isSentByThisUser ? "message-sent" : "message-received"
-        }`;
-
-        messageEl.innerHTML = `
-        <div class="message-meta">
-            <strong>${senderName}</strong>
-            <time data-timestamp="${msg.timestamp}">${new Date(
-          msg.timestamp
-        ).toLocaleTimeString("fa-IR")}</time>
-        </div>
-        <p class="message-text">${msg.message_text || msg.message}</p> 
-      `;
-        elements.chatBox.appendChild(messageEl);
-      };
-
-      const sendMessage = () => {
-        const messageText = elements.messageInput.value.trim();
-        if (!messageText || !state.socket) return;
-
-        const sender = state.isClient
-          ? "client"
-          : container.querySelector("#personaSelect")?.value || "Admin";
-
-        state.socket.emit("send_message", {
-          room: state.roomId,
-          message: messageText,
-        });
-
-        addMessage(
-          {
-            message_text: messageText,
-            timestamp: new Date().toISOString(),
-          },
-          true
-        );
-
-        elements.messageInput.value = "";
-        elements.messageInput.focus();
-        scrollToBottom();
-      };
-
-      elements.sendButton.addEventListener("click", sendMessage);
-      elements.messageInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" && !e.shiftKey) {
-          e.preventDefault();
-          sendMessage();
-        }
-      });
-
-      if (state.socket) {
-        state.socket.on("connect", () =>
-          state.socket.emit("join", { room: state.roomId })
-        );
-        state.socket.on("new_message", (data) => {
-          addMessage(data);
-          scrollToBottom();
-        });
-      }
-
-      this.helpers
-        .fetchJSON(state.historyUrl)
-        .then((data) => {
-          elements.chatBox.innerHTML = "";
-          if (data.messages?.length) {
-            data.messages.forEach((msg) => addMessage(msg));
-          } else {
-            elements.chatBox.innerHTML =
-              '<div class="chat-empty-state">هنوز پیامی وجود ندارد.</div>';
-          }
-          scrollToBottom();
-        })
-        .catch((err) => {
-          console.error("Failed to load chat history:", err);
-          elements.chatBox.innerHTML =
-            '<div class="chat-error-state">خطا در بارگذاری تاریخچه گفتگو.</div>';
-        });
-    },
   },
 
   init() {
@@ -1651,6 +1739,7 @@ const airocupApp = {
     }
   },
 };
+window.airocupApp = airocupApp;
 
 document.addEventListener("DOMContentLoaded", () => {
   try {

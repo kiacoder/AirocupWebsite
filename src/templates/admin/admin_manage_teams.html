@@ -1,70 +1,129 @@
-{% extends "Global/Base.html" %}
+{% extends "global/base.html" %}
 
-{% block Title %}مدیریت جامع تیم‌ها | پنل آیروکاپ{% endblock %}
+{% block title %}مدیریت جامع تیم‌ها | پنل آیروکاپ{% endblock %}
 
-{% block Body %}
-<div class="Container">
-  <div class="PageHeader">
-    <h1 class="SectionTitle">مدیریت جامع تیم‌ها</h1>
-    <p class="FormSubtitle">
-      در این بخش تمام تیم‌های فعال در سیستم را مشاهده و مدیریت کنید.
-    </p>
-  </div>
-
-  <div class="Card Card--table Card--centered-large">
-    <h2 class="Card__header">
-      <i class="fas fa-layer-group"></i> لیست تیم‌ها ({{ Teams|length | persian_digits }} تیم)
-    </h2>
-
-    <div class="UserTableWrapper">
-      <table class="UserTable">
-        <thead>
-          <tr>
-            <th>نام تیم</th>
-            <th>کاربر مالک</th>
-            <th>تعداد اعضا</th>
-            <th>آخرین وضعیت پرداخت</th>
-            <th class="ActionsHeader">عملیات</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for TeamData in Teams %}
-          <tr>
-            <td data-label="نام تیم">
-              <strong>{{ TeamData.TeamName }}</strong><br />
-              <span class="TeamId">ID: #{{ TeamData.TeamID | persian_digits }}</span>
-            </td>
-            <td data-label="کاربر">{{ TeamData.ClientEmail }}</td>
-            <td data-label="اعضا">{{ TeamData.MemberCount | persian_digits }} نفر</td>
-            <td data-label="وضعیت پرداخت">
-              {% set status_enum = TeamData.LastPaymentStatus %}
-              <span class="StatusBadge {% if status_enum and status_enum.value == 'Approved' %}StatusApproved{% elif status_enum and status_enum.value == 'Pending' %}StatusPending{% elif status_enum and status_enum.value == 'Rejected' %}StatusRejected{% else %}StatusNotStarted{% endif %}">
-                {{ status_enum.label if status_enum else 'شروع نشده' }}
-              </span>
-            </td>
-            <td class="Actions">
-              <a href="{{ url_for('Admin.AdminEditTeam', TeamID=TeamData.TeamID) }}" class="Btn BtnPrimary" title="مدیریت کامل تیم و اعضا">
-                <i class="fas fa-edit"></i> مدیریت تیم
-              </a>
-            </td>
-          </tr>
-          {% else %}
-          <tr class="EmptyStateRow">
-            <td colspan="5" class="EmptyState">
-                <i class="fas fa-layer-group EmptyState__icon"></i>
-                هنوز هیچ تیمی در سیستم ثبت نشده است.
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+{% block body %}
+<div class="admin-page">
+  <header class="admin-page__header">
+    <div class="admin-page__title">
+      <h1>مدیریت جامع تیم‌ها</h1>
+      <p class="admin-page__subtitle">
+        تمام تیم‌های فعال در سامانه را مشاهده کنید، وضعیت پرداخت‌ها را بررسی کنید و به صفحه مدیریت اختصاصی هر تیم دسترسی پیدا کنید.
+      </p>
     </div>
-  </div>
+    <div class="admin-page__actions">
+      <span class="admin-badge">
+        <i class="fas fa-users"></i>
+        {{ teams|length | persian_digits }} تیم
+      </span>
+    </div>
+  </header>
 
-  <div class="SectionCta">
-    <a href="{{ url_for('admin.admin_dashboard') }}" class="Btn BtnSecondary">
-      <i class="fas fa-arrow-left"></i> بازگشت به داشبورد
+  <section class="admin-page__section">
+    <article class="admin-surface">
+      <header class="admin-surface__header">
+        <div class="admin-surface__title">
+          <h2><i class="fas fa-layer-group"></i> لیست تیم‌ها</h2>
+          <p>خلاصه‌ای از آخرین وضعیت تیم‌ها به‌همراه اطلاعات مالک و آخرین پرداخت.</p>
+        </div>
+      </header>
+      <div class="admin-surface__body">
+        <div class="admin-table-wrapper">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>نام تیم</th>
+                <th>کاربر مالک</th>
+                <th>لیگ‌ها</th>
+                <th>مقطع</th>
+                <th>تعداد اعضا</th>
+                <th>آخرین وضعیت پرداخت</th>
+                <th>وضعیت</th>
+                <th>عملیات</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for team in teams %}
+              {% set status_enum = team.last_payment_status %}
+              {% set status_value = status_enum.value if status_enum else None %}
+              {% set needs_attention = (not team.has_leader) or team.is_name_missing %}
+              <tr 
+                class="clickable-row {% if needs_attention %}admin-table__row--warning{% endif %}" 
+                {% if needs_attention %}style="background-color: #fff4e5;"{% endif %}
+                onclick="window.location.href='{{ url_for('admin.admin_edit_team', team_id=team.team_id) }}';"
+              >
+                <td>
+                  <strong>{{ team.team_name or '—' }}</strong><br />
+                  <small class="admin-page__lead">کد تیم: #{{ team.team_id | persian_digits }}</small>
+                  {% if needs_attention %}
+                  <div class="admin-badge admin-badge--warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    {% if team.is_name_missing %}نام تیم ثبت نشده{% endif %}
+                    {% if team.is_name_missing and (not team.has_leader) %} | {% endif %}
+                    {% if not team.has_leader %}سرپرست تعیین نشده{% endif %}
+                  </div>
+                  {% endif %}
+                </td>
+                <td>{{ team.client_email }}</td>
+                <td>
+                  <div class="admin-meta-grid">
+                    <span>اول: {{ team.league_one.name if team.league_one else '—' }}</span>
+                    <span>دوم: {{ team.league_two.name if team.league_two else '—' }}</span>
+                  </div>
+                </td>
+                <td>{{ team.education_level or '—' }}</td>
+                <td>{{ team.member_count | persian_digits }} نفر</td>
+                <td>
+                  <span
+                    class="admin-status {% if status_value == 'approved' %}admin-status--approved{% elif status_value == 'pending' %}admin-status--pending{% elif status_value == 'rejected' %}admin-status--rejected{% else %}admin-status--idle{% endif %}"
+                  >
+                    <i class="fas fa-circle"></i>
+                    {{ status_enum.label if status_enum else 'منتظر اقدام' }}
+                  </span>
+                </td>
+                <td>{{ team.status.label if team.status else '—' }}</td>
+                <td class="admin-table__actions" onclick="event.stopPropagation()">
+                  <a
+                    href="{{ url_for('admin.admin_edit_team', team_id=team.team_id) }}"
+                    class="btn btn-primary btn-small"
+                    title="مدیریت کامل تیم"
+                  >
+                    <i class="fas fa-edit"></i>
+                    مدیریت تیم
+                  </a>
+                  {% if team.status and team.status != enums.EntityStatus.ACTIVE %}
+                  <form method="POST" action="{{ url_for('admin.admin_restore_team', team_id=team.team_id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <button type="submit" class="btn btn-success btn-small">
+                      <i class="fas fa-undo"></i>
+                      بازگردانی
+                    </button>
+                  </form>
+                  {% endif %}
+                </td>
+              </tr>
+              {% else %}
+              <tr class="admin-table__empty">
+                <td colspan="8">
+                  <div class="admin-empty-state">
+                    <i class="fas fa-layer-group"></i>
+                    هیچ تیمی با فیلتر فعلی یافت نشد.
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <footer class="admin-page__footer">
+    <a href="{{ url_for('admin.admin_dashboard') }}" class="btn btn-secondary">
+      <i class="fas fa-arrow-right"></i>
+      بازگشت به داشبورد
     </a>
-  </div>
+  </footer>
 </div>
 {% endblock %}

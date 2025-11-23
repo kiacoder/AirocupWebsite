@@ -1,0 +1,48 @@
+{% extends "global/base.html" %}
+{% block title %}گزارش فعالیت‌ها | پنل آیروکاپ{% endblock %}
+{% block body %}
+<div class="admin-page">
+  <header class="admin-page__header">
+    <div class="admin-page__title">
+      <h1>گزارش فعالیت‌ها</h1>
+      <p class="admin-page__subtitle">آخرین رویدادهای کاربران و مدیران را بررسی کنید.</p>
+    </div>
+  </header>
+  <section class="admin-page__section">
+    <article class="admin-surface">
+      <div class="admin-surface__body">
+        <div class="admin-table-wrapper">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>زمان</th>
+                <th>کاربر</th>
+                <th>دخالت ادمین</th>
+                <th>شرح</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for log in logs %}
+              <tr>
+                <td class="RelativeTime" data-timestamp="{{ log.timestamp.isoformat() }}">
+                  {{ log.timestamp | formatdate | persian_digits }}
+                </td>
+                <td>#{{ log.client_id | persian_digits }}</td>
+                <td>
+                  <span class="admin-status {% if log.admin_involved %}admin-status--approved{% else %}admin-status--idle{% endif %}">
+                    {{ 'بله' if log.admin_involved else 'خیر' }}
+                  </span>
+                </td>
+                <td dir="auto">{{ log.action }}</td>
+              </tr>
+              {% else %}
+              <tr class="admin-table__empty"><td colspan="4">لاگی ثبت نشده است.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </article>
+  </section>
+</div>
+{% endblock %}
