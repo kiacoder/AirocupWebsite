@@ -202,8 +202,6 @@ const airocupApp = {
         airocupApp.constants.SELECTORS.FLASH_CONTAINER
       );
       if (!container) return;
-
-      // Limit number of visible flash messages to 3
       const existingFlashes = container.querySelectorAll('.flash-message:not(.flash-message-closing)');
       if (existingFlashes.length >= 3) {
         this.dismissFlash(existingFlashes[0]);

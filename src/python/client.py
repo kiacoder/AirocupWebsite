@@ -10,9 +10,9 @@ import secrets
 from typing import Any, cast
 from threading import Thread
 import bcrypt
-import jdatetime  # type:ignore
-import filetype  # type:ignore
-from persiantools.digits import fa_to_en  # type:ignore
+import jdatetime
+import filetype
+from persiantools.digits import fa_to_en
 from sqlalchemy import exc, func, select
 from sqlalchemy.orm import subqueryload, joinedload
 import bleach
@@ -48,10 +48,8 @@ client_blueprint = Blueprint("client", __name__)
 @client_blueprint.before_request
 def enforce_profile_and_team_completion():
     """Redirect users to required completion steps before normal navigation."""
-
     if not session.get("client_id"):
         return None
-
     allowed_endpoints = {
         "client.complete_profile",
         "global.logout",
@@ -59,8 +57,10 @@ def enforce_profile_and_team_completion():
         "client.upload_document",
         "client.select_league",
     }
-
-    if session.get("needs_contact_completion") and request.endpoint != "client.complete_profile":
+    if (
+        session.get("needs_contact_completion")
+        and request.endpoint != "client.complete_profile"
+    ):
         return redirect(url_for("client.complete_profile"))
 
     pending_team_id = session.get("pending_team_completion_id")
@@ -81,7 +81,6 @@ def enforce_profile_and_team_completion():
                     )
             else:
                 session.pop("pending_team_completion_id", None)
-
     return None
 
 
@@ -444,7 +443,10 @@ def complete_profile():
                 )
 
             if not utils.is_valid_iranian_phone(phone_number):
-                flash("شماره همراه معتبر نیست (باید با 09 شروع شود و ۱۱ رقم باشد).", "error")
+                flash(
+                    "شماره همراه معتبر نیست (باید با 09 شروع شود و ۱۱ رقم باشد).",
+                    "error",
+                )
                 return render_template(
                     constants.client_html_names_data["complete_profile"],
                     client=client,
@@ -455,7 +457,8 @@ def complete_profile():
             email_taken = (
                 db.query(models.Client)
                 .filter(
-                    models.Client.email == email, models.Client.client_id != client.client_id
+                    models.Client.email == email,
+                    models.Client.client_id != client.client_id,
                 )
                 .first()
             )
@@ -1780,9 +1783,13 @@ def submit_data_resolution():
                     member.national_id = fa_to_en(
                         request.form.get(f"member_national_id_{member_id}", "").strip()
                     )
-                    
-                    gender_str = request.form.get(f"member_gender_{member_id}", "").strip()
-                    member.gender = next((g for g in models.Gender if g.value == gender_str), None)
+
+                    gender_str = request.form.get(
+                        f"member_gender_{member_id}", ""
+                    ).strip()
+                    member.gender = next(
+                        (g for g in models.Gender if g.value == gender_str), None
+                    )
 
                     member.role = role_map.get(
                         request.form.get(f"member_role_{member_id}", "").strip(),
@@ -2453,11 +2460,9 @@ def select_league(team_id):
                         ):
                             member_age = utils.calculate_age(member.birth_date)
                             if member_age is None:
-                                continue  # Skip invalid ages, let utils handle if needed
-                            
+                                continue
                             is_below = min_age is not None and member_age < min_age
                             is_above = max_age is not None and member_age > max_age
-                            
                             if is_below or is_above:
                                 violating_member = member
                                 break
@@ -2660,25 +2665,19 @@ def _process_payment_submission(
     paid_at=None,
 ):
     """Handles saving the receipt file and creating a payment record."""
-    
-    # Attempt to detect extension from content first
     receipt_file.stream.seek(0)
     kind = filetype.guess(receipt_file.stream)
     receipt_file.stream.seek(0)
-    
     extension = ""
     if kind:
         extension = kind.extension
     else:
-        # Fallback to filename extension if content detection fails (though likely caught by validation)
         original_filename = secure_filename(receipt_file.filename)
         if "." in original_filename:
-             extension = original_filename.rsplit(".", 1)[1].lower()
-        elif "." in receipt_file.filename: # Try insecure filename if secure stripped it
-             extension = receipt_file.filename.rsplit(".", 1)[1].lower()
-
+            extension = original_filename.rsplit(".", 1)[1].lower()
+        elif "." in receipt_file.filename:
+            extension = receipt_file.filename.rsplit(".", 1)[1].lower()
     secure_name = f"{uuid.uuid4()}.{extension}" if extension else str(uuid.uuid4())
-
     new_payment = models.Payment(
         team_id=team.team_id,
         client_id=session["client_id"],
@@ -2717,24 +2716,18 @@ def _process_payment_submission(
 def _validate_new_member_receipt(receipt_file):
     """Ensure a receipt file exists and respects format/size rules."""
     max_size = constants.AppConfig.max_image_size
-
     if not receipt_file or receipt_file.filename == "":
         return "لطفاً تصویر رسید پرداخت عضو جدید را بارگذاری کنید."
-
     upload_size = _determine_upload_size(receipt_file)
     if upload_size is None:
         return "امکان بررسی اندازه فایل رسید وجود ندارد. لطفاً دوباره تلاش کنید."
-
     if upload_size <= 0:
         return "فایل انتخاب‌شده خالی است. لطفاً رسید صحیحی انتخاب کنید."
-
     if upload_size > max_size:
         max_size_mb = max_size / 1024 / 1024
         return f"حجم فایل رسید نباید بیشتر از {max_size_mb:.1f} مگابایت باشد."
-
     receipt_file.stream.seek(0)
     if not utils.is_file_allowed(receipt_file.stream):
         return "نوع فایل رسید مجاز نیست یا فایل خراب است."
     receipt_file.stream.seek(0)
-
     return None

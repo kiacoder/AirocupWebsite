@@ -19,7 +19,7 @@ from flask import (
     jsonify,
     current_app,
 )
-import persiantools.digits  # type:ignore
+import persiantools.digits
 from sqlalchemy import exc, func, select, or_, case, String
 from sqlalchemy.sql.functions import count
 from sqlalchemy.orm import joinedload, subqueryload
@@ -696,9 +696,7 @@ def admin_delete_news(article_id):
         if not article:
             flash("خبر مورد نظر یافت نشد.", "error")
             return redirect(url_for("admin.admin_manage_news"))
-
         try:
-            # Remove uploaded image if present
             if article.image_path:
                 image_path = os.path.join(
                     current_app.config["UPLOAD_FOLDER_NEWS"], article.image_path
@@ -710,10 +708,12 @@ def admin_delete_news(article_id):
                         current_app.logger.exception(
                             "failed to remove news image %s", image_path
                         )
-
-            # Remove uploaded HTML template if it lives under the managed news html dir
-            if article.template_path and article.template_path.startswith("news/htmls/"):
-                html_path = os.path.join(constants.Path.static_dir, article.template_path)
+            if article.template_path and article.template_path.startswith(
+                "news/htmls/"
+            ):
+                html_path = os.path.join(
+                    constants.Path.static_dir, article.template_path
+                )
                 if os.path.exists(html_path):
                     try:
                         os.remove(html_path)
@@ -922,9 +922,7 @@ def admin_manage_teams():
     payment_status = (request.args.get("payment_status", "") or "").strip()
     keyword = (request.args.get("q", "") or "").strip()
     league_id = _parse_nullable_int(request.args.get("league_id"))
-    education_filter = _normalize_nullable_text(
-        request.args.get("education_level")
-    )
+    education_filter = _normalize_nullable_text(request.args.get("education_level"))
 
     with database.get_db_session() as db:
         last_payment_subquery = (
@@ -1129,11 +1127,13 @@ def admin_edit_team(team_id):
                 new_team_name = _normalize_nullable_text(request.form.get("team_name"))
                 league_one_id = _parse_nullable_int(request.form.get("league_one_id"))
                 league_two_id = _parse_nullable_int(request.form.get("league_two_id"))
-                education_level = _normalize_nullable_text(request.form.get("education_level"))
+                education_level = _normalize_nullable_text(
+                    request.form.get("education_level")
+                )
                 registration_raw = request.form.get("team_registration_date")
 
-                registration_date, registration_error = database.parse_nullable_datetime(
-                    registration_raw
+                registration_date, registration_error = (
+                    database.parse_nullable_datetime(registration_raw)
                 )
                 if registration_error:
                     flash(registration_error, "error")
@@ -1143,7 +1143,9 @@ def admin_edit_team(team_id):
                     is_valid, error_message = utils.is_valid_team_name(new_team_name)
                     if not is_valid:
                         flash(error_message, "error")
-                        return redirect(url_for("admin.admin_edit_team", team_id=team_id))
+                        return redirect(
+                            url_for("admin.admin_edit_team", team_id=team_id)
+                        )
 
                     existing_team = (
                         db.query(models.Team)
@@ -1156,7 +1158,9 @@ def admin_edit_team(team_id):
                     )
                     if existing_team:
                         flash("تیمی با این نام از قبل وجود دارد.", "error")
-                        return redirect(url_for("admin.admin_edit_team", team_id=team_id))
+                        return redirect(
+                            url_for("admin.admin_edit_team", team_id=team_id)
+                        )
 
                 if (
                     education_level
@@ -1183,7 +1187,7 @@ def admin_edit_team(team_id):
                                     if is_below or is_above:
                                         violating_member = member
                                         break
-                        
+
                         if violating_member:
                             flash(
                                 f"عضو «{violating_member.name}» با مقطع «{education_level}» سازگار نیست.",
@@ -1232,33 +1236,35 @@ def admin_edit_team(team_id):
             .order_by(models.Payment.upload_date.desc())
             .all()
         )
-
         last_payment = payments[0] if payments else None
-
-        # Calculate Payable Amount
-        active_members_count = sum(1 for m in members if m.status == models.EntityStatus.ACTIVE)
+        active_members_count = sum(
+            1 for m in members if m.status == models.EntityStatus.ACTIVE
+        )
         has_approved_payment = database.check_if_team_is_paid(db, team_id)
-        
         fee_per_person = config.payment_config.get("fee_per_person") or 0
         fee_team = config.payment_config.get("fee_team") or 0
         league_two_discount = config.payment_config.get("league_two_discount") or 0
-        new_member_fee_per_league = config.payment_config.get("new_member_fee_per_league") or 0
+        new_member_fee_per_league = (
+            config.payment_config.get("new_member_fee_per_league") or 0
+        )
 
         payable_amount = 0
         if has_approved_payment:
-            # Team has paid initially, so they only pay for new (unpaid) members
             if team.unpaid_members_count > 0:
                 num_leagues = 1 + (1 if team.league_two_id else 0)
-                payable_amount = team.unpaid_members_count * new_member_fee_per_league * num_leagues
+                payable_amount = (
+                    team.unpaid_members_count * new_member_fee_per_league * num_leagues
+                )
         else:
-            # Initial payment calculation
             members_fee = active_members_count * fee_per_person
             base_cost = fee_team + members_fee
-            
+
             league_two_cost = 0
             if team.league_two_id:
-                league_two_cost = int(round(base_cost * (1 - league_two_discount / 100)))
-            
+                league_two_cost = int(
+                    round(base_cost * (1 - league_two_discount / 100))
+                )
+
             payable_amount = base_cost + league_two_cost
 
     return render_template(
@@ -1638,39 +1644,38 @@ def admin_dashboard():
             "new_clients_this_week": new_clients_this_week,
             "total_income": total_income,
         }
-
-        # --- New Statistics ---
-        # 1. League Popularity
         league_counts = {}
         active_teams = (
             db.query(models.Team)
-            .options(joinedload(models.Team.league_one), joinedload(models.Team.league_two))
+            .options(
+                joinedload(models.Team.league_one), joinedload(models.Team.league_two)
+            )
             .filter(models.Team.status == models.EntityStatus.ACTIVE)
             .all()
         )
         for team in active_teams:
             if team.league_one:
-                league_counts[team.league_one.name] = league_counts.get(team.league_one.name, 0) + 1
+                league_counts[team.league_one.name] = (
+                    league_counts.get(team.league_one.name, 0) + 1
+                )
             if team.league_two:
-                league_counts[team.league_two.name] = league_counts.get(team.league_two.name, 0) + 1
-        
-        league_stats = [
-            {"name": k, "count": v} 
-            for k, v in sorted(league_counts.items(), key=lambda item: item[1], reverse=True)
-        ]
+                league_counts[team.league_two.name] = (
+                    league_counts.get(team.league_two.name, 0) + 1
+                )
 
-        # 2. Gender Stats
+        league_stats = [
+            {"name": k, "count": v}
+            for k, v in sorted(
+                league_counts.items(), key=lambda item: item[1], reverse=True
+            )
+        ]
         gender_data = (
             db.query(models.Member.gender, func.count(models.Member.member_id))
             .filter(models.Member.status == models.EntityStatus.ACTIVE)
             .group_by(models.Member.gender)
             .all()
         )
-        gender_stats = {
-            "male": 0,
-            "female": 0,
-            "unknown": 0
-        }
+        gender_stats = {"male": 0, "female": 0, "unknown": 0}
         for gender_enum, count_val in gender_data:
             if gender_enum == models.Gender.MALE:
                 gender_stats["male"] = count_val
@@ -1678,16 +1683,19 @@ def admin_dashboard():
                 gender_stats["female"] = count_val
             else:
                 gender_stats["unknown"] += count_val
-        
         total_gender_count = sum(gender_stats.values()) or 1
-        gender_stats["male_percent"] = round((gender_stats["male"] / total_gender_count) * 100, 1)
-        gender_stats["female_percent"] = round((gender_stats["female"] / total_gender_count) * 100, 1)
-
-        # New: Average Age by Gender
+        gender_stats["male_percent"] = round(
+            (gender_stats["male"] / total_gender_count) * 100, 1
+        )
+        gender_stats["female_percent"] = round(
+            (gender_stats["female"] / total_gender_count) * 100, 1
+        )
         gender_age_data = (
             db.query(models.Member.gender, models.Member.birth_date)
-            .filter(models.Member.status == models.EntityStatus.ACTIVE,
-                    models.Member.birth_date.isnot(None))
+            .filter(
+                models.Member.status == models.EntityStatus.ACTIVE,
+                models.Member.birth_date.isnot(None),
+            )
             .all()
         )
 
@@ -1699,11 +1707,12 @@ def admin_dashboard():
                 male_ages.append(age)
             elif gender == models.Gender.FEMALE:
                 female_ages.append(age)
-        
-        gender_stats["average_male_age"] = round(sum(male_ages) / len(male_ages)) if male_ages else 0
-        gender_stats["average_female_age"] = round(sum(female_ages) / len(female_ages)) if female_ages else 0
-
-        # 3. Server Stats
+        gender_stats["average_male_age"] = (
+            round(sum(male_ages) / len(male_ages)) if male_ages else 0
+        )
+        gender_stats["average_female_age"] = (
+            round(sum(female_ages) / len(female_ages)) if female_ages else 0
+        )
         server_stats = {}
         try:
             total_disk, used_disk, free_disk = shutil.disk_usage("/")
@@ -1712,13 +1721,8 @@ def admin_dashboard():
         except Exception:
             server_stats["disk_percent"] = 0
             server_stats["disk_free_gb"] = 0
-
-        # 4. Top Viewed News
         top_news = (
-            db.query(models.News)
-            .order_by(models.News.views.desc())
-            .limit(5)
-            .all()
+            db.query(models.News).order_by(models.News.views.desc()).limit(5).all()
         )
 
         active_member_counts = (
@@ -1807,12 +1811,12 @@ def admin_download_db():
         if not os.path.exists(db_path):
             flash("فایل دیتابیس یافت نشد.", "error")
             return redirect(url_for("admin.admin_dashboard"))
-        
+
         return send_from_directory(
             os.path.dirname(db_path),
             os.path.basename(db_path),
             as_attachment=True,
-            download_name=f"airocup_backup_{datetime.datetime.now().strftime('%Y%m%d_%H%M')}.db"
+            download_name=f"airocup_backup_{datetime.datetime.now().strftime('%Y%m%d_%H%M')}.db",
         )
     except Exception as e:
         current_app.logger.error(f"Error downloading DB: {e}")
@@ -1833,9 +1837,7 @@ def admin_search():
     payment_sort = request.args.get("payment_sort", "recent")
     league_id_1 = _parse_nullable_int(request.args.get("league_id"))
     league_id_2 = _parse_nullable_int(request.args.get("league_id_2"))
-    education_filter = _normalize_nullable_text(
-        request.args.get("education_level")
-    )
+    education_filter = _normalize_nullable_text(request.args.get("education_level"))
     has_document_filter = request.args.get("has_document")
 
     with database.get_db_session() as db:
@@ -1863,20 +1865,20 @@ def admin_search():
         if client_sort == "email":
             client_query = client_query.order_by(func.lower(models.Client.email))
         elif client_sort == "oldest":
-            client_query = client_query.order_by(
-                models.Client.registration_date.asc()
-            )
+            client_query = client_query.order_by(models.Client.registration_date.asc())
         else:
-            client_query = client_query.order_by(
-                models.Client.registration_date.desc()
-            )
+            client_query = client_query.order_by(models.Client.registration_date.desc())
         clients = client_query.limit(150).all()
 
-        team_query = db.query(models.Team).join(models.Client).options(
-            joinedload(models.Team.client),
-            joinedload(models.Team.league_one),
-            joinedload(models.Team.league_two),
-            joinedload(models.Team.documents),
+        team_query = (
+            db.query(models.Team)
+            .join(models.Client)
+            .options(
+                joinedload(models.Team.client),
+                joinedload(models.Team.league_one),
+                joinedload(models.Team.league_two),
+                joinedload(models.Team.documents),
+            )
         )
         if query:
             keyword_like = f"%{query}%"
@@ -1904,7 +1906,7 @@ def admin_search():
                     models.Team.league_two_id == league_id_1,
                 )
             )
-            
+
         if league_id_2:
             team_query = team_query.filter(
                 or_(
@@ -1926,13 +1928,9 @@ def admin_search():
         if team_sort == "name":
             team_query = team_query.order_by(func.lower(models.Team.team_name))
         elif team_sort == "oldest":
-            team_query = team_query.order_by(
-                models.Team.team_registration_date.asc()
-            )
+            team_query = team_query.order_by(models.Team.team_registration_date.asc())
         else:
-            team_query = team_query.order_by(
-                models.Team.team_registration_date.desc()
-            )
+            team_query = team_query.order_by(models.Team.team_registration_date.desc())
         teams = team_query.limit(300).all()
 
         payment_query = db.query(models.Payment)
@@ -1965,12 +1963,9 @@ def admin_search():
 
         members = []
         if query:
-            member_query = (
-                db.query(models.Member)
-                .options(
-                    joinedload(models.Member.team).joinedload(models.Team.client),
-                    joinedload(models.Member.city).joinedload(models.City.province),
-                )
+            member_query = db.query(models.Member).options(
+                joinedload(models.Member.team).joinedload(models.Team.client),
+                joinedload(models.Member.city).joinedload(models.City.province),
             )
             keyword_like = f"%{query}%"
             member_query = member_query.filter(
@@ -1988,7 +1983,7 @@ def admin_search():
                 member_query = member_query.filter(
                     models.Member.status == models.EntityStatus.ACTIVE
                 )
-                
+
             members = member_query.limit(300).all()
 
         return render_template(

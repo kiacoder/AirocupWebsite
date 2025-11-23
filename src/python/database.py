@@ -126,7 +126,9 @@ def ensure_schema_upgrades():
                 )
             )
             connection.execute(text("DROP TABLE clients_old;"))
-            connection.execute(text(f"PRAGMA foreign_keys={'on' if fk_initial_state else 'off'};"))
+            connection.execute(
+                text(f"PRAGMA foreign_keys={'on' if fk_initial_state else 'off'};")
+            )
         if not _has_column(connection, "teams", "education_level"):
             _add_column(connection, "teams", "education_level VARCHAR(50)")
 
@@ -181,10 +183,14 @@ def ensure_schema_upgrades():
             text("UPDATE clients SET status='active' WHERE status IS NULL;")
         )
         connection.execute(
-            text("UPDATE payments SET status='PENDING' WHERE status IS NULL OR status='pending';")
+            text(
+                "UPDATE payments SET status='PENDING' WHERE status IS NULL OR status='pending';"
+            )
         )
         connection.execute(
-            text("UPDATE team_documents SET status='PENDING' WHERE status IS NULL OR status='pending';")
+            text(
+                "UPDATE team_documents SET status='PENDING' WHERE status IS NULL OR status='pending';"
+            )
         )
         connection.execute(
             text(
@@ -369,7 +375,9 @@ def validate_client_update(
             errors.append("وضعیت انتخاب‌شده معتبر نیست.")
 
     if "is_phone_verified" in form_data:
-        clean_data["is_phone_verified"] = str(form_data.get("is_phone_verified")).lower() in (
+        clean_data["is_phone_verified"] = str(
+            form_data.get("is_phone_verified")
+        ).lower() in (
             "1",
             "true",
             "on",

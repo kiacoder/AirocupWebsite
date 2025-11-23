@@ -2,11 +2,13 @@
 
 import os
 from typing import Dict, Optional, Tuple
-from better_profanity import profanity  # type:ignore
-import jdatetime  # type:ignore
+from better_profanity import profanity
+import jdatetime
+
 
 class Path:
     "Define all Paths Of Files"
+
     base_dir = os.path.dirname(os.path.abspath(__file__))
     root_dir = os.path.abspath(os.path.join(base_dir, "..", ".."))
     static_dir = os.path.join(root_dir, "static")
@@ -72,6 +74,7 @@ class Path:
         "water_waste": "images/logo/sponsors/water_and_waste.png",
         "naft_iran": "images/logo/sponsors/naft.png",
     }
+
 
 provinces_data = {
     "آذربایجان شرقی": [

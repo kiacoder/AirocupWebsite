@@ -8,12 +8,12 @@ from typing import Any, IO, Tuple, Optional
 from sqlalchemy.orm import Session, subqueryload
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import func, or_
-import jdatetime  # type: ignore
-import filetype  # type: ignore
+import jdatetime
+import filetype
 from flask import Flask, session, current_app
-from persiantools.digits import fa_to_en  # type: ignore
-import requests  # type: ignore
-import bleach  # type: ignore
+from persiantools.digits import fa_to_en
+import requests
+import bleach
 from . import models
 from . import constants
 from . import database
@@ -460,7 +460,6 @@ def validate_member_for_resolution(
 ) -> dict:
     "Validate a member's data for missing or invalid fields"
     problems: dict[str, list[str]] = {"missing": [], "invalid": []}
-    # TEMP_COMMENT: Checking file update
     if not member.name or not member.name.strip():
         problems["missing"].append("name")
     if not member.national_id or not member.national_id.strip():
@@ -533,10 +532,10 @@ def get_first_incomplete_team(db: Session, client_id: int) -> Optional[models.Te
             models.Team.client_id == client_id,
             models.Team.status == models.EntityStatus.ACTIVE,
             or_(
-                models.Team.team_name == None,  # noqa: E711
+                models.Team.team_name == None,
                 func.length(func.trim(models.Team.team_name)) == 0,
-                models.Team.education_level == None,  # noqa: E711
-                models.Team.league_one_id == None,  # noqa: E711
+                models.Team.education_level == None,
+                models.Team.league_one_id == None,
             ),
         )
         .order_by(models.Team.team_id.asc())

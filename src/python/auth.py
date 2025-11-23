@@ -2,8 +2,7 @@
 
 from functools import wraps
 from flask import request, session, flash, redirect, url_for, abort
-from flask_wtf.csrf import CSRFError  # type:ignore
-
+from flask_wtf.csrf import CSRFError
 from . import database, models
 from .extensions import csrf_protector
 

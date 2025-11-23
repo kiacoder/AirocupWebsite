@@ -90,12 +90,7 @@ def view_article(article_id):
         article = database.get_article_by_id(db, article_id)
         if not article:
             abort(404)
-        
         database.increment_news_view(db, article_id)
-
-    # if article.link:
-    #     return redirect(article.link)
-
     if article.template_path:
         template_path = article.template_path.strip()
         if template_path.lower().startswith("news/htmls"):

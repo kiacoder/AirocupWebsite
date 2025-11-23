@@ -7,8 +7,8 @@ import traceback
 import datetime
 import logging
 import bcrypt
-import jdatetime  # type:ignore
-from persiantools.digits import en_to_fa  # type:ignore
+import jdatetime
+from persiantools.digits import en_to_fa
 from sqlalchemy import exc, func
 import bleach
 from waitress import serve
