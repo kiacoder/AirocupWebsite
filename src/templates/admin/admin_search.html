@@ -101,6 +101,14 @@
                 {% endfor %}
               </select>
             </div>
+            <div class="form-group">
+              <label for="has_document">وضعیت مستندات</label>
+              <select id="has_document" name="has_document">
+                <option value="">مهم نیست</option>
+                <option value="yes" {% if has_document_filter=='yes' %}selected{% endif %}>دارای مستندات</option>
+                <option value="no" {% if has_document_filter=='no' %}selected{% endif %}>بدون مستندات</option>
+              </select>
+            </div>
           </div>
           <div class="admin-search-actions">
             <button type="submit" class="btn btn-primary">
@@ -176,6 +184,7 @@
                 <th>لیگ‌ها</th>
                 <th>مقطع</th>
                 <th>وضعیت</th>
+                <th>مستندات</th>
                 <th>عملیات</th>
               </tr>
             </thead>
@@ -192,6 +201,18 @@
                 </td>
                 <td>{{ t.education_level or '—' }}</td>
                 <td>{{ t.status.label if t.status else '—' }}</td>
+                <td>
+                  {% if t.documents %}
+                    <span class="admin-badge admin-badge--success">
+                      <i class="fas fa-file-check"></i> دارد
+                    </span>
+                    <a href="{{ url_for('admin.admin_manage_client', client_id=t.client_id) }}" class="btn btn-secondary btn-small" title="مشاهده مستندات">
+                      <i class="fas fa-eye"></i>
+                    </a>
+                  {% else %}
+                    <span class="admin-badge admin-badge--muted">ندارد</span>
+                  {% endif %}
+                </td>
                 <td class="admin-table__actions">
                   <a href="{{ url_for('admin.admin_edit_team', team_id=t.team_id) }}" class="btn btn-primary btn-small">مدیریت</a>
                   {% if t.status != enums.EntityStatus.ACTIVE %}
@@ -206,7 +227,7 @@
                 </td>
               </tr>
               {% else %}
-              <tr class="admin-table__empty"><td colspan="6">نتیجه‌ای برای تیم‌ها یافت نشد.</td></tr>
+              <tr class="admin-table__empty"><td colspan="7">نتیجه‌ای برای تیم‌ها یافت نشد.</td></tr>
               {% endfor %}
             </tbody>
           </table>

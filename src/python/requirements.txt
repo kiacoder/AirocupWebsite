@@ -41,3 +41,6 @@ redis
 3DViewer-Flask
 accessible-pygments
 filetype
+waitress
+bleach
+better_profanity

@@ -167,6 +167,10 @@ def ensure_schema_upgrades():
             _add_column(connection, "payments", "payer_phone VARCHAR(20)")
         if not _has_column(connection, "payments", "paid_at"):
             _add_column(connection, "payments", "paid_at DATETIME")
+        if not _has_column(connection, "team_documents", "status"):
+            _add_column(
+                connection, "team_documents", "status VARCHAR(50) DEFAULT 'PENDING'"
+            )
         connection.execute(
             text("UPDATE teams SET status='active' WHERE status IS NULL;")
         )
@@ -177,8 +181,27 @@ def ensure_schema_upgrades():
             text("UPDATE clients SET status='active' WHERE status IS NULL;")
         )
         connection.execute(
-            text("UPDATE payments SET status='pending' WHERE status IS NULL;")
+            text("UPDATE payments SET status='PENDING' WHERE status IS NULL OR status='pending';")
         )
+        connection.execute(
+            text("UPDATE team_documents SET status='PENDING' WHERE status IS NULL OR status='pending';")
+        )
+        connection.execute(
+            text(
+                "UPDATE teams SET unpaid_members_count=0 WHERE unpaid_members_count IS NULL;"
+            )
+        )
+        connection.execute(
+            text(
+                "UPDATE payments SET receipt_filename='unknown' WHERE receipt_filename IS NULL;"
+            )
+        )
+        connection.execute(
+            text(
+                "UPDATE team_documents SET file_name='unknown', file_type='unknown' WHERE file_name IS NULL OR file_type IS NULL;"
+            )
+        )
+        connection.commit()
         _ensure_index(
             connection, "clients_status_email_idx", "clients", "status, email"
         )

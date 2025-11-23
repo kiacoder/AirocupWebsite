@@ -57,6 +57,7 @@ def enforce_profile_and_team_completion():
         "global.logout",
         "client.update_team",
         "client.upload_document",
+        "client.select_league",
     }
 
     if session.get("needs_contact_completion") and request.endpoint != "client.complete_profile":
@@ -69,8 +70,14 @@ def enforce_profile_and_team_completion():
             if incomplete_team:
                 session["pending_team_completion_id"] = incomplete_team.team_id
                 if request.endpoint not in allowed_endpoints:
+                    if not incomplete_team.team_name:
+                        return redirect(
+                            url_for(
+                                "client.update_team", team_id=incomplete_team.team_id
+                            )
+                        )
                     return redirect(
-                        url_for("client.update_team", team_id=incomplete_team.team_id)
+                        url_for("client.select_league", team_id=incomplete_team.team_id)
                     )
             else:
                 session.pop("pending_team_completion_id", None)
@@ -660,6 +667,13 @@ def update_team(team_id):
                 .all()
             )
 
+        is_documents_approved = any(
+            doc.status == models.DocumentStatus.APPROVED for doc in documents
+        )
+        is_documents_rejected = any(
+            doc.status == models.DocumentStatus.REJECTED for doc in documents
+        )
+
         return render_template(
             constants.client_html_names_data["update_team"],
             team=team,
@@ -667,6 +681,8 @@ def update_team(team_id):
             has_any_payment=has_any_payment,
             is_payment_approved=is_payment_approved,
             documents=documents,
+            is_documents_approved=is_documents_approved,
+            is_documents_rejected=is_documents_rejected,
         )
 
 
@@ -2064,6 +2080,19 @@ def upload_document(team_id):
             flash("شما اجازه بارگذاری مستندات برای این تیم را ندارید.", "error")
             return redirect(url_for("client.update_team", team_id=team_id))
 
+        current_document_count = (
+            db.query(models.TeamDocument)
+            .filter(models.TeamDocument.team_id == team_id)
+            .count()
+        )
+
+        if current_document_count >= constants.AppConfig.max_documents_per_team:
+            flash(
+                f"شما به حداکثر تعداد مجاز مستندات ({constants.AppConfig.max_documents_per_team} فایل) برای این تیم رسیده‌اید.",
+                "error",
+            )
+            return redirect(url_for("client.update_team", team_id=team_id))
+
         if "file" not in request.files:
             flash("فایلی برای بارگذاری انتخاب نشده است.", "error")
             return redirect(url_for("client.update_team", team_id=team_id))
@@ -2423,9 +2452,13 @@ def select_league(team_id):
                             and member.role == models.MemberRole.MEMBER
                         ):
                             member_age = utils.calculate_age(member.birth_date)
-                            if member_age is None or not (
-                                min_age <= member_age <= max_age
-                            ):
+                            if member_age is None:
+                                continue  # Skip invalid ages, let utils handle if needed
+                            
+                            is_below = min_age is not None and member_age < min_age
+                            is_above = max_age is not None and member_age > max_age
+                            
+                            if is_below or is_above:
                                 violating_member = member
                                 break
                     if violating_member:

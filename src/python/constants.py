@@ -5,10 +5,8 @@ from typing import Dict, Optional, Tuple
 from better_profanity import profanity  # type:ignore
 import jdatetime  # type:ignore
 
-
 class Path:
     "Define all Paths Of Files"
-
     base_dir = os.path.dirname(os.path.abspath(__file__))
     root_dir = os.path.abspath(os.path.join(base_dir, "..", ".."))
     static_dir = os.path.join(root_dir, "static")
@@ -49,9 +47,9 @@ class Path:
         "solid_white_favicon": "images/logo/solid/ico/BWT.ico",
     }
     transparent_logos = {
-        "transparent_black": "images/logo/transparent/tb_airocup_logo.png",
-        "transparent_purple": "images/logo/transparent/tp_airocup_logo.png",
-        "transparent_white": "images/logo/transparent/tw_airocup_logo.png",
+        "transparent_black": "images/logo/transparent/WBT.png",
+        "transparent_purple": "images/logo/transparent/BPT.png",
+        "transparent_white": "images/logo/transparent/BWT.png",
         "favicon": "images/logo/transparent/favicon.svg",
     }
 
@@ -74,7 +72,6 @@ class Path:
         "water_waste": "images/logo/sponsors/water_and_waste.png",
         "naft_iran": "images/logo/sponsors/naft.png",
     }
-
 
 provinces_data = {
     "آذربایجان شرقی": [
@@ -1222,6 +1219,7 @@ class AppConfig:
 
     max_team_per_client = 20
     max_members_per_team = 10
+    max_documents_per_team = 10
     max_image_size = 50 * 1024 * 1024
     max_office_size = 50 * 1024 * 1024
     max_document_size = 200 * 1024 * 1024
@@ -1457,7 +1455,7 @@ committee_members_data = [
         "name": "مهندس پوریا حداد",
         "role": "دبیر کمیته هوش مصنوعی",
         "description": "مسئولیت برگزاری لیگ‌های هوش مصنوعی و ارزیابی پروژه‌ها",
-        "image": "images/committee/Poria.png",
+        "image": "images/committee/poria.png",
     },
     {
         "name": "دکتر محمد خلیل پور",
@@ -1565,4 +1563,5 @@ admin_html_names_data = {
     "admin_select_chat": "admin/admin_chat_list.html",
     "admin_search": "admin/admin_search.html",
     "admin_logs": "admin/admin_logs.html",
+    "admin_pending_documents": "admin/admin_pending_documents.html",
 }

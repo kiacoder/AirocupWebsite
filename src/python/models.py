@@ -74,6 +74,14 @@ class PaymentStatus(LabeledEnum):
     REJECTED = ("rejected", "رد شده")
 
 
+class DocumentStatus(LabeledEnum):
+    """Enumeration for the status of a document."""
+
+    PENDING = ("pending", "در حال بررسی")
+    APPROVED = ("approved", "تایید شده")
+    REJECTED = ("rejected", "رد شده")
+
+
 class Client(Base):
     """Represents a registered user account (client)."""
 
@@ -420,5 +428,10 @@ class TeamDocument(Base):
     file_name: Mapped[str] = mapped_column(String(255), nullable=False)
     file_type: Mapped[str] = mapped_column(String(50), nullable=False)
     upload_date: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=False)
+    status: Mapped[DocumentStatus] = mapped_column(
+        sql_alchemy_enum(DocumentStatus),
+        nullable=False,
+        default=DocumentStatus.PENDING,
+    )
     team = relationship("Team", back_populates="documents")
     client = relationship("Client", back_populates="team_documents")

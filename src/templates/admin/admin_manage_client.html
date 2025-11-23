@@ -101,7 +101,137 @@
     <article class="admin-surface">
       <header class="admin-surface__header">
         <div class="admin-surface__title">
-          <h2><i class="fas fa-layer-group"></i> تیم‌های ثبت‌شده</h2>
+          <h2><i class="fas fa-file-alt"></i> مستندات بارگذاری شده</h2>
+          <p>بررسی و مدیریت وضعیت مدارک ارسالی کاربر.</p>
+        </div>
+      </header>
+      <div class="admin-surface__body">
+        <div class="admin-table-wrapper">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>نام فایل</th>
+                <th>تیم</th>
+                <th>تاریخ بارگذاری</th>
+                <th>وضعیت</th>
+                <th>دانلود</th>
+                <th>عملیات</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for doc in documents if doc.status.value == 'pending' %}
+              <tr>
+                <td dir="ltr">{{ doc.file_name }}</td>
+                <td>{{ doc.team.team_name if doc.team else 'تیم حذف شده' }}</td>
+                <td>{{ doc.upload_date | formatdate | persian_digits }}</td>
+                <td>
+                  <span class="admin-status admin-status--pending">
+                    {{ doc.status.label }}
+                  </span>
+                </td>
+                <td>
+                  <a href="{{ url_for('client.get_document', team_id=doc.team_id, filename=doc.file_name) }}" class="btn btn-secondary btn-small" target="_blank">
+                    <i class="fas fa-download"></i>
+                  </a>
+                </td>
+                <td>
+                  <div class="admin-table__actions">
+                    <form method="POST" action="{{ url_for('admin.admin_manage_document', document_id=doc.document_id, action='approve') }}" style="display:inline;">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <button type="submit" class="btn btn-success btn-small" title="تایید">
+                        <i class="fas fa-check"></i> تایید
+                      </button>
+                    </form>
+                    <form method="POST" action="{{ url_for('admin.admin_manage_document', document_id=doc.document_id, action='reject') }}" style="display:inline;">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <button type="submit" class="btn btn-danger btn-small" title="رد">
+                        <i class="fas fa-times"></i> رد
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+              {% else %}
+              <tr class="admin-table__empty">
+                <td colspan="6">
+                  <div class="admin-empty-state">
+                    <i class="fas fa-folder-open"></i>
+                    مستند در انتظار بررسی وجود ندارد.
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="admin-divider"></div>
+
+        <h3>مستندات تعیین وضعیت شده</h3>
+        <div class="admin-table-wrapper">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>نام فایل</th>
+                <th>تیم</th>
+                <th>تاریخ بارگذاری</th>
+                <th>وضعیت</th>
+                <th>دانلود</th>
+                <th>عملیات</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for doc in documents if doc.status.value != 'pending' %}
+              <tr>
+                <td dir="ltr">{{ doc.file_name }}</td>
+                <td>{{ doc.team.team_name if doc.team else 'تیم حذف شده' }}</td>
+                <td>{{ doc.upload_date | formatdate | persian_digits }}</td>
+                <td>
+                  <span class="admin-status {% if doc.status.value == 'approved' %}admin-status--approved{% else %}admin-status--rejected{% endif %}">
+                    {{ doc.status.label }}
+                  </span>
+                </td>
+                <td>
+                  <a href="{{ url_for('client.get_document', team_id=doc.team_id, filename=doc.file_name) }}" class="btn btn-secondary btn-small" target="_blank">
+                    <i class="fas fa-download"></i>
+                  </a>
+                </td>
+                <td>
+                  <div class="admin-table__actions">
+                    {% if doc.status.value == 'rejected' %}
+                    <form method="POST" action="{{ url_for('admin.admin_manage_document', document_id=doc.document_id, action='approve') }}" style="display:inline;">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <button type="submit" class="btn btn-success btn-small" title="تغییر به تایید">
+                        <i class="fas fa-check"></i> تایید مجدد
+                      </button>
+                    </form>
+                    {% else %}
+                    <form method="POST" action="{{ url_for('admin.admin_manage_document', document_id=doc.document_id, action='reject') }}" style="display:inline;">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <button type="submit" class="btn btn-danger btn-small" title="تغییر به رد">
+                        <i class="fas fa-times"></i> رد مجدد
+                      </button>
+                    </form>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+              {% else %}
+              <tr class="admin-table__empty">
+                <td colspan="6">
+                  <div class="admin-empty-state">
+                    مستندی تعیین وضعیت نشده است.
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </article>
+
+    <article class="admin-surface">
           <p>مدیریت تیم‌ها، وضعیت پرداخت و دسترسی سریع به اعضا.</p>
         </div>
         <div class="admin-surface__actions">

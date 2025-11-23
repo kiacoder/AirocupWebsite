@@ -154,6 +154,20 @@
 
         <h3>مستندات بارگذاری شده</h3>
 
+        {% if is_documents_approved %}
+        <div style="background-color: #d4edda; color: #155724; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #c3e6cb; text-align: center;">
+            <i class="fas fa-check-circle"></i>
+            <strong>تبریک!</strong> مدارک شما تایید شد و شما به مرحله بعدی راه یافتید.
+        </div>
+        {% endif %}
+
+        {% if is_documents_rejected %}
+        <div style="background-color: #f8d7da; color: #721c24; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #f5c6cb; text-align: center;">
+            <i class="fas fa-times-circle"></i>
+            <strong>متاسفانه مدارک شما تایید نشد.</strong> لطفاً مدارک صحیح را مجدداً بارگذاری کنید یا با پشتیبانی تماس بگیرید.
+        </div>
+        {% endif %}
+
         {% if documents %}
         <div class="user-table-wrapper">
           <table class="data-table">
@@ -162,6 +176,7 @@
                 <th>نام فایل</th>
                 <th>نوع</th>
                 <th>تاریخ</th>
+                <th>وضعیت</th>
                 <th>دانلود</th>
               </tr>
             </thead>
@@ -171,6 +186,11 @@
                 <td>{{ doc.file_name | truncate(40) }}</td>
                 <td>{{ doc.file_type }}</td>
                 <td>{{ doc.upload_date | formatdate }}</td>
+                <td>
+                  <span class="status-badge {% if doc.status.value == 'approved' %}status-approved{% elif doc.status.value == 'rejected' %}status-rejected{% else %}status-pending{% endif %}">
+                    {{ doc.status.label }}
+                  </span>
+                </td>
                 <td>
                   <a
                     href="{{ url_for('client.get_document', team_id=doc.team_id, filename=doc.file_name) }}"

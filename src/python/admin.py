@@ -837,15 +837,79 @@ def admin_manage_client(client_id):
             )
         ]
 
+        documents = (
+            db.query(models.TeamDocument)
+            .options(joinedload(models.TeamDocument.team))
+            .filter(models.TeamDocument.client_id == client_id)
+            .order_by(models.TeamDocument.upload_date.desc())
+            .all()
+        )
+
     return render_template(
         constants.admin_html_names_data["admin_manage_client"],
         client=client,
         teams=teams_with_status,
         archived_teams=archived_teams_with_status,
         payments_history=payments_history,
+        documents=documents,
         education_levels=constants.education_levels,
         enums=models,
     )
+
+
+@admin_blueprint.route("/Admin/PendingDocuments")
+@admin_required
+def admin_pending_documents():
+    """List all pending documents."""
+    with database.get_db_session() as db:
+        documents = (
+            db.query(models.TeamDocument)
+            .options(
+                joinedload(models.TeamDocument.team),
+                joinedload(models.TeamDocument.client),
+            )
+            .filter(models.TeamDocument.status == models.DocumentStatus.PENDING)
+            .order_by(models.TeamDocument.upload_date.asc())
+            .all()
+        )
+
+    return render_template(
+        constants.admin_html_names_data["admin_pending_documents"],
+        documents=documents,
+    )
+
+
+@admin_blueprint.route(
+    "/Admin/ManageDocument/<int:document_id>/<action>", methods=["POST"]
+)
+@admin_required
+def admin_manage_document(document_id, action):
+    """Approve or reject a document."""
+    if action not in ["approve", "reject"]:
+        abort(400)
+
+    with database.get_db_session() as db:
+        document = (
+            db.query(models.TeamDocument)
+            .filter(models.TeamDocument.document_id == document_id)
+            .first()
+        )
+        if not document:
+            flash("مستند مورد نظر یافت نشد.", "error")
+            return redirect(request.referrer or url_for("admin.admin_dashboard"))
+
+        if action == "approve":
+            document.status = models.DocumentStatus.APPROVED
+            flash("مستند تایید شد.", "success")
+        elif action == "reject":
+            document.status = models.DocumentStatus.REJECTED
+            flash("مستند رد شد.", "warning")
+
+        db.commit()
+
+        return redirect(
+            url_for("admin.admin_manage_client", client_id=document.client_id)
+        )
 
 
 @admin_blueprint.route("/Admin/ManageTeams")
@@ -1106,20 +1170,20 @@ def admin_edit_team(team_id):
                     age_range = level_info.get("ages") if level_info else None
                     if age_range:
                         min_age, max_age = age_range
-                        violating_member = next(
-                            (
-                                member
-                                for member in team.members
-                                if member.status == models.EntityStatus.ACTIVE
+                        violating_member = None
+                        for member in team.members:
+                            if (
+                                member.status == models.EntityStatus.ACTIVE
                                 and member.role == models.MemberRole.MEMBER
-                                and not (
-                                    min_age
-                                    <= utils.calculate_age(member.birth_date)
-                                    <= max_age
-                                )
-                            ),
-                            None,
-                        )
+                            ):
+                                age = utils.calculate_age(member.birth_date)
+                                if age is not None:
+                                    is_below = min_age is not None and age < min_age
+                                    is_above = max_age is not None and age > max_age
+                                    if is_below or is_above:
+                                        violating_member = member
+                                        break
+                        
                         if violating_member:
                             flash(
                                 f"عضو «{violating_member.name}» با مقطع «{education_level}» سازگار نیست.",
@@ -1772,6 +1836,7 @@ def admin_search():
     education_filter = _normalize_nullable_text(
         request.args.get("education_level")
     )
+    has_document_filter = request.args.get("has_document")
 
     with database.get_db_session() as db:
         clients = []
@@ -1811,6 +1876,7 @@ def admin_search():
             joinedload(models.Team.client),
             joinedload(models.Team.league_one),
             joinedload(models.Team.league_two),
+            joinedload(models.Team.documents),
         )
         if query:
             keyword_like = f"%{query}%"
@@ -1851,6 +1917,11 @@ def admin_search():
             team_query = team_query.filter(
                 models.Team.education_level == education_filter
             )
+
+        if has_document_filter == "yes":
+            team_query = team_query.filter(models.Team.documents.any())
+        elif has_document_filter == "no":
+            team_query = team_query.filter(~models.Team.documents.any())
 
         if team_sort == "name":
             team_query = team_query.order_by(func.lower(models.Team.team_name))
@@ -1932,6 +2003,7 @@ def admin_search():
             league_filter_1=league_id_1,
             league_filter_2=league_id_2,
             education_filter=education_filter,
+            has_document_filter=has_document_filter,
             clients=clients,
             teams=teams,
             payments=payments,

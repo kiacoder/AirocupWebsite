@@ -102,7 +102,7 @@ def validate_member_age(
         return True, None
 
     if not education_level:
-        return False, "مقطع تحصیلی تیم مشخص نشده است."
+        return True, None
 
     level_config = constants.education_levels.get(education_level)
     if not level_config:
@@ -460,28 +460,32 @@ def validate_member_for_resolution(
 ) -> dict:
     "Validate a member's data for missing or invalid fields"
     problems: dict[str, list[str]] = {"missing": [], "invalid": []}
-    if member.name is None:
+    # TEMP_COMMENT: Checking file update
+    if not member.name or not member.name.strip():
         problems["missing"].append("name")
-    if member.national_id is None:
+    if not member.national_id or not member.national_id.strip():
         problems["missing"].append("national_id")
     if member.role is None:
         problems["missing"].append("role")
     if member.city_id is None:
         problems["missing"].append("city")
+    if member.gender is None:
+        problems["missing"].append("gender")
     if member.birth_date is None:
         problems["missing"].append("birth_date")
 
     if member.birth_date is not None:
-        try:
-            is_valid_age, age_error = validate_member_age(
-                member.birth_date,
-                member.role,
-                education_level,
-            )
-            if not is_valid_age and age_error:
-                problems["invalid"].append(age_error)
-        except (ValueError, AttributeError):
-            problems["invalid"].append("تاریخ تولد نامعتبر است")
+        if education_level:
+            try:
+                is_valid_age, age_error = validate_member_age(
+                    member.birth_date,
+                    member.role,
+                    education_level,
+                )
+                if not is_valid_age and age_error:
+                    problems["invalid"].append(age_error)
+            except (ValueError, AttributeError):
+                problems["invalid"].append("تاریخ تولد نامعتبر است")
 
     return problems
 
@@ -531,6 +535,8 @@ def get_first_incomplete_team(db: Session, client_id: int) -> Optional[models.Te
             or_(
                 models.Team.team_name == None,  # noqa: E711
                 func.length(func.trim(models.Team.team_name)) == 0,
+                models.Team.education_level == None,  # noqa: E711
+                models.Team.league_one_id == None,  # noqa: E711
             ),
         )
         .order_by(models.Team.team_id.asc())
