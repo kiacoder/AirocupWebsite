@@ -3,7 +3,7 @@
 مصنوعی و رباتیک{% endblock %} {% block head %}
 <link
   rel="stylesheet"
-  href="{{ url_for('static', filename='css/index.css', v=static_version) }}"
+  href="{{ url_for('static', filename='css/style.css', v=static_version) }}"
 />
 {% endblock %} {% block body %}
 <header class="hero-section">
@@ -28,7 +28,8 @@
             <p class="subtitle">دانشگاه علم و صنعت ایران برگزار می‌کند</p>
             <h1 class="hero-title">مسابقات ملی هوش مصنوعی و رباتیک آیروکاپ</h1>
             <p class="tagline">
-              «اولین گردهمایی ملی هوش مصنوعی و رباتیک؛ نقطه‌ آغاز نسلی که آینده صنایع و جامعه را دگرگون می‌کند.»
+              «اولین گردهمایی ملی هوش مصنوعی و رباتیک؛ نقطه‌ آغاز نسلی که آینده
+              صنایع و جامعه را دگرگون می‌کند.»
             </p>
           </div>
         </div>
@@ -68,9 +69,7 @@
             </div>
           </div>
           <div class="hero-stat-card">
-            <span class="hero-stat-icon"
-              ><i class="fa-solid fa-user"></i
-            ></span>
+            <span class="hero-stat-icon"><i class="fa-solid fa-user"></i></span>
             <div>
               <span class="stat-value">{{ total_committee }}</span>
               <span class="stat-label">عضو کمیته</span>
@@ -100,9 +99,15 @@
           </div>
         </div>
 
-        <div class="olympiad-highlight" aria-label="Comstech 2026 qualifier notice">
+        <div
+          class="olympiad-highlight"
+          aria-label="Comstech 2026 qualifier notice"
+        >
           <i class="fas fa-trophy icon" aria-hidden="true"></i>
-          <span>مرحله انتخابی المپیاد بین‌المللی هوش مصنوعی کشورهای جهان اسلام  (Comstech2026)</span>
+          <span
+            >مرحله انتخابی المپیاد بین‌المللی هوش مصنوعی کشورهای جهان اسلام
+            (Comstech2026)</span
+          >
         </div>
 
         <div class="cta-buttons">
@@ -189,9 +194,9 @@
               height="707"
             />
           </button>
+        </div>
       </div>
     </div>
-  </div>
   </div>
 </header>
 <section id="about-section" class="video-section fade-in-element">
@@ -214,7 +219,7 @@
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowfullscreen
             loading="lazy"
-            style="width: 100%; height: 100%; border: none; min-height: 300px;"
+            style="width: 100%; height: 100%; border: none; min-height: 300px"
           ></iframe>
         </div>
       </div>
@@ -258,8 +263,8 @@
         <div class="impact-icon"><i class="fas fa-graduation-cap"></i></div>
         <h3>آموزش هدفمند</h3>
         <p>
-           وبینار های آموزشی و ترویجی و کارگاه‌های تخصصی، منتورینگ و بازخورد مستمر برای ارتقای سطح علمی و
-          مهارتی تیم‌ها.
+          وبینار های آموزشی و ترویجی و کارگاه‌های تخصصی، منتورینگ و بازخورد
+          مستمر برای ارتقای سطح علمی و مهارتی تیم‌ها.
         </p>
       </article>
       <article class="impact-card">
