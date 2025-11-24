@@ -50,7 +50,7 @@
                         </td>
                         <td>{{ doc.upload_date | formatdate | persian_digits }}</td>
                         <td>
-                        <a href="{{ url_for('client.get_document', team_id=doc.team_id, filename=doc.file_name) }}" class="btn btn-secondary btn-small" target="_blank">
+                        <a href="{{ url_for('admin.admin_get_document', team_id=doc.team_id, filename=doc.file_name) }}" class="btn btn-secondary btn-small" target="_blank">
                             <i class="fas fa-download"></i>
                         </a>
                         </td>

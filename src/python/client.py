@@ -39,6 +39,7 @@ from . import constants
 from . import models
 from . import utils
 from . import auth
+from . import admin as admin_module
 from .extensions import csrf_protector, limiter
 from .auth import login_required
 
@@ -112,6 +113,12 @@ def _get_current_app() -> Flask:
 @client_blueprint.route("/signup", methods=["GET", "POST"])
 def signup():
     """Render and handle the client sign-up page"""
+    if admin_module.signup_disabled:
+        flash("ثبت‌نام موقتاً غیرفعال است. لطفاً بعداً تلاش کنید یا وارد حساب شوید.", "warning")
+        if request.method == "GET":
+            return redirect(url_for("auth.login_page"))
+    if request.method == "POST" and admin_module.signup_disabled:
+        return redirect(url_for("auth.login_page"))
     if request.method == "POST":
         csrf_protector.protect()
 

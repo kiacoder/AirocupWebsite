@@ -1062,16 +1062,28 @@ technical_committee_members = [
         "image": "images/technical_committee/somaieh_soltani.png",
     },
     {
-        "name": "مهندس امیر حسین کرمی",
-        "role": "مدیر امور استان ها",
-        "description": "هماهنگی٬ برنامه ریزی و پیگیری امور استان ها",
-        "image": "images/technical_committee/amir_hossain.png",
-    },
-    {
         "name": "مهندس سهیل رحیمی",
         "role": "رئیس لیگ ربات جنگجو",
         "description": "مسئولیت برنامه‌ریزی و اجرای لیگ ربات جنگجو",
         "image": "images/technical_committee/soheil.jpg",
+    },
+    {
+        "name": "آقای مهندس امیرحسین انصاری",
+        "role": "نماینده استان فارس",
+        "description": "",
+        "image": "images/technical_committee/amir.jpg",
+    },
+    {
+        "name": "خانم دکتر اکرم حسینوند",
+        "role": "نماینده شهر اهواز استان خوزستان",
+        "description": "",
+        "image": "images/technical_committee/akram.jpg",
+    },
+    {
+        "name": "مهندس امیر حسین کرمی",
+        "role": "مدیر امور استان ها",
+        "description": "هماهنگی٬ برنامه ریزی و پیگیری امور استان ها",
+        "image": "images/technical_committee/amir_hossain.png",
     },
     {
         "name": "مهندس مهدی محمدی",

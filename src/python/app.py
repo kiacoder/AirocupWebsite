@@ -173,6 +173,19 @@ def humanize_number_filter(num):
         return num
 
 
+@flask_app.template_filter("datetime_local")
+def datetime_local_filter(dt_value):
+    """Format datetime to HTML datetime-local string."""
+    if not dt_value:
+        return ""
+    try:
+        if isinstance(dt_value, datetime.datetime):
+            return dt_value.replace(microsecond=0).isoformat(timespec="minutes")
+        return str(dt_value)
+    except Exception:
+        return ""
+
+
 @flask_app.context_processor
 def inject_global_variables():
     """Injects global variables into the template context"""

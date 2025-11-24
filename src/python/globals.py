@@ -107,28 +107,28 @@ def view_article(article_id):
                     )
                 except OSError:
                     current_app.logger.error(
-                        "Could not read template file %s for Article %s",
+                        "Could not read template file %s for Article %s. Falling back to DB content.",
                         html_path,
                         article_id,
                     )
-                    abort(500, "Could not read article content file.")
+                    # Fallback to DB content
+            else:
+                 current_app.logger.warning(
+                    "Custom HTML file %s missing for Article %s. Falling back to DB content.",
+                     html_path,
+                     article_id
+                 )
         else:
             try:
                 return render_template(f"News/{template_path}")
             except TemplateNotFound:
                 current_app.logger.error(
-                    "Template %s not found for Article %s",
+                    "Template %s not found for Article %s. Falling back to DB content.",
                     template_path,
                     article_id,
                 )
-                abort(500, "Template file for this article could not be found.")
+                # Fallback to DB content
 
-        current_app.logger.error(
-            "Template %s not found for Article %s",
-            template_path,
-            article_id,
-        )
-        abort(500, "Template file for this article could not be found.")
     return render_template(constants.global_html_names_data["article"], article=article)
 
 

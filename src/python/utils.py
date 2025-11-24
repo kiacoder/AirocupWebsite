@@ -415,6 +415,9 @@ def create_member_from_form_data(
     except (ValueError, TypeError):
         return None, "تاریخ تولد باید به صورت عددی وارد شود."
 
+    if not phone_number:
+        return None, "شماره موبایل الزامی است."
+
     errors = database.validate_new_member_data(
         db,
         name,

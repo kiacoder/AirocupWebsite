@@ -286,7 +286,7 @@ class Member(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     birth_date: Mapped[Optional[datetime.date]] = mapped_column(Date, nullable=True)
     national_id: Mapped[str] = mapped_column(String(10), nullable=False)
-    phone_number: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    phone_number: Mapped[str] = mapped_column(String(20), nullable=False)
     gender: Mapped[Gender] = mapped_column(
         sql_alchemy_enum(Gender),
         nullable=True,

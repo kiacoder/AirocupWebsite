@@ -5,6 +5,8 @@ import math
 import uuid
 import datetime
 import shutil
+import subprocess
+import filetype
 from types import SimpleNamespace
 from flask import (
     Blueprint,
@@ -22,10 +24,11 @@ from flask import (
 import persiantools.digits
 from sqlalchemy import exc, func, select, or_, case, String
 from sqlalchemy.sql.functions import count
-from sqlalchemy.orm import joinedload, subqueryload
+from sqlalchemy.orm import joinedload, subqueryload, aliased
 import bleach
 import bcrypt
 from werkzeug.utils import secure_filename
+from werkzeug.security import safe_join
 from . import config
 from . import database
 from . import constants
@@ -34,6 +37,7 @@ from . import utils
 from .auth import admin_required, admin_action_required
 
 admin_blueprint = Blueprint("admin", __name__, template_folder="admin")
+signup_disabled = False
 
 
 def _coerce_payment_status(raw_status):
@@ -831,11 +835,21 @@ def admin_manage_client(client_id):
                 receipt_filename=row.receipt_filename,
                 team_name=team_name,
                 client_id=row.client_id,
+                team_id=row.team_id,
+                payer_name=row.payer_name,
+                payer_phone=row.payer_phone,
+                tracking_number=row.tracking_number,
+                paid_at=row.paid_at,
             )
             for row, team_name in (
                 db.query(models.Payment, models.Team.team_name)
                 .join(models.Team, models.Payment.team_id == models.Team.team_id)
-                .filter(models.Payment.client_id == client_id)
+                .filter(
+                    or_(
+                        models.Payment.client_id == client_id,
+                        models.Team.client_id == client_id,
+                    )
+                )
                 .order_by(models.Payment.upload_date.desc())
                 .all()
             )
@@ -891,6 +905,17 @@ def admin_pending_documents():
         constants.admin_html_names_data["admin_pending_documents"],
         grouped_documents=grouped_documents,
     )
+
+
+@admin_blueprint.route("/Admin/GetDocument/<int:team_id>/<path:filename>")
+@admin_required
+def admin_get_document(team_id, filename):
+    """Serve team documents to admin."""
+    directory = os.path.join(constants.Path.uploads_dir, "documents", str(team_id))
+    filepath = safe_join(directory, filename)
+    if filepath is None or not os.path.exists(filepath):
+        abort(404)
+    return send_from_directory(directory, filename, as_attachment=True)
 
 
 @admin_blueprint.route(
@@ -1289,6 +1314,7 @@ def admin_edit_team(team_id):
         education_levels=constants.education_levels,
         last_payment=last_payment,
         payable_amount=payable_amount,
+        enums=models,
         **form_context,
     )
 
@@ -1654,6 +1680,49 @@ def admin_dashboard():
             db.query(models.DailyStat).filter(models.DailyStat.date == today).first()
         )
         daily_visits = daily_stat.visit_count if daily_stat else 0
+        week_ago = today - datetime.timedelta(days=6)
+        weekly_rows = {
+            row.date: row.visit_count or 0
+            for row in db.query(models.DailyStat)
+            .filter(models.DailyStat.date >= week_ago)
+            .all()
+        }
+        weekly_visits = []
+        for i in range(7):
+            day = week_ago + datetime.timedelta(days=i)
+            weekly_visits.append(
+                {"date": day, "visit_count": weekly_rows.get(day, 0)}
+            )
+        weekly_min = min([w["visit_count"] for w in weekly_visits], default=0)
+        weekly_max = max([w["visit_count"] for w in weekly_visits], default=0)
+        weekly_last = weekly_visits[-1] if weekly_visits else None
+        weekly_last_count = weekly_last["visit_count"] if weekly_last else 0
+
+        gender_by_league = []
+        gender_league_rows = (
+            db.query(
+                models.League.name.label("league_name"),
+                models.Member.gender,
+                func.count(models.Member.member_id).label("count"),
+            )
+            .select_from(models.Member)
+            .join(models.Team, models.Member.team_id == models.Team.team_id)
+            .join(models.League, models.Team.league_one_id == models.League.league_id)
+            .filter(models.Member.status == models.EntityStatus.ACTIVE)
+            .group_by(models.League.name, models.Member.gender)
+            .all()
+        )
+        league_map = {}
+        for league_name, gender, count_val in gender_league_rows:
+            if league_name not in league_map:
+                league_map[league_name] = {"league": league_name, "male": 0, "female": 0, "unknown": 0}
+            key = "unknown"
+            if gender == models.Gender.MALE:
+                key = "male"
+            elif gender == models.Gender.FEMALE:
+                key = "female"
+            league_map[league_name][key] += count_val or 0
+        gender_by_league = sorted(league_map.values(), key=lambda x: (x["male"] + x["female"] + x["unknown"]), reverse=True)
 
         stats = {
             "total_clients": total_clients,
@@ -1665,6 +1734,12 @@ def admin_dashboard():
             "new_clients_this_week": new_clients_this_week,
             "online_users_count": online_users_count,
             "daily_visits": daily_visits,
+            "weekly_visits": weekly_visits,
+            "weekly_min": weekly_min,
+            "weekly_max": weekly_max,
+            "weekly_last": weekly_last,
+            "weekly_last_count": weekly_last_count,
+            "gender_by_league": gender_by_league,
         }
         league_counts = {}
         active_teams = (
@@ -1724,6 +1799,7 @@ def admin_dashboard():
             db.query(models.Member.gender, models.Member.birth_date)
             .filter(
                 models.Member.status == models.EntityStatus.ACTIVE,
+                models.Member.role == models.MemberRole.MEMBER,
                 models.Member.birth_date.isnot(None),
             )
             .all()
@@ -1748,9 +1824,56 @@ def admin_dashboard():
             total_disk, used_disk, free_disk = shutil.disk_usage("/")
             server_stats["disk_percent"] = round((used_disk / total_disk) * 100, 1)
             server_stats["disk_free_gb"] = round(free_disk / (1024**3), 1)
+            server_stats["disk_total_gb"] = round(total_disk / (1024**3), 1)
         except Exception:
             server_stats["disk_percent"] = 0
             server_stats["disk_free_gb"] = 0
+            server_stats["disk_total_gb"] = 0
+
+        try:
+            import psutil
+
+            server_stats["cpu_percent"] = psutil.cpu_percent(interval=0.1)
+            load_avg = os.getloadavg() if hasattr(os, "getloadavg") else (0, 0, 0)
+            server_stats["load_avg_1m"] = round(load_avg[0], 2)
+
+            vm = psutil.virtual_memory()
+            server_stats["ram_total_gb"] = round(vm.total / (1024**3), 1)
+            server_stats["ram_used_gb"] = round(vm.used / (1024**3), 1)
+            server_stats["ram_percent"] = round(vm.percent, 1)
+
+            sm = psutil.swap_memory()
+            server_stats["swap_percent"] = round(sm.percent, 1)
+        except Exception:
+            load_avg = os.getloadavg() if hasattr(os, "getloadavg") else (0, 0, 0)
+            server_stats["cpu_percent"] = 0
+            server_stats["load_avg_1m"] = round(load_avg[0], 2)
+            server_stats["ram_total_gb"] = 0
+            server_stats["ram_used_gb"] = 0
+            server_stats["ram_percent"] = 0
+            server_stats["swap_percent"] = 0
+
+        try:
+            output = subprocess.check_output(
+                [
+                    "nvidia-smi",
+                    "--query-gpu=utilization.gpu,memory.total,memory.used",
+                    "--format=csv,noheader,nounits",
+                ],
+                text=True,
+                stderr=subprocess.DEVNULL,
+            )
+            first_line = output.strip().splitlines()[0]
+            util, mem_total, mem_used = [
+                float(x.strip()) for x in first_line.split(",")
+            ]
+            server_stats["gpu_percent"] = round(util, 1)
+            server_stats["vram_total_gb"] = round(mem_total / 1024, 2)
+            server_stats["vram_used_gb"] = round(mem_used / 1024, 2)
+        except Exception:
+            server_stats["gpu_percent"] = None
+            server_stats["vram_total_gb"] = None
+            server_stats["vram_used_gb"] = None
         top_news = (
             db.query(models.News).order_by(models.News.views.desc()).limit(5).all()
         )
@@ -1832,6 +1955,25 @@ def admin_dashboard():
     )
 
 
+@admin_blueprint.route("/API/GetTeamsByLeague/<int:league_id>")
+@admin_required
+def api_get_teams_by_league(league_id):
+    """Return list of teams for a league."""
+    with database.get_db_session() as db:
+        teams = (
+            db.query(models.Team.team_name)
+            .filter(
+                or_(
+                    models.Team.league_one_id == league_id,
+                    models.Team.league_two_id == league_id,
+                ),
+                models.Team.status == models.EntityStatus.ACTIVE,
+            )
+            .all()
+        )
+        return jsonify([t.team_name for t in teams if t.team_name])
+
+
 @admin_blueprint.route("/Admin/DownloadDatabase")
 @admin_required
 def admin_download_db():
@@ -1900,9 +2042,13 @@ def admin_search():
             client_query = client_query.order_by(models.Client.registration_date.desc())
         clients = client_query.limit(150).all()
 
+        league_one_alias = aliased(models.League)
+        league_two_alias = aliased(models.League)
         team_query = (
             db.query(models.Team)
             .join(models.Client)
+            .outerjoin(league_one_alias, models.Team.league_one_id == league_one_alias.league_id)
+            .outerjoin(league_two_alias, models.Team.league_two_id == league_two_alias.league_id)
             .options(
                 joinedload(models.Team.client),
                 joinedload(models.Team.league_one),
@@ -1918,8 +2064,8 @@ def admin_search():
                     models.Client.email.ilike(keyword_like),
                     models.Client.phone_number.ilike(keyword_like),
                     func.cast(models.Team.team_id, String).ilike(keyword_like),
-                    models.Team.league_one.has(models.League.name.ilike(keyword_like)),
-                    models.Team.league_two.has(models.League.name.ilike(keyword_like)),
+                    league_one_alias.name.ilike(keyword_like),
+                    league_two_alias.name.ilike(keyword_like),
                 )
             )
         if team_status == "archived":
@@ -1963,7 +2109,7 @@ def admin_search():
             team_query = team_query.order_by(models.Team.team_registration_date.asc())
         else:
             team_query = team_query.order_by(models.Team.team_registration_date.desc())
-        teams = team_query.limit(300).all()
+        teams = team_query.distinct(models.Team.team_id).limit(300).all()
 
         payment_query = db.query(models.Payment)
         if payment_status:
@@ -1984,21 +2130,27 @@ def admin_search():
                     models.Payment.payer_name.ilike(keyword_like),
                     models.Payment.payer_phone.ilike(keyword_like),
                     models.Payment.tracking_number.ilike(keyword_like),
+                    models.Payment.receipt_filename.ilike(keyword_like),
                 )
             )
+
+        payment_query = payment_query.options(
+            joinedload(models.Payment.team),
+            joinedload(models.Payment.client),
+        )
 
         if payment_sort == "amount":
             payment_query = payment_query.order_by(models.Payment.amount.desc())
         else:
             payment_query = payment_query.order_by(models.Payment.upload_date.desc())
-        payments = payment_query.limit(100).all()
+        payments = payment_query.limit(200).all()
 
         members = []
+        member_query = db.query(models.Member).options(
+            joinedload(models.Member.team).joinedload(models.Team.client),
+            joinedload(models.Member.city).joinedload(models.City.province),
+        )
         if query:
-            member_query = db.query(models.Member).options(
-                joinedload(models.Member.team).joinedload(models.Team.client),
-                joinedload(models.Member.city).joinedload(models.City.province),
-            )
             keyword_like = f"%{query}%"
             member_query = member_query.filter(
                 or_(
@@ -2007,16 +2159,16 @@ def admin_search():
                     models.Member.phone_number.ilike(keyword_like),
                 )
             )
-            if team_status == "archived":
-                member_query = member_query.filter(
-                    models.Member.status != models.EntityStatus.ACTIVE
-                )
-            elif team_status != "all":
-                member_query = member_query.filter(
-                    models.Member.status == models.EntityStatus.ACTIVE
-                )
+        if team_status == "archived":
+            member_query = member_query.filter(
+                models.Member.status != models.EntityStatus.ACTIVE
+            )
+        elif team_status != "all":
+            member_query = member_query.filter(
+                models.Member.status == models.EntityStatus.ACTIVE
+            )
 
-            members = member_query.limit(300).all()
+        members = member_query.order_by(models.Member.member_id.desc()).limit(400).all()
 
         return render_template(
             constants.admin_html_names_data["admin_search"],
@@ -2037,6 +2189,66 @@ def admin_search():
             members=members,
             enums=models,
         )
+
+
+@admin_blueprint.route("/Admin/SignupStatus")
+@admin_required
+def admin_signup_status():
+    return jsonify({"signup_disabled": signup_disabled})
+
+
+@admin_blueprint.route("/Admin/ToggleSignup", methods=["POST"])
+@admin_required
+def admin_toggle_signup():
+    global signup_disabled
+    disabled_value = request.form.get("disabled")
+    if disabled_value is None and request.is_json:
+        payload = request.get_json(silent=True) or {}
+        disabled_value = payload.get("disabled")
+    signup_disabled = str(disabled_value).lower() in ("1", "true", "yes", "on")
+    flash(
+        "ثبت‌نام کاربران غیر فعال شد." if signup_disabled else "ثبت‌نام کاربران فعال شد.",
+        "success",
+    )
+    return redirect(request.referrer or url_for("admin.admin_dashboard"))
+
+
+@admin_blueprint.route("/Admin/MoveMember", methods=["POST"])
+@admin_required
+def admin_move_member():
+    member_id = _parse_nullable_int(request.form.get("member_id"))
+    target_team_id = _parse_nullable_int(request.form.get("team_id"))
+    if request.is_json:
+        payload = request.get_json(silent=True) or {}
+        member_id = payload.get("member_id", member_id)
+        target_team_id = payload.get("team_id", target_team_id)
+    if not member_id or not target_team_id:
+        flash("شناسه عضو یا تیم مقصد نامعتبر است.", "error")
+        return redirect(request.referrer or url_for("admin.admin_dashboard"))
+
+    with database.get_db_session() as db:
+        member = (
+            db.query(models.Member)
+            .options(joinedload(models.Member.team))
+            .filter(models.Member.member_id == member_id)
+            .first()
+        )
+        target_team = (
+            db.query(models.Team)
+            .filter(models.Team.team_id == target_team_id)
+            .first()
+        )
+        if not member or not target_team:
+            flash("عضو یا تیم مقصد یافت نشد.", "error")
+            return redirect(request.referrer or url_for("admin.admin_dashboard"))
+
+        member.team_id = target_team.team_id
+        db.commit()
+        flash(
+            f"عضو {member.name} به تیم {target_team.team_name or target_team.team_id} منتقل شد.",
+            "success",
+        )
+    return redirect(request.referrer or url_for("admin.admin_dashboard"))
 
 
 @admin_blueprint.route(
@@ -2105,6 +2317,190 @@ def admin_manage_payment(payment_id, action):
 
     return redirect(url_for("admin.admin_dashboard"))
 
+
+def _save_receipt_file(client_id: int, file_storage, old_filename: str | None = None):
+    """Save uploaded receipt file for admin flows; returns new filename or raises."""
+    if not file_storage or not file_storage.filename:
+        return old_filename
+
+    file_storage.stream.seek(0, os.SEEK_END)
+    size = file_storage.stream.tell()
+    file_storage.stream.seek(0)
+    max_size = getattr(constants.AppConfig, "max_image_size", 5 * 1024 * 1024)
+    if size <= 0 or size > max_size:
+        raise ValueError("حجم فایل رسید نامعتبر است.")
+    if not utils.is_file_allowed(file_storage.stream):
+        file_storage.stream.seek(0)
+        raise ValueError("نوع فایل رسید مجاز نیست.")
+    file_storage.stream.seek(0)
+    kind = filetype.guess(file_storage.stream)
+    file_storage.stream.seek(0)
+    extension = kind.extension if kind else ""
+    if not extension and "." in file_storage.filename:
+        extension = file_storage.filename.rsplit(".", 1)[1].lower()
+    new_name = f"{uuid.uuid4()}.{extension}" if extension else str(uuid.uuid4())
+    target_dir = os.path.join(constants.Path.receipts_dir, str(client_id))
+    os.makedirs(target_dir, exist_ok=True)
+    file_storage.save(os.path.join(target_dir, new_name))
+
+    if old_filename:
+        old_path = os.path.join(target_dir, old_filename)
+        if os.path.exists(old_path):
+            try:
+                os.remove(old_path)
+            except OSError:
+                current_app.logger.warning("Could not remove old receipt %s", old_path)
+    return new_name
+
+
+@admin_blueprint.route("/Admin/Payment/<int:payment_id>/Update", methods=["POST"])
+@admin_required
+def admin_update_payment(payment_id):
+    """Update a payment record (amount, members count, status, payer info, paid_at)."""
+    with database.get_db_session() as db_session:
+        payment = (
+            db_session.query(models.Payment)
+            .options(joinedload(models.Payment.team))
+            .filter(models.Payment.payment_id == payment_id)
+            .first()
+        )
+        if not payment:
+            flash("پرداخت مورد نظر یافت نشد.", "error")
+            return redirect(request.referrer or url_for("admin.admin_dashboard"))
+
+        amount = _parse_nullable_int(request.form.get("amount"))
+        members_paid_for = _parse_nullable_int(request.form.get("members_paid_for"))
+        status_raw = _normalize_nullable_text(request.form.get("status"))
+        tracking_number = _normalize_nullable_text(request.form.get("tracking_number"))
+        payer_name = _normalize_nullable_text(request.form.get("payer_name"))
+        payer_phone = _normalize_nullable_text(request.form.get("payer_phone"))
+        paid_at_raw = _normalize_nullable_text(request.form.get("paid_at"))
+        receipt_file = request.files.get("receipt_file")
+
+        if amount is not None:
+            payment.amount = amount
+        if members_paid_for is not None:
+            payment.members_paid_for = members_paid_for
+        if status_raw:
+            try:
+                payment.status = models.PaymentStatus(status_raw)
+            except ValueError:
+                flash("وضعیت پرداخت نامعتبر است.", "error")
+                return redirect(request.referrer or url_for("admin.admin_dashboard"))
+        payment.tracking_number = tracking_number
+        payment.payer_name = payer_name
+        payment.payer_phone = payer_phone
+        if paid_at_raw:
+            try:
+                payment.paid_at = datetime.datetime.fromisoformat(paid_at_raw)
+            except ValueError:
+                flash("فرمت تاریخ پرداخت نامعتبر است. از YYYY-MM-DD HH:MM استفاده کنید.", "error")
+                return redirect(request.referrer or url_for("admin.admin_dashboard"))
+        if receipt_file and receipt_file.filename:
+            try:
+                payment.receipt_filename = _save_receipt_file(payment.client_id, receipt_file, payment.receipt_filename)
+            except ValueError as err:
+                flash(str(err), "error")
+                return redirect(request.referrer or url_for("admin.admin_dashboard"))
+
+        db_session.commit()
+        flash("پرداخت با موفقیت به‌روزرسانی شد.", "success")
+        return redirect(request.referrer or url_for("admin.admin_dashboard"))
+
+
+@admin_blueprint.route("/Admin/Payment/Add", methods=["POST"])
+@admin_required
+def admin_add_payment():
+    """Create a manual payment entry for a team."""
+    team_id = _parse_nullable_int(request.form.get("team_id"))
+    client_id = _parse_nullable_int(request.form.get("client_id"))
+    amount = _parse_nullable_int(request.form.get("amount"))
+    members_paid_for = _parse_nullable_int(request.form.get("members_paid_for"))
+    status_raw = _normalize_nullable_text(request.form.get("status")) or "APPROVED"
+    payer_name = _normalize_nullable_text(request.form.get("payer_name"))
+    payer_phone = _normalize_nullable_text(request.form.get("payer_phone"))
+    tracking_number = _normalize_nullable_text(request.form.get("tracking_number"))
+    paid_at_raw = _normalize_nullable_text(request.form.get("paid_at"))
+    receipt_file = request.files.get("receipt_file")
+
+    if not team_id or not amount:
+        flash("تیم و مبلغ الزامی است.", "error")
+        return redirect(request.referrer or url_for("admin.admin_dashboard"))
+
+    with database.get_db_session() as db_session:
+        team = db_session.query(models.Team).filter(models.Team.team_id == team_id).first()
+        if not team:
+            flash("تیم مقصد یافت نشد.", "error")
+            return redirect(request.referrer or url_for("admin.admin_dashboard"))
+        resolved_client_id = client_id or team.client_id
+        try:
+            status_enum = models.PaymentStatus(status_raw)
+        except ValueError:
+            status_enum = models.PaymentStatus.APPROVED
+
+        paid_at = None
+        if paid_at_raw:
+            try:
+                paid_at = datetime.datetime.fromisoformat(paid_at_raw)
+            except ValueError:
+                flash("فرمت تاریخ پرداخت نامعتبر است.", "error")
+                return redirect(request.referrer or url_for("admin.admin_dashboard"))
+
+        new_payment = models.Payment(
+            team_id=team_id,
+            client_id=resolved_client_id,
+            amount=amount,
+            members_paid_for=members_paid_for or 0,
+            receipt_filename="",
+            tracking_number=tracking_number,
+            payer_name=payer_name,
+            payer_phone=payer_phone,
+            paid_at=paid_at,
+            upload_date=datetime.datetime.now(datetime.timezone.utc),
+            status=status_enum,
+        )
+        db_session.add(new_payment)
+        db_session.flush()
+        if receipt_file and receipt_file.filename:
+            try:
+                new_payment.receipt_filename = _save_receipt_file(
+                    resolved_client_id, receipt_file, None
+                )
+            except ValueError as err:
+                db_session.rollback()
+                flash(str(err), "error")
+                return redirect(request.referrer or url_for("admin.admin_dashboard"))
+        db_session.commit()
+        flash("پرداخت جدید با موفقیت ثبت شد.", "success")
+    return redirect(request.referrer or url_for("admin.admin_dashboard"))
+
+
+@admin_blueprint.route("/Admin/Payment/<int:payment_id>/DeleteReceipt", methods=["POST"])
+@admin_required
+def admin_delete_payment_receipt(payment_id):
+    """Remove receipt file reference and delete the file from disk."""
+    with database.get_db_session() as db_session:
+        payment = (
+            db_session.query(models.Payment)
+            .filter(models.Payment.payment_id == payment_id)
+            .first()
+        )
+        if not payment:
+            flash("پرداخت مورد نظر یافت نشد.", "error")
+            return redirect(request.referrer or url_for("admin.admin_dashboard"))
+        old_name = payment.receipt_filename
+        payment.receipt_filename = ""
+        db_session.commit()
+        if old_name:
+            target_dir = os.path.join(constants.Path.receipts_dir, str(payment.client_id))
+            old_path = os.path.join(target_dir, old_name)
+            if os.path.exists(old_path):
+                try:
+                    os.remove(old_path)
+                except OSError:
+                    current_app.logger.warning("Could not remove old receipt %s", old_path)
+        flash("فایل رسید حذف شد.", "success")
+    return redirect(request.referrer or url_for("admin.admin_dashboard"))
 
 @admin_blueprint.route("/Admin/Logs")
 @admin_required

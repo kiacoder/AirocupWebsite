@@ -273,6 +273,55 @@
           <h2><i class="fas fa-wallet"></i> سوابق پرداخت تیم</h2>
           <p>همه رسیدها و وضعیت‌های مربوط به این تیم.</p>
         </div>
+        <div class="admin-surface__actions">
+          <form class="admin-inline-form" method="POST" enctype="multipart/form-data" action="{{ url_for('admin.admin_add_payment') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="team_id" value="{{ team.team_id }}">
+            <input type="hidden" name="client_id" value="{{ team.client_id }}">
+            <div class="form-grid form-grid--compact">
+              <div class="form-group">
+                <label for="team_manual_amount">مبلغ</label>
+                <input type="number" id="team_manual_amount" name="amount" min="0" required placeholder="مبلغ (ریال)">
+              </div>
+              <div class="form-group">
+                <label for="team_manual_members">تعداد اعضا</label>
+                <input type="number" id="team_manual_members" name="members_paid_for" min="0" placeholder="مثال: 3">
+              </div>
+              <div class="form-group">
+                <label for="team_manual_status">وضعیت</label>
+                <select id="team_manual_status" name="status">
+                  {% for status in enums.PaymentStatus %}
+                  <option value="{{ status.value }}" {% if status.name=='APPROVED' %}selected{% endif %}>{{ status.label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="team_manual_paid_at">تاریخ پرداخت</label>
+                <input type="datetime-local" id="team_manual_paid_at" name="paid_at">
+              </div>
+              <div class="form-group">
+                <label for="team_manual_tracking">شماره پیگیری</label>
+                <input type="text" id="team_manual_tracking" name="tracking_number" placeholder="اختیاری">
+              </div>
+              <div class="form-group">
+                <label for="team_manual_payer_name">نام پرداخت‌کننده</label>
+                <input type="text" id="team_manual_payer_name" name="payer_name" placeholder="اختیاری">
+              </div>
+              <div class="form-group">
+                <label for="team_manual_payer_phone">تلفن پرداخت‌کننده</label>
+                <input type="tel" id="team_manual_payer_phone" name="payer_phone" placeholder="اختیاری">
+              </div>
+              <div class="form-group">
+                <label for="team_manual_receipt">فایل رسید</label>
+                <input type="file" id="team_manual_receipt" name="receipt_file" accept="image/*,.pdf,.doc,.docx">
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-small">
+              <i class="fas fa-plus-circle"></i>
+              افزودن پرداخت دستی
+            </button>
+          </form>
+        </div>
       </header>
       <div class="admin-surface__body">
         <div class="admin-table-wrapper">
@@ -285,6 +334,7 @@
                 <th>تاریخ بارگذاری</th>
                 <th>وضعیت</th>
                 <th>رسید</th>
+                <th>ویرایش</th>
               </tr>
             </thead>
             <tbody>
@@ -313,10 +363,69 @@
                   </a>
                   {% else %}-{% endif %}
                 </td>
+                <td>
+                  <form class="admin-inline-form admin-inline-form--stacked" method="POST" enctype="multipart/form-data" action="{{ url_for('admin.admin_update_payment', payment_id=payment.payment_id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="form-grid form-grid--compact">
+                      <div class="form-group">
+                        <label>مبلغ</label>
+                        <input type="number" name="amount" min="0" value="{{ payment.amount }}">
+                      </div>
+                      <div class="form-group">
+                        <label>اعضا</label>
+                        <input type="number" name="members_paid_for" min="0" value="{{ payment.members_paid_for }}">
+                      </div>
+                      <div class="form-group">
+                        <label>وضعیت</label>
+                        <select name="status">
+                          {% for status in enums.PaymentStatus %}
+                          <option value="{{ status.value }}" {% if payment.status == status %}selected{% endif %}>{{ status.label }}</option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                      <div class="form-group">
+                        <label>پرداخت در</label>
+                        <input type="datetime-local" name="paid_at" value="{{ payment.paid_at|default('', true)|datetime_local }}">
+                      </div>
+                      <div class="form-group">
+                        <label>پیگیری</label>
+                        <input type="text" name="tracking_number" value="{{ payment.tracking_number or '' }}">
+                      </div>
+                      <div class="form-group">
+                        <label>پرداخت‌کننده</label>
+                        <input type="text" name="payer_name" value="{{ payment.payer_name or '' }}">
+                      </div>
+                      <div class="form-group">
+                        <label>تلفن پرداخت‌کننده</label>
+                        <input type="tel" name="payer_phone" value="{{ payment.payer_phone or '' }}">
+                      </div>
+                      <div class="form-group">
+                        <label>فایل رسید</label>
+                        <input type="file" name="receipt_file" accept="image/*,.pdf,.doc,.docx">
+                        {% if payment.receipt_filename %}
+                        <small><a href="{{ url_for('uploaded_receipt_file', client_id=payment.client_id, filename=payment.receipt_filename) }}" target="_blank">مشاهده رسید فعلی</a></small>
+                        {% endif %}
+                      </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-small">
+                      <i class="fas fa-save"></i>
+                      ذخیره
+                    </button>
+                  </form>
+                  {% if payment.receipt_filename %}
+                  <form method="POST" action="{{ url_for('admin.admin_delete_payment_receipt', payment_id=payment.payment_id) }}" style="margin-top: 0.35rem; display:inline-block;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-danger btn-small">
+                      <i class="fas fa-trash"></i>
+                      حذف فایل رسید
+                    </button>
+                  </form>
+                  {% endif %}
+                </td>
               </tr>
               {% else %}
               <tr class="admin-table__empty">
-                <td colspan="6">
+                <td colspan="7">
                   <div class="admin-empty-state">
                     <i class="fas fa-receipt"></i>
                     پرداختی برای این تیم ثبت نشده است.

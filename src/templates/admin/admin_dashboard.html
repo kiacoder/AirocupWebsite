@@ -22,8 +22,8 @@
           </p>
         </div>
 
-        <div class="admin-dashboard__hero-panels">
-          <div class="admin-dashboard__highlights" aria-label="شاخص‌های فوری">
+      <div class="admin-dashboard__hero-panels">
+        <div class="admin-dashboard__highlights" aria-label="شاخص‌های فوری">
             <div class="admin-dashboard__highlight">
               <span class="admin-dashboard__highlight-label">رسیدهای منتظر تایید</span>
               <strong>{{ pending_payments_count | persian_digits }}</strong>
@@ -43,6 +43,11 @@
               <span class="admin-dashboard__highlight-label">بازدید امروز</span>
               <strong>{{ stats.daily_visits | default(0, true) | persian_digits }}</strong>
               <small>تعداد بازدیدهای یکتا</small>
+            </div>
+            <div class="admin-dashboard__highlight">
+              <span class="admin-dashboard__highlight-label">بازدید ۷ روز اخیر</span>
+              <strong>{{ stats.weekly_last_count | default(0, true) | persian_digits }}</strong>
+              <small>آخرین روز ثبت‌شده</small>
             </div>
           </div>
 
@@ -72,6 +77,14 @@
           <a href="{{ url_for('admin.admin_download_db') }}" class="btn btn-warning btn-large">
             <i class="fas fa-database"></i> دانلود دیتابیس
           </a>
+          <form method="POST" action="{{ url_for('admin.admin_toggle_signup') }}" class="inline-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="disabled" value="{{ 0 if signup_disabled else 1 }}">
+            <button type="submit" class="btn {{ 'btn-danger' if signup_disabled else 'btn-success' }} btn-large">
+              <i class="fas fa-user-lock"></i>
+              {{ 'فعال‌کردن ثبت‌نام' if signup_disabled else 'تعطیل‌کردن ثبت‌نام' }}
+            </button>
+          </form>
         </div>
       </div>
 
@@ -107,13 +120,32 @@
             </div>
           </header>
           <div class="admin-surface__body">
+            {% if stats.weekly_visits %}
+            <div class="admin-chart-card">
+              <h4>بازدید ۷ روز اخیر</h4>
+              <div class="sparkline" aria-hidden="true">
+                {% for day in stats.weekly_visits %}
+                <span style="--v: {{ day.visit_count or 0 }};" title="{{ day.date }}: {{ day.visit_count | persian_digits }}"></span>
+                {% endfor %}
+              </div>
+              <div class="sparkline-legend">
+                <span>کمترین: {{ stats.weekly_min | default(0, true) | persian_digits }}</span>
+                <span>بیشترین: {{ stats.weekly_max | default(0, true) | persian_digits }}</span>
+              </div>
+            </div>
+            {% endif %}
             <ul class="stat-list">
               {% for league in league_stats %}
-              <li class="stat-list__item">
-                <a href="{{ url_for('admin.admin_manage_teams', league_id=league.id) }}" class="admin-link">
-                  {{ league.name }}
-                </a>
-                <span class="stat-badge">{{ league.count | persian_digits }} تیم</span>
+              <li class="stat-list__item" style="display: block;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <a href="#" onclick="toggleLeagueTeams(event, {{ league.id }})" class="admin-link">
+                      {{ league.name }}
+                    </a>
+                    <span class="stat-badge">{{ league.count | persian_digits }} تیم</span>
+                </div>
+                <div id="league-teams-{{ league.id }}" style="display: none; margin-top: 0.5rem; padding-right: 1rem; font-size: 0.9em; color: #555;">
+                    <i class="fas fa-spinner fa-spin"></i> در حال بارگذاری...
+                </div>
               </li>
               {% else %}
               <li class="stat-list__empty">هیچ تیمی ثبت نشده است.</li>
@@ -152,9 +184,50 @@
                 </div>
               </div>
             </div>
+            {% if stats.gender_by_league %}
+            <div class="gender-league-table">
+              <div class="gender-league-table__head">
+                <span>لیگ</span>
+                <span>آقا</span>
+                <span>خانم</span>
+                <span>نامشخص</span>
+              </div>
+              {% for row in stats.gender_by_league %}
+              <div class="gender-league-table__row">
+                <span class="gender-league-table__league">{{ row.league }}</span>
+                <span class="gender-league-table__val">{{ row.male | persian_digits }}</span>
+                <span class="gender-league-table__val">{{ row.female | persian_digits }}</span>
+                <span class="gender-league-table__val">{{ row.unknown | persian_digits }}</span>
+              </div>
+              {% endfor %}
+            </div>
+            {% endif %}
           </div>
         </article>
         <div class="stats-column">
+          <article class="admin-surface">
+            <header class="admin-surface__header">
+              <div class="admin-surface__title">
+                <h3><i class="fas fa-arrows-alt-h"></i> جابجایی سریع عضو</h3>
+              </div>
+            </header>
+            <div class="admin-surface__body">
+              <form class="form-inline-grid" method="POST" action="{{ url_for('admin.admin_move_member') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="form-group">
+                  <label for="member_id">شناسه عضو</label>
+                  <input type="number" id="member_id" name="member_id" min="1" required placeholder="مثال: 125" />
+                </div>
+                <div class="form-group">
+                  <label for="target_team_id">تیم مقصد</label>
+                  <input type="number" id="target_team_id" name="team_id" min="1" required placeholder="مثال: 45" />
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">
+                  <i class="fas fa-random"></i> انتقال عضو
+                </button>
+              </form>
+            </div>
+          </article>
           <article class="admin-surface">
             <header class="admin-surface__header">
               <div class="admin-surface__title">
@@ -163,11 +236,34 @@
             </header>
             <div class="admin-surface__body">
               <div class="server-stat">
+                <label>CPU: %{{ server_stats.cpu_percent | default(0, true) | persian_digits }}</label>
+                <div class="progress-bar">
+                  <div class="progress-bar__fill" style="width: {{ server_stats.cpu_percent | default(0) }}%;"></div>
+                </div>
+                <span class="progress-text">Load 1m: {{ server_stats.load_avg_1m | default(0, true) | persian_digits }}</span>
+              </div>
+              <div class="server-stat" style="margin-top: 0.75rem;">
+                <label>حافظه (RAM): {{ server_stats.ram_used_gb | default(0, true) | persian_digits }} / {{ server_stats.ram_total_gb | default(0, true) | persian_digits }} GB</label>
+                <div class="progress-bar">
+                  <div class="progress-bar__fill" style="width: {{ server_stats.ram_percent | default(0) }}%;"></div>
+                </div>
+                <span class="progress-text">%{{ server_stats.ram_percent | default(0, true) | persian_digits }} در حال استفاده</span>
+              </div>
+              {% if server_stats.gpu_percent is not none %}
+              <div class="server-stat" style="margin-top: 0.75rem;">
+                <label>GPU: %{{ server_stats.gpu_percent | persian_digits }}</label>
+                <div class="progress-bar">
+                  <div class="progress-bar__fill" style="width: {{ server_stats.gpu_percent }}%;"></div>
+                </div>
+                <span class="progress-text">VRAM: {{ server_stats.vram_used_gb | default(0, true) | persian_digits }} / {{ server_stats.vram_total_gb | default(0, true) | persian_digits }} GB</span>
+              </div>
+              {% endif %}
+              <div class="server-stat" style="margin-top: 0.75rem;">
                 <label>فضای دیسک ({{ server_stats.disk_free_gb | persian_digits }} GB آزاد)</label>
                 <div class="progress-bar">
                   <div class="progress-bar__fill" style="width: {{ server_stats.disk_percent }}%;"></div>
                 </div>
-                <span class="progress-text">%{{ server_stats.disk_percent | persian_digits }} پر شده</span>
+                <span class="progress-text">%{{ server_stats.disk_percent | persian_digits }} پر شده از {{ server_stats.disk_total_gb | persian_digits }} GB</span>
               </div>
             </div>
           </article>
@@ -517,4 +613,38 @@
     </section>
   </main>
 </div>
+<script>
+async function toggleLeagueTeams(event, leagueId) {
+    event.preventDefault();
+    const container = document.getElementById(`league-teams-${leagueId}`);
+    if (container.style.display === 'none') {
+        if (container.dataset.loaded !== 'true') {
+             try {
+                 const response = await fetch(`/API/GetTeamsByLeague/${leagueId}`);
+                 const teams = await response.json();
+                 container.innerHTML = '';
+                 if (teams.length > 0) {
+                     const ul = document.createElement('ul');
+                     ul.style.listStyle = 'disc inside';
+                     teams.forEach(name => {
+                         const li = document.createElement('li');
+                         li.textContent = name;
+                         ul.appendChild(li);
+                     });
+                     container.appendChild(ul);
+                 } else {
+                     container.textContent = 'تیمی یافت نشد.';
+                 }
+                 container.dataset.loaded = 'true';
+             } catch (e) {
+                 console.error(e);
+                 container.textContent = 'خطا در دریافت اطلاعات.';
+             }
+        }
+        container.style.display = 'block';
+    } else {
+        container.style.display = 'none';
+    }
+}
+</script>
 {% endblock %}

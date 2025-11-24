@@ -180,6 +180,10 @@
             >خروج</a
           >
         </nav>
+        <a href="{{ url_for('admin.admin_search') }}" class="btn btn-primary btn-small admin-header-search-link">
+          <i class="fas fa-search"></i>
+          جستجوی پیشرفته
+        </a>
 
         <button
           class="admin-header-mobile-toggle"
@@ -603,7 +607,9 @@
       defer
     ></script>
     <script
-      src="{{ url_for('static', filename='js/chart.umd.min.js', v=static_version) }}"
+      src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"
+      integrity="sha256-0q+JdOlScWOHcunpUk21uab1jW7C1deBQARHtKMcaB4="
+      crossorigin="anonymous"
       defer
     ></script>
 
