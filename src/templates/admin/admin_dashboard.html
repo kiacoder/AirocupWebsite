@@ -138,7 +138,7 @@
               {% for league in league_stats %}
               <li class="stat-list__item" style="display: block;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <a href="#" onclick="toggleLeagueTeams(event, {{ league.id }})" class="admin-link">
+                    <a href="javascript:void(0);" onclick="toggleLeagueTeams(event, {{ league.id }})" class="admin-link" aria-controls="league-teams-{{ league.id }}" aria-expanded="false">
                       {{ league.name }}
                     </a>
                     <span class="stat-badge">{{ league.count | persian_digits }} تیم</span>
@@ -561,7 +561,7 @@
                 </td>
                 <td>
                   <a
-                    href="{{ url_for('uploaded_receipt_file', client_id=payment.client_id, filename=payment.receipt_filename) }}"
+                    href="{{ url_for('client.get_receipt', client_id=payment.client_id, filename=payment.receipt_filename) }}"
                     class="btn btn-secondary btn-small"
                     target="_blank"
                     rel="noopener"
@@ -616,35 +616,38 @@
 <script>
 async function toggleLeagueTeams(event, leagueId) {
     event.preventDefault();
+    const link = event.currentTarget;
     const container = document.getElementById(`league-teams-${leagueId}`);
-    if (container.style.display === 'none') {
+    const isExpanded = container.style.display === 'block';
+
+    if (!isExpanded) {
         if (container.dataset.loaded !== 'true') {
-             try {
-                 const response = await fetch(`/API/GetTeamsByLeague/${leagueId}`);
-                 const teams = await response.json();
-                 container.innerHTML = '';
-                 if (teams.length > 0) {
-                     const ul = document.createElement('ul');
-                     ul.style.listStyle = 'disc inside';
-                     teams.forEach(name => {
-                         const li = document.createElement('li');
-                         li.textContent = name;
-                         ul.appendChild(li);
-                     });
-                     container.appendChild(ul);
-                 } else {
-                     container.textContent = 'تیمی یافت نشد.';
-                 }
-                 container.dataset.loaded = 'true';
-             } catch (e) {
-                 console.error(e);
-                 container.textContent = 'خطا در دریافت اطلاعات.';
-             }
+            try {
+                const response = await fetch(`/API/GetTeamsByLeague/${leagueId}`);
+                if (!response.ok) throw new Error('Network response was not ok');
+                const teams = await response.json();
+                container.innerHTML = '';
+                if (teams.length > 0) {
+                    const ul = document.createElement('ul');
+                    ul.style.listStyle = 'disc inside';
+                    teams.forEach(name => {
+                        const li = document.createElement('li');
+                        li.textContent = name;
+                        ul.appendChild(li);
+                    });
+                    container.appendChild(ul);
+                } else {
+                    container.textContent = 'تیمی در این لیگ یافت نشد.';
+                }
+                container.dataset.loaded = 'true';
+            } catch (e) {
+                console.error('Failed to fetch teams:', e);
+                container.textContent = 'خطا در دریافت اطلاعات. لطفاً دوباره تلاش کنید.';
+            }
         }
-        container.style.display = 'block';
-    } else {
-        container.style.display = 'none';
     }
+    container.style.display = isExpanded ? 'none' : 'block';
+    link.setAttribute('aria-expanded', !isExpanded);
 }
 </script>
 {% endblock %}
